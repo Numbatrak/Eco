@@ -186,7 +186,9 @@ export const securityEvents = pgTable(
 /**
  * Minimal stub backing GET /public/sites/:subdomain until the real
  * storefront-builder backend exists - theme/sections are opaque JSON blobs
- * with no editor behind them yet in this task.
+ * with no editor behind them yet in this task. productsGridEnabled is a
+ * standalone toggle (not a general reorderable section list, which is out
+ * of scope) for showing a live product grid on the site.
  */
 export const tenantSiteConfig = pgTable("tenant_site_config", {
   tenantId: uuid("tenant_id")
@@ -194,6 +196,7 @@ export const tenantSiteConfig = pgTable("tenant_site_config", {
     .references(() => tenants.id, { onDelete: "cascade" }),
   theme: jsonb("theme").notNull().default({}),
   sections: jsonb("sections").notNull().default([]),
+  productsGridEnabled: boolean("products_grid_enabled").notNull().default(false),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

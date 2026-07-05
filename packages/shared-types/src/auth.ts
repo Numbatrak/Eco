@@ -112,3 +112,21 @@ export const verifyEmailRequestSchema = z.object({
   token: z.string(),
 });
 export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
+
+export const tenantMemberRoleSchema = z.enum(["owner", "admin", "member"]);
+export type TenantMemberRoleValue = z.infer<typeof tenantMemberRoleSchema>;
+
+export const userTenantMembershipSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  subdomain: z.string().nullable(),
+  role: tenantMemberRoleSchema,
+});
+export type UserTenantMembership = z.infer<typeof userTenantMembershipSchema>;
+
+export const meResponseSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  tenants: z.array(userTenantMembershipSchema),
+});
+export type MeResponse = z.infer<typeof meResponseSchema>;

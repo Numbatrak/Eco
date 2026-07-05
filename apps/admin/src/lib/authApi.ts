@@ -17,10 +17,13 @@ import type {
   PasswordResetRequest,
   PasswordResetComplete,
   VerifyEmailRequest,
+  MeResponse,
 } from "@platform/shared-types";
 import { apiRequest } from "./apiClient";
 
 export const authApi = {
+  me: (accessToken: string) => apiRequest<MeResponse>("/auth/me", { method: "GET", accessToken }),
+
   register: (body: RegisterRequest) =>
     apiRequest<MessageResponse>("/auth/register", { method: "POST", body }),
 

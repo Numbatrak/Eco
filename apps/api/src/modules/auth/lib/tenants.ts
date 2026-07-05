@@ -1,5 +1,7 @@
+import { eq } from "drizzle-orm";
 import { tenants, tenantMembers, tenantSiteConfig, type Database } from "@platform/db";
 import { grantPermissionsForRole } from "../../permissions/lib/grants.js";
+import type { TenantMemberRole } from "../../permissions/lib/permissions.js";
 
 export interface CreateTenantWithOwnerParams {
   name: string;
@@ -38,4 +40,33 @@ export async function createTenantWithOwner(
     await tx.insert(tenantSiteConfig).values({ tenantId: tenant.id });
     return tenant;
   });
+}
+
+export interface UserTenantMembership {
+  id: string;
+  name: string;
+  subdomain: string | null;
+  role: TenantMemberRole;
+}
+
+/**
+ * Tenant-switching UI is out of scope, but a user could in principle belong
+ * to more than one tenant (e.g. seeded data, future invite flow) - this
+ * returns all memberships rather than assuming exactly one.
+ */
+export async function listTenantsForUser(
+  db: Database,
+  userId: string,
+): Promise<UserTenantMembership[]> {
+  const rows = await db
+    .select({
+      id: tenants.id,
+      name: tenants.name,
+      subdomain: tenants.subdomain,
+      role: tenantMembers.role,
+    })
+    .from(tenantMembers)
+    .innerJoin(tenants, eq(tenants.id, tenantMembers.tenantId))
+    .where(eq(tenantMembers.userId, userId));
+  return rows;
 }

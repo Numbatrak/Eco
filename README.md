@@ -333,3 +333,56 @@ Paystack/Flutterwave HTTP APIs with native `fetch`, no SDK dependency.
   behind a shared/CGNAT IP from an actual card-testing bot, and doesn't rate
   limit per-tenant or per-card. Treat it as a first line of defense, not a
   complete anti-fraud system.
+
+## Commerce UI: merchant dashboard + published storefront
+
+### `apps/admin` (merchant dashboard)
+
+A `DashboardLayout` shell (sidebar + `<Outlet>`) adds five sections behind the
+existing auth screens: **Products** (list with published/draft filter,
+create/edit form, delete with a plain confirm dialog), **Orders** (list +
+detail, read-only), **Payment settings** (provider/keys/mode — saving `mode:
+"live"` reuses `ReauthModal` as a money-movement gate, requiring password
+always and a 2FA code only if the merchant actually has 2FA enabled, since
+unlike the disable-2FA flow this can't assume 2FA is already on), and **Site
+settings** (subdomain, publish toggle, and a standalone "show product grid on
+storefront" toggle — see below). There is deliberately **no** page-section
+list (Hero/Menu/Visit) or theme-preset picker: the task's storefront-builder
+references didn't correspond to anything in this codebase, and the chosen
+scope (confirmed with the user) is the single products-grid toggle only.
+
+### `apps/storefront` (Next.js, published storefront)
+
+`src/middleware.ts` reads the `Host` header, resolves it to a tenant
+subdomain (`src/lib/subdomain.ts` — a pure, unit-tested function, kept
+separate from the `NextRequest`-specific middleware wrapper), and rewrites to
+`/sites/{subdomain}/...`. Note the route folder is `app/sites`, **not**
+`app/_sites` — Next.js treats any `_`-prefixed folder as a private,
+routing-excluded folder, so a `_sites` tree would silently 404 everything the
+middleware rewrites to.
+
+`app/sites/[subdomain]/layout.tsx` fetches `GET /public/sites/:subdomain`
+server-side and calls `notFound()` for anything unpublished/missing, which
+renders the sibling `not-found.tsx` — a branded "this site isn't available"
+page, not the framework default. Cart state (`CartContext`) is backed by the
+`cart_token_{subdomain}` cookie and drives a persistent mini-cart drawer
+(`MiniCart`) in the header. The checkout page is a contact form
+(react-hook-form + the shared `checkoutRequestSchema`) that redirects to the
+provider's hosted checkout URL; the order-status page
+(`/sites/[subdomain]/order/[orderId]/status`) polls
+`GET .../checkout/:orderId/status` on an interval until it resolves to
+`paid`/`failed` rather than trusting the provider redirect's query params,
+consistent with how the backend itself never trusts them.
+
+Money is formatted from integer cents at the UI layer only (`lib/money.ts` in
+both apps) — no cart/order arithmetic happens client-side; totals always come
+from the API response.
+
+### Known gaps (Commerce UI)
+
+- No custom-domain UI, no inventory display, no discount codes, and no saved
+  customer accounts/order history — checkout is guest-only, per this task's
+  explicit scope.
+- Tenant switching isn't implemented: `AuthContext.currentTenant` is just
+  `tenants[0]` from `GET /auth/me` — a user who somehow belongs to more than
+  one tenant only ever sees the first.

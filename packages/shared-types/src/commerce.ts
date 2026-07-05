@@ -108,6 +108,11 @@ export const paymentSettingsRequestSchema = z.object({
   publicKey: z.string().trim().min(1),
   secretKey: z.string().trim().min(1),
   mode: paymentModeSchema,
+  // Required (password always, code only if the user has 2FA enabled) when
+  // mode is "live" - this is the re-auth bar for real money movement,
+  // verified server-side. Not needed for test mode.
+  password: z.string().optional(),
+  code: z.string().optional(),
 });
 export type PaymentSettingsRequest = z.infer<typeof paymentSettingsRequestSchema>;
 
@@ -120,10 +125,78 @@ export const paymentSettingsResponseSchema = z.object({
 });
 export type PaymentSettingsResponse = z.infer<typeof paymentSettingsResponseSchema>;
 
+// ---------- orders (merchant-facing) ----------
+
+export const orderItemSchema = z.object({
+  id: z.string().uuid(),
+  productId: z.string().uuid().nullable(),
+  nameSnapshot: z.string(),
+  unitPriceSnapshotCents: z.number().int().nonnegative(),
+  quantity: z.number().int().positive(),
+  lineTotalCents: z.number().int().nonnegative(),
+});
+export type OrderItem = z.infer<typeof orderItemSchema>;
+
+export const orderSummarySchema = z.object({
+  id: z.string().uuid(),
+  orderNumber: z.string(),
+  customerName: z.string(),
+  status: orderStatusValueSchema,
+  totalCents: z.number().int().nonnegative(),
+  currency: z.string(),
+  createdAt: z.string(),
+});
+export type OrderSummary = z.infer<typeof orderSummarySchema>;
+
+export const orderDetailSchema = orderSummarySchema.extend({
+  customerEmail: z.string(),
+  customerPhone: z.string().nullable(),
+  subtotalCents: z.number().int().nonnegative(),
+  paymentProvider: paymentProviderKeySchema,
+  paymentReference: z.string().nullable(),
+  items: z.array(orderItemSchema),
+});
+export type OrderDetail = z.infer<typeof orderDetailSchema>;
+
 // ---------- tenant site settings ----------
 
 export const updateTenantRequestSchema = z.object({
   subdomain: z.string().trim().min(3).max(63).optional(),
   published: z.boolean().optional(),
+  showProductGrid: z.boolean().optional(),
 });
 export type UpdateTenantRequest = z.infer<typeof updateTenantRequestSchema>;
+
+export const tenantSettingsResponseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  subdomain: z.string().nullable(),
+  published: z.boolean(),
+  showProductGrid: z.boolean(),
+});
+export type TenantSettingsResponse = z.infer<typeof tenantSettingsResponseSchema>;
+
+// ---------- public site (storefront) ----------
+
+export const publicSiteProductSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  priceCents: z.number().int().nonnegative(),
+  currency: z.string(),
+  imageUrl: z.string().nullable(),
+});
+export type PublicSiteProduct = z.infer<typeof publicSiteProductSchema>;
+
+export const publicSiteSchema = z.object({
+  tenant: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    subdomain: z.string(),
+  }),
+  theme: z.unknown(),
+  sections: z.unknown(),
+  productsGridEnabled: z.boolean(),
+  products: z.array(publicSiteProductSchema),
+});
+export type PublicSite = z.infer<typeof publicSiteSchema>;

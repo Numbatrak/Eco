@@ -1,3 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Space+Grotesk:wght@400;500;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  background-color: #f7f4ee;
+  color: #191510;
+  font-family:
+    "Space Grotesk",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family:
+    "Bricolage Grotesque",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}

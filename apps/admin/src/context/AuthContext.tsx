@@ -8,15 +8,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { MfaStatusResponse } from "@platform/shared-types";
+import type { MfaStatusResponse, UserTenantMembership } from "@platform/shared-types";
 import { authApi } from "../lib/authApi";
 import { apiRequest, ApiError } from "../lib/apiClient";
-import { decodeJwtPayload } from "../lib/decodeJwt";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 export interface AuthUser {
   id: string;
+  email: string;
 }
 
 interface RequestOptions {
@@ -27,6 +27,8 @@ interface RequestOptions {
 interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
+  currentTenant: UserTenantMembership | null;
+  refreshCurrentTenant: () => Promise<void>;
   accessToken: string | null;
   mfaStatus: MfaStatusResponse | null;
   refreshMfaStatus: () => Promise<void>;
@@ -38,15 +40,12 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function userFromAccessToken(accessToken: string): AuthUser | null {
-  const payload = decodeJwtPayload<{ sub?: string }>(accessToken);
-  return payload?.sub ? { id: payload.sub } : null;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }): React.ReactElement {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [mfaStatus, setMfaStatus] = useState<MfaStatusResponse | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [currentTenant, setCurrentTenant] = useState<UserTenantMembership | null>(null);
   const accessTokenRef = useRef<string | null>(null);
   accessTokenRef.current = accessToken;
 
@@ -59,18 +58,33 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
     }
   }, []);
 
+  const loadMe = useCallback(async (token: string) => {
+    try {
+      const me = await authApi.me(token);
+      setUser({ id: me.id, email: me.email });
+      // Tenant-switching is out of scope - a member's first (and, in
+      // practice, only) tenant is treated as "the" active tenant.
+      setCurrentTenant(me.tenants[0] ?? null);
+    } catch {
+      // Non-fatal - dashboard screens that need a tenant will surface their own error.
+    }
+  }, []);
+
   const setSession = useCallback(
     (token: string) => {
       setAccessToken(token);
       setStatus("authenticated");
       void loadMfaStatus(token);
+      void loadMe(token);
     },
-    [loadMfaStatus],
+    [loadMfaStatus, loadMe],
   );
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setMfaStatus(null);
+    setUser(null);
+    setCurrentTenant(null);
     setStatus("unauthenticated");
   }, []);
 
@@ -125,10 +139,18 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
     }
   }, [loadMfaStatus]);
 
+  const refreshCurrentTenant = useCallback(async () => {
+    if (accessTokenRef.current) {
+      await loadMe(accessTokenRef.current);
+    }
+  }, [loadMe]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
-      user: accessToken ? userFromAccessToken(accessToken) : null,
+      user,
+      currentTenant,
+      refreshCurrentTenant,
       accessToken,
       mfaStatus,
       refreshMfaStatus,
@@ -136,7 +158,18 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
       logout,
       authorizedRequest,
     }),
-    [status, accessToken, mfaStatus, refreshMfaStatus, setSession, logout, authorizedRequest],
+    [
+      status,
+      user,
+      currentTenant,
+      refreshCurrentTenant,
+      accessToken,
+      mfaStatus,
+      refreshMfaStatus,
+      setSession,
+      logout,
+      authorizedRequest,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

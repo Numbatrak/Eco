@@ -13,6 +13,7 @@ import productsRoutes from "./modules/products/routes/index.js";
 import cartRoutes from "./modules/cart/routes/index.js";
 import checkoutRoutes from "./modules/checkout/routes/index.js";
 import paymentsRoutes from "./modules/payments/routes/index.js";
+import ordersRoutes from "./modules/orders/routes/index.js";
 
 const app = Fastify({ logger: true });
 
@@ -30,6 +31,7 @@ await app.register(productsRoutes);
 await app.register(cartRoutes);
 await app.register(checkoutRoutes);
 await app.register(paymentsRoutes);
+await app.register(ordersRoutes);
 
 const port = Number(process.env.PORT ?? 3001);
 

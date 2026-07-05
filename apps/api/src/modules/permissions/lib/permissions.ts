@@ -1,4 +1,4 @@
-export type PermissionKey = "products.view" | "products.edit" | "payments.manage";
+export type PermissionKey = "products.view" | "products.edit" | "payments.manage" | "orders.view";
 
 export type TenantMemberRole = "owner" | "admin" | "member";
 
@@ -9,7 +9,7 @@ export type TenantMemberRole = "owner" | "admin" | "member";
  * door is open later without a schema change.
  */
 export const ROLE_DEFAULT_PERMISSIONS: Record<TenantMemberRole, PermissionKey[]> = {
-  owner: ["products.view", "products.edit", "payments.manage"],
-  admin: ["products.view", "products.edit", "payments.manage"],
+  owner: ["products.view", "products.edit", "payments.manage", "orders.view"],
+  admin: ["products.view", "products.edit", "payments.manage", "orders.view"],
   member: ["products.view"],
 };

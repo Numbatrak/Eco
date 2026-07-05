@@ -1,11 +1,25 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { tenants, tenantSiteConfig } from "@platform/db";
-import { updateTenantRequestSchema } from "@platform/shared-types";
+import { updateTenantRequestSchema, type TenantSettingsResponse } from "@platform/shared-types";
 import { isValidSubdomainFormat, isReservedSubdomain } from "../lib/subdomain.js";
-import { findTenantBySubdomain } from "../lib/site-store.js";
+import { findTenantBySubdomain, findTenantSettings } from "../lib/site-store.js";
 
 export default async function tenantSettingsRoutes(app: FastifyInstance): Promise<void> {
+  app.get<{ Params: { tenantId: string } }>(
+    "/tenants/:tenantId",
+    { preHandler: [app.authenticate, app.requireTenantRole(["owner", "admin", "member"])] },
+    async (request, reply) => {
+      const db = app.getDb();
+      const settings = await findTenantSettings(db, request.params.tenantId);
+      if (!settings) {
+        return reply.code(404).send({ error: "Tenant not found" });
+      }
+      const response: TenantSettingsResponse = settings;
+      return reply.send(response);
+    },
+  );
+
   app.patch<{ Params: { tenantId: string } }>(
     "/tenants/:tenantId",
     { preHandler: [app.authenticate, app.requireTenantRole(["owner"])] },
@@ -33,6 +47,13 @@ export default async function tenantSettingsRoutes(app: FastifyInstance): Promis
         await db
           .update(tenantSiteConfig)
           .set({ publishedAt: body.published ? new Date() : null, updatedAt: new Date() })
+          .where(eq(tenantSiteConfig.tenantId, tenantId));
+      }
+
+      if (body.showProductGrid !== undefined) {
+        await db
+          .update(tenantSiteConfig)
+          .set({ productsGridEnabled: body.showProductGrid, updatedAt: new Date() })
           .where(eq(tenantSiteConfig.tenantId, tenantId));
       }
 
