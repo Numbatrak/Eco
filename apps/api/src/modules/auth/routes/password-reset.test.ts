@@ -24,7 +24,9 @@ vi.mock("../lib/refresh-tokens.js", () => ({
   revokeAllRefreshTokens: vi.fn(async () => {
     sessionsRevoked = true;
   }),
-  findActiveRefreshTokenRow: vi.fn(async () => (sessionsRevoked ? null : { id: "row-1", userId: "66666666-6666-6666-6666-666666666666" })),
+  findActiveRefreshTokenRow: vi.fn(async () =>
+    sessionsRevoked ? null : { id: "row-1", userId: "66666666-6666-6666-6666-666666666666" },
+  ),
   issueRefreshToken: vi.fn(async () => ({ token: "new-refresh-token", jti: "new-jti" })),
   revokeRefreshTokenRow: vi.fn(async () => {}),
 }));
@@ -48,7 +50,7 @@ describe("password reset revokes existing sessions", () => {
     const beforeReset = await app.inject({
       method: "POST",
       url: "/auth/refresh",
-      payload: { refreshToken: oldRefreshToken },
+      cookies: { refresh_token: oldRefreshToken },
     });
     expect(beforeReset.statusCode).toBe(200);
 
@@ -73,7 +75,7 @@ describe("password reset revokes existing sessions", () => {
     const afterReset = await app.inject({
       method: "POST",
       url: "/auth/refresh",
-      payload: { refreshToken: oldRefreshToken },
+      cookies: { refresh_token: oldRefreshToken },
     });
     expect(afterReset.statusCode).toBe(401);
   });

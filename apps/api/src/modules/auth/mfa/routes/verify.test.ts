@@ -53,7 +53,8 @@ describe("POST /auth/2fa/verify", () => {
     expect(first.statusCode).toBe(200);
     const body = first.json();
     expect(body.accessToken).toBeTypeOf("string");
-    expect(body.refreshToken).toBe("fake-refresh-token");
+    expect(body.refreshToken).toBeUndefined();
+    expect(first.cookies.find((c) => c.name === "refresh_token")?.value).toBe("fake-refresh-token");
 
     const replay = await app.inject({
       method: "POST",

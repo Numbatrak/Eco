@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { Database } from "@platform/db";
 import type { RedisClient } from "../lib/redis.js";
 import authenticatePlugin from "../plugins/authenticate.js";
+import cookiesPlugin from "../plugins/cookies.js";
 
 export interface TestAppDeps {
   db?: Database;
@@ -19,6 +20,7 @@ export async function buildTestApp(deps: TestAppDeps): Promise<FastifyInstance> 
   const db = deps.db ?? ({} as Database);
   app.decorate("getDb", () => db);
   app.decorate("getRedis", () => deps.redis);
+  await app.register(cookiesPlugin);
   await app.register(authenticatePlugin);
   for (const route of deps.routes) {
     await app.register(route);

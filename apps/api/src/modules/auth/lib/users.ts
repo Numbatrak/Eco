@@ -38,6 +38,7 @@ export async function createUser(
 
 export interface UserPatch {
   passwordHash?: string;
+  emailVerifiedAt?: Date | null;
   totpSecretEncrypted?: string | null;
   totpEnabledAt?: Date | null;
   emailOtpEnabledAt?: Date | null;

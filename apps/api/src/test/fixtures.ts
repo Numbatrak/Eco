@@ -5,6 +5,7 @@ export function makeFakeUser(overrides: Partial<UserRow> = {}): UserRow {
     id: "11111111-1111-1111-1111-111111111111",
     email: "user@example.com",
     passwordHash: "unused-in-these-tests",
+    emailVerifiedAt: null,
     totpSecretEncrypted: null,
     totpEnabledAt: null,
     emailOtpEnabledAt: null,

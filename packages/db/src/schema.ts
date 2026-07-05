@@ -1,13 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  pgTable,
-  pgEnum,
-  uuid,
-  text,
-  timestamp,
-  uniqueIndex,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, text, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 // ---------- enums ----------
 
@@ -46,6 +38,7 @@ export const users = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull(),
     passwordHash: text("password_hash").notNull(),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     totpSecretEncrypted: text("totp_secret_encrypted"),
     totpEnabledAt: timestamp("totp_enabled_at", { withTimezone: true }),
     emailOtpEnabledAt: timestamp("email_otp_enabled_at", { withTimezone: true }),

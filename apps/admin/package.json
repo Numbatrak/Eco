@@ -8,19 +8,32 @@
     "dev": "vite --port 3002",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@platform/shared-types": "workspace:*",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "react-router-dom": "^7.1.3",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@platform/config": "workspace:*",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
   }
 }
