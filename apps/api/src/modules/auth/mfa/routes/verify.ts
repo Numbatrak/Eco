@@ -1,12 +1,15 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { mfaVerifyRequestSchema, type TokenPair } from "@platform/shared-types";
-import { getMfaChallengeTtlSeconds, signAccessToken, verifyMfaChallengeToken } from "../../lib/jwt.js";
+import { mfaVerifyRequestSchema, type AccessTokenResponse } from "@platform/shared-types";
+import {
+  getMfaChallengeTtlSeconds,
+  signAccessToken,
+  verifyMfaChallengeToken,
+} from "../../lib/jwt.js";
 import { issueRefreshToken } from "../../lib/refresh-tokens.js";
 import { logSecurityEvent } from "../../lib/security-events.js";
+import { setRefreshTokenCookie } from "../../lib/refresh-cookie.js";
 import { findUserById } from "../../lib/users.js";
-import {
-  checkChallengeAttempts,
-} from "../../lib/rate-limit.js";
+import { checkChallengeAttempts } from "../../lib/rate-limit.js";
 import {
   invalidateChallenge,
   isChallengeJtiUsed,
@@ -70,9 +73,10 @@ export default async function verifyRoutes(app: FastifyInstance): Promise<void> 
 
     const accessToken = await signAccessToken({ sub });
     const { token: refreshToken } = await issueRefreshToken(db, sub, meta);
+    setRefreshTokenCookie(reply, refreshToken);
     await logSecurityEvent(db, { userId: sub, eventType: "2fa_verified", ...meta });
 
-    const response: TokenPair = { accessToken, refreshToken };
+    const response: AccessTokenResponse = { accessToken };
     return reply.send(response);
   });
 }

@@ -3,8 +3,14 @@ import { z } from "zod";
 export const registerRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12),
+  businessName: z.string().trim().min(1).max(200),
 });
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+
+export const messageResponseSchema = z.object({
+  message: z.string(),
+});
+export type MessageResponse = z.infer<typeof messageResponseSchema>;
 
 export const loginRequestSchema = z.object({
   email: z.string().email(),
@@ -19,7 +25,6 @@ export const loginResponseSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("authenticated"),
     accessToken: z.string(),
-    refreshToken: z.string(),
   }),
   z.object({
     status: z.literal("mfa_required"),
@@ -29,21 +34,10 @@ export const loginResponseSchema = z.discriminatedUnion("status", [
 ]);
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 
-export const refreshRequestSchema = z.object({
-  refreshToken: z.string(),
-});
-export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
-
-export const logoutRequestSchema = z.object({
-  refreshToken: z.string(),
-});
-export type LogoutRequest = z.infer<typeof logoutRequestSchema>;
-
-export const tokenPairSchema = z.object({
+export const accessTokenResponseSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
 });
-export type TokenPair = z.infer<typeof tokenPairSchema>;
+export type AccessTokenResponse = z.infer<typeof accessTokenResponseSchema>;
 
 export const mfaVerifyRequestSchema = z.object({
   challengeToken: z.string(),
@@ -62,10 +56,16 @@ export const totpSetupResponseSchema = z.object({
 });
 export type TotpSetupResponse = z.infer<typeof totpSetupResponseSchema>;
 
-export const totpConfirmRequestSchema = z.object({
+export const mfaCodeSchema = z.object({
   code: z.string().min(1),
 });
+export type MfaCode = z.infer<typeof mfaCodeSchema>;
+
+export const totpConfirmRequestSchema = mfaCodeSchema;
 export type TotpConfirmRequest = z.infer<typeof totpConfirmRequestSchema>;
+
+export const emailOtpConfirmRequestSchema = mfaCodeSchema;
+export type EmailOtpConfirmRequest = z.infer<typeof emailOtpConfirmRequestSchema>;
 
 export const totpConfirmResponseSchema = z.object({
   backupCodes: z.array(z.string()),
@@ -107,3 +107,8 @@ export const passwordResetCompleteSchema = z.object({
   newPassword: z.string().min(12),
 });
 export type PasswordResetComplete = z.infer<typeof passwordResetCompleteSchema>;
+
+export const verifyEmailRequestSchema = z.object({
+  token: z.string(),
+});
+export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;

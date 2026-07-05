@@ -64,10 +64,12 @@ running anything that touches Postgres.
 or email OTP). A client integrating against `POST /auth/login` must handle two
 possible response shapes, distinguished by `status`:
 
-**No 2FA enabled** — tokens are issued immediately:
+**No 2FA enabled** — an access token is issued immediately, and the refresh
+token is set as an `httpOnly` cookie (`refresh_token`) on the response — it is
+never present in a JSON body, so a client-side script can't read it:
 
 ```json
-{ "status": "authenticated", "accessToken": "...", "refreshToken": "..." }
+{ "status": "authenticated", "accessToken": "..." }
 ```
 
 **2FA enabled** — no usable token is issued yet. The response only tells you a
@@ -85,14 +87,42 @@ which one it is, the client doesn't need to specify) to `POST /auth/2fa/verify`:
 { "challengeToken": "...", "code": "123456" }
 ```
 
-A successful call returns the same `{ accessToken, refreshToken }` shape as a
-non-2FA login. If `method` is `"email_otp"`, call `POST /auth/2fa/send-email-otp`
-with just the `challengeToken` first to have a code emailed, then verify as above.
+A successful call returns `{ accessToken }` (again with the refresh token set
+as the `refresh_token` cookie), same as a non-2FA login. If `method` is
+`"email_otp"`, call `POST /auth/2fa/send-email-otp` with just the
+`challengeToken` first to have a code emailed, then verify as above.
 
 The `challengeToken` is short-lived (5 minutes), single-use (a second `verify`
 call with the same token — even a correct one — is rejected), and capped at 5
 verify attempts before the challenge is invalidated outright and the user must
 log in again.
+
+`POST /auth/refresh` and `POST /auth/logout` take no body — both read
+`refresh_token` from the request cookie. `refresh` rotates it (revokes the old
+row, issues a new one, sets a new cookie) and returns a fresh `{ accessToken }`;
+`logout` revokes the row and clears the cookie. A client needs
+`credentials: "include"` (fetch) for any of these calls to see the cookie
+cross-origin; `apps/api`'s CORS plugin is configured for `PUBLIC_APP_URL` with
+`credentials: true` rather than a wildcard origin, which cookies require.
+
+## Auth: registration, tenant creation, and email verification
+
+`POST /auth/register` takes `{ email, password, businessName }` and, in the
+same request, creates the user, a new tenant named `businessName`, and an
+`owner` `tenant_members` row linking them (all three in one DB transaction).
+It always responds `202` with the same generic message regardless of whether
+the email was already registered — an existing email gets a "someone tried to
+sign up with your email" notice instead of a new account, so registration
+outcome is never inferable from the response. A real new signup gets a
+verification email (via the `sendEmail` stub) linking to
+`${PUBLIC_APP_URL}/verify-email?token=...`; the frontend page at that route is
+expected to `POST` the token to `POST /auth/verify-email` (rather than the
+email link hitting the API directly via `GET`, which would let email-scanner
+prefetching burn the one-time token) to set `users.email_verified_at`. The
+token lives in Redis, TTL 24h, single-use.
+
+Login is not gated on email verification in this task's scope — an unverified
+user can still log in.
 
 ### Managing 2FA (authenticated endpoints, `Authorization: Bearer <accessToken>`)
 
@@ -104,6 +134,10 @@ log in again.
   ever returned — store them now, they cannot be retrieved again.**
 - `GET /auth/2fa/status` → which methods are enabled and how many unused backup
   codes remain. Never returns secrets or code hashes.
+- `POST /auth/2fa/email-otp/setup` → emails a 6-digit code to the user's own
+  address and responds `202`. Does **not** enable email OTP yet.
+- `POST /auth/2fa/email-otp/confirm` with `{ code }` → enables email OTP as a
+  2FA method for this user.
 - `POST /auth/2fa/disable` with `{ password, code }` → requires the current
   password **and** a currently-valid 2FA code (TOTP or an unused backup code),
   the same bar as enabling. Disables all 2FA methods and deletes unused backup
@@ -131,17 +165,21 @@ log in again.
 
 ### Known gaps (flagged, not silently skipped)
 
-- The generated Drizzle migration (`packages/db/drizzle/0000_*.sql`) has **not**
-  been applied or verified against a live Postgres instance — there's no
-  database available in this environment. Run `pnpm --filter @platform/db
-  db:migrate` against a real `DATABASE_URL` before relying on this schema.
+- The generated Drizzle migrations (`packages/db/drizzle/0000_*.sql`,
+  `0001_*.sql`) have **not** been applied or verified against a live Postgres
+  instance — there's no database available in this environment. Run
+  `pnpm --filter @platform/db db:migrate` against a real `DATABASE_URL` before
+  relying on this schema.
 - Vitest coverage here mocks `@platform/db` and Redis (via `ioredis-mock`); there
   is no integration-tier suite exercising a real Postgres/Redis end to end, since
   neither is available in this environment. Add a Docker/testcontainers-based
   suite before treating this as full coverage.
-- There is no dedicated endpoint to enroll email OTP as a user's 2FA method in
-  this task's scope — the schema and login/verify flows support it
-  (`email_otp_enabled_at`, `preferred_2fa_method`), but only the TOTP
-  setup/confirm pair is wired up. Add an email-OTP enrollment endpoint before
-  exposing it as a user-facing option.
-
+- `verifyCurrentMfaCode` (used for the disable/regenerate-backup-codes re-auth
+  bar) only checks TOTP and backup codes, not email OTP — a user enrolled in
+  email OTP only cannot currently re-authenticate with an emailed code for
+  those two actions (pre-existing limitation, not introduced by the email-OTP
+  enrollment endpoints added here).
+- Re-registering with an already-registered email sends a same-shaped `202`
+  response and a "someone tried to sign up with your email" notice to the
+  existing address, but nothing rate-limits that notice email — repeated
+  requests against the same existing email will re-send it every time.

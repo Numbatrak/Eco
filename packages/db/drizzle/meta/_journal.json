@@ -8,6 +8,13 @@
       "when": 1783228422373,
       "tag": "0000_damp_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783249222296,
+      "tag": "0001_exotic_paladin",
+      "breakpoints": true
     }
   ]
 }

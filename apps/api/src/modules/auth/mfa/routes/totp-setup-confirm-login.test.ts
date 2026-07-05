@@ -96,6 +96,9 @@ describe("TOTP setup -> confirm -> login-with-TOTP", () => {
     expect(verifyResponse.statusCode).toBe(200);
     const verifyBody = verifyResponse.json();
     expect(verifyBody.accessToken).toBeTypeOf("string");
-    expect(verifyBody.refreshToken).toBe("fake-refresh-token");
+    expect(verifyBody.refreshToken).toBeUndefined();
+    expect(verifyResponse.cookies.find((c) => c.name === "refresh_token")?.value).toBe(
+      "fake-refresh-token",
+    );
   });
 });
