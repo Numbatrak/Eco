@@ -1,4 +1,5 @@
-import { tenants, tenantMembers, type Database } from "@platform/db";
+import { tenants, tenantMembers, tenantSiteConfig, type Database } from "@platform/db";
+import { grantPermissionsForRole } from "../../permissions/lib/grants.js";
 
 export interface CreateTenantWithOwnerParams {
   name: string;
@@ -22,11 +23,19 @@ export async function createTenantWithOwner(
     if (!tenant) {
       throw new Error("Failed to create tenant");
     }
-    await tx.insert(tenantMembers).values({
-      tenantId: tenant.id,
-      userId: params.ownerUserId,
-      role: "owner",
-    });
+    const [member] = await tx
+      .insert(tenantMembers)
+      .values({
+        tenantId: tenant.id,
+        userId: params.ownerUserId,
+        role: "owner",
+      })
+      .returning({ id: tenantMembers.id });
+    if (!member) {
+      throw new Error("Failed to create tenant member");
+    }
+    await grantPermissionsForRole(tx, member.id, "owner");
+    await tx.insert(tenantSiteConfig).values({ tenantId: tenant.id });
     return tenant;
   });
 }

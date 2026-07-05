@@ -4,9 +4,15 @@ import redisPlugin from "./plugins/redis.js";
 import corsPlugin from "./plugins/cors.js";
 import cookiesPlugin from "./plugins/cookies.js";
 import authenticatePlugin from "./plugins/authenticate.js";
+import tenantAccessPlugin from "./plugins/tenant-access.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./modules/auth/routes/index.js";
 import mfaRoutes from "./modules/auth/mfa/routes/index.js";
+import sitesRoutes from "./modules/sites/routes/index.js";
+import productsRoutes from "./modules/products/routes/index.js";
+import cartRoutes from "./modules/cart/routes/index.js";
+import checkoutRoutes from "./modules/checkout/routes/index.js";
+import paymentsRoutes from "./modules/payments/routes/index.js";
 
 const app = Fastify({ logger: true });
 
@@ -15,9 +21,15 @@ await app.register(redisPlugin);
 await app.register(corsPlugin);
 await app.register(cookiesPlugin);
 await app.register(authenticatePlugin);
+await app.register(tenantAccessPlugin);
 await app.register(healthRoutes);
 await app.register(authRoutes);
 await app.register(mfaRoutes);
+await app.register(sitesRoutes);
+await app.register(productsRoutes);
+await app.register(cartRoutes);
+await app.register(checkoutRoutes);
+await app.register(paymentsRoutes);
 
 const port = Number(process.env.PORT ?? 3001);
 

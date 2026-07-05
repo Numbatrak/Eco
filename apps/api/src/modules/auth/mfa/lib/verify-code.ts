@@ -1,6 +1,6 @@
 import type { Database } from "@platform/db";
 import type { RedisClient } from "../../../../lib/redis.js";
-import { decryptTotpSecret } from "../../lib/totp-encryption.js";
+import { decryptSecret } from "../../../../lib/encryption.js";
 import { getEmailOtpHash, clearEmailOtp } from "../../lib/mfa-challenge-store.js";
 import { verifyTotpCode } from "./totp.js";
 import { verifyEmailOtp } from "./email-otp.js";
@@ -40,7 +40,7 @@ export async function verifyChallengeCode(
   code: string,
 ): Promise<{ ok: boolean; via?: MfaVerificationMethod }> {
   if (user.totpEnabledAt && user.totpSecretEncrypted) {
-    const secret = decryptTotpSecret(user.totpSecretEncrypted);
+    const secret = decryptSecret(user.totpSecretEncrypted);
     if (verifyTotpCode(secret, code)) {
       return { ok: true, via: "totp" };
     }
@@ -72,7 +72,7 @@ export async function verifyCurrentMfaCode(
   code: string,
 ): Promise<{ ok: boolean; via?: MfaVerificationMethod }> {
   if (user.totpEnabledAt && user.totpSecretEncrypted) {
-    const secret = decryptTotpSecret(user.totpSecretEncrypted);
+    const secret = decryptSecret(user.totpSecretEncrypted);
     if (verifyTotpCode(secret, code)) {
       return { ok: true, via: "totp" };
     }
