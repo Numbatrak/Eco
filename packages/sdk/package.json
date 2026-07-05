@@ -1,0 +1,34 @@
+{
+  "name": "@platform/sdk",
+  "version": "0.0.0",
+  "description": "Dev-facing SDK for the platform API.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@platform/config": "workspace:*",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  }
+}

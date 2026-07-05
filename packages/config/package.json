@@ -1,0 +1,25 @@
+{
+  "name": "@platform/config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "files": [
+    "eslint.config.js",
+    "prettier.config.js",
+    "index.js"
+  ],
+  "scripts": {
+    "lint": "echo 'no-op: config package has nothing to lint against itself' && exit 0",
+    "typecheck": "echo 'no-op: config package is plain JS' && exit 0"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "typescript-eslint": "^8.19.1"
+  },
+  "peerDependencies": {
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2"
+  }
+}
