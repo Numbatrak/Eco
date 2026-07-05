@@ -5,7 +5,7 @@ import type { RedisClient } from "../../../../lib/redis.js";
 import { buildTestApp } from "../../../../test/build-test-app.js";
 import { makeFakeUser } from "../../../../test/fixtures.js";
 import disableRoutes from "./disable.js";
-import { encryptTotpSecret } from "../../lib/totp-encryption.js";
+import { encryptSecret } from "../../../../lib/encryption.js";
 import { hashPassword } from "../../lib/password.js";
 import { signAccessToken } from "../../lib/jwt.js";
 
@@ -31,7 +31,7 @@ describe("POST /auth/2fa/disable", () => {
     const fakeUser = makeFakeUser({
       id: userId,
       passwordHash,
-      totpSecretEncrypted: encryptTotpSecret(secret),
+      totpSecretEncrypted: encryptSecret(secret),
       totpEnabledAt: new Date(),
     });
     vi.mocked(findUserById).mockResolvedValue(fakeUser);

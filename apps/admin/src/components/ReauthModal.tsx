@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { mfaDisableRequestSchema, type MfaDisableRequest } from "@platform/shared-types";
 import { PasswordField } from "./PasswordField";
 import { OtpInput } from "./OtpInput";
@@ -11,24 +12,38 @@ export interface ReauthModalProps {
   title: string;
   description?: string;
   confirmLabel?: string;
+  /** Whether a 2FA code is required in addition to the password. Default true (the disable-2FA/regenerate-backup-codes bar). Set false for actions gating users who may not have 2FA enabled. */
+  requireCode?: boolean;
+  /** Red "danger" button vs the normal accent button. Default true. */
+  danger?: boolean;
   onCancel: () => void;
   /** password + current 2FA code, verified server-side before the caller's action runs. */
   onConfirm: (values: MfaDisableRequest) => Promise<void>;
 }
 
 /**
- * Password + current-2FA-code re-confirmation dialog. Reused verbatim by
- * disable-2FA and regenerate-backup-codes - both require the same re-auth bar.
+ * Password + current-2FA-code re-confirmation dialog. Reused by disable-2FA,
+ * regenerate-backup-codes, and saving live-mode payment credentials - all
+ * gate real-world-consequential actions behind the same re-auth bar.
  */
 export function ReauthModal({
   open,
   title,
   description,
   confirmLabel = "Confirm",
+  requireCode = true,
+  danger = true,
   onCancel,
   onConfirm,
 }: ReauthModalProps): React.ReactElement | null {
   const [serverError, setServerError] = useState<string | null>(null);
+  const schema = useMemo(
+    () =>
+      requireCode
+        ? mfaDisableRequestSchema
+        : z.object({ password: z.string().min(1, "Password is required"), code: z.string() }),
+    [requireCode],
+  );
   const {
     register,
     handleSubmit,
@@ -36,7 +51,7 @@ export function ReauthModal({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<MfaDisableRequest>({
-    resolver: zodResolver(mfaDisableRequestSchema),
+    resolver: zodResolver(schema),
     defaultValues: { password: "", code: "" },
   });
 
@@ -80,18 +95,20 @@ export function ReauthModal({
             error={errors.password?.message}
             {...register("password")}
           />
-          <Controller
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <OtpInput
-                label="Current 2FA code"
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.code?.message}
-              />
-            )}
-          />
+          {requireCode ? (
+            <Controller
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <OtpInput
+                  label="Current 2FA code"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.code?.message}
+                />
+              )}
+            />
+          ) : null}
           {serverError ? (
             <div className="banner banner-danger" role="alert">
               {serverError}
@@ -101,7 +118,11 @@ export function ReauthModal({
             <button type="button" className="btn btn-secondary" onClick={handleCancel}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
+            <button
+              type="submit"
+              className={danger ? "btn btn-danger" : "btn btn-primary"}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Confirming…" : confirmLabel}
             </button>
           </div>

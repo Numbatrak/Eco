@@ -35,10 +35,13 @@ extends.
   for external developers; it's a standalone-publishable package.
 - `packages/db` is the only package that talks to Postgres; its schema now
   includes `users`, `tenants`/`tenant_members`, `refresh_tokens`, `backup_codes`,
-  and `security_events` for auth + 2FA.
+  and `security_events` for auth + 2FA; `permissions`/`tenant_member_permissions`
+  and `tenant_site_config` for authorization and the (stubbed) storefront
+  builder; and `products`, `carts`/`cart_items`, `orders`/`order_items`,
+  `tenant_payment_settings`, and `payment_webhook_events` for commerce.
 - `apps/api` also talks to Redis directly (`src/lib/redis.ts`) for ephemeral,
-  short-TTL auth state: rate limiting, 2FA challenge single-use tracking, email
-  OTP codes, and password reset tokens.
+  short-TTL auth state (rate limiting, 2FA challenge single-use tracking, email
+  OTP codes, password reset tokens) and for checkout rate limiting.
 
 ## Getting started
 
@@ -151,7 +154,8 @@ user can still log in.
 - A user with 2FA enabled never receives a usable access/refresh token from
   password verification alone — `POST /auth/login` only ever returns a challenge
   token in that case.
-- TOTP secrets are encrypted at rest (AES-256-GCM, key from `TOTP_ENCRYPTION_KEY`)
+- TOTP secrets are encrypted at rest (AES-256-GCM, key from `SECRET_ENCRYPTION_KEY`,
+  shared with payment-provider secret key encryption - see `src/lib/encryption.ts`)
   and never returned by any endpoint except the one `setup` response where
   returning it is unavoidable (it's embedded in the QR provisioning URI).
 - Backup codes and email OTP codes are hashed with argon2id, exactly like
@@ -162,6 +166,125 @@ user can still log in.
 - Completing a password reset revokes every refresh token for that account (all
   devices, all sessions) — it does not touch 2FA enrollment, so 2FA is still
   required on the next login.
+
+## Permissions
+
+There's no full RBAC system - just the three `tenant_member_role` values
+(`owner`/`admin`/`member`) plus a seeded `permissions` table
+(`products.view`, `products.edit`, `payments.manage`) and a
+`tenant_member_permissions` join table. Permissions are granted **once**, at
+`tenant_member` creation time, based on a static role → permission mapping in
+`src/modules/permissions/lib/permissions.ts` (owner/admin get all three,
+member gets `products.view` only) — they are not derived live from role on
+every check, so a future per-member permission override doesn't need a schema
+change. `app.requireTenantPermission(key)` and `app.requireTenantRole(roles)`
+(registered by `src/plugins/tenant-access.ts`) are Fastify preHandlers that
+read `:tenantId` from the route params, confirm the authenticated user is a
+member of that tenant, and check the permission/role — used as
+`{ preHandler: [app.authenticate, app.requireTenantPermission("products.edit")] }`.
+
+## Commerce: products, cart, checkout, payments
+
+### Tenant sites and subdomains
+
+- `PATCH /tenants/:tenantId` (owner-only) sets `{ subdomain, published }`.
+  `subdomain` is validated against a format pattern and a reserved list
+  (`www`, `api`, `admin`, `app`, `mail`, `status`, `blog`, `help`, `docs`,
+  `cdn`, `assets` by default — override via `RESERVED_SUBDOMAINS`) and
+  uniqueness (case-insensitive) before being set. `published` toggles
+  `tenant_site_config.published_at`.
+- `GET /public/sites/:subdomain` is public and unauthenticated. It 404s with a
+  stable `{ error: "site_not_found" }` shape — indistinguishable whether the
+  subdomain doesn't exist, has no site config, or isn't published — and
+  otherwise returns `{ tenant, theme, sections, products }` (published
+  products only). `theme`/`sections` are opaque JSON stubs on
+  `tenant_site_config` — there's no storefront-builder editor behind them in
+  this task; see Known gaps.
+
+### Products
+
+`GET/POST/PATCH/DELETE /tenants/:tenantId/products` — tenant-scoped, gated by
+`products.view` (read) or `products.edit` (write). Prices are always integer
+`price_cents`; there's no endpoint to change status without going through the
+normal PATCH (setting `status: "published"` is what makes a product appear in
+`GET /public/sites/:subdomain`).
+
+### Cart
+
+Guest carts, no shopper auth. `POST /public/sites/:subdomain/cart` creates a
+cart and sets an httpOnly `cart_token_{subdomain}` cookie — **one cookie per
+tenant subdomain**, not a single shared cookie, since a shopper can browse
+multiple tenant storefronts from the same browser against the same API host
+and their carts must not collide. The cookie stores an opaque token; only its
+SHA-256 hash is persisted (`carts.cart_token`), same pattern as refresh
+tokens. `POST .../cart/items` upserts (adds to existing quantity rather than
+duplicating a line) and rejects a product that's missing or not `published`.
+Every cart mutation returns the full recomputed cart
+(`{ id, items, subtotalCents, currency }`) so the frontend never has to
+recompute money client-side from partial data.
+
+### Checkout
+
+`POST /public/sites/:subdomain/checkout` — rate-limited per IP
+(`CHECKOUT_RATE_LIMIT_PER_MINUTE`, default 10/min) via the same Redis
+fixed-window limiter auth uses. Rejects an empty cart or a cart containing a
+since-unpublished item (`cart_empty` / `cart_has_unpublished_items`), then:
+creates the `order` + `order_items` (snapshotting name and price at that
+moment — never recomputed from live product data later), initializes a
+transaction with the tenant's configured `PaymentProvider`, stores the
+returned reference on the order, deletes the cart, and returns
+`{ orderId, orderNumber, checkoutUrl }`.
+
+`GET /public/sites/:subdomain/checkout/:orderId/status` is the landing point
+for the provider's redirect. It never trusts the redirect's query params: if
+the order is still `pending` and has a `payment_reference`, it calls
+`provider.verifyTransaction()` server-side before ever reporting (or
+persisting) anything other than `pending`.
+
+### Payments
+
+`PaymentProvider` (`src/modules/payments/lib/provider.ts`) is implemented by
+`PaystackProvider` and `FlutterwaveProvider` — `initializeTransaction`,
+`verifyTransaction`, `verifyWebhookSignature`. Both call the real
+Paystack/Flutterwave HTTP APIs with native `fetch`, no SDK dependency.
+
+- **Settings**: `GET/PUT /tenants/:tenantId/payment-settings`, gated by
+  `payments.manage`. `GET` never returns the secret key — only
+  `{ provider, mode, enabled, hasSecretKey, publicKey }`. `PUT` encrypts the
+  secret key immediately (AES-256-GCM, `src/lib/encryption.ts` — the same
+  helper TOTP secrets use) before it ever reaches the database.
+- **Webhooks**: `POST /webhooks/paystack` and `POST /webhooks/flutterwave` are
+  unauthenticated by design (no session exists to authenticate) and instead
+  trust only a verified signature:
+  - Paystack: HMAC-SHA512 of the **raw** request body (captured via a
+    content-type-parser override scoped to just this route's plugin context,
+    so the rest of the app keeps normal JSON parsing) keyed with the tenant's
+    secret key, compared to `x-paystack-signature`.
+  - Flutterwave: the `verif-hash` header compared directly to the tenant's
+    configured secret key value.
+  - Both comparisons are constant-time (`src/modules/payments/lib/constant-time.ts`,
+    wrapping `crypto.timingSafeEqual`).
+  - The tenant (and therefore which secret key to verify against) is resolved
+    by looking up the order via the payload's transaction reference **before**
+    verifying the signature — there's no tenant identifier in the webhook URL
+    itself, so this lookup has to come first. If no order matches the
+    reference, the request is rejected outright (400) with no processing.
+  - Idempotency: each event is inserted into `payment_webhook_events` via
+    `INSERT ... ON CONFLICT (provider, event_reference) DO NOTHING`; if that
+    insert affects zero rows (the event was already recorded — a replay or a
+    concurrent duplicate delivery that won the race), the handler
+    acknowledges `200` without calling `verifyTransaction` or touching the
+    order again.
+  - An order only ever transitions `pending → paid` (or `→ failed`) via a
+    conditional `UPDATE ... WHERE status = 'pending'` — so a webhook and a
+    concurrent status-poll re-verification can't double-process the same
+    order, and nothing is ever marked paid without a provider-verified
+    transaction (`verifyTransaction`, not just a webhook body's claimed
+    status or a redirect's query params).
+  - On confirmed payment: a confirmation email is sent (reusing the existing
+    `sendEmail` stub). There is a clearly marked call site
+    (`src/modules/checkout/lib/orders.ts`, `markOrderPaid`) for a future
+    WhatsApp order notification — deliberately not implemented in this task.
 
 ### Known gaps (flagged, not silently skipped)
 
@@ -183,3 +306,83 @@ user can still log in.
   response and a "someone tried to sign up with your email" notice to the
   existing address, but nothing rate-limits that notice email — repeated
   requests against the same existing email will re-send it every time.
+- `tenant_site_config.theme`/`sections` are opaque JSON blobs with **no
+  editor** behind them - there's no storefront-builder backend yet in this
+  task's scope, so the only way to make `GET /public/sites/:subdomain` return
+  something is the `published` toggle on `PATCH /tenants/:tenantId`. Treat
+  the shape of `theme`/`sections` as provisional until that task lands.
+  Similarly, there's no endpoint to invite additional tenant members in this
+  task's scope, so `admin`/`member`-role permission grants
+  (`src/modules/permissions/lib/permissions.ts`) are defined but currently
+  unreachable in practice — only the `owner` path (registration) runs today.
+- Paystack/Flutterwave integration is implemented against their public API
+  docs but has **not** been exercised against live (or sandbox) provider
+  accounts — there's no way to obtain test credentials in this environment.
+  Get a real Paystack/Flutterwave test account and run an end-to-end
+  checkout before relying on this in production.
+- Flutterwave webhook verification compares `verif-hash` to the tenant's API
+  secret key (decrypted), per this task's schema, which only has one secret
+  field (`tenant_payment_settings.secret_key_encrypted`). Flutterwave
+  actually lets you configure a distinct webhook "secret hash" separate from
+  your API secret key; reusing the API secret key as the webhook hash works
+  but means anyone who could forge a valid API secret key could also forge
+  webhooks. Add a dedicated `webhook_secret_hash` column before this handles
+  real money if that distinction matters for your threat model.
+- The checkout rate limit is a simple fixed-window per-IP counter (same
+  primitive as the login/2FA rate limits) - it doesn't distinguish a shopper
+  behind a shared/CGNAT IP from an actual card-testing bot, and doesn't rate
+  limit per-tenant or per-card. Treat it as a first line of defense, not a
+  complete anti-fraud system.
+
+## Commerce UI: merchant dashboard + published storefront
+
+### `apps/admin` (merchant dashboard)
+
+A `DashboardLayout` shell (sidebar + `<Outlet>`) adds five sections behind the
+existing auth screens: **Products** (list with published/draft filter,
+create/edit form, delete with a plain confirm dialog), **Orders** (list +
+detail, read-only), **Payment settings** (provider/keys/mode — saving `mode:
+"live"` reuses `ReauthModal` as a money-movement gate, requiring password
+always and a 2FA code only if the merchant actually has 2FA enabled, since
+unlike the disable-2FA flow this can't assume 2FA is already on), and **Site
+settings** (subdomain, publish toggle, and a standalone "show product grid on
+storefront" toggle — see below). There is deliberately **no** page-section
+list (Hero/Menu/Visit) or theme-preset picker: the task's storefront-builder
+references didn't correspond to anything in this codebase, and the chosen
+scope (confirmed with the user) is the single products-grid toggle only.
+
+### `apps/storefront` (Next.js, published storefront)
+
+`src/middleware.ts` reads the `Host` header, resolves it to a tenant
+subdomain (`src/lib/subdomain.ts` — a pure, unit-tested function, kept
+separate from the `NextRequest`-specific middleware wrapper), and rewrites to
+`/sites/{subdomain}/...`. Note the route folder is `app/sites`, **not**
+`app/_sites` — Next.js treats any `_`-prefixed folder as a private,
+routing-excluded folder, so a `_sites` tree would silently 404 everything the
+middleware rewrites to.
+
+`app/sites/[subdomain]/layout.tsx` fetches `GET /public/sites/:subdomain`
+server-side and calls `notFound()` for anything unpublished/missing, which
+renders the sibling `not-found.tsx` — a branded "this site isn't available"
+page, not the framework default. Cart state (`CartContext`) is backed by the
+`cart_token_{subdomain}` cookie and drives a persistent mini-cart drawer
+(`MiniCart`) in the header. The checkout page is a contact form
+(react-hook-form + the shared `checkoutRequestSchema`) that redirects to the
+provider's hosted checkout URL; the order-status page
+(`/sites/[subdomain]/order/[orderId]/status`) polls
+`GET .../checkout/:orderId/status` on an interval until it resolves to
+`paid`/`failed` rather than trusting the provider redirect's query params,
+consistent with how the backend itself never trusts them.
+
+Money is formatted from integer cents at the UI layer only (`lib/money.ts` in
+both apps) — no cart/order arithmetic happens client-side; totals always come
+from the API response.
+
+### Known gaps (Commerce UI)
+
+- No custom-domain UI, no inventory display, no discount codes, and no saved
+  customer accounts/order history — checkout is guest-only, per this task's
+  explicit scope.
+- Tenant switching isn't implemented: `AuthContext.currentTenant` is just
+  `tenants[0]` from `GET /auth/me` — a user who somehow belongs to more than
+  one tenant only ever sees the first.

@@ -2,22 +2,29 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage(): React.ReactElement {
-  const { user, logout } = useAuth();
+  const { currentTenant } = useAuth();
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "var(--space-6)" }}>
-      <h1>Dashboard</h1>
-      <p className="field-hint">
-        Storefront builder scaffold placeholder. Signed in as {user?.id}.
-      </p>
-      <div style={{ display: "flex", gap: 12, marginTop: "var(--space-5)" }}>
-        <Link to="/security" className="btn btn-secondary">
-          Security settings
-        </Link>
-        <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
-          Log out
-        </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+      <div>
+        <h1>Overview</h1>
+        <p className="field-hint">
+          {currentTenant?.subdomain
+            ? `Your storefront: ${currentTenant.subdomain}`
+            : "Set a subdomain in Site settings to start publishing your storefront."}
+        </p>
       </div>
-    </main>
+      <div className="panel" style={{ padding: "var(--space-5)", display: "flex", gap: "var(--space-3)" }}>
+        <Link to="/products" className="btn btn-secondary">
+          Manage products
+        </Link>
+        <Link to="/orders" className="btn btn-secondary">
+          View orders
+        </Link>
+        <Link to="/payment-settings" className="btn btn-secondary">
+          Payment settings
+        </Link>
+      </div>
+    </div>
   );
 }

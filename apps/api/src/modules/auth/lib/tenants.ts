@@ -1,4 +1,7 @@
-import { tenants, tenantMembers, type Database } from "@platform/db";
+import { eq } from "drizzle-orm";
+import { tenants, tenantMembers, tenantSiteConfig, type Database } from "@platform/db";
+import { grantPermissionsForRole } from "../../permissions/lib/grants.js";
+import type { TenantMemberRole } from "../../permissions/lib/permissions.js";
 
 export interface CreateTenantWithOwnerParams {
   name: string;
@@ -22,11 +25,48 @@ export async function createTenantWithOwner(
     if (!tenant) {
       throw new Error("Failed to create tenant");
     }
-    await tx.insert(tenantMembers).values({
-      tenantId: tenant.id,
-      userId: params.ownerUserId,
-      role: "owner",
-    });
+    const [member] = await tx
+      .insert(tenantMembers)
+      .values({
+        tenantId: tenant.id,
+        userId: params.ownerUserId,
+        role: "owner",
+      })
+      .returning({ id: tenantMembers.id });
+    if (!member) {
+      throw new Error("Failed to create tenant member");
+    }
+    await grantPermissionsForRole(tx, member.id, "owner");
+    await tx.insert(tenantSiteConfig).values({ tenantId: tenant.id });
     return tenant;
   });
+}
+
+export interface UserTenantMembership {
+  id: string;
+  name: string;
+  subdomain: string | null;
+  role: TenantMemberRole;
+}
+
+/**
+ * Tenant-switching UI is out of scope, but a user could in principle belong
+ * to more than one tenant (e.g. seeded data, future invite flow) - this
+ * returns all memberships rather than assuming exactly one.
+ */
+export async function listTenantsForUser(
+  db: Database,
+  userId: string,
+): Promise<UserTenantMembership[]> {
+  const rows = await db
+    .select({
+      id: tenants.id,
+      name: tenants.name,
+      subdomain: tenants.subdomain,
+      role: tenantMembers.role,
+    })
+    .from(tenantMembers)
+    .innerJoin(tenants, eq(tenants.id, tenantMembers.tenantId))
+    .where(eq(tenantMembers.userId, userId));
+  return rows;
 }

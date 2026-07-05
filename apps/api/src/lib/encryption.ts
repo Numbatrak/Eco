@@ -7,21 +7,27 @@ let _key: Buffer | undefined;
 
 function getKey(): Buffer {
   if (!_key) {
-    const raw = process.env.TOTP_ENCRYPTION_KEY;
+    const raw = process.env.SECRET_ENCRYPTION_KEY;
     if (!raw) {
-      throw new Error("TOTP_ENCRYPTION_KEY is not set. Copy .env.example to .env and configure it.");
+      throw new Error(
+        "SECRET_ENCRYPTION_KEY is not set. Copy .env.example to .env and configure it.",
+      );
     }
     const key = Buffer.from(raw, "base64");
     if (key.length !== 32) {
-      throw new Error("TOTP_ENCRYPTION_KEY must decode to exactly 32 bytes (base64-encoded).");
+      throw new Error("SECRET_ENCRYPTION_KEY must decode to exactly 32 bytes (base64-encoded).");
     }
     _key = key;
   }
   return _key;
 }
 
-/** Encrypts a TOTP secret for storage. Stored form: `iv:authTag:ciphertext`, each base64url. */
-export function encryptTotpSecret(secret: string): string {
+/**
+ * Shared AES-256-GCM at-rest encryption for any short secret string (TOTP
+ * seeds, payment provider secret keys, ...) - one key, one implementation.
+ * Stored form: `iv:authTag:ciphertext`, each base64url.
+ */
+export function encryptSecret(secret: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, getKey(), iv);
   const ciphertext = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
@@ -29,10 +35,10 @@ export function encryptTotpSecret(secret: string): string {
   return [iv, authTag, ciphertext].map((buf) => buf.toString("base64url")).join(":");
 }
 
-export function decryptTotpSecret(stored: string): string {
+export function decryptSecret(stored: string): string {
   const parts = stored.split(":");
   if (parts.length !== 3) {
-    throw new Error("Malformed encrypted TOTP secret");
+    throw new Error("Malformed encrypted secret");
   }
   const [ivPart, authTagPart, ciphertextPart] = parts;
   const iv = Buffer.from(ivPart as string, "base64url");

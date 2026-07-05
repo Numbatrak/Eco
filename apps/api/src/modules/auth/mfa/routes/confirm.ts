@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { totpConfirmRequestSchema, type TotpConfirmResponse } from "@platform/shared-types";
 import { findUserById, updateUser } from "../../lib/users.js";
-import { decryptTotpSecret } from "../../lib/totp-encryption.js";
+import { decryptSecret } from "../../../../lib/encryption.js";
 import { logSecurityEvent } from "../../lib/security-events.js";
 import { verifyTotpCode } from "../lib/totp.js";
 import { generateBackupCodes, hashBackupCode } from "../lib/backup-codes.js";
@@ -13,10 +13,12 @@ export default async function totpConfirmRoutes(app: FastifyInstance): Promise<v
     const db = app.getDb();
     const user = await findUserById(db, request.userId);
     if (!user || !user.totpSecretEncrypted) {
-      return reply.code(400).send({ error: "No pending TOTP setup. Call /auth/2fa/totp/setup first." });
+      return reply
+        .code(400)
+        .send({ error: "No pending TOTP setup. Call /auth/2fa/totp/setup first." });
     }
 
-    const secret = decryptTotpSecret(user.totpSecretEncrypted);
+    const secret = decryptSecret(user.totpSecretEncrypted);
     if (!verifyTotpCode(secret, body.code)) {
       return reply.code(401).send({ error: "Invalid code" });
     }

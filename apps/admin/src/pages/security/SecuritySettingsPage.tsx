@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import type { MfaDisableRequest } from "@platform/shared-types";
 import { useAuth } from "../../context/AuthContext";
 import { authApi } from "../../lib/authApi";
@@ -96,10 +95,7 @@ export default function SecuritySettingsPage(): React.ReactElement {
       }}
     >
       <div>
-        <Link to="/dashboard" className="btn-link">
-          ← Back to dashboard
-        </Link>
-        <h1 style={{ marginTop: 12 }}>Two-factor authentication</h1>
+        <h1>Two-factor authentication</h1>
       </div>
 
       <div

@@ -5,7 +5,7 @@ import type { RedisClient } from "../../../../lib/redis.js";
 import { buildTestApp } from "../../../../test/build-test-app.js";
 import { makeFakeUser } from "../../../../test/fixtures.js";
 import verifyRoutes from "./verify.js";
-import { encryptTotpSecret } from "../../lib/totp-encryption.js";
+import { encryptSecret } from "../../../../lib/encryption.js";
 import { signMfaChallengeToken } from "../../lib/jwt.js";
 
 vi.mock("../../lib/users.js", () => ({
@@ -29,7 +29,7 @@ describe("2FA challenge attempt lockout", () => {
   const userId = "22222222-2222-2222-2222-222222222222";
   const fakeUser = makeFakeUser({
     id: userId,
-    totpSecretEncrypted: encryptTotpSecret(secret),
+    totpSecretEncrypted: encryptSecret(secret),
     totpEnabledAt: new Date(),
   });
 

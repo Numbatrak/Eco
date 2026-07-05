@@ -15,6 +15,20 @@
       "when": 1783249222296,
       "tag": "0001_exotic_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783258865343,
+      "tag": "0002_premium_bushwacker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783283525125,
+      "tag": "0003_plain_firelord",
+      "breakpoints": true
     }
   ]
 }

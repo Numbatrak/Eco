@@ -3,6 +3,7 @@ import type { Database } from "@platform/db";
 import type { RedisClient } from "../lib/redis.js";
 import authenticatePlugin from "../plugins/authenticate.js";
 import cookiesPlugin from "../plugins/cookies.js";
+import tenantAccessPlugin from "../plugins/tenant-access.js";
 
 export interface TestAppDeps {
   db?: Database;
@@ -22,6 +23,7 @@ export async function buildTestApp(deps: TestAppDeps): Promise<FastifyInstance> 
   app.decorate("getRedis", () => deps.redis);
   await app.register(cookiesPlugin);
   await app.register(authenticatePlugin);
+  await app.register(tenantAccessPlugin);
   for (const route of deps.routes) {
     await app.register(route);
   }

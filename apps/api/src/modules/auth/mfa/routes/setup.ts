@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { type TotpSetupResponse } from "@platform/shared-types";
 import { findUserById, updateUser } from "../../lib/users.js";
-import { encryptTotpSecret } from "../../lib/totp-encryption.js";
+import { encryptSecret } from "../../../../lib/encryption.js";
 import { buildOtpauthUri, generateTotpSecret } from "../lib/totp.js";
 
 export default async function totpSetupRoutes(app: FastifyInstance): Promise<void> {
@@ -13,7 +13,7 @@ export default async function totpSetupRoutes(app: FastifyInstance): Promise<voi
     }
 
     const secret = generateTotpSecret();
-    await updateUser(db, user.id, { totpSecretEncrypted: encryptTotpSecret(secret) });
+    await updateUser(db, user.id, { totpSecretEncrypted: encryptSecret(secret) });
 
     const response: TotpSetupResponse = {
       otpauthUrl: buildOtpauthUri(secret, user.email),

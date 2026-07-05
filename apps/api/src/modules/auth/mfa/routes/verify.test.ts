@@ -5,7 +5,7 @@ import type { RedisClient } from "../../../../lib/redis.js";
 import { buildTestApp } from "../../../../test/build-test-app.js";
 import { makeFakeUser } from "../../../../test/fixtures.js";
 import verifyRoutes from "./verify.js";
-import { encryptTotpSecret } from "../../lib/totp-encryption.js";
+import { encryptSecret } from "../../../../lib/encryption.js";
 import { signMfaChallengeToken } from "../../lib/jwt.js";
 
 vi.mock("../../lib/users.js", () => ({
@@ -29,7 +29,7 @@ describe("POST /auth/2fa/verify", () => {
   const userId = "11111111-1111-1111-1111-111111111111";
   const fakeUser = makeFakeUser({
     id: userId,
-    totpSecretEncrypted: encryptTotpSecret(secret),
+    totpSecretEncrypted: encryptSecret(secret),
     totpEnabledAt: new Date(),
   });
 
