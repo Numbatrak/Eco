@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.turbo
+.env
+.env.*
+!.env.example
+.next
+.DS_Store
+*.log
+.vercel
+.drizzle
