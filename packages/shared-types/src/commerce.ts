@@ -7,7 +7,8 @@ export type ProductStatus = z.infer<typeof productStatusSchema>;
 
 export const productSchema = z.object({
   id: z.string().uuid(),
-  tenantId: z.string().uuid(),
+  // Organization id (Better Auth's text-typed ids, not a uuid column).
+  tenantId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   priceCents: z.number().int().nonnegative(),
@@ -168,7 +169,7 @@ export const updateTenantRequestSchema = z.object({
 export type UpdateTenantRequest = z.infer<typeof updateTenantRequestSchema>;
 
 export const tenantSettingsResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string(),
   subdomain: z.string().nullable(),
   published: z.boolean(),
@@ -190,7 +191,7 @@ export type PublicSiteProduct = z.infer<typeof publicSiteProductSchema>;
 
 export const publicSiteSchema = z.object({
   tenant: z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     name: z.string(),
     subdomain: z.string(),
   }),

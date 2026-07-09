@@ -1,17 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
-import { tenants, tenantSiteConfig } from "@platform/db";
+import { tenantSiteConfig } from "@platform/db";
 import { updateTenantRequestSchema, type TenantSettingsResponse } from "@platform/shared-types";
-import { isValidSubdomainFormat, isReservedSubdomain } from "../lib/subdomain.js";
-import { findTenantBySubdomain, findTenantSettings } from "../lib/site-store.js";
+import { fromNodeHeaders } from "better-auth/node";
+import { auth } from "../../../lib/auth.js";
+import { findTenantSettings } from "../lib/site-store.js";
 
 export default async function tenantSettingsRoutes(app: FastifyInstance): Promise<void> {
-  app.get<{ Params: { tenantId: string } }>(
-    "/tenants/:tenantId",
-    { preHandler: [app.authenticate, app.requireTenantRole(["owner", "admin", "member"])] },
+  app.get(
+    "/org/site-settings",
+    { preHandler: app.requireOrgMembership() },
     async (request, reply) => {
       const db = app.getDb();
-      const settings = await findTenantSettings(db, request.params.tenantId);
+      const settings = await findTenantSettings(db, request.activeOrganizationId!);
       if (!settings) {
         return reply.code(404).send({ error: "Tenant not found" });
       }
@@ -20,27 +21,21 @@ export default async function tenantSettingsRoutes(app: FastifyInstance): Promis
     },
   );
 
-  app.patch<{ Params: { tenantId: string } }>(
-    "/tenants/:tenantId",
-    { preHandler: [app.authenticate, app.requireTenantRole(["owner"])] },
+  app.patch(
+    "/org/site-settings",
+    { preHandler: app.requireOrgPermission({ settings: ["manage"] }) },
     async (request, reply) => {
       const body = updateTenantRequestSchema.parse(request.body);
       const db = app.getDb();
-      const { tenantId } = request.params;
+      const tenantId = request.activeOrganizationId!;
 
       if (body.subdomain !== undefined) {
-        const candidate = body.subdomain.toLowerCase();
-        if (!isValidSubdomainFormat(candidate)) {
-          return reply.code(400).send({ error: "Invalid subdomain format" });
-        }
-        if (isReservedSubdomain(candidate)) {
-          return reply.code(409).send({ error: "This subdomain is reserved" });
-        }
-        const existing = await findTenantBySubdomain(db, candidate);
-        if (existing && existing.id !== tenantId) {
-          return reply.code(409).send({ error: "This subdomain is already taken" });
-        }
-        await db.update(tenants).set({ subdomain: candidate }).where(eq(tenants.id, tenantId));
+        // Format/reserved-word/uniqueness checks live solely in the
+        // organization plugin's beforeUpdateOrganization hook now (../../../lib/auth.ts).
+        await auth.api.updateOrganization({
+          headers: fromNodeHeaders(request.headers),
+          body: { organizationId: tenantId, data: { slug: body.subdomain.toLowerCase() } },
+        });
       }
 
       if (body.published !== undefined) {

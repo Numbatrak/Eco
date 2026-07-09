@@ -21,33 +21,3 @@ export async function checkAndIncrementRateLimit(
   }
   return { allowed: count <= opts.limit, remaining: Math.max(0, opts.limit - count) };
 }
-
-const MAX_CHALLENGE_ATTEMPTS = 5;
-
-export async function checkChallengeAttempts(
-  redis: RedisClient,
-  challengeJti: string,
-  challengeTtlSeconds: number,
-): Promise<RateLimitResult> {
-  return checkAndIncrementRateLimit(redis, `mfa:attempts:${challengeJti}`, {
-    limit: MAX_CHALLENGE_ATTEMPTS,
-    windowSeconds: challengeTtlSeconds,
-  });
-}
-
-export async function checkEmailOtpResend(
-  redis: RedisClient,
-  challengeJti: string,
-): Promise<RateLimitResult> {
-  const short = await checkAndIncrementRateLimit(redis, `mfa:otp_resend:short:${challengeJti}`, {
-    limit: 1,
-    windowSeconds: 30,
-  });
-  if (!short.allowed) {
-    return short;
-  }
-  return checkAndIncrementRateLimit(redis, `mfa:otp_resend:long:${challengeJti}`, {
-    limit: 5,
-    windowSeconds: 900,
-  });
-}

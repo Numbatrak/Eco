@@ -1,0 +1,191 @@
+import type { FastifyBaseLogger } from "fastify";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization, twoFactor } from "better-auth/plugins";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import { sql } from "drizzle-orm";
+import { getDb } from "@platform/db";
+import { ac, orgRoles } from "./access-control.js";
+import { isReservedSubdomain, isValidSubdomainFormat } from "../modules/sites/lib/subdomain.js";
+import { sendEmail } from "../modules/auth/lib/email.js";
+
+/**
+ * Minimal console-backed logger so this module (and the `@better-auth/cli
+ * generate` step, which imports it standalone) doesn't need a running
+ * Fastify instance just to construct the auth config. `sendEmail` only ever
+ * calls `.info`.
+ */
+const authLogger = {
+  info: (obj: unknown, msg?: string) => console.log(msg ?? "", obj),
+} as unknown as FastifyBaseLogger;
+
+/**
+ * Raw SQL rather than the generated `member` table import: this file has to
+ * exist (and be importable standalone) before `@better-auth/cli generate`
+ * has produced that table, so it can't depend on it.
+ */
+// db.execute() on the postgres-js driver returns the row array directly
+// (not wrapped in { rows: [...] } the way the node-postgres driver does).
+type RawRows<T> = T[];
+
+async function countOwners(organizationId: string): Promise<number> {
+  const db = getDb();
+  const result = (await db.execute(
+    sql`select count(*)::int as count from "member" where "organization_id" = ${organizationId} and "role" = 'owner'`,
+  )) as unknown as RawRows<{ count: number }>;
+  return Number(result[0]?.count ?? 0);
+}
+
+async function findMemberById(
+  memberId: string,
+): Promise<{ organizationId: string; role: string } | null> {
+  const db = getDb();
+  const result = (await db.execute(
+    sql`select "organization_id", "role" from "member" where "id" = ${memberId} limit 1`,
+  )) as unknown as RawRows<{ organization_id: string; role: string }>;
+  const row = result[0];
+  return row ? { organizationId: row.organization_id, role: row.role } : null;
+}
+
+/** /organization/remove-member accepts either a member id or the member's email. */
+async function findMemberByIdOrEmail(
+  memberIdOrEmail: string,
+  organizationId: string | undefined,
+): Promise<{ organizationId: string; role: string } | null> {
+  if (!memberIdOrEmail.includes("@")) {
+    return findMemberById(memberIdOrEmail);
+  }
+  if (!organizationId) return null;
+  const db = getDb();
+  const result = (await db.execute(
+    sql`select m."organization_id", m."role" from "member" m
+        join "user" u on u."id" = m."user_id"
+        where u."email" = ${memberIdOrEmail} and m."organization_id" = ${organizationId} limit 1`,
+  )) as unknown as RawRows<{ organization_id: string; role: string }>;
+  const row = result[0];
+  return row ? { organizationId: row.organization_id, role: row.role } : null;
+}
+
+async function findMemberRole(organizationId: string, userId: string): Promise<string | null> {
+  const db = getDb();
+  const result = (await db.execute(
+    sql`select "role" from "member" where "organization_id" = ${organizationId} and "user_id" = ${userId} limit 1`,
+  )) as unknown as RawRows<{ role: string }>;
+  return result[0]?.role ?? null;
+}
+
+export const auth = betterAuth({
+  database: drizzleAdapter(getDb(), { provider: "pg" }),
+  baseURL: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3001}`,
+  trustedOrigins: [process.env.PUBLIC_APP_URL ?? "http://localhost:3002"],
+  emailAndPassword: {
+    enabled: true,
+    // Matches today's actual behavior - the old login.ts never checked
+    // emailVerifiedAt, verification was presentational-only.
+    requireEmailVerification: false,
+    async sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
+      await sendEmail(authLogger, {
+        to: user.email,
+        subject: "Reset your password",
+        body: `Use this link to reset your password: ${url}`,
+      });
+    },
+  },
+  plugins: [
+    organization({
+      ac,
+      roles: orgRoles,
+      organizationHooks: {
+        async beforeCreateOrganization({ organization: org }) {
+          const slug = org.slug;
+          if (typeof slug !== "string" || !isValidSubdomainFormat(slug)) {
+            throw new APIError("BAD_REQUEST", { message: "Invalid subdomain format" });
+          }
+          if (isReservedSubdomain(slug)) {
+            throw new APIError("CONFLICT", { message: "This subdomain is reserved" });
+          }
+          // organization.slug only has a case-sensitive unique constraint at
+          // the DB level (unlike the old tenants_subdomain_unique_idx on
+          // lower(subdomain)) - normalize here so uniqueness is effectively
+          // case-insensitive too.
+          return { data: { ...org, slug: slug.toLowerCase() } };
+        },
+        async beforeUpdateOrganization({ organization: data }) {
+          if (data.slug === undefined) return;
+          const slug = data.slug;
+          if (typeof slug !== "string" || !isValidSubdomainFormat(slug)) {
+            throw new APIError("BAD_REQUEST", { message: "Invalid subdomain format" });
+          }
+          if (isReservedSubdomain(slug)) {
+            throw new APIError("CONFLICT", { message: "This subdomain is reserved" });
+          }
+          return { data: { ...data, slug: slug.toLowerCase() } };
+        },
+        async beforeRemoveMember({ member }) {
+          if (member.role !== "owner") return;
+          const ownerCount = await countOwners(member.organizationId);
+          if (ownerCount <= 1) {
+            throw new APIError("FORBIDDEN", {
+              message: "An organization must retain at least one owner",
+            });
+          }
+        },
+        async beforeUpdateMemberRole({ member, newRole }) {
+          if (member.role !== "owner" || newRole === "owner") return;
+          const ownerCount = await countOwners(member.organizationId);
+          if (ownerCount <= 1) {
+            throw new APIError("FORBIDDEN", {
+              message: "An organization must retain at least one owner",
+            });
+          }
+        },
+      },
+    }),
+    twoFactor({
+      issuer: process.env.PUBLIC_APP_URL ?? "Platform",
+      totpOptions: { digits: 6, period: 30 },
+      otpOptions: {
+        period: 5,
+        allowedAttempts: 5,
+        storeOTP: "encrypted",
+        async sendOTP({ user, otp }) {
+          await sendEmail(authLogger, {
+            to: user.email,
+            subject: "Your verification code",
+            body: `Your code is ${otp}`,
+          });
+        },
+      },
+      backupCodeOptions: { amount: 10, length: 10, storeBackupCodes: "encrypted" },
+    }),
+  ],
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      // Actor-aware guard: the organization plugin's beforeRemoveMember /
+      // beforeUpdateMemberRole hooks receive the *target* member/user, not
+      // the caller, so "only an owner can remove/demote another owner" has
+      // to be enforced here instead, where the session (the caller) is
+      // still available on ctx.
+      if (ctx.path !== "/organization/remove-member" && ctx.path !== "/organization/update-member-role") {
+        return;
+      }
+      const session = await getSessionFromCtx(ctx);
+      if (!session) return;
+      const body = ctx.body as
+        | { memberId?: string; memberIdOrEmail?: string; organizationId?: string }
+        | undefined;
+      const target = body?.memberId
+        ? await findMemberById(body.memberId)
+        : body?.memberIdOrEmail
+          ? await findMemberByIdOrEmail(body.memberIdOrEmail, body.organizationId)
+          : null;
+      if (!target || target.role !== "owner") return;
+      const actorRole = await findMemberRole(target.organizationId, session.user.id);
+      if (actorRole !== "owner") {
+        throw new APIError("FORBIDDEN", {
+          message: "Only an owner can remove or change the role of another owner",
+        });
+      }
+    }),
+  },
+});

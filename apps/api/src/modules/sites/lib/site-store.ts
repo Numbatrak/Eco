@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { tenants, tenantSiteConfig, products, type Database } from "@platform/db";
+import { organization, tenantSiteConfig, products, type Database } from "@platform/db";
 import type { PublicSite } from "@platform/shared-types";
 
 export interface TenantSummary {
@@ -22,15 +22,15 @@ export async function findTenantSettings(
 ): Promise<TenantSettings | null> {
   const [row] = await db
     .select({
-      id: tenants.id,
-      name: tenants.name,
-      subdomain: tenants.subdomain,
+      id: organization.id,
+      name: organization.name,
+      subdomain: organization.slug,
       publishedAt: tenantSiteConfig.publishedAt,
       productsGridEnabled: tenantSiteConfig.productsGridEnabled,
     })
-    .from(tenants)
-    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, tenants.id))
-    .where(eq(tenants.id, tenantId))
+    .from(organization)
+    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, organization.id))
+    .where(eq(organization.id, tenantId))
     .limit(1);
   if (!row) {
     return null;
@@ -49,9 +49,9 @@ export async function findTenantBySubdomain(
   subdomain: string,
 ): Promise<TenantSummary | null> {
   const [row] = await db
-    .select({ id: tenants.id, name: tenants.name, subdomain: tenants.subdomain })
-    .from(tenants)
-    .where(sql`lower(${tenants.subdomain}) = lower(${subdomain})`)
+    .select({ id: organization.id, name: organization.name, subdomain: organization.slug })
+    .from(organization)
+    .where(sql`lower(${organization.slug}) = lower(${subdomain})`)
     .limit(1);
   return row ?? null;
 }
@@ -63,14 +63,14 @@ export async function findPublishedTenantBySubdomain(
 ): Promise<TenantSummary | null> {
   const [row] = await db
     .select({
-      id: tenants.id,
-      name: tenants.name,
-      subdomain: tenants.subdomain,
+      id: organization.id,
+      name: organization.name,
+      subdomain: organization.slug,
       publishedAt: tenantSiteConfig.publishedAt,
     })
-    .from(tenants)
-    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, tenants.id))
-    .where(sql`lower(${tenants.subdomain}) = lower(${subdomain})`)
+    .from(organization)
+    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, organization.id))
+    .where(sql`lower(${organization.slug}) = lower(${subdomain})`)
     .limit(1);
   if (!row || !row.publishedAt) {
     return null;
@@ -84,17 +84,17 @@ export async function findPublishedSiteBySubdomain(
 ): Promise<PublicSite | null> {
   const [row] = await db
     .select({
-      tenantId: tenants.id,
-      tenantName: tenants.name,
-      subdomain: tenants.subdomain,
+      tenantId: organization.id,
+      tenantName: organization.name,
+      subdomain: organization.slug,
       theme: tenantSiteConfig.theme,
       sections: tenantSiteConfig.sections,
       productsGridEnabled: tenantSiteConfig.productsGridEnabled,
       publishedAt: tenantSiteConfig.publishedAt,
     })
-    .from(tenants)
-    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, tenants.id))
-    .where(sql`lower(${tenants.subdomain}) = lower(${subdomain})`)
+    .from(organization)
+    .innerJoin(tenantSiteConfig, eq(tenantSiteConfig.tenantId, organization.id))
+    .where(sql`lower(${organization.slug}) = lower(${subdomain})`)
     .limit(1);
 
   if (!row || !row.publishedAt) {

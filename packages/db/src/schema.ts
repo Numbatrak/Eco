@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
   pgTable,
   pgEnum,
@@ -11,12 +10,11 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
+import { account, invitation, member, organization, session, twoFactor, user, verification } from "./auth-schema.js";
+
+export * from "./auth-schema.js";
 
 // ---------- enums ----------
-
-export const tenantMemberRoleEnum = pgEnum("tenant_member_role", ["owner", "admin", "member"]);
-
-export const preferred2faMethodEnum = pgEnum("preferred_2fa_method", ["totp", "email_otp"]);
 
 export const securityEventTypeEnum = pgEnum("security_event_type", [
   "login_success",
@@ -41,135 +39,13 @@ export const paymentProviderEnum = pgEnum("payment_provider", ["paystack", "flut
 
 export const paymentModeEnum = pgEnum("payment_mode", ["test", "live"]);
 
-// ---------- tenants ----------
-
-export const tenants = pgTable(
-  "tenants",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
-    // Nullable until set via PATCH /tenants/:tenantId - registration only
-    // collects a business name, not a subdomain.
-    subdomain: text("subdomain"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [uniqueIndex("tenants_subdomain_unique_idx").on(sql`lower(${table.subdomain})`)],
-);
-
-// ---------- users ----------
-
-export const users = pgTable(
-  "users",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    email: text("email").notNull(),
-    passwordHash: text("password_hash").notNull(),
-    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
-    totpSecretEncrypted: text("totp_secret_encrypted"),
-    totpEnabledAt: timestamp("totp_enabled_at", { withTimezone: true }),
-    emailOtpEnabledAt: timestamp("email_otp_enabled_at", { withTimezone: true }),
-    preferred2faMethod: preferred2faMethodEnum("preferred_2fa_method"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [uniqueIndex("users_email_unique_idx").on(sql`lower(${table.email})`)],
-);
-
-// ---------- tenant_members ----------
-
-export const tenantMembers = pgTable(
-  "tenant_members",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    role: tenantMemberRoleEnum("role").notNull().default("member"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("tenant_members_tenant_user_unique_idx").on(table.tenantId, table.userId),
-    index("tenant_members_user_idx").on(table.userId),
-  ],
-);
-
-// ---------- permissions ----------
-
-/** Reference table of grantable permission keys - seeded, not user-editable. */
-export const permissions = pgTable("permissions", {
-  key: text("key").primaryKey(),
-  description: text("description").notNull(),
-});
-
-export const tenantMemberPermissions = pgTable(
-  "tenant_member_permissions",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    tenantMemberId: uuid("tenant_member_id")
-      .notNull()
-      .references(() => tenantMembers.id, { onDelete: "cascade" }),
-    permissionKey: text("permission_key")
-      .notNull()
-      .references(() => permissions.key, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("tenant_member_permissions_unique_idx").on(
-      table.tenantMemberId,
-      table.permissionKey,
-    ),
-    index("tenant_member_permissions_member_idx").on(table.tenantMemberId),
-  ],
-);
-
-// ---------- refresh_tokens ----------
-
-export const refreshTokens = pgTable(
-  "refresh_tokens",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    tokenHash: text("token_hash").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    revokedAt: timestamp("revoked_at", { withTimezone: true }),
-    userAgent: text("user_agent"),
-    ipAddress: text("ip_address"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("refresh_tokens_user_idx").on(table.userId),
-    uniqueIndex("refresh_tokens_token_hash_unique_idx").on(table.tokenHash),
-  ],
-);
-
-// ---------- backup_codes ----------
-
-export const backupCodes = pgTable(
-  "backup_codes",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    codeHash: text("code_hash").notNull(),
-    usedAt: timestamp("used_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [index("backup_codes_user_idx").on(table.userId)],
-);
-
 // ---------- security_events ----------
 
 export const securityEvents = pgTable(
   "security_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     eventType: securityEventTypeEnum("event_type").notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -191,9 +67,9 @@ export const securityEvents = pgTable(
  * of scope) for showing a live product grid on the site.
  */
 export const tenantSiteConfig = pgTable("tenant_site_config", {
-  tenantId: uuid("tenant_id")
+  tenantId: text("tenant_id")
     .primaryKey()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+    .references(() => organization.id, { onDelete: "cascade" }),
   theme: jsonb("theme").notNull().default({}),
   sections: jsonb("sections").notNull().default([]),
   productsGridEnabled: boolean("products_grid_enabled").notNull().default(false),
@@ -208,9 +84,9 @@ export const products = pgTable(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id")
+    tenantId: text("tenant_id")
       .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
     priceCents: integer("price_cents").notNull(),
@@ -232,9 +108,9 @@ export const carts = pgTable(
   "carts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id")
+    tenantId: text("tenant_id")
       .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     cartToken: text("cart_token").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -274,9 +150,9 @@ export const orders = pgTable(
   "orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id")
+    tenantId: text("tenant_id")
       .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     orderNumber: text("order_number").notNull(),
     customerName: text("customer_name").notNull(),
     customerEmail: text("customer_email").notNull(),
@@ -319,9 +195,9 @@ export const orderItems = pgTable(
 // ---------- tenant_payment_settings ----------
 
 export const tenantPaymentSettings = pgTable("tenant_payment_settings", {
-  tenantId: uuid("tenant_id")
+  tenantId: text("tenant_id")
     .primaryKey()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+    .references(() => organization.id, { onDelete: "cascade" }),
   provider: paymentProviderEnum("provider").notNull(),
   publicKey: text("public_key"),
   secretKeyEncrypted: text("secret_key_encrypted"),
@@ -337,7 +213,7 @@ export const paymentWebhookEvents = pgTable(
   "payment_webhook_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+    tenantId: text("tenant_id").references(() => organization.id, { onDelete: "set null" }),
     provider: paymentProviderEnum("provider").notNull(),
     eventReference: text("event_reference").notNull(),
     payload: jsonb("payload").notNull(),
@@ -356,13 +232,14 @@ export const paymentWebhookEvents = pgTable(
 // ---------- aggregate schema export ----------
 
 export const schema = {
-  tenants,
-  users,
-  tenantMembers,
-  permissions,
-  tenantMemberPermissions,
-  refreshTokens,
-  backupCodes,
+  user,
+  session,
+  account,
+  verification,
+  organization,
+  member,
+  invitation,
+  twoFactor,
   securityEvents,
   tenantSiteConfig,
   products,

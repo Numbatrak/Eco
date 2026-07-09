@@ -1,30 +1,17 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import RedisMock from "ioredis-mock";
+import { member } from "@platform/db";
 import type { RedisClient } from "../../../lib/redis.js";
 import { buildTestApp } from "../../../test/build-test-app.js";
-import { makeFakeUser } from "../../../test/fixtures.js";
+import { getTestDb, truncateAll } from "../../../test/test-db.js";
 import registerRoutes from "./register.js";
 
-vi.mock("../lib/users.js", () => ({
-  findUserByEmail: vi.fn(),
-  createUser: vi.fn(),
-}));
-vi.mock("../lib/tenants.js", () => ({
-  createTenantWithOwner: vi.fn(async () => ({ id: "tenant-1", name: "Acme" })),
-}));
-vi.mock("../lib/email.js", () => ({
-  sendEmail: vi.fn(async () => {}),
-}));
-
-const { findUserByEmail, createUser } = await import("../lib/users.js");
-const { createTenantWithOwner } = await import("../lib/tenants.js");
-const { sendEmail } = await import("../lib/email.js");
-
 describe("POST /auth/register", () => {
-  it("creates a user + tenant for a new email and sends a verification link", async () => {
-    vi.mocked(findUserByEmail).mockResolvedValue(null);
-    vi.mocked(createUser).mockResolvedValue({ id: "user-1", email: "new@example.com" });
+  afterEach(async () => {
+    await truncateAll();
+  });
 
+  it("creates a user + organization with an owner-role membership", async () => {
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [registerRoutes] });
 
@@ -32,61 +19,41 @@ describe("POST /auth/register", () => {
       method: "POST",
       url: "/auth/register",
       payload: {
-        email: "new@example.com",
+        email: `new-${Date.now()}@example.com`,
         password: "a-strong-password-123",
         businessName: "Acme",
       },
     });
 
     expect(response.statusCode).toBe(202);
-    expect(createUser).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ email: "new@example.com" }),
-    );
-    expect(createTenantWithOwner).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ name: "Acme", ownerUserId: "user-1" }),
-    );
 
-    const sentBody = vi.mocked(sendEmail).mock.calls[0]?.[1]?.body ?? "";
-    expect(sentBody).toContain("verify-email?token=");
+    const db = getTestDb();
+    const rows = await db.select().from(member);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.role).toBe("owner");
   });
 
-  it("returns the identical response for a duplicate email without creating anything", async () => {
-    const existing = makeFakeUser({ email: "taken@example.com" });
-    vi.mocked(createUser).mockResolvedValue({ id: "user-2", email: "brand-new@example.com" });
-    vi.mocked(findUserByEmail).mockImplementation(async (_db, email) =>
-      email === "taken@example.com" ? existing : null,
-    );
-
+  it("returns the identical response for a duplicate email without creating a second membership", async () => {
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [registerRoutes] });
+    const email = `taken-${Date.now()}@example.com`;
 
-    const newEmailResponse = await app.inject({
+    const first = await app.inject({
       method: "POST",
       url: "/auth/register",
-      payload: {
-        email: "brand-new@example.com",
-        password: "a-strong-password-123",
-        businessName: "Acme",
-      },
+      payload: { email, password: "a-strong-password-123", businessName: "Acme" },
     });
-
-    const duplicateResponse = await app.inject({
+    const second = await app.inject({
       method: "POST",
       url: "/auth/register",
-      payload: {
-        email: "taken@example.com",
-        password: "a-strong-password-123",
-        businessName: "Acme",
-      },
+      payload: { email, password: "a-different-password-456", businessName: "Someone Else" },
     });
 
-    expect(duplicateResponse.statusCode).toBe(newEmailResponse.statusCode);
-    expect(duplicateResponse.json()).toEqual(newEmailResponse.json());
-    expect(createUser).not.toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ email: "taken@example.com" }),
-    );
+    expect(second.statusCode).toBe(first.statusCode);
+    expect(second.json()).toEqual(first.json());
+
+    const db = getTestDb();
+    const rows = await db.select().from(member);
+    expect(rows).toHaveLength(1);
   });
 });

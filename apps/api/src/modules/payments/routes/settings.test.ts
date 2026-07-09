@@ -1,14 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import RedisMock from "ioredis-mock";
 import type { RedisClient } from "../../../lib/redis.js";
 import { buildTestApp } from "../../../test/build-test-app.js";
+import { truncateAll } from "../../../test/test-db.js";
+import { signUpOwnerWithOrg } from "../../../test/auth-helpers.js";
 import paymentSettingsRoutes from "./settings.js";
-import { signAccessToken } from "../../auth/lib/jwt.js";
 
-vi.mock("../../permissions/lib/membership.js", () => ({
-  findTenantMembership: vi.fn(async () => ({ tenantMemberId: "member-1", role: "owner" })),
-  memberHasPermission: vi.fn(async () => true),
-}));
 vi.mock("../lib/payment-settings-store.js", () => ({
   findPaymentSettings: vi.fn(async () => null),
   serializePaymentSettings: vi.fn(() => ({
@@ -27,28 +24,29 @@ vi.mock("../lib/live-mode-reauth.js", () => ({
 const { upsertPaymentSettings } = await import("../lib/payment-settings-store.js");
 const { verifyLiveModeReauth } = await import("../lib/live-mode-reauth.js");
 
-const tenantId = "tenant-1";
-const userId = "11111111-1111-1111-1111-111111111111";
-
-async function putSettings(body: Record<string, unknown>) {
+async function putSettings(cookie: string, body: Record<string, unknown>) {
   const redis = new RedisMock() as unknown as RedisClient;
   const app = await buildTestApp({ redis, routes: [paymentSettingsRoutes] });
-  const accessToken = await signAccessToken({ sub: userId });
   return app.inject({
     method: "PUT",
-    url: `/tenants/${tenantId}/payment-settings`,
-    headers: { authorization: `Bearer ${accessToken}` },
+    url: "/org/payment-settings",
+    headers: { cookie },
     payload: body,
   });
 }
 
-describe("PUT /tenants/:tenantId/payment-settings", () => {
+describe("PUT /org/payment-settings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
+  afterEach(async () => {
+    await truncateAll();
+  });
+
   it("saves test-mode credentials without requiring password/2FA re-auth", async () => {
-    const response = await putSettings({
+    const owner = await signUpOwnerWithOrg();
+    const response = await putSettings(owner.headers.get("cookie") ?? "", {
       provider: "paystack",
       publicKey: "pk_test_x",
       secretKey: "sk_test_x",
@@ -66,8 +64,9 @@ describe("PUT /tenants/:tenantId/payment-settings", () => {
       status: 401,
       error: "Incorrect password",
     });
+    const owner = await signUpOwnerWithOrg();
 
-    const response = await putSettings({
+    const response = await putSettings(owner.headers.get("cookie") ?? "", {
       provider: "paystack",
       publicKey: "pk_live_x",
       secretKey: "sk_live_x",
@@ -82,8 +81,9 @@ describe("PUT /tenants/:tenantId/payment-settings", () => {
 
   it("saves live-mode credentials once re-auth succeeds", async () => {
     vi.mocked(verifyLiveModeReauth).mockResolvedValue({ ok: true });
+    const owner = await signUpOwnerWithOrg();
 
-    const response = await putSettings({
+    const response = await putSettings(owner.headers.get("cookie") ?? "", {
       provider: "paystack",
       publicKey: "pk_live_x",
       secretKey: "sk_live_x",
@@ -94,5 +94,20 @@ describe("PUT /tenants/:tenantId/payment-settings", () => {
 
     expect(response.statusCode).toBe(200);
     expect(upsertPaymentSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a viewer-role caller (no payments.manage permission)", async () => {
+    const owner = await signUpOwnerWithOrg();
+    const { addUserToOrgWithRole } = await import("../../../test/auth-helpers.js");
+    const viewer = await addUserToOrgWithRole(owner.orgId, "viewer");
+
+    const response = await putSettings(viewer.activeHeaders.get("cookie") ?? "", {
+      provider: "paystack",
+      publicKey: "pk_test_x",
+      secretKey: "sk_test_x",
+      mode: "test",
+    });
+
+    expect(response.statusCode).toBe(403);
   });
 });

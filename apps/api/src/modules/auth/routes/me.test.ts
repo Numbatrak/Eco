@@ -1,48 +1,39 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import RedisMock from "ioredis-mock";
 import type { RedisClient } from "../../../lib/redis.js";
 import { buildTestApp } from "../../../test/build-test-app.js";
-import { makeFakeUser } from "../../../test/fixtures.js";
+import { truncateAll } from "../../../test/test-db.js";
+import { signUpOwnerWithOrg } from "../../../test/auth-helpers.js";
 import meRoutes from "./me.js";
-import { signAccessToken } from "../lib/jwt.js";
-
-vi.mock("../lib/users.js", () => ({
-  findUserById: vi.fn(),
-}));
-vi.mock("../lib/tenants.js", () => ({
-  listTenantsForUser: vi.fn(),
-}));
-
-const { findUserById } = await import("../lib/users.js");
-const { listTenantsForUser } = await import("../lib/tenants.js");
 
 describe("GET /auth/me", () => {
-  it("returns the current user and their tenant memberships", async () => {
-    const userId = "11111111-1111-1111-1111-111111111111";
-    vi.mocked(findUserById).mockResolvedValue(makeFakeUser({ id: userId, email: "owner@example.com" }));
-    vi.mocked(listTenantsForUser).mockResolvedValue([
-      { id: "tenant-1", name: "Acme", subdomain: "acme", role: "owner" },
-    ]);
+  afterEach(async () => {
+    await truncateAll();
+  });
+
+  it("returns the current user and their organization memberships", async () => {
+    const owner = await signUpOwnerWithOrg({ orgName: "Acme" });
 
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [meRoutes] });
-    const accessToken = await signAccessToken({ sub: userId });
 
     const response = await app.inject({
       method: "GET",
       url: "/auth/me",
-      headers: { authorization: `Bearer ${accessToken}` },
+      headers: { cookie: owner.headers.get("cookie") ?? "" },
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      id: userId,
-      email: "owner@example.com",
-      tenants: [{ id: "tenant-1", name: "Acme", subdomain: "acme", role: "owner" }],
-    });
+    const body = response.json();
+    expect(body.user.id).toBe(owner.userId);
+    expect(body.user.email).toBe(owner.email);
+    expect(body.organizations).toEqual([
+      { id: owner.orgId, name: "Acme", slug: owner.slug, role: "owner" },
+    ]);
+    expect(body.activeOrganizationId).toBe(owner.orgId);
   });
 
-  it("rejects a request without a bearer token", async () => {
+  it("rejects a request without a session cookie", async () => {
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [meRoutes] });
 

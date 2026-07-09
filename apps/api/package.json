@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file=.env src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -16,20 +16,21 @@
     "@fastify/cors": "^10.0.1",
     "@platform/db": "workspace:*",
     "@platform/shared-types": "workspace:*",
-    "argon2": "^0.41.1",
+    "better-auth": "^1.6.23",
     "drizzle-orm": "^0.38.3",
     "fastify": "^5.2.0",
+    "fastify-better-auth": "^1.2.0",
     "fastify-plugin": "^5.0.1",
     "ioredis": "^5.4.2",
-    "jose": "^5.9.6",
-    "otplib": "^12.0.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
     "@platform/config": "workspace:*",
     "@types/ioredis-mock": "^8.2.5",
     "@types/node": "^22.10.5",
     "ioredis-mock": "^8.9.0",
+    "otplib": "^12.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"

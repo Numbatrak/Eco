@@ -18,84 +18,31 @@ export const loginRequestSchema = z.object({
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
-export const mfaMethodSchema = z.enum(["totp", "email_otp"]);
-export type MfaMethod = z.infer<typeof mfaMethodSchema>;
+export const authUserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  emailVerified: z.boolean(),
+  twoFactorEnabled: z.boolean().optional(),
+});
+export type AuthUser = z.infer<typeof authUserSchema>;
 
-export const loginResponseSchema = z.discriminatedUnion("status", [
+/**
+ * Matches Better Auth's native sign-in response shape directly (rather than
+ * the old custom challengeToken pattern) - the second-factor flow is
+ * cookie-based, no token needs to round-trip through the client.
+ */
+export const loginResponseSchema = z.union([
   z.object({
-    status: z.literal("authenticated"),
-    accessToken: z.string(),
+    twoFactorRedirect: z.literal(true),
+    twoFactorMethods: z.array(z.string()),
   }),
   z.object({
-    status: z.literal("mfa_required"),
-    challengeToken: z.string(),
-    method: mfaMethodSchema,
+    token: z.string(),
+    user: authUserSchema,
   }),
 ]);
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
-
-export const accessTokenResponseSchema = z.object({
-  accessToken: z.string(),
-});
-export type AccessTokenResponse = z.infer<typeof accessTokenResponseSchema>;
-
-export const mfaVerifyRequestSchema = z.object({
-  challengeToken: z.string(),
-  code: z.string().min(1),
-});
-export type MfaVerifyRequest = z.infer<typeof mfaVerifyRequestSchema>;
-
-export const mfaSendEmailOtpRequestSchema = z.object({
-  challengeToken: z.string(),
-});
-export type MfaSendEmailOtpRequest = z.infer<typeof mfaSendEmailOtpRequestSchema>;
-
-export const totpSetupResponseSchema = z.object({
-  otpauthUrl: z.string(),
-  secret: z.string(),
-});
-export type TotpSetupResponse = z.infer<typeof totpSetupResponseSchema>;
-
-export const mfaCodeSchema = z.object({
-  code: z.string().min(1),
-});
-export type MfaCode = z.infer<typeof mfaCodeSchema>;
-
-export const totpConfirmRequestSchema = mfaCodeSchema;
-export type TotpConfirmRequest = z.infer<typeof totpConfirmRequestSchema>;
-
-export const emailOtpConfirmRequestSchema = mfaCodeSchema;
-export type EmailOtpConfirmRequest = z.infer<typeof emailOtpConfirmRequestSchema>;
-
-export const totpConfirmResponseSchema = z.object({
-  backupCodes: z.array(z.string()),
-});
-export type TotpConfirmResponse = z.infer<typeof totpConfirmResponseSchema>;
-
-export const mfaDisableRequestSchema = z.object({
-  password: z.string(),
-  code: z.string().min(1),
-});
-export type MfaDisableRequest = z.infer<typeof mfaDisableRequestSchema>;
-
-export const backupCodesRegenerateRequestSchema = z.object({
-  password: z.string(),
-  code: z.string().min(1),
-});
-export type BackupCodesRegenerateRequest = z.infer<typeof backupCodesRegenerateRequestSchema>;
-
-export const backupCodesRegenerateResponseSchema = z.object({
-  backupCodes: z.array(z.string()),
-});
-export type BackupCodesRegenerateResponse = z.infer<typeof backupCodesRegenerateResponseSchema>;
-
-export const mfaStatusResponseSchema = z.object({
-  totpEnabled: z.boolean(),
-  emailOtpEnabled: z.boolean(),
-  preferredMethod: mfaMethodSchema.nullable(),
-  unusedBackupCodeCount: z.number().int().min(0),
-});
-export type MfaStatusResponse = z.infer<typeof mfaStatusResponseSchema>;
 
 export const passwordResetRequestSchema = z.object({
   email: z.string().email(),
@@ -108,25 +55,20 @@ export const passwordResetCompleteSchema = z.object({
 });
 export type PasswordResetComplete = z.infer<typeof passwordResetCompleteSchema>;
 
-export const verifyEmailRequestSchema = z.object({
-  token: z.string(),
-});
-export type VerifyEmailRequest = z.infer<typeof verifyEmailRequestSchema>;
+export const orgRoleSchema = z.enum(["owner", "admin", "editor", "viewer"]);
+export type OrgRole = z.infer<typeof orgRoleSchema>;
 
-export const tenantMemberRoleSchema = z.enum(["owner", "admin", "member"]);
-export type TenantMemberRoleValue = z.infer<typeof tenantMemberRoleSchema>;
-
-export const userTenantMembershipSchema = z.object({
-  id: z.string().uuid(),
+export const userOrganizationMembershipSchema = z.object({
+  id: z.string(),
   name: z.string(),
-  subdomain: z.string().nullable(),
-  role: tenantMemberRoleSchema,
+  slug: z.string(),
+  role: orgRoleSchema,
 });
-export type UserTenantMembership = z.infer<typeof userTenantMembershipSchema>;
+export type UserOrganizationMembership = z.infer<typeof userOrganizationMembershipSchema>;
 
 export const meResponseSchema = z.object({
-  id: z.string().uuid(),
-  email: z.string().email(),
-  tenants: z.array(userTenantMembershipSchema),
+  user: authUserSchema,
+  organizations: z.array(userOrganizationMembershipSchema),
+  activeOrganizationId: z.string().nullable(),
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;

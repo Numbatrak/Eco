@@ -6,6 +6,14 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": false,
+    // This is an application, not a published library (no `types`/`exports`
+    // field in package.json) - nothing consumes its .d.ts output, so don't
+    // pay the "portable declaration type" tax the base config imposes for
+    // the library packages. Concretely: better-auth's inferred `auth`
+    // instance type depends on unexported internals from a specific
+    // pnpm-resolved zod copy, which trips TS2742 under declaration emit.
+    "declaration": false,
+    "declarationMap": false,
     "types": ["node"]
   },
   "include": ["src"]
