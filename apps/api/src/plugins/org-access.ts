@@ -1,6 +1,8 @@
 import fp from "fastify-plugin";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
+import { eq } from "drizzle-orm";
+import { organization, type Database } from "@platform/db";
 import { auth } from "../lib/auth.js";
 
 declare module "fastify" {
@@ -24,6 +26,33 @@ declare module "fastify" {
   }
 }
 
+/**
+ * Single choke point for tenant suspension: both requireOrgPermission and
+ * requireOrgMembership call this right after resolving the active org, so a
+ * suspended tenant's team is locked out of every /org/* route regardless of
+ * which helper the route uses. Returns true (and has already replied) if
+ * suspended - callers should return immediately in that case.
+ */
+async function rejectIfSuspended(
+  db: Database,
+  organizationId: string,
+  reply: FastifyReply,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ status: organization.status })
+    .from(organization)
+    .where(eq(organization.id, organizationId))
+    .limit(1);
+  if (row?.status === "suspended") {
+    await reply.code(403).send({
+      error: "organization_suspended",
+      message: "Your account has been suspended, contact support.",
+    });
+    return true;
+  }
+  return false;
+}
+
 export default fp(async (app) => {
   app.decorate("requireOrgPermission", (permissions: Record<string, string[]>) => {
     return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -36,6 +65,9 @@ export default fp(async (app) => {
       const organizationId = session.session.activeOrganizationId;
       if (!organizationId) {
         await reply.code(400).send({ error: "No active organization selected" });
+        return;
+      }
+      if (await rejectIfSuspended(app.getDb(), organizationId, reply)) {
         return;
       }
       const result = await auth.api.hasPermission({ headers, body: { organizationId, permissions } });
@@ -58,6 +90,9 @@ export default fp(async (app) => {
       const organizationId = session.session.activeOrganizationId;
       if (!organizationId) {
         await reply.code(400).send({ error: "No active organization selected" });
+        return;
+      }
+      if (await rejectIfSuspended(app.getDb(), organizationId, reply)) {
         return;
       }
       try {

@@ -189,14 +189,16 @@ export const publicSiteProductSchema = z.object({
 });
 export type PublicSiteProduct = z.infer<typeof publicSiteProductSchema>;
 
+import { siteThemeSchema, siteSectionSchema } from "./site-config.js";
+
 export const publicSiteSchema = z.object({
   tenant: z.object({
     id: z.string(),
     name: z.string(),
     subdomain: z.string(),
   }),
-  theme: z.unknown(),
-  sections: z.unknown(),
+  theme: siteThemeSchema,
+  sections: z.array(siteSectionSchema),
   productsGridEnabled: z.boolean(),
   products: z.array(publicSiteProductSchema),
 });

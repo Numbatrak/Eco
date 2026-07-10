@@ -3,7 +3,9 @@
 // repo's migration flow (packages/db/drizzle) rather than using a separate
 // Better-Auth-owned migration mechanism - see packages/db/src/schema.ts.
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, text, timestamp, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+
+export const organizationStatusEnum = pgEnum("organization_status", ["active", "suspended"]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -89,6 +91,11 @@ export const organization = pgTable(
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    // Platform-admin back-office additions (not part of Better Auth's own
+    // organization model) - suspension state and the placeholder plan field
+    // ahead of the real credit/subscription system.
+    status: organizationStatusEnum("status").notNull().default("active"),
+    plan: text("plan").notNull().default("free"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

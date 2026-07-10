@@ -59,6 +59,21 @@ export function CartProvider({
         const updated = await cartApi.addItem(subdomain, { productId, quantity });
         setCart(updated);
       } catch (addError) {
+        // Cart cookie may have expired or been cleared. Create a fresh cart
+        // and retry once so the shopper doesn't see a spurious failure.
+        if (addError instanceof ApiError && addError.status === 404) {
+          try {
+            await cartApi.createCart(subdomain);
+            const updated = await cartApi.addItem(subdomain, { productId, quantity });
+            setCart(updated);
+            return;
+          } catch (retryError) {
+            setError(
+              retryError instanceof ApiError ? retryError.message : "Could not add this item.",
+            );
+            throw retryError;
+          }
+        }
         setError(addError instanceof ApiError ? addError.message : "Could not add this item.");
         throw addError;
       }

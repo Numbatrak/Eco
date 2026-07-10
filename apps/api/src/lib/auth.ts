@@ -77,17 +77,32 @@ async function findMemberRole(organizationId: string, userId: string): Promise<s
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
   baseURL: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3001}`,
-  trustedOrigins: [process.env.PUBLIC_APP_URL ?? "http://localhost:3002"],
+  // Store-owner auth calls come from the storefront's /dashboard, proxied
+  // through Next's /api/:path* rewrite, so the Origin the API sees is
+  // STOREFRONT_APP_URL - not a tenant subdomain. Only two origins actually
+  // reach Better Auth: the platform-admin console and the storefront.
+  trustedOrigins: [
+    process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
+    process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
+  ],
   emailAndPassword: {
     enabled: true,
     // Matches today's actual behavior - the old login.ts never checked
     // emailVerifiedAt, verification was presentational-only.
     requireEmailVerification: false,
-    async sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
+    async sendResetPassword({ user, token }: { user: { email: string }; token: string }) {
+      // Link straight to the SPA's own /reset-password?token=... route rather
+      // than Better Auth's generated `url` (which points at the backend's
+      // GET /api/auth/reset-password/:token redirect-callback endpoint,
+      // useful when a callbackURL is configured but not otherwise).
+      // Store-owner reset flow lives under the storefront's /dashboard, not
+      // the platform-admin console.
+      const appUrl = process.env.STOREFRONT_APP_URL ?? "http://localhost:3000";
+      const resetUrl = `${appUrl}/dashboard/reset-password?token=${encodeURIComponent(token)}`;
       await sendEmail(authLogger, {
         to: user.email,
         subject: "Reset your password",
-        body: `Use this link to reset your password: ${url}`,
+        body: `Use this link to reset your password: ${resetUrl}`,
       });
     },
   },
@@ -101,7 +116,7 @@ export const auth = betterAuth({
           if (typeof slug !== "string" || !isValidSubdomainFormat(slug)) {
             throw new APIError("BAD_REQUEST", { message: "Invalid subdomain format" });
           }
-          if (isReservedSubdomain(slug)) {
+          if (await isReservedSubdomain(getDb(), slug)) {
             throw new APIError("CONFLICT", { message: "This subdomain is reserved" });
           }
           // organization.slug only has a case-sensitive unique constraint at
@@ -116,7 +131,7 @@ export const auth = betterAuth({
           if (typeof slug !== "string" || !isValidSubdomainFormat(slug)) {
             throw new APIError("BAD_REQUEST", { message: "Invalid subdomain format" });
           }
-          if (isReservedSubdomain(slug)) {
+          if (await isReservedSubdomain(getDb(), slug)) {
             throw new APIError("CONFLICT", { message: "This subdomain is reserved" });
           }
           return { data: { ...data, slug: slug.toLowerCase() } };

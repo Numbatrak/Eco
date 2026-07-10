@@ -11,8 +11,16 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { account, invitation, member, organization, session, twoFactor, user, verification } from "./auth-schema.js";
+import {
+  platformAdminAccount,
+  platformAdminSession,
+  platformAdminTwoFactor,
+  platformAdminUser,
+  platformAdminVerification,
+} from "./platform-admin-auth-schema.js";
 
 export * from "./auth-schema.js";
+export * from "./platform-admin-auth-schema.js";
 
 // ---------- enums ----------
 
@@ -229,6 +237,77 @@ export const paymentWebhookEvents = pgTable(
   ],
 );
 
+// ---------- credit_adjustments ----------
+
+/**
+ * Every manual credit change, no exceptions - this task only adds the
+ * override + audit trail, not a stored running balance (a tenant's balance
+ * is SUM(delta) computed on read, see modules/platform-admin/lib).
+ */
+export const creditAdjustments = pgTable(
+  "credit_adjustments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    adminId: text("admin_id").references(() => platformAdminUser.id, { onDelete: "set null" }),
+    delta: integer("delta").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("credit_adjustments_tenant_idx").on(table.tenantId)],
+);
+
+// ---------- reserved_subdomains ----------
+
+/**
+ * Source of truth for reserved subdomains, replacing the old
+ * RESERVED_SUBDOMAINS env var - checked by the organization-creation hook in
+ * apps/api/src/lib/auth.ts via isReservedSubdomain().
+ */
+export const reservedSubdomains = pgTable("reserved_subdomains", {
+  word: text("word").primaryKey(),
+  addedBy: text("added_by").references(() => platformAdminUser.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------- feature_flags ----------
+
+export const featureFlags = pgTable("feature_flags", {
+  key: text("key").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  description: text("description"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------- platform_settings ----------
+
+export const platformSettings = pgTable("platform_settings", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------- platform_admin_audit_log ----------
+
+export const platformAdminAuditLog = pgTable(
+  "platform_admin_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminId: text("admin_id").references(() => platformAdminUser.id, { onDelete: "set null" }),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    details: jsonb("details"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("platform_admin_audit_log_admin_idx").on(table.adminId),
+    index("platform_admin_audit_log_created_at_idx").on(table.createdAt),
+  ],
+);
+
 // ---------- aggregate schema export ----------
 
 export const schema = {
@@ -240,6 +319,11 @@ export const schema = {
   member,
   invitation,
   twoFactor,
+  platformAdminUser,
+  platformAdminSession,
+  platformAdminAccount,
+  platformAdminVerification,
+  platformAdminTwoFactor,
   securityEvents,
   tenantSiteConfig,
   products,
@@ -249,4 +333,9 @@ export const schema = {
   orderItems,
   tenantPaymentSettings,
   paymentWebhookEvents,
+  creditAdjustments,
+  reservedSubdomains,
+  featureFlags,
+  platformSettings,
+  platformAdminAuditLog,
 };

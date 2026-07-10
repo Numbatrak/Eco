@@ -5,6 +5,8 @@ import corsPlugin from "./plugins/cors.js";
 import cookiesPlugin from "./plugins/cookies.js";
 import betterAuthPlugin from "./plugins/better-auth.js";
 import orgAccessPlugin from "./plugins/org-access.js";
+import platformAdminBetterAuthPlugin from "./plugins/platform-admin-better-auth.js";
+import platformAdminAccessPlugin from "./plugins/platform-admin-access.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./modules/auth/routes/index.js";
 import sitesRoutes from "./modules/sites/routes/index.js";
@@ -13,6 +15,7 @@ import cartRoutes from "./modules/cart/routes/index.js";
 import checkoutRoutes from "./modules/checkout/routes/index.js";
 import paymentsRoutes from "./modules/payments/routes/index.js";
 import ordersRoutes from "./modules/orders/routes/index.js";
+import platformAdminRoutes from "./modules/platform-admin/routes/index.js";
 
 const app = Fastify({ logger: true });
 
@@ -22,6 +25,8 @@ await app.register(corsPlugin);
 await app.register(cookiesPlugin);
 await app.register(betterAuthPlugin);
 await app.register(orgAccessPlugin);
+await app.register(platformAdminBetterAuthPlugin);
+await app.register(platformAdminAccessPlugin);
 await app.register(healthRoutes);
 await app.register(authRoutes);
 await app.register(sitesRoutes);
@@ -30,6 +35,7 @@ await app.register(cartRoutes);
 await app.register(checkoutRoutes);
 await app.register(paymentsRoutes);
 await app.register(ordersRoutes);
+await app.register(platformAdminRoutes);
 
 const port = Number(process.env.PORT ?? 3001);
 

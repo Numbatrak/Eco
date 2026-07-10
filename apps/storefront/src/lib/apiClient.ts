@@ -1,4 +1,16 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+/**
+ * Browser calls go through Next's /api/:path* rewrite (see next.config.mjs)
+ * so requests stay same-origin as whatever host the page is on
+ * (localhost:3000 for the dashboard, {slug}.localhost:3000 for tenant sites).
+ * That keeps the cart's SameSite=Lax cookie first-party and avoids CORS.
+ *
+ * Server-side (SSR fetchSite) hits the API directly - no browser, no cookie
+ * constraints, and NEXT_PUBLIC_API_URL is authoritative.
+ */
+const API_BASE_URL =
+  typeof window === "undefined"
+    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001")
+    : "/api";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -13,7 +25,7 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
 }
 

@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "create-admin-account": "tsx --env-file=.env src/cli/create-admin-account.ts",
+    "seed-admin": "tsx --env-file=.env src/cli/seed-admin-account.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

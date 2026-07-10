@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { member } from "@platform/db";
+import { member, reservedSubdomains } from "@platform/db";
 import { truncateAll, getTestDb } from "../test/test-db.js";
 import { signUpUser, createOrgAsUser, addUserToOrgWithRole } from "../test/auth-helpers.js";
 import { auth } from "./auth.js";
@@ -11,8 +11,14 @@ describe("organization creation hooks", () => {
   });
 
   it("rejects a reserved subdomain", async () => {
+    // reserved_subdomains is a real table now (not an env var), and
+    // truncateAll() wipes it along with everything else between tests - so
+    // this test seeds its own reserved word rather than depending on the
+    // migration's one-time seed data still being present.
+    const db = getTestDb();
+    await db.insert(reservedSubdomains).values({ word: "reserved-for-test" });
     const user = await signUpUser();
-    await expect(createOrgAsUser(user.headers, { slug: "admin" })).rejects.toMatchObject({
+    await expect(createOrgAsUser(user.headers, { slug: "reserved-for-test" })).rejects.toMatchObject({
       body: { message: "This subdomain is reserved" },
     });
   });

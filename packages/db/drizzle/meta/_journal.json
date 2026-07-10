@@ -43,6 +43,13 @@
       "when": 1783553458155,
       "tag": "0005_right_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783584739079,
+      "tag": "0006_rare_big_bertha",
+      "breakpoints": true
     }
   ]
 }
