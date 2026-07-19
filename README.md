@@ -8,8 +8,9 @@ product) lives here too and will be migrated in during a later task.
 
 ```
 /apps
-  /storefront   Next.js (App Router) — customer-facing sites, one per tenant subdomain
-  /admin        Vite + React — internal dashboard
+  /storefront   Next.js (App Router) — customer-facing sites, one per tenant subdomain,
+                plus the store-owner dashboard at /dashboard on the main domain
+  /admin        Vite + React — Platform Admin (super-admin) console
   /api          Fastify — backend API
   /numbatrak    placeholder — migration lands in a later task
 /packages
@@ -336,20 +337,30 @@ Paystack/Flutterwave HTTP APIs with native `fetch`, no SDK dependency.
 
 ## Commerce UI: merchant dashboard + published storefront
 
-### `apps/admin` (merchant dashboard)
+### `apps/storefront` `/dashboard` (merchant dashboard)
 
-A `DashboardLayout` shell (sidebar + `<Outlet>`) adds five sections behind the
-existing auth screens: **Products** (list with published/draft filter,
-create/edit form, delete with a plain confirm dialog), **Orders** (list +
-detail, read-only), **Payment settings** (provider/keys/mode — saving `mode:
-"live"` reuses `ReauthModal` as a money-movement gate, requiring password
-always and a 2FA code only if the merchant actually has 2FA enabled, since
-unlike the disable-2FA flow this can't assume 2FA is already on), and **Site
-settings** (subdomain, publish toggle, and a standalone "show product grid on
-storefront" toggle — see below). There is deliberately **no** page-section
-list (Hero/Menu/Visit) or theme-preset picker: the task's storefront-builder
-references didn't correspond to anything in this codebase, and the chosen
-scope (confirmed with the user) is the single products-grid toggle only.
+Lives at `/dashboard/*` on the main domain of the storefront Next.js app —
+same origin as the tenant's public site, so the store-owner's Better Auth
+session cookie carries through. A `DashboardLayout` shell (sidebar +
+`{children}`) adds five sections behind the auth screens
+(`/dashboard/{login,signup,forgot-password,reset-password,2fa/verify}`):
+**Products** (list with published/draft filter, create/edit form, delete
+with a plain confirm dialog), **Orders** (list + detail, read-only),
+**Payment settings** (provider/keys/mode — saving `mode: "live"` reuses
+`ReauthModal` as a money-movement gate, requiring password always and a 2FA
+code only if the merchant actually has 2FA enabled, since unlike the
+disable-2FA flow this can't assume 2FA is already on), and **Site settings**
+(subdomain, publish toggle, and a standalone "show product grid on
+storefront" toggle — see below). The middleware naturally 404s `/dashboard`
+on a tenant subdomain (it rewrites to `/sites/[subdomain]/dashboard`, which
+has no route), so the dashboard is main-domain-only.
+
+### `apps/admin` (Platform Admin)
+
+Vite + React SPA for super-admin work — tenant management, config, reserved
+subdomains, feature flags. Talks to its own isolated Better Auth instance
+(`/platform-admin/auth/*`, cookie prefix `platform_admin`) so it can't get
+confused with a tenant-member session. Deliberately no store-owner UI here.
 
 ### `apps/storefront` (Next.js, published storefront)
 

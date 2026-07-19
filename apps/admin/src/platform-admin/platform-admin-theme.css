@@ -1,0 +1,377 @@
+/*
+ * Deliberately NOT the tenant dashboard's warm branding (theme.css):
+ * no display font import, denser type/spacing scale, near-flat surfaces,
+ * one muted accent. Reinforces "this is a different tool, different
+ * stakes." Scoped entirely under .pa-shell so it can't leak into (or be
+ * overridden by) the tenant dashboard's tokens - every rule here either
+ * targets .pa-shell itself or is nested under it.
+ */
+.pa-shell {
+  --ink: #1a1a1a;
+  --paper: #f2f2f2;
+  --panel: #ffffff;
+  --line: #d4d4d4;
+  --accent: #2b5a8c;
+  --accent-ink: #ffffff;
+  --muted: #6b6b6b;
+  --danger: #a12f2f;
+  --danger-bg: #f8e8e8;
+  --success: #2f6d3d;
+  --success-bg: #e8f2ea;
+  --warning: #8a6100;
+  --warning-bg: #f7efd9;
+
+  --font-heading: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 5px;
+
+  --space-1: 3px;
+  --space-2: 6px;
+  --space-3: 10px;
+  --space-4: 14px;
+  --space-5: 18px;
+  --space-6: 24px;
+  --space-7: 36px;
+
+  --shadow-panel: none;
+
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pa-shell h1,
+.pa-shell h2,
+.pa-shell h3,
+.pa-shell h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.pa-shell .panel {
+  box-shadow: none;
+}
+
+/* theme.css's .btn-primary/.btn-danger hover and .text-input focus ring use
+   a couple of hardcoded (warm-accent) hex/rgba values rather than var() -
+   override just those under .pa-shell so hover/focus states match the
+   blue accent instead of the tenant dashboard's orange. */
+.pa-shell .btn-primary:hover:not(:disabled) {
+  background: #1f4a75;
+}
+.pa-shell .btn-danger:hover:not(:disabled) {
+  background: #7f2626;
+}
+.pa-shell .text-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(43, 90, 140, 0.18);
+}
+
+/* ---------- layout shell ---------- */
+
+.pa-dashboard-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+}
+
+.pa-sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pa-brand {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pa-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pa-nav-link {
+  display: block;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.pa-nav-link:hover {
+  background: var(--paper);
+}
+
+.pa-nav-link.active {
+  background: var(--paper);
+  font-weight: 600;
+  border: 1px solid var(--line);
+}
+
+.pa-main {
+  padding: var(--space-5);
+  overflow-x: auto;
+}
+
+/* ---------- KPI cards ---------- */
+
+.pa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.pa-kpi-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
+.pa-kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.pa-kpi-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: var(--space-1);
+}
+
+/* ---------- dense tables ---------- */
+
+.pa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.pa-table th,
+.pa-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.pa-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pa-table tbody tr:hover {
+  background: var(--paper);
+}
+
+.pa-table-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.pa-table-link:hover {
+  text-decoration: underline;
+}
+
+.pa-numeric {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+/* ---------- status badges ---------- */
+
+.pa-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pa-badge-active {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.pa-badge-suspended {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* lifecycle status badges */
+.pa-badge-trial {
+  background: var(--paper);
+  color: var(--accent);
+}
+.pa-badge-past_due {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.pa-badge-locked {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.pa-badge-cancelled {
+  background: var(--paper);
+  color: var(--muted);
+}
+
+/* tenants list filter bar */
+.pa-filter-bar {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+}
+.pa-filter-bar label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pa-filter-bar .text-input {
+  min-width: 130px;
+}
+
+/* ---------- overview zones + health ---------- */
+
+.pa-zone {
+  margin-bottom: var(--space-5);
+}
+
+.pa-zone-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.pa-zone-head h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* small secondary line under a KPI value (breakdowns) */
+.pa-kpi-sub {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: var(--space-2);
+  line-height: 1.5;
+}
+
+.pa-kpi-value.is-healthy {
+  color: var(--success);
+}
+.pa-kpi-value.is-warning {
+  color: var(--warning);
+}
+.pa-kpi-value.is-critical {
+  color: var(--danger);
+}
+
+/* health pill with a status dot */
+.pa-health {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.pa-health::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.pa-health-healthy {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.pa-health-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.pa-health-critical {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.pa-health-unknown {
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.pa-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: var(--space-1);
+}
+
+/* ---------- tabs ---------- */
+
+.pa-tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space-4);
+}
+
+.pa-tab {
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.pa-tab.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+/* ---------- toolbar ---------- */
+
+.pa-toolbar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}

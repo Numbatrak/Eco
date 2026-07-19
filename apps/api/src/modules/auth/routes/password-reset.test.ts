@@ -36,9 +36,9 @@ describe("password reset", () => {
     expect(requestResponse.statusCode).toBe(202);
 
     const sentBody = vi.mocked(sendEmail).mock.calls[0]?.[1]?.body ?? "";
-    // Better Auth embeds the token as a path segment
-    // (/reset-password/<token>?callbackURL=...), not a query param.
-    const token = /\/reset-password\/([^\s?&]+)/.exec(sentBody)?.[1];
+    // auth.ts's sendResetPassword builds a query-param URL
+    // (/reset-password?token=...) to the SPA's own route, not a path segment.
+    const token = /\/reset-password\?token=([^\s&]+)/.exec(sentBody)?.[1];
     expect(token).toBeTruthy();
 
     const completeResponse = await app.inject({

@@ -15,7 +15,6 @@ export class ApiError extends Error {
 interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
-  accessToken?: string | null;
 }
 
 function extractErrorMessage(body: unknown, status: number): string {
@@ -30,17 +29,15 @@ function extractErrorMessage(body: unknown, status: number): string {
 }
 
 /**
- * Talks directly to apps/api for now (not routed through @platform/sdk, which
- * isn't built out yet). `credentials: "include"` is required on every call so
- * the httpOnly refresh_token cookie the API sets/reads travels cross-origin.
+ * Talks directly to apps/api (not routed through @platform/sdk, which isn't
+ * built out yet). Better Auth uses httpOnly session cookies rather than a
+ * bearer token, so `credentials: "include"` on every call is what carries
+ * the session cross-origin - there's no token to attach or refresh here.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";
-  }
-  if (options.accessToken) {
-    headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -62,4 +59,25 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   return body as T;
+}
+
+/**
+ * Fetches a file endpoint with the session cookie and triggers a browser
+ * download. Used for CSV exports, which aren't JSON and so can't go through
+ * apiRequest.
+ */
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, { credentials: "include" });
+  if (!response.ok) {
+    throw new ApiError(response.status, undefined, "Download failed.");
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

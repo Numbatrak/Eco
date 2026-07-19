@@ -8,9 +8,11 @@ export function serializeProduct(row: ProductRow): Product {
   return {
     id: row.id,
     tenantId: row.tenantId,
+    collectionId: row.collectionId,
     name: row.name,
     description: row.description,
     priceCents: row.priceCents,
+    compareAtPriceCents: row.compareAtPriceCents,
     currency: row.currency,
     imageUrl: row.imageUrl,
     status: row.status,

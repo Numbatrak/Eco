@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { OrderStatusResponse } from "@platform/shared-types";
 import { useSite } from "../../../../../../components/SiteProvider";
 import { cartApi } from "../../../../../../lib/cartApi";
 import { ApiError } from "../../../../../../lib/apiClient";
 import { formatCents } from "../../../../../../lib/money";
+import { purchase } from "../../../../../../lib/analytics/pixelEvents";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -18,6 +19,14 @@ const STATUS_COPY: Record<OrderStatusResponse["status"], { title: string; descri
   paid: {
     title: "Payment received",
     description: "Thanks for your order! We've sent a confirmation to your email.",
+  },
+  shipped: {
+    title: "Order shipped",
+    description: "Your order is on its way.",
+  },
+  delivered: {
+    title: "Order delivered",
+    description: "Your order has been delivered.",
   },
   failed: {
     title: "Payment failed",
@@ -36,6 +45,14 @@ export default function OrderStatusPage(): React.ReactElement {
 
   const [status, setStatus] = useState<OrderStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const firedPurchase = useRef(false);
+
+  useEffect(() => {
+    if (status?.status === "paid" && !firedPurchase.current) {
+      firedPurchase.current = true;
+      purchase(status.orderId, status.totalCents, status.currency);
+    }
+  }, [status]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +103,14 @@ export default function OrderStatusPage(): React.ReactElement {
           <span className="text-muted">Total</span>
           <span className="text-ink">{formatCents(status.totalCents, status.currency)}</span>
         </div>
+      </div>
+      <div className="mt-6">
+        <a
+          href="/"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink"
+        >
+          Back to store
+        </a>
       </div>
     </div>
   );

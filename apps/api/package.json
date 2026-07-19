@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "create-admin-account": "tsx --env-file=.env src/cli/create-admin-account.ts",
+    "seed-admin": "tsx --env-file=.env src/cli/seed-admin-account.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -21,7 +23,9 @@
     "fastify": "^5.2.0",
     "fastify-better-auth": "^1.2.0",
     "fastify-plugin": "^5.0.1",
+    "form-data": "^4.0.6",
     "ioredis": "^5.4.2",
+    "mailgun.js": "^13.3.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

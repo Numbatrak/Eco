@@ -1,12 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import { registerRequestSchema, type MessageResponse } from "@platform/shared-types";
 import { isAPIError } from "better-auth/api";
+import { eq } from "drizzle-orm";
+import { organization, tenantSiteConfig } from "@platform/db";
 import { auth } from "../../../lib/auth.js";
 
 // Identical regardless of whether the email was already registered - the
 // registration outcome must never be inferable from the response.
 const GENERIC_MESSAGE =
-  "If that email is available, we've created your account. Check your inbox for a verification link.";
+  "If that email is available, we've created your account. You can log in now.";
 
 function slugify(name: string): string {
   const base = name
@@ -20,6 +22,7 @@ function slugify(name: string): string {
 export default async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.post("/auth/register", async (request, reply) => {
     const body = registerRequestSchema.parse(request.body);
+    const db = app.getDb();
 
     let signUp;
     try {
@@ -43,9 +46,34 @@ export default async function registerRoutes(app: FastifyInstance): Promise<void
       const suffix = attempt === 0 ? "" : `-${Math.random().toString(36).slice(2, 6)}`;
       const slug = `${slugify(body.businessName)}${suffix}`;
       try {
-        await auth.api.createOrganization({
+        const org = await auth.api.createOrganization({
           body: { name: body.businessName, slug, userId: signUp.user.id },
         });
+        // GET/PATCH /org/site-settings both require this row to already
+        // exist (the GET does an inner join, the PATCH only ever updates,
+        // never inserts) - without provisioning it here, every tenant's
+        // site-settings page would 404 forever.
+        if (org) {
+          await db.insert(tenantSiteConfig).values({ tenantId: org.id });
+          // Persist signup attribution onto the org — the join key for the
+          // Super Admin Overview's acquisition-channel metrics. Best-effort:
+          // absent UTMs just leave these null ("direct").
+          const attr = body.attribution;
+          if (attr) {
+            await db
+              .update(organization)
+              .set({
+                signupUtmSource: attr.utmSource ?? null,
+                signupUtmMedium: attr.utmMedium ?? null,
+                signupUtmCampaign: attr.utmCampaign ?? null,
+                signupUtmContent: attr.utmContent ?? null,
+                signupUtmTerm: attr.utmTerm ?? null,
+                signupReferrer: attr.referrer ?? null,
+                signupLandingPath: attr.landingPath ?? null,
+              })
+              .where(eq(organization.id, org.id));
+          }
+        }
         lastError = undefined;
         break;
       } catch (error) {

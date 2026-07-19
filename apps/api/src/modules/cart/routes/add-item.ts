@@ -19,6 +19,7 @@ export default async function addCartItemRoutes(app: FastifyInstance): Promise<v
         ctx.cart.id,
         body.productId,
         body.quantity,
+        body.variantId,
       );
       if (!result.ok) {
         return reply.code(400).send({ error: result.reason });

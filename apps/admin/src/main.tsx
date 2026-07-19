@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./theme.css";
+import "./platform-admin/platform-admin-theme.css";
 import App from "./App.js";
 
 const rootElement = document.getElementById("root");

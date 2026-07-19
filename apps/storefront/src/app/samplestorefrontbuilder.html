@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storefront Builder — sample</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Grotesk:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400..600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#191510;
+    --paper:#F7F4EE;
+    --panel:#FFFFFF;
+    --line:#E1DACB;
+    --line-soft:#ECE7DA;
+    --accent:#D98E2B;
+    --accent-ink:#191510;
+    --muted:#8A8271;
+    --radius-ui:10px;
+    --ui-font:'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:var(--ui-font);
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input{font-family:inherit;}
+
+  .app{display:flex;flex-direction:column;height:100vh;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:10px 18px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    flex-shrink:0;
+    z-index:20;
+  }
+  .icon-btn{
+    width:34px;height:34px;border-radius:8px;border:1px solid transparent;
+    background:transparent;display:flex;align-items:center;justify-content:center;
+    color:var(--ink);
+  }
+  .icon-btn:hover{background:var(--line-soft);}
+  .drawer-toggle{display:none;}
+  .site-id{display:flex;flex-direction:column;line-height:1.15;}
+  .site-name-input{
+    font-size:14.5px;font-weight:600;border:none;background:transparent;color:var(--ink);
+    padding:2px 4px;border-radius:6px;max-width:220px;
+  }
+  .site-name-input:hover, .site-name-input:focus{background:var(--line-soft);outline:none;}
+  .site-domain{font-size:11.5px;color:var(--muted);padding:0 4px;letter-spacing:.01em;}
+  .topbar-spacer{flex:1;}
+  .autosave{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .autosave-dot{width:6px;height:6px;border-radius:50%;background:#3E8E6B;}
+  .device-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .device-toggle button{
+    border:none;background:var(--panel);padding:7px 10px;display:flex;align-items:center;color:var(--muted);
+  }
+  .device-toggle button.active{background:var(--ink);color:var(--paper);}
+  .publish-btn{
+    background:var(--accent);color:var(--accent-ink);border:none;font-weight:600;font-size:13.5px;
+    padding:9px 16px;border-radius:9px;transition:transform .12s ease;
+  }
+  .publish-btn:hover{transform:translateY(-1px);}
+  .publish-btn:active{transform:translateY(0);}
+
+  /* ---------- Workspace ---------- */
+  .workspace{flex:1;display:flex;min-height:0;position:relative;}
+
+  .rail, .panel{
+    width:250px;flex-shrink:0;background:var(--panel);
+    overflow-y:auto;
+  }
+  .rail{border-right:1px solid var(--line);}
+  .panel{border-left:1px solid var(--line);}
+
+  .rail-section, .panel-section{padding:16px;border-bottom:1px solid var(--line-soft);}
+  .rail-label, .panel-label{
+    font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:12px;display:block;
+  }
+
+  .template-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .template-card{
+    border:1.5px solid var(--line);border-radius:9px;padding:6px 6px 8px;background:var(--paper);
+    display:flex;flex-direction:column;gap:6px;align-items:center;
+  }
+  .template-card.active{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink);}
+  .template-thumb{width:100%;height:44px;border-radius:5px;background:var(--line-soft);position:relative;overflow:hidden;}
+  .template-thumb::before{content:"";position:absolute;top:6px;left:6px;right:6px;height:6px;border-radius:3px;background:var(--muted);opacity:.5;}
+  .template-thumb::after{content:"";position:absolute;bottom:8px;left:6px;width:34%;height:12px;border-radius:3px;background:var(--accent);}
+  .template-card span{font-size:11.5px;font-weight:500;}
+
+  .section-list{display:flex;flex-direction:column;gap:4px;}
+  .section-row{
+    display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:8px;
+  }
+  .section-row.selected{background:var(--line-soft);}
+  .section-row .grip{color:var(--muted);font-size:12px;letter-spacing:1px;}
+  .section-row .name{flex:1;font-size:13px;font-weight:500;background:none;border:none;text-align:left;color:var(--ink);padding:0;}
+  .row-btn{
+    width:22px;height:22px;border:none;background:transparent;color:var(--muted);border-radius:5px;
+    display:flex;align-items:center;justify-content:center;font-size:11px;
+  }
+  .row-btn:hover{background:var(--panel);color:var(--ink);}
+  .section-row.hidden-section .name{color:var(--muted);text-decoration:line-through;}
+
+  .panel-tabs{display:flex;gap:2px;padding:12px 16px 0;}
+  .panel-tab{
+    flex:1;border:none;background:transparent;padding:9px 0;font-size:12.5px;font-weight:600;color:var(--muted);
+    border-bottom:2px solid var(--line);
+  }
+  .panel-tab.active{color:var(--ink);border-bottom-color:var(--ink);}
+
+  .swatch-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .swatch{
+    width:44px;height:44px;border-radius:10px;border:2px solid transparent;position:relative;flex-shrink:0;
+  }
+  .swatch.active{border-color:var(--ink);}
+  .swatch span{position:absolute;inset:3px;border-radius:7px;}
+
+  .font-option{
+    display:flex;align-items:center;justify-content:space-between;
+    border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px;
+  }
+  .font-option.active{border-color:var(--ink);}
+  .font-option .preview{font-size:16px;}
+  .font-option .sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;}
+  .field input, .field textarea{
+    width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 9px;font-size:13px;color:var(--ink);
+    background:var(--paper);resize:vertical;
+  }
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--ink);}
+
+  .upload-box{
+    border:1.5px dashed var(--line);border-radius:9px;padding:18px 10px;text-align:center;
+    color:var(--muted);font-size:12px;
+  }
+
+  .empty-hint{font-size:12.5px;color:var(--muted);line-height:1.5;padding:4px 2px;}
+
+  /* ---------- Stage / live preview ---------- */
+  .stage{flex:1;background:#EFEAE0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:26px 26px 60px;}
+  .device-frame{
+    width:100%;max-width:900px;background:var(--panel);border-radius:14px;
+    box-shadow:0 1px 2px rgba(20,16,8,.06), 0 18px 40px -18px rgba(20,16,8,.28);
+    overflow:hidden;transition:max-width .25s ease;
+  }
+  .device-frame.mobile{max-width:390px;}
+  .browser-chrome{
+    display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--panel);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .browser-dots{display:flex;gap:5px;}
+  .browser-dots span{width:8px;height:8px;border-radius:50%;background:var(--line);}
+  .browser-url{
+    flex:1;background:var(--paper);border-radius:7px;padding:5px 10px;font-size:11.5px;color:var(--muted);
+    font-family:var(--ui-font);text-align:center;
+  }
+
+  /* the actual live storefront preview, themeable via CSS variables */
+  .preview{
+    --p-ink:var(--ink); --p-bg:var(--paper); --p-accent:var(--accent);
+    --p-display:'Bricolage Grotesque', serif; --p-body:'Space Grotesk', sans-serif;
+    background:var(--p-bg);color:var(--p-ink);font-family:var(--p-body);
+  }
+  .p-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;}
+  .p-brand{font-family:var(--p-display);font-weight:700;font-size:18px;}
+  .p-navlinks{display:flex;gap:20px;font-size:12.5px;color:var(--p-ink);opacity:.75;}
+  .device-frame.mobile .p-navlinks{display:none;}
+
+  .p-section{padding:0 28px 40px;}
+  .p-section.hidden{display:none;}
+
+  .p-hero{padding:34px 28px 46px;display:flex;flex-direction:column;gap:14px;}
+  .p-eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--p-accent);font-weight:600;}
+  .p-headline{font-family:var(--p-display);font-size:40px;line-height:1.06;font-weight:700;max-width:520px;margin:0;}
+  .p-sub{font-size:14.5px;opacity:.75;max-width:440px;line-height:1.55;margin:0;}
+  .p-cta{
+    margin-top:6px;display:inline-flex;width:fit-content;background:var(--p-accent);color:var(--p-bg);
+    padding:11px 20px;border-radius:8px;font-weight:600;font-size:13.5px;
+  }
+
+  [data-template="market"] .p-hero{align-items:center;text-align:center;}
+  [data-template="market"] .p-sub, [data-template="market"] .p-headline{margin-left:auto;margin-right:auto;}
+  [data-template="market"] .p-cta{border-radius:999px;margin-left:auto;margin-right:auto;}
+
+  [data-template="studio"] .p-hero{flex-direction:row;align-items:center;justify-content:space-between;gap:24px;text-align:left;}
+  [data-template="studio"] .p-headline{font-size:36px;}
+  [data-template="studio"] .p-cta{border-radius:0;}
+  .device-frame.mobile [data-template="studio"] .p-hero{flex-direction:column;align-items:flex-start;}
+
+  .p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px;}
+  .device-frame.mobile .p-grid{grid-template-columns:1fr 1fr;}
+  .p-card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:14px;}
+  [data-template="market"] .p-card{border-radius:16px;}
+  [data-template="studio"] .p-card{border-radius:2px;border-color:var(--p-ink);border-width:1px;}
+  [data-template="corner"] .p-card{border-radius:6px;}
+  .p-card-dot{width:100%;height:64px;border-radius:8px;background:var(--p-accent);opacity:.16;margin-bottom:10px;}
+  .p-card h4{margin:0 0 4px;font-family:var(--p-display);font-size:14.5px;}
+  .p-card p{margin:0;font-size:12px;opacity:.6;}
+  .p-card .price{margin-top:8px;font-size:12.5px;font-weight:600;color:var(--p-accent);}
+
+  .p-section-title{font-family:var(--p-display);font-size:22px;margin:0 0 16px;}
+  [data-template="market"] .p-section-title{text-align:center;}
+
+  .p-visit{display:flex;gap:32px;flex-wrap:wrap;}
+  .device-frame.mobile .p-visit{flex-direction:column;gap:16px;}
+  .p-visit-col h5{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--p-accent);}
+  .p-visit-col p{margin:0;font-size:13px;line-height:1.6;opacity:.8;}
+
+  .p-footer{
+    padding:20px 28px;border-top:1px solid var(--line-soft);display:flex;justify-content:space-between;
+    font-size:11.5px;opacity:.55;
+  }
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);
+    background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:9px;font-size:13px;
+    opacity:0;pointer-events:none;transition:all .25s ease;display:flex;align-items:center;gap:8px;z-index:50;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .toast .dot{width:6px;height:6px;border-radius:50%;background:#5FBF8F;}
+
+  /* ---------- responsive drawers ---------- */
+  @media (max-width:920px){
+    .drawer-toggle{display:flex;}
+    .rail, .panel{
+      position:absolute;top:0;bottom:0;width:270px;transform:translateX(-110%);
+      transition:transform .22s ease;box-shadow:0 0 0 2000px rgba(20,16,8,0);z-index:10;
+    }
+    .panel{transform:translateX(110%);right:0;}
+    .rail.open{transform:translateX(0);box-shadow:0 0 0 2000px rgba(20,16,8,.28);}
+    .panel.open{transform:translateX(0);box-shadow:0 0 0 2000px rgba(20,16,8,.28);}
+    .site-domain{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <button class="icon-btn drawer-toggle" id="toggleRail" title="Templates & sections" aria-label="Templates & sections">☰</button>
+    <button class="icon-btn" title="Back" aria-label="Back">←</button>
+    <div class="site-id">
+      <input class="site-name-input" id="siteNameInput" value="Acme Coffee Co.">
+      <span class="site-domain" id="siteDomainLabel">acmecoffeeco.launch.shop</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="autosave"><span class="autosave-dot"></span>Saved just now</div>
+    <div class="device-toggle">
+      <button class="active" id="btnDesktop" aria-label="Desktop preview">▭</button>
+      <button id="btnMobile" aria-label="Mobile preview">▯</button>
+    </div>
+    <button class="publish-btn" id="publishBtn">Publish</button>
+    <button class="icon-btn drawer-toggle" id="togglePanel" title="Customize" aria-label="Customize">✎</button>
+  </div>
+
+  <div class="workspace">
+
+    <!-- LEFT RAIL -->
+    <aside class="rail" id="rail">
+      <div class="rail-section">
+        <span class="rail-label">Template</span>
+        <div class="template-grid">
+          <button class="template-card active" data-template="market"><span class="template-thumb"></span><span>Market</span></button>
+          <button class="template-card" data-template="studio"><span class="template-thumb"></span><span>Studio</span></button>
+          <button class="template-card" data-template="corner"><span class="template-thumb"></span><span>Corner Shop</span></button>
+          <button class="template-card" data-template="market" disabled style="opacity:.4;"><span class="template-thumb"></span><span>More soon</span></button>
+        </div>
+      </div>
+      <div class="rail-section">
+        <span class="rail-label">Sections</span>
+        <div class="section-list" id="sectionList">
+          <div class="section-row selected" data-target="hero">
+            <span class="grip">⠿⠿</span>
+            <button class="name">Hero</button>
+            <button class="row-btn" data-move="up" aria-label="Move up">▲</button>
+            <button class="row-btn" data-move="down" aria-label="Move down">▼</button>
+            <button class="row-btn" data-toggle-vis aria-label="Toggle visibility">👁</button>
+          </div>
+          <div class="section-row" data-target="menu">
+            <span class="grip">⠿⠿</span>
+            <button class="name">Menu</button>
+            <button class="row-btn" data-move="up" aria-label="Move up">▲</button>
+            <button class="row-btn" data-move="down" aria-label="Move down">▼</button>
+            <button class="row-btn" data-toggle-vis aria-label="Toggle visibility">👁</button>
+          </div>
+          <div class="section-row" data-target="visit">
+            <span class="grip">⠿⠿</span>
+            <button class="name">Visit &amp; Hours</button>
+            <button class="row-btn" data-move="up" aria-label="Move up">▲</button>
+            <button class="row-btn" data-move="down" aria-label="Move down">▼</button>
+            <button class="row-btn" data-toggle-vis aria-label="Toggle visibility">👁</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER STAGE -->
+    <main class="stage">
+      <div class="device-frame" id="deviceFrame">
+        <div class="browser-chrome">
+          <div class="browser-dots"><span></span><span></span><span></span></div>
+          <div class="browser-url" id="browserUrl">acmecoffeeco.launch.shop</div>
+        </div>
+
+        <div class="preview" id="preview" data-template="market">
+          <nav class="p-nav">
+            <span class="p-brand" id="pBrand">Acme Coffee Co.</span>
+            <div class="p-navlinks"><span>Menu</span><span>Visit</span><span>Contact</span></div>
+          </nav>
+
+          <section class="p-section p-hero" id="sec-hero">
+            <span class="p-eyebrow">Small batch · roasted weekly</span>
+            <h1 class="p-headline" id="pHeadline">Coffee worth slowing down for.</h1>
+            <p class="p-sub" id="pSub">We roast in small batches out of our corner shop and pour every cup like it's the only one we're making today.</p>
+            <span class="p-cta" id="pCta">See the menu</span>
+          </section>
+
+          <section class="p-section" id="sec-menu">
+            <h3 class="p-section-title">On the counter today</h3>
+            <div class="p-grid">
+              <div class="p-card"><div class="p-card-dot"></div><h4>House Filter</h4><p>Rotating single origin</p><div class="price">$4.50</div></div>
+              <div class="p-card"><div class="p-card-dot"></div><h4>Oat Cortado</h4><p>Double ristretto, steamed oat</p><div class="price">$5.25</div></div>
+              <div class="p-card"><div class="p-card-dot"></div><h4>Cardamom Bun</h4><p>Baked in-house, Tuesdays</p><div class="price">$3.75</div></div>
+            </div>
+          </section>
+
+          <section class="p-section" id="sec-visit">
+            <h3 class="p-section-title">Visit &amp; hours</h3>
+            <div class="p-visit">
+              <div class="p-visit-col"><h5>Address</h5><p>14 Aina Street<br>Lagos, NG</p></div>
+              <div class="p-visit-col"><h5>Hours</h5><p>Mon–Fri · 7am–5pm<br>Sat–Sun · 8am–3pm</p></div>
+              <div class="p-visit-col"><h5>Say hello</h5><p>hello@acmecoffeeco.com<br>+234 800 000 0000</p></div>
+            </div>
+          </section>
+
+          <footer class="p-footer">
+            <span id="pFooterBrand">© Acme Coffee Co.</span>
+            <span>Built with your platform</span>
+          </footer>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside class="panel" id="panel">
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="design">Design</button>
+        <button class="panel-tab" data-tab="content">Content</button>
+      </div>
+
+      <div id="tabDesign">
+        <div class="panel-section">
+          <span class="panel-label">Palette</span>
+          <div class="swatch-row" id="swatchRow">
+            <button class="swatch active" data-ink="#191510" data-bg="#FBF7F0" data-accent="#D98E2B" style="background:#FBF7F0;"><span style="background:#D98E2B;"></span></button>
+            <button class="swatch" data-ink="#16231F" data-bg="#F3F1E7" data-accent="#2F6B5E" style="background:#F3F1E7;"><span style="background:#2F6B5E;"></span></button>
+            <button class="swatch" data-ink="#171B26" data-bg="#F5F1EC" data-accent="#A23E48" style="background:#F5F1EC;"><span style="background:#A23E48;"></span></button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <span class="panel-label">Typography</span>
+          <button class="font-option active" data-display="'Bricolage Grotesque', serif" data-body="'Space Grotesk', sans-serif">
+            <div><div class="preview" style="font-family:'Bricolage Grotesque', serif;">Aa Coffee</div><div class="sub">Bricolage + Space Grotesk</div></div>
+          </button>
+          <button class="font-option" data-display="'Fraunces', serif" data-body="'Inter', sans-serif">
+            <div><div class="preview" style="font-family:'Fraunces', serif;">Aa Coffee</div><div class="sub">Fraunces + Inter</div></div>
+          </button>
+        </div>
+        <div class="panel-section">
+          <span class="panel-label">Logo</span>
+          <div class="upload-box">Drop an image, or click to upload<br>PNG or SVG, up to 2MB</div>
+        </div>
+      </div>
+
+      <div id="tabContent" style="display:none;">
+        <div class="panel-section" id="contentEditor">
+          <!-- populated by JS depending on selected section -->
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastText">Published</span></div>
+
+<script>
+(function(){
+  const preview = document.getElementById('preview');
+  const deviceFrame = document.getElementById('deviceFrame');
+
+  /* ---- template switching ---- */
+  document.querySelectorAll('.template-card[data-template]').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      if(card.disabled) return;
+      document.querySelectorAll('.template-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      preview.setAttribute('data-template', card.dataset.template);
+    });
+  });
+
+  /* ---- palette switching ---- */
+  document.querySelectorAll('.swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+      sw.classList.add('active');
+      preview.style.setProperty('--p-ink', sw.dataset.ink);
+      preview.style.setProperty('--p-bg', sw.dataset.bg);
+      preview.style.setProperty('--p-accent', sw.dataset.accent);
+    });
+  });
+
+  /* ---- font pairing ---- */
+  document.querySelectorAll('.font-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.font-option').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      preview.style.setProperty('--p-display', opt.dataset.display);
+      preview.style.setProperty('--p-body', opt.dataset.body);
+    });
+  });
+
+  /* ---- device toggle ---- */
+  const btnDesktop = document.getElementById('btnDesktop');
+  const btnMobile = document.getElementById('btnMobile');
+  btnDesktop.addEventListener('click', ()=>{
+    deviceFrame.classList.remove('mobile');
+    btnDesktop.classList.add('active'); btnMobile.classList.remove('active');
+  });
+  btnMobile.addEventListener('click', ()=>{
+    deviceFrame.classList.add('mobile');
+    btnMobile.classList.add('active'); btnDesktop.classList.remove('active');
+  });
+
+  /* ---- site name / brand sync ---- */
+  const siteNameInput = document.getElementById('siteNameInput');
+  const pBrand = document.getElementById('pBrand');
+  const pFooterBrand = document.getElementById('pFooterBrand');
+  const siteDomainLabel = document.getElementById('siteDomainLabel');
+  const browserUrl = document.getElementById('browserUrl');
+
+  function slugify(str){
+    return str.toLowerCase().trim().replace(/[^a-z0-9]+/g,'') || 'yourshop';
+  }
+  siteNameInput.addEventListener('input', ()=>{
+    const val = siteNameInput.value || 'Your Shop';
+    pBrand.textContent = val;
+    pFooterBrand.textContent = '© ' + val;
+    const domain = slugify(val) + '.launch.shop';
+    siteDomainLabel.textContent = domain;
+    browserUrl.textContent = domain;
+  });
+
+  /* ---- section list: select / visibility / reorder ---- */
+  const sectionList = document.getElementById('sectionList');
+  const contentEditor = document.getElementById('contentEditor');
+
+  const editableFields = {
+    hero: [
+      {label:'Headline', target:'pHeadline', type:'input'},
+      {label:'Subheading', target:'pSub', type:'textarea'},
+      {label:'Button label', target:'pCta', type:'input'}
+    ],
+    menu: [],
+    visit: []
+  };
+
+  function renderEditor(key){
+    contentEditor.innerHTML = '';
+    const fields = editableFields[key] || [];
+    if(fields.length === 0){
+      contentEditor.innerHTML = '<p class="empty-hint">This section does not have editable text yet in this sample — hero content is fully live below.</p>';
+      return;
+    }
+    fields.forEach(f=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      const el = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
+      el.value = document.getElementById(f.target).textContent;
+      el.addEventListener('input', ()=>{ document.getElementById(f.target).textContent = el.value; });
+      wrap.appendChild(label); wrap.appendChild(el);
+      contentEditor.appendChild(wrap);
+    });
+  }
+
+  sectionList.querySelectorAll('.section-row').forEach(row=>{
+    row.querySelector('.name').addEventListener('click', ()=>{
+      sectionList.querySelectorAll('.section-row').forEach(r=>r.classList.remove('selected'));
+      row.classList.add('selected');
+      renderEditor(row.dataset.target);
+      document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelector('.panel-tab[data-tab="content"]').classList.add('active');
+      document.getElementById('tabDesign').style.display = 'none';
+      document.getElementById('tabContent').style.display = 'block';
+    });
+
+    row.querySelector('[data-toggle-vis]').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const target = document.getElementById('sec-' + row.dataset.target);
+      row.classList.toggle('hidden-section');
+      if(target) target.classList.toggle('hidden');
+    });
+
+    row.querySelectorAll('[data-move]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const dir = btn.dataset.move;
+        const sec = document.getElementById('sec-' + row.dataset.target);
+        if(!sec) return;
+        if(dir === 'up'){
+          const prevRow = row.previousElementSibling;
+          const prevSec = prevRow ? document.getElementById('sec-' + prevRow.dataset.target) : null;
+          if(prevRow){ sectionList.insertBefore(row, prevRow); }
+          if(prevSec){ preview.insertBefore(sec, prevSec); }
+        } else {
+          const nextRow = row.nextElementSibling;
+          const nextSec = nextRow ? document.getElementById('sec-' + nextRow.dataset.target) : null;
+          if(nextRow){ sectionList.insertBefore(nextRow, row); }
+          if(nextSec){ preview.insertBefore(nextSec, sec); }
+        }
+      });
+    });
+  });
+
+  renderEditor('hero');
+
+  /* ---- panel tabs ---- */
+  document.querySelectorAll('.panel-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const isDesign = tab.dataset.tab === 'design';
+      document.getElementById('tabDesign').style.display = isDesign ? 'block' : 'none';
+      document.getElementById('tabContent').style.display = isDesign ? 'none' : 'block';
+    });
+  });
+
+  /* ---- publish toast ---- */
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  document.getElementById('publishBtn').addEventListener('click', ()=>{
+    toastText.textContent = 'Published to ' + browserUrl.textContent;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2600);
+  });
+
+  /* ---- mobile drawers ---- */
+  const rail = document.getElementById('rail');
+  const panel = document.getElementById('panel');
+  document.getElementById('toggleRail').addEventListener('click', ()=>{
+    rail.classList.toggle('open'); panel.classList.remove('open');
+  });
+  document.getElementById('togglePanel').addEventListener('click', ()=>{
+    panel.classList.toggle('open'); rail.classList.remove('open');
+  });
+})();
+</script>
+</body>
+</html>

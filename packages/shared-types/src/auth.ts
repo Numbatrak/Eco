@@ -1,9 +1,24 @@
 import { z } from "zod";
 
+// Optional signup attribution — captured client-side and persisted onto the
+// organization, the join key for the Super Admin Overview's acquisition-channel
+// metrics and affiliate commission. All optional so signup never depends on them.
+export const signupAttributionSchema = z.object({
+  utmSource: z.string().max(200).optional(),
+  utmMedium: z.string().max(200).optional(),
+  utmCampaign: z.string().max(200).optional(),
+  utmContent: z.string().max(200).optional(),
+  utmTerm: z.string().max(200).optional(),
+  referrer: z.string().max(500).optional(),
+  landingPath: z.string().max(500).optional(),
+});
+export type SignupAttribution = z.infer<typeof signupAttributionSchema>;
+
 export const registerRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12),
   businessName: z.string().trim().min(1).max(200),
+  attribution: signupAttributionSchema.optional(),
 });
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 

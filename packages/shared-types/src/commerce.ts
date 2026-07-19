@@ -1,5 +1,66 @@
 import { z } from "zod";
 
+// ---------- collections ----------
+
+const collectionSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(63)
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens only");
+
+export const collectionSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  sortOrder: z.number().int(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Collection = z.infer<typeof collectionSchema>;
+
+export const createCollectionRequestSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  slug: collectionSlugSchema,
+  description: z.string().trim().max(2000).optional(),
+  imageUrl: z.string().url().optional(),
+  sortOrder: z.number().int().optional(),
+  isActive: z.boolean().optional(),
+});
+export type CreateCollectionRequest = z.infer<typeof createCollectionRequestSchema>;
+
+export const updateCollectionRequestSchema = createCollectionRequestSchema.partial();
+export type UpdateCollectionRequest = z.infer<typeof updateCollectionRequestSchema>;
+
+// ---------- product variants ----------
+
+export const productVariantSchema = z.object({
+  id: z.string().uuid(),
+  productId: z.string().uuid(),
+  size: z.string(),
+  color: z.string(),
+  stockCount: z.number().int().nonnegative(),
+  isAvailable: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type ProductVariant = z.infer<typeof productVariantSchema>;
+
+export const createVariantRequestSchema = z.object({
+  size: z.string().trim().min(1).max(50),
+  color: z.string().trim().min(1).max(50),
+  stockCount: z.number().int().nonnegative().optional(),
+  isAvailable: z.boolean().optional(),
+});
+export type CreateVariantRequest = z.infer<typeof createVariantRequestSchema>;
+
+export const updateVariantRequestSchema = createVariantRequestSchema.partial();
+export type UpdateVariantRequest = z.infer<typeof updateVariantRequestSchema>;
+
 // ---------- products ----------
 
 export const productStatusSchema = z.enum(["draft", "published"]);
@@ -9,9 +70,12 @@ export const productSchema = z.object({
   id: z.string().uuid(),
   // Organization id (Better Auth's text-typed ids, not a uuid column).
   tenantId: z.string(),
+  collectionId: z.string().uuid().nullable(),
   name: z.string(),
   description: z.string().nullable(),
   priceCents: z.number().int().nonnegative(),
+  // Set only when the product is on sale, for strike-through display.
+  compareAtPriceCents: z.number().int().nonnegative().nullable(),
   currency: z.string().length(3),
   imageUrl: z.string().nullable(),
   status: productStatusSchema,
@@ -21,9 +85,11 @@ export const productSchema = z.object({
 export type Product = z.infer<typeof productSchema>;
 
 export const createProductRequestSchema = z.object({
+  collectionId: z.string().uuid().nullable().optional(),
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(5000).optional(),
   priceCents: z.number().int().nonnegative(),
+  compareAtPriceCents: z.number().int().nonnegative().nullable().optional(),
   currency: z
     .string()
     .trim()
@@ -42,6 +108,9 @@ export type UpdateProductRequest = z.infer<typeof updateProductRequestSchema>;
 export const cartItemSchema = z.object({
   id: z.string().uuid(),
   productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable(),
+  // e.g. "M / Blue" - built server-side by joining the variant's size/color.
+  variantLabel: z.string().nullable(),
   name: z.string(),
   quantity: z.number().int().positive(),
   unitPriceSnapshotCents: z.number().int().nonnegative(),
@@ -59,6 +128,7 @@ export type Cart = z.infer<typeof cartSchema>;
 
 export const addCartItemRequestSchema = z.object({
   productId: z.string().uuid(),
+  variantId: z.string().uuid().optional(),
   quantity: z.number().int().positive().max(999),
 });
 export type AddCartItemRequest = z.infer<typeof addCartItemRequestSchema>;
@@ -68,12 +138,59 @@ export const updateCartItemRequestSchema = z.object({
 });
 export type UpdateCartItemRequest = z.infer<typeof updateCartItemRequestSchema>;
 
+// ---------- delivery + VAT ----------
+
+export const deliverySettingsRequestSchema = z.object({
+  vatEnabled: z.boolean(),
+  vatRateBps: z.number().int().min(0).max(10000),
+  deliveryFeeCents: z.number().int().nonnegative(),
+  freeDeliveryThresholdCents: z.number().int().nonnegative().nullable().optional(),
+});
+export type DeliverySettingsRequest = z.infer<typeof deliverySettingsRequestSchema>;
+
+export const deliverySettingsResponseSchema = z.object({
+  vatEnabled: z.boolean(),
+  vatRateBps: z.number().int(),
+  deliveryFeeCents: z.number().int().nonnegative(),
+  freeDeliveryThresholdCents: z.number().int().nonnegative().nullable(),
+});
+export type DeliverySettingsResponse = z.infer<typeof deliverySettingsResponseSchema>;
+
+export const deliveryQuoteResponseSchema = z.object({
+  feeCents: z.number().int().nonnegative(),
+  qualifiesForFreeDelivery: z.boolean(),
+  freeDeliveryThresholdCents: z.number().int().nonnegative().nullable(),
+  vat: z.object({
+    enabled: z.boolean(),
+    rateBps: z.number().int(),
+    amountCents: z.number().int().nonnegative(),
+  }),
+});
+export type DeliveryQuoteResponse = z.infer<typeof deliveryQuoteResponseSchema>;
+
 // ---------- checkout ----------
 
 export const checkoutRequestSchema = z.object({
   customerName: z.string().trim().min(1).max(200),
   customerEmail: z.string().email(),
   customerPhone: z.string().trim().max(32).optional(),
+  deliveryAddress: z.string().trim().min(1).max(500),
+  deliveryCity: z.string().trim().min(1).max(200),
+  deliveryState: z.string().trim().min(1).max(200),
+  attribution: z
+    .object({
+      utmSource: z.string().trim().max(200).optional(),
+      utmMedium: z.string().trim().max(200).optional(),
+      utmCampaign: z.string().trim().max(200).optional(),
+      utmTerm: z.string().trim().max(200).optional(),
+      utmContent: z.string().trim().max(200).optional(),
+      referrer: z.string().trim().max(2000).optional(),
+      landingPath: z.string().trim().max(2000).optional(),
+      fbclid: z.string().trim().max(500).optional(),
+      ttclid: z.string().trim().max(500).optional(),
+      gclid: z.string().trim().max(500).optional(),
+    })
+    .optional(),
 });
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 
@@ -84,8 +201,29 @@ export const checkoutResponseSchema = z.object({
 });
 export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
 
-export const orderStatusValueSchema = z.enum(["pending", "paid", "failed", "cancelled"]);
+export const orderStatusValueSchema = z.enum([
+  "pending",
+  "paid",
+  "shipped",
+  "delivered",
+  "failed",
+  "cancelled",
+]);
 export type OrderStatusValue = z.infer<typeof orderStatusValueSchema>;
+
+/**
+ * Server-enforced transition rules for the admin status-update endpoint.
+ * "paid" is reachable only via the payment webhook (markOrderPaid), never
+ * through this map / the manual admin PATCH.
+ */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatusValue, OrderStatusValue[]> = {
+  pending: ["cancelled"],
+  paid: ["shipped", "cancelled"],
+  shipped: ["delivered"],
+  delivered: [],
+  failed: [],
+  cancelled: [],
+};
 
 export const orderStatusResponseSchema = z.object({
   orderId: z.string().uuid(),
@@ -126,7 +264,41 @@ export const paymentSettingsResponseSchema = z.object({
 });
 export type PaymentSettingsResponse = z.infer<typeof paymentSettingsResponseSchema>;
 
+// ---------- analytics settings ----------
+
+export const analyticsSettingsRequestSchema = z.object({
+  metaPixelId: z.string().trim().min(1),
+  metaCapiToken: z.string().trim().min(1),
+  enabled: z.boolean(),
+});
+export type AnalyticsSettingsRequest = z.infer<typeof analyticsSettingsRequestSchema>;
+
+export const analyticsSettingsResponseSchema = z.object({
+  metaPixelId: z.string().nullable(),
+  hasCapiToken: z.boolean(),
+  enabled: z.boolean(),
+});
+export type AnalyticsSettingsResponse = z.infer<typeof analyticsSettingsResponseSchema>;
+
 // ---------- orders (merchant-facing) ----------
+
+// ---------- customers ----------
+
+export const customerSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string(),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string().nullable(),
+  address: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  orderCount: z.number().int().nonnegative(),
+  totalSpentCents: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Customer = z.infer<typeof customerSchema>;
 
 export const orderItemSchema = z.object({
   id: z.string().uuid(),
@@ -153,6 +325,11 @@ export const orderDetailSchema = orderSummarySchema.extend({
   customerEmail: z.string(),
   customerPhone: z.string().nullable(),
   subtotalCents: z.number().int().nonnegative(),
+  deliveryAddress: z.string().nullable(),
+  deliveryCity: z.string().nullable(),
+  deliveryState: z.string().nullable(),
+  deliveryFeeCents: z.number().int().nonnegative(),
+  vatAmountCents: z.number().int().nonnegative(),
   paymentProvider: paymentProviderKeySchema,
   paymentReference: z.string().nullable(),
   items: z.array(orderItemSchema),
@@ -181,13 +358,18 @@ export type TenantSettingsResponse = z.infer<typeof tenantSettingsResponseSchema
 
 export const publicSiteProductSchema = z.object({
   id: z.string().uuid(),
+  collectionId: z.string().uuid().nullable(),
   name: z.string(),
   description: z.string().nullable(),
   priceCents: z.number().int().nonnegative(),
+  compareAtPriceCents: z.number().int().nonnegative().nullable(),
   currency: z.string(),
   imageUrl: z.string().nullable(),
+  variants: z.array(productVariantSchema),
 });
 export type PublicSiteProduct = z.infer<typeof publicSiteProductSchema>;
+
+import { siteThemeSchema, siteSectionSchema } from "./site-config.js";
 
 export const publicSiteSchema = z.object({
   tenant: z.object({
@@ -195,9 +377,14 @@ export const publicSiteSchema = z.object({
     name: z.string(),
     subdomain: z.string(),
   }),
-  theme: z.unknown(),
-  sections: z.unknown(),
+  theme: siteThemeSchema,
+  sections: z.array(siteSectionSchema),
   productsGridEnabled: z.boolean(),
   products: z.array(publicSiteProductSchema),
+  collections: z.array(collectionSchema),
+  // Public-safe subset only - never the CAPI token, which stays server-side.
+  analytics: z.object({
+    metaPixelId: z.string().nullable(),
+  }),
 });
 export type PublicSite = z.infer<typeof publicSiteSchema>;
