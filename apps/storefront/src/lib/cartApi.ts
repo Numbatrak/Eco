@@ -5,6 +5,7 @@ import type {
   CheckoutRequest,
   CheckoutResponse,
   OrderStatusResponse,
+  DeliveryQuoteResponse,
 } from "@platform/shared-types";
 import { apiRequest } from "./apiClient";
 
@@ -28,6 +29,11 @@ export const cartApi = {
 
   checkout: (subdomain: string, body: CheckoutRequest) =>
     apiRequest<CheckoutResponse>(`/public/sites/${subdomain}/checkout`, { method: "POST", body }),
+
+  getDeliveryQuote: (subdomain: string, subtotalCents: number) =>
+    apiRequest<DeliveryQuoteResponse>(
+      `/public/sites/${subdomain}/delivery-quote?subtotalCents=${subtotalCents}`,
+    ),
 
   getOrderStatus: (subdomain: string, orderId: string) =>
     apiRequest<OrderStatusResponse>(`/public/sites/${subdomain}/checkout/${orderId}/status`),

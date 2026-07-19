@@ -5,15 +5,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import type { CreateProductRequest } from "@platform/shared-types";
+import type { Collection, CreateProductRequest } from "@platform/shared-types";
 import { commerceApi } from "../../../lib/commerceApi";
 import { TextField } from "../../../components/dashboard/TextField";
 import { ApiError } from "../../../lib/apiClient";
+import { VariantEditor } from "./VariantEditor";
 
 const productFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   description: z.string().trim().max(5000),
   priceAmount: z.coerce.number().nonnegative("Price can't be negative"),
+  compareAtPriceAmount: z.coerce.number().nonnegative("Price can't be negative").optional(),
   currency: z
     .string()
     .trim()
@@ -26,6 +28,7 @@ const productFormSchema = z.object({
     .refine((value) => value === "" || z.string().url().safeParse(value).success, {
       message: "Must be a valid URL",
     }),
+  collectionId: z.string(),
   published: z.boolean(),
 });
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -34,8 +37,10 @@ const DEFAULT_VALUES: ProductFormValues = {
   name: "",
   description: "",
   priceAmount: 0,
+  compareAtPriceAmount: undefined,
   currency: "NGN",
   imageUrl: "",
+  collectionId: "",
   published: false,
 };
 
@@ -45,6 +50,7 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(!isEditing);
+  const [collections, setCollections] = useState<Collection[]>([]);
 
   const {
     register,
@@ -59,6 +65,13 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
   });
 
   useEffect(() => {
+    commerceApi
+      .listCollections()
+      .then(({ collections: list }) => setCollections(list))
+      .catch(() => setCollections([]));
+  }, []);
+
+  useEffect(() => {
     if (!isEditing || !productId) return;
     commerceApi
       .getProduct(productId)
@@ -67,8 +80,11 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
           name: product.name,
           description: product.description ?? "",
           priceAmount: product.priceCents / 100,
+          compareAtPriceAmount:
+            product.compareAtPriceCents != null ? product.compareAtPriceCents / 100 : undefined,
           currency: product.currency,
           imageUrl: product.imageUrl ?? "",
+          collectionId: product.collectionId ?? "",
           published: product.status === "published",
         });
         setLoaded(true);
@@ -84,8 +100,11 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
       name: values.name,
       description: values.description || undefined,
       priceCents: Math.round(values.priceAmount * 100),
+      compareAtPriceCents:
+        values.compareAtPriceAmount != null ? Math.round(values.compareAtPriceAmount * 100) : null,
       currency: values.currency,
       imageUrl: values.imageUrl || undefined,
+      collectionId: values.collectionId || null,
       status: values.published ? "published" : "draft",
     };
     try {
@@ -153,6 +172,16 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
         />
 
         <TextField
+          label="Compare-at price"
+          type="number"
+          min={0}
+          step="0.01"
+          hint={!errors.compareAtPriceAmount ? "Optional - shows as a strike-through sale price." : undefined}
+          error={errors.compareAtPriceAmount?.message}
+          {...register("compareAtPriceAmount")}
+        />
+
+        <TextField
           label="Currency"
           hint={!errors.currency ? "3-letter code, e.g. NGN, USD" : undefined}
           error={errors.currency?.message}
@@ -165,6 +194,20 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
           error={errors.imageUrl?.message}
           {...register("imageUrl")}
         />
+
+        <div className="field">
+          <label className="field-label" htmlFor="collectionId">
+            Collection
+          </label>
+          <select id="collectionId" className="text-input" {...register("collectionId")}>
+            <option value="">No collection</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
           <input
@@ -194,6 +237,8 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
           </button>
         </div>
       </form>
+
+      {isEditing && productId ? <VariantEditor productId={productId} /> : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { platformAdminAuditLog, type Database } from "@platform/db";
 
 export interface AuditLogParams {
-  adminId: string;
+  adminId: string | null;
   action: string;
   targetType?: string;
   targetId?: string;

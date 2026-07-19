@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { registerRequestSchema, type MessageResponse } from "@platform/shared-types";
 import { isAPIError } from "better-auth/api";
-import { tenantSiteConfig } from "@platform/db";
+import { eq } from "drizzle-orm";
+import { organization, tenantSiteConfig } from "@platform/db";
 import { auth } from "../../../lib/auth.js";
 
 // Identical regardless of whether the email was already registered - the
@@ -54,6 +55,24 @@ export default async function registerRoutes(app: FastifyInstance): Promise<void
         // site-settings page would 404 forever.
         if (org) {
           await db.insert(tenantSiteConfig).values({ tenantId: org.id });
+          // Persist signup attribution onto the org — the join key for the
+          // Super Admin Overview's acquisition-channel metrics. Best-effort:
+          // absent UTMs just leave these null ("direct").
+          const attr = body.attribution;
+          if (attr) {
+            await db
+              .update(organization)
+              .set({
+                signupUtmSource: attr.utmSource ?? null,
+                signupUtmMedium: attr.utmMedium ?? null,
+                signupUtmCampaign: attr.utmCampaign ?? null,
+                signupUtmContent: attr.utmContent ?? null,
+                signupUtmTerm: attr.utmTerm ?? null,
+                signupReferrer: attr.referrer ?? null,
+                signupLandingPath: attr.landingPath ?? null,
+              })
+              .where(eq(organization.id, org.id));
+          }
         }
         lastError = undefined;
         break;

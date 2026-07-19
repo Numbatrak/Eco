@@ -26,10 +26,11 @@ const statement = {
   billing: ["manage", "view"],
   site: ["edit", "publish"],
   products: ["edit", "view"],
+  collections: ["edit", "view"],
   members: ["invite", "remove", "manage_roles"],
   settings: ["manage"],
   payments: ["manage"],
-  orders: ["view"],
+  orders: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -44,10 +45,11 @@ export const ownerRole = ac.newRole({
   billing: ["manage", "view"],
   site: ["edit", "publish"],
   products: ["edit", "view"],
+  collections: ["edit", "view"],
   members: ["invite", "remove", "manage_roles"],
   settings: ["manage"],
   payments: ["manage"],
-  orders: ["view"],
+  orders: ["view", "manage"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -59,10 +61,11 @@ export const adminRole = ac.newRole({
   billing: ["view"],
   site: ["edit", "publish"],
   products: ["edit", "view"],
+  collections: ["edit", "view"],
   members: ["invite", "remove", "manage_roles"],
   settings: ["manage"],
   payments: ["manage"],
-  orders: ["view"],
+  orders: ["view", "manage"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -81,12 +84,14 @@ export const adminRole = ac.newRole({
 export const editorRole = ac.newRole({
   site: ["edit"],
   products: ["edit", "view"],
+  collections: ["edit", "view"],
 });
 
 /** Viewer gets every `*.view` action across all statements. */
 export const viewerRole = ac.newRole({
   billing: ["view"],
   products: ["view"],
+  collections: ["view"],
   orders: ["view"],
 });
 

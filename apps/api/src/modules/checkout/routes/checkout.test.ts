@@ -27,12 +27,23 @@ vi.mock("../lib/orders.js", () => ({
   createPendingOrder: vi.fn(),
   setOrderPaymentReference: vi.fn(async () => {}),
 }));
+vi.mock("../../delivery/lib/delivery-settings-store.js", async () => {
+  const actual = await vi.importActual<typeof import("../../delivery/lib/delivery-settings-store.js")>(
+    "../../delivery/lib/delivery-settings-store.js",
+  );
+  return { ...actual, findDeliverySettings: vi.fn() };
+});
+vi.mock("../../customers/lib/customers.js", () => ({
+  upsertCustomer: vi.fn(),
+}));
 
 const { resolveCartContext } = await import("../../cart/lib/cart-request.js");
 const { serializeCart, findUnpublishedCartItems } = await import("../../cart/lib/cart-store.js");
 const { findPaymentSettings } = await import("../../payments/lib/payment-settings-store.js");
 const { buildProvider } = await import("../../payments/lib/provider-factory.js");
 const { createPendingOrder } = await import("../lib/orders.js");
+const { findDeliverySettings } = await import("../../delivery/lib/delivery-settings-store.js");
+const { upsertCustomer } = await import("../../customers/lib/customers.js");
 
 const tenant = { id: "tenant-1", name: "Acme", subdomain: "acme" };
 const cart = {
@@ -42,7 +53,13 @@ const cart = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
-const checkoutPayload = { customerName: "Jane Doe", customerEmail: "jane@example.com" };
+const checkoutPayload = {
+  customerName: "Jane Doe",
+  customerEmail: "jane@example.com",
+  deliveryAddress: "1 Broad Street",
+  deliveryCity: "Lagos",
+  deliveryState: "Lagos",
+};
 
 async function postCheckout(app: Awaited<ReturnType<typeof buildTestApp>>) {
   return app.inject({
@@ -56,6 +73,21 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(resolveCartContext).mockResolvedValue({ tenant, cart });
+    vi.mocked(findDeliverySettings).mockResolvedValue(null);
+    vi.mocked(upsertCustomer).mockResolvedValue({
+      id: "customer-1",
+      tenantId: tenant.id,
+      name: "Jane Doe",
+      email: "jane@example.com",
+      phone: null,
+      address: null,
+      city: null,
+      state: null,
+      orderCount: 0,
+      totalSpentCents: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
   it("rejects checkout when the cart is empty", async () => {
@@ -83,6 +115,8 @@ describe("POST /public/sites/:subdomain/checkout", () => {
         {
           id: "item-1",
           productId: "product-1",
+          variantId: null,
+          variantLabel: null,
           name: "Widget",
           quantity: 1,
           unitPriceSnapshotCents: 1000,
@@ -96,6 +130,9 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       {
         id: "item-1",
         productId: "product-1",
+        variantId: null,
+        variantSize: null,
+        variantColor: null,
         name: "Widget",
         quantity: 1,
         unitPriceSnapshotCents: 1000,
@@ -121,6 +158,8 @@ describe("POST /public/sites/:subdomain/checkout", () => {
         {
           id: "item-1",
           productId: "product-1",
+          variantId: null,
+          variantLabel: null,
           name: "Widget",
           quantity: 1,
           unitPriceSnapshotCents: 1000,
@@ -150,6 +189,8 @@ describe("POST /public/sites/:subdomain/checkout", () => {
         {
           id: "item-1",
           productId: "product-1",
+          variantId: null,
+          variantLabel: null,
           name: "Widget",
           quantity: 2,
           unitPriceSnapshotCents: 1000,
@@ -182,6 +223,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
     vi.mocked(createPendingOrder).mockResolvedValue({
       id: "order-1",
       tenantId: tenant.id,
+      customerId: null,
       orderNumber: "ABCD1234",
       customerName: checkoutPayload.customerName,
       customerEmail: checkoutPayload.customerEmail,
@@ -189,9 +231,25 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       status: "pending",
       currency: "NGN",
       subtotalCents: 2000,
+      deliveryAddress: null,
+      deliveryCity: null,
+      deliveryState: null,
+      deliveryFeeCents: 0,
+      vatRateBps: null,
+      vatAmountCents: 0,
       totalCents: 2000,
       paymentProvider: "paystack",
       paymentReference: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
+      referrer: null,
+      landingPath: null,
+      fbclid: null,
+      ttclid: null,
+      gclid: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

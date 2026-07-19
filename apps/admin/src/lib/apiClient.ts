@@ -60,3 +60,24 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return body as T;
 }
+
+/**
+ * Fetches a file endpoint with the session cookie and triggers a browser
+ * download. Used for CSV exports, which aren't JSON and so can't go through
+ * apiRequest.
+ */
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, { credentials: "include" });
+  if (!response.ok) {
+    throw new ApiError(response.status, undefined, "Download failed.");
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

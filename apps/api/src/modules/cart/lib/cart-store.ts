@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { carts, cartItems, products, type Database } from "@platform/db";
+import { and, eq, isNull } from "drizzle-orm";
+import { carts, cartItems, products, productVariants, type Database } from "@platform/db";
 import type { Cart, CartItem } from "@platform/shared-types";
 import { generateOpaqueToken, sha256Hex } from "../../auth/lib/tokens.js";
 
@@ -36,6 +36,9 @@ export async function findCartByToken(
 export interface CartItemWithProductRow {
   id: string;
   productId: string;
+  variantId: string | null;
+  variantSize: string | null;
+  variantColor: string | null;
   name: string;
   quantity: number;
   unitPriceSnapshotCents: number;
@@ -51,6 +54,9 @@ async function getCartItemsWithProduct(
     .select({
       id: cartItems.id,
       productId: cartItems.productId,
+      variantId: cartItems.variantId,
+      variantSize: productVariants.size,
+      variantColor: productVariants.color,
       name: products.name,
       quantity: cartItems.quantity,
       unitPriceSnapshotCents: cartItems.unitPriceSnapshotCents,
@@ -59,6 +65,7 @@ async function getCartItemsWithProduct(
     })
     .from(cartItems)
     .innerJoin(products, eq(products.id, cartItems.productId))
+    .leftJoin(productVariants, eq(productVariants.id, cartItems.variantId))
     .where(eq(cartItems.cartId, cartId));
 }
 
@@ -71,6 +78,8 @@ export function buildCartSummary(cartId: string, rows: CartItemWithProductRow[])
   const items: CartItem[] = rows.map((row) => ({
     id: row.id,
     productId: row.productId,
+    variantId: row.variantId,
+    variantLabel: row.variantSize && row.variantColor ? `${row.variantSize} / ${row.variantColor}` : null,
     name: row.name,
     quantity: row.quantity,
     unitPriceSnapshotCents: row.unitPriceSnapshotCents,
@@ -92,7 +101,12 @@ export async function findUnpublishedCartItems(db: Database, cartId: string) {
   return rows.filter((row) => row.status !== "published");
 }
 
-export type AddItemFailureReason = "product_not_found" | "product_not_published";
+export type AddItemFailureReason =
+  | "product_not_found"
+  | "product_not_published"
+  | "variant_required"
+  | "invalid_variant"
+  | "variant_unavailable";
 
 export async function addItemToCart(
   db: Database,
@@ -100,6 +114,7 @@ export async function addItemToCart(
   cartId: string,
   productId: string,
   quantity: number,
+  variantId?: string,
 ): Promise<{ ok: true } | { ok: false; reason: AddItemFailureReason }> {
   const [product] = await db
     .select()
@@ -113,10 +128,34 @@ export async function addItemToCart(
     return { ok: false, reason: "product_not_published" };
   }
 
+  const variants = await db
+    .select()
+    .from(productVariants)
+    .where(eq(productVariants.productId, productId));
+
+  if (variants.length > 0) {
+    if (!variantId) {
+      return { ok: false, reason: "variant_required" };
+    }
+    const variant = variants.find((v) => v.id === variantId);
+    if (!variant) {
+      return { ok: false, reason: "invalid_variant" };
+    }
+    if (!variant.isAvailable || variant.stockCount <= 0) {
+      return { ok: false, reason: "variant_unavailable" };
+    }
+  }
+
   const [existing] = await db
     .select()
     .from(cartItems)
-    .where(and(eq(cartItems.cartId, cartId), eq(cartItems.productId, productId)))
+    .where(
+      and(
+        eq(cartItems.cartId, cartId),
+        eq(cartItems.productId, productId),
+        variantId ? eq(cartItems.variantId, variantId) : isNull(cartItems.variantId),
+      ),
+    )
     .limit(1);
 
   if (existing) {
@@ -128,6 +167,7 @@ export async function addItemToCart(
     await db.insert(cartItems).values({
       cartId,
       productId,
+      variantId,
       quantity,
       unitPriceSnapshotCents: product.priceCents,
     });

@@ -20,7 +20,7 @@ export default async function tenantPlanRoutes(app: FastifyInstance): Promise<vo
         action: "tenant_plan_updated",
         targetType: "tenant",
         targetId: tenantId,
-        details: { plan: body.plan },
+        details: { plan: body.plan, reason: body.reason },
       });
       return reply.code(204).send();
     },

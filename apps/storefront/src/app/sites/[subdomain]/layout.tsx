@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { fetchSite } from "../../../lib/siteApi";
 import { SiteProvider } from "../../../components/SiteProvider";
 import { CartProvider } from "../../../components/CartContext";
+import { AnalyticsScripts } from "../../../components/storefront/AnalyticsScripts";
 
 export default async function SiteLayout({
   children,
@@ -20,6 +21,7 @@ export default async function SiteLayout({
   return (
     <SiteProvider site={site} subdomain={subdomain}>
       <CartProvider subdomain={subdomain}>
+        <AnalyticsScripts metaPixelId={site.analytics.metaPixelId} />
         {children}
       </CartProvider>
     </SiteProvider>

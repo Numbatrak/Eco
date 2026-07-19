@@ -15,6 +15,8 @@ const cartFixture: Cart = {
     {
       id: "item-1",
       productId: "product-1",
+      variantId: null,
+      variantLabel: null,
       name: "Widget",
       quantity: 2,
       unitPriceSnapshotCents: 500,
@@ -40,6 +42,12 @@ vi.mock("../../../../components/CartContext", () => ({
 vi.mock("../../../../lib/cartApi", () => ({
   cartApi: {
     checkout: vi.fn(),
+    getDeliveryQuote: vi.fn().mockResolvedValue({
+      feeCents: 0,
+      qualifiesForFreeDelivery: true,
+      freeDeliveryThresholdCents: null,
+      vat: { enabled: false, rateBps: 0, amountCents: 0 },
+    }),
   },
 }));
 
@@ -90,6 +98,9 @@ describe("CheckoutPage validation", () => {
 
     await user.type(screen.getByLabelText(/full name/i), "Ada Lovelace");
     await user.type(screen.getByLabelText(/^email$/i), "ada@example.com");
+    await user.type(screen.getByLabelText(/delivery address/i), "1 Broad Street");
+    await user.type(screen.getByLabelText(/^city$/i), "Lagos");
+    await user.type(screen.getByLabelText(/^state$/i), "Lagos");
     await user.click(screen.getByRole("button", { name: /continue to payment/i }));
 
     await screen.findByText(/redirecting to payment/i);
@@ -98,6 +109,9 @@ describe("CheckoutPage validation", () => {
       expect.objectContaining({
         customerName: "Ada Lovelace",
         customerEmail: "ada@example.com",
+        deliveryAddress: "1 Broad Street",
+        deliveryCity: "Lagos",
+        deliveryState: "Lagos",
       }),
     );
     expect(window.location.href).toBe("https://pay.example.com/session");

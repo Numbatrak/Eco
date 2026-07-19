@@ -8,6 +8,12 @@ import { buildProvider } from "../../payments/lib/provider-factory.js";
 import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
 import { createPendingOrder, setOrderPaymentReference } from "../lib/orders.js";
 import { buildCheckoutCallbackUrl } from "../lib/callback-url.js";
+import {
+  findDeliverySettings,
+  serializeDeliverySettings,
+} from "../../delivery/lib/delivery-settings-store.js";
+import { quoteDelivery } from "../../delivery/lib/quote.js";
+import { upsertCustomer } from "../../customers/lib/customers.js";
 
 const CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -63,15 +69,48 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         return reply.code(400).send({ error: "cart_empty" });
       }
 
+      const deliverySettingsRow = await findDeliverySettings(db, ctx.tenant.id);
+      const deliverySettings = serializeDeliverySettings(deliverySettingsRow);
+      // Server-authoritative recompute (Pattern 1 / Pattern 8) - the browser's
+      // /delivery-quote preview is never trusted for the actual charge.
+      const quote = quoteDelivery(deliverySettings, cart.subtotalCents);
+      const totalCents = cart.subtotalCents + quote.feeCents + quote.vat.amountCents;
+
+      const customer = await upsertCustomer(db, ctx.tenant.id, {
+        name: body.customerName,
+        email: body.customerEmail,
+        phone: body.customerPhone,
+        address: body.deliveryAddress,
+        city: body.deliveryCity,
+        state: body.deliveryState,
+      });
+
       const order = await createPendingOrder(db, {
         tenantId: ctx.tenant.id,
+        customerId: customer.id,
         customerName: body.customerName,
         customerEmail: body.customerEmail,
         customerPhone: body.customerPhone,
         currency,
         subtotalCents: cart.subtotalCents,
-        totalCents: cart.subtotalCents,
+        deliveryAddress: body.deliveryAddress,
+        deliveryCity: body.deliveryCity,
+        deliveryState: body.deliveryState,
+        deliveryFeeCents: quote.feeCents,
+        vatRateBps: quote.vat.enabled ? quote.vat.rateBps : null,
+        vatAmountCents: quote.vat.amountCents,
+        totalCents,
         paymentProvider: settings.provider,
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmTerm: body.attribution?.utmTerm,
+        utmContent: body.attribution?.utmContent,
+        referrer: body.attribution?.referrer,
+        landingPath: body.attribution?.landingPath,
+        fbclid: body.attribution?.fbclid,
+        ttclid: body.attribution?.ttclid,
+        gclid: body.attribution?.gclid,
         items: cart.items.map((item) => ({
           productId: item.productId,
           nameSnapshot: item.name,

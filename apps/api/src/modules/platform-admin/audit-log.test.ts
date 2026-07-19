@@ -10,7 +10,7 @@ import { signUpOwnerWithOrg } from "../../test/auth-helpers.js";
 import tenantSuspendRoutes from "./routes/tenant-suspend.js";
 import tenantReactivateRoutes from "./routes/tenant-reactivate.js";
 import tenantPlanRoutes from "./routes/tenant-plan.js";
-import tenantCreditsAdjustRoutes from "./routes/tenant-credits-adjust.js";
+import tenantCreditsGrantRoutes from "./routes/tenant-credits-grant.js";
 import featureFlagsRoutes from "./routes/feature-flags.js";
 import settingsRoutes from "./routes/settings.js";
 import reservedSubdomainsRoutes from "./routes/reserved-subdomains.js";
@@ -41,7 +41,7 @@ describe("platform-admin audit log", () => {
         tenantSuspendRoutes,
         tenantReactivateRoutes,
         tenantPlanRoutes,
-        tenantCreditsAdjustRoutes,
+        tenantCreditsGrantRoutes,
         featureFlagsRoutes,
         settingsRoutes,
         reservedSubdomainsRoutes,
@@ -52,6 +52,7 @@ describe("platform-admin audit log", () => {
       method: "POST",
       url: `/platform-admin/tenants/${tenant.orgId}/suspend`,
       headers: { cookie },
+      payload: { reason: "non-payment" },
     });
     expect(suspendResponse.statusCode).toBe(204);
     expect(await auditCount(admin.adminId, "tenant_suspended")).toBe(1);
@@ -73,11 +74,11 @@ describe("platform-admin audit log", () => {
 
     await app.inject({
       method: "POST",
-      url: `/platform-admin/tenants/${tenant.orgId}/credits/adjust`,
+      url: `/platform-admin/tenants/${tenant.orgId}/credits/grant`,
       headers: { cookie },
-      payload: { delta: 50, reason: "goodwill credit" },
+      payload: { creditType: "email", amount: 50, reason: "goodwill credit" },
     });
-    expect(await auditCount(admin.adminId, "tenant_credits_adjusted")).toBe(1);
+    expect(await auditCount(admin.adminId, "tenant_credits_granted")).toBe(1);
 
     await app.inject({
       method: "PATCH",

@@ -30,6 +30,13 @@ export default function ShopPage(): React.ReactElement {
       brandName={site.tenant.name}
       config={site}
       products={site.products}
+      collections={site.collections.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        imageUrl: c.imageUrl,
+      }))}
+      hasCollections={site.collections.length > 0}
       onAddToCart={handleAdd}
       addingProductId={addingId}
       cartSlot={<MiniCart />}

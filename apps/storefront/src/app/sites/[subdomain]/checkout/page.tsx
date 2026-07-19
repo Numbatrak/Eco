@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { checkoutRequestSchema, type CheckoutRequest } from "@platform/shared-types";
+import {
+  checkoutRequestSchema,
+  type CheckoutRequest,
+  type DeliveryQuoteResponse,
+} from "@platform/shared-types";
 import { useSite } from "../../../../components/SiteProvider";
 import { useCart } from "../../../../components/CartContext";
 import { cartApi } from "../../../../lib/cartApi";
 import { ApiError } from "../../../../lib/apiClient";
 import { formatCents } from "../../../../lib/money";
+import { getAttribution } from "../../../../lib/attribution";
+import { initiateCheckout } from "../../../../lib/analytics/pixelEvents";
 
 export default function CheckoutPage(): React.ReactElement {
   const { subdomain } = useSite();
   const { cart, loading: cartLoading } = useCart();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [quote, setQuote] = useState<DeliveryQuoteResponse | null>(null);
+  const firedInitiateCheckout = useRef(false);
 
   const {
     register,
@@ -24,10 +32,28 @@ export default function CheckoutPage(): React.ReactElement {
     resolver: zodResolver(checkoutRequestSchema),
   });
 
+  useEffect(() => {
+    if (!cart || cart.items.length === 0) return;
+    cartApi
+      .getDeliveryQuote(subdomain, cart.subtotalCents)
+      .then(setQuote)
+      .catch(() => setQuote(null));
+  }, [subdomain, cart?.subtotalCents, cart?.items.length]);
+
+  useEffect(() => {
+    if (!cart || cart.items.length === 0 || firedInitiateCheckout.current) return;
+    firedInitiateCheckout.current = true;
+    initiateCheckout(
+      cart.subtotalCents,
+      cart.currency ?? "NGN",
+      cart.items.map((item) => item.productId),
+    );
+  }, [cart]);
+
   async function onSubmit(values: CheckoutRequest): Promise<void> {
     setSubmitError(null);
     try {
-      const result = await cartApi.checkout(subdomain, values);
+      const result = await cartApi.checkout(subdomain, { ...values, attribution: getAttribution() });
       setRedirecting(true);
       window.location.href = result.checkoutUrl;
     } catch (error) {
@@ -58,10 +84,37 @@ export default function CheckoutPage(): React.ReactElement {
             <span className="text-muted">{formatCents(item.lineTotalCents, currency)}</span>
           </div>
         ))}
-        <div className="mt-2 flex justify-between border-t border-line pt-2 font-medium text-ink">
-          <span>Subtotal</span>
-          <span>{formatCents(cart.subtotalCents, currency)}</span>
+        <div className="mt-2 flex justify-between text-sm">
+          <span className="text-muted">Subtotal</span>
+          <span className="text-ink">{formatCents(cart.subtotalCents, currency)}</span>
         </div>
+        {quote ? (
+          <>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted">Delivery</span>
+              <span className="text-ink">
+                {quote.qualifiesForFreeDelivery ? "Free" : formatCents(quote.feeCents, currency)}
+              </span>
+            </div>
+            {quote.vat.enabled ? (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">VAT</span>
+                <span className="text-ink">{formatCents(quote.vat.amountCents, currency)}</span>
+              </div>
+            ) : null}
+            <div className="mt-2 flex justify-between border-t border-line pt-2 font-medium text-ink">
+              <span>Total</span>
+              <span>
+                {formatCents(cart.subtotalCents + quote.feeCents + quote.vat.amountCents, currency)}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="mt-2 flex justify-between border-t border-line pt-2 font-medium text-ink">
+            <span>Total</span>
+            <span>{formatCents(cart.subtotalCents, currency)}</span>
+          </div>
+        )}
       </div>
 
       <form
@@ -109,6 +162,48 @@ export default function CheckoutPage(): React.ReactElement {
           />
           {errors.customerPhone ? (
             <p className="text-xs text-danger">{errors.customerPhone.message}</p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-ink" htmlFor="deliveryAddress">
+            Delivery address
+          </label>
+          <input
+            id="deliveryAddress"
+            className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink"
+            {...register("deliveryAddress")}
+          />
+          {errors.deliveryAddress ? (
+            <p className="text-xs text-danger">{errors.deliveryAddress.message}</p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-ink" htmlFor="deliveryCity">
+            City
+          </label>
+          <input
+            id="deliveryCity"
+            className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink"
+            {...register("deliveryCity")}
+          />
+          {errors.deliveryCity ? (
+            <p className="text-xs text-danger">{errors.deliveryCity.message}</p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-ink" htmlFor="deliveryState">
+            State
+          </label>
+          <input
+            id="deliveryState"
+            className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink"
+            {...register("deliveryState")}
+          />
+          {errors.deliveryState ? (
+            <p className="text-xs text-danger">{errors.deliveryState.message}</p>
           ) : null}
         </div>
 

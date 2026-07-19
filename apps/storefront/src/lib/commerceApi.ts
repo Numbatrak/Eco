@@ -4,10 +4,22 @@ import type {
   CreateProductRequest,
   Product,
   UpdateProductRequest,
+  Collection,
+  CreateCollectionRequest,
+  UpdateCollectionRequest,
+  ProductVariant,
+  CreateVariantRequest,
+  UpdateVariantRequest,
   OrderSummary,
   OrderDetail,
+  OrderStatusValue,
+  Customer,
   PaymentSettingsRequest,
   PaymentSettingsResponse,
+  DeliverySettingsRequest,
+  DeliverySettingsResponse,
+  AnalyticsSettingsRequest,
+  AnalyticsSettingsResponse,
   UpdateTenantRequest,
   TenantSettingsResponse,
 } from "@platform/shared-types";
@@ -33,15 +45,70 @@ export const commerceApi = {
   deleteProduct: (productId: string) =>
     apiRequest<void>(`/org/products/${productId}`, { method: "DELETE" }),
 
-  listOrders: () => apiRequest<{ orders: OrderSummary[] }>("/org/orders", { method: "GET" }),
+  listVariants: (productId: string) =>
+    apiRequest<{ variants: ProductVariant[] }>(`/org/products/${productId}/variants`, { method: "GET" }),
+
+  createVariant: (productId: string, body: CreateVariantRequest) =>
+    apiRequest<ProductVariant>(`/org/products/${productId}/variants`, { method: "POST", body }),
+
+  updateVariant: (productId: string, variantId: string, body: UpdateVariantRequest) =>
+    apiRequest<ProductVariant>(`/org/products/${productId}/variants/${variantId}`, {
+      method: "PATCH",
+      body,
+    }),
+
+  deleteVariant: (productId: string, variantId: string) =>
+    apiRequest<void>(`/org/products/${productId}/variants/${variantId}`, { method: "DELETE" }),
+
+  listCollections: () =>
+    apiRequest<{ collections: Collection[] }>("/org/collections", { method: "GET" }),
+
+  getCollection: (collectionId: string) =>
+    apiRequest<Collection>(`/org/collections/${collectionId}`, { method: "GET" }),
+
+  createCollection: (body: CreateCollectionRequest) =>
+    apiRequest<Collection>("/org/collections", { method: "POST", body }),
+
+  updateCollection: (collectionId: string, body: UpdateCollectionRequest) =>
+    apiRequest<Collection>(`/org/collections/${collectionId}`, { method: "PATCH", body }),
+
+  deleteCollection: (collectionId: string) =>
+    apiRequest<void>(`/org/collections/${collectionId}`, { method: "DELETE" }),
+
+  listOrders: (customerId?: string) =>
+    apiRequest<{ orders: OrderSummary[] }>(
+      customerId ? `/org/orders?customerId=${customerId}` : "/org/orders",
+      { method: "GET" },
+    ),
 
   getOrder: (orderId: string) => apiRequest<OrderDetail>(`/org/orders/${orderId}`, { method: "GET" }),
+
+  updateOrderStatus: (orderId: string, status: OrderStatusValue) =>
+    apiRequest<void>(`/org/orders/${orderId}/status`, { method: "PATCH", body: { status } }),
+
+  listCustomers: () =>
+    apiRequest<{ customers: Customer[] }>("/org/customers", { method: "GET" }),
+
+  getCustomer: (customerId: string) =>
+    apiRequest<Customer>(`/org/customers/${customerId}`, { method: "GET" }),
 
   getPaymentSettings: () =>
     apiRequest<PaymentSettingsResponse>("/org/payment-settings", { method: "GET" }),
 
   savePaymentSettings: (body: PaymentSettingsRequest) =>
     apiRequest<PaymentSettingsResponse>("/org/payment-settings", { method: "PUT", body }),
+
+  getDeliverySettings: () =>
+    apiRequest<DeliverySettingsResponse>("/org/delivery-settings", { method: "GET" }),
+
+  saveDeliverySettings: (body: DeliverySettingsRequest) =>
+    apiRequest<DeliverySettingsResponse>("/org/delivery-settings", { method: "PUT", body }),
+
+  getAnalyticsSettings: () =>
+    apiRequest<AnalyticsSettingsResponse>("/org/analytics-settings", { method: "GET" }),
+
+  saveAnalyticsSettings: (body: AnalyticsSettingsRequest) =>
+    apiRequest<AnalyticsSettingsResponse>("/org/analytics-settings", { method: "PUT", body }),
 
   getTenantSettings: () =>
     apiRequest<TenantSettingsResponse>("/org/site-settings", { method: "GET" }),

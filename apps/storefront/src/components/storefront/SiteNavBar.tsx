@@ -1,27 +1,34 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { SiteTheme } from "@platform/shared-types";
 
 export interface SiteNavBarProps {
   brandName: string;
   theme: SiteTheme;
+  hasCollections?: boolean;
   cartSlot?: ReactNode;
 }
 
-export function SiteNavBar({ brandName, theme, cartSlot }: SiteNavBarProps): React.ReactElement {
+export function SiteNavBar({
+  brandName,
+  theme,
+  hasCollections,
+  cartSlot,
+}: SiteNavBarProps): React.ReactElement {
   return (
     <nav className="st-nav">
-      <span className="st-brand">
+      <Link href="/" className="st-brand">
         {theme.logoUrl ? (
           <img src={theme.logoUrl} alt={brandName} className="st-brand-logo" />
         ) : null}
         {brandName}
-      </span>
+      </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <div className="st-navlinks">
-          <span>Menu</span>
-          <span>Visit</span>
+          <Link href="/">Home</Link>
+          {hasCollections ? <Link href="/collections">Collections</Link> : null}
         </div>
         {cartSlot}
       </div>

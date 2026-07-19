@@ -5,6 +5,9 @@ function row(overrides: Partial<CartItemWithProductRow> = {}): CartItemWithProdu
   return {
     id: "item-1",
     productId: "product-1",
+    variantId: null,
+    variantSize: null,
+    variantColor: null,
     name: "Widget",
     quantity: 1,
     unitPriceSnapshotCents: 1000,

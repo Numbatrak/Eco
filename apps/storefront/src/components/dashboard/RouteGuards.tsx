@@ -37,6 +37,22 @@ export function RequireAuth({ children }: { children: ReactNode }): React.ReactE
   return <>{children}</>;
 }
 
+/** Redirects authenticated users with no organization to the create-org page. */
+export function RequireOrg({ children }: { children: ReactNode }): React.ReactElement | null {
+  const { status, organizations } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated" && organizations.length === 0) {
+      router.replace("/dashboard/create-org");
+    }
+  }, [status, organizations, router]);
+
+  if (status === "loading") return <FullPageSpinner />;
+  if (status === "authenticated" && organizations.length === 0) return null;
+  return <>{children}</>;
+}
+
 /** Redirects already-authenticated users away from auth pages. */
 export function RequireGuest({ children }: { children: ReactNode }): React.ReactElement | null {
   const { status } = useAuth();

@@ -2,9 +2,10 @@
 
 import { use, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import type { OrderDetail } from "@platform/shared-types";
+import type { OrderDetail, OrderStatusValue } from "@platform/shared-types";
 import { RequireAuth } from "../../../../components/dashboard/RouteGuards";
 import { DashboardLayout } from "../../../../components/dashboard/DashboardLayout";
+import { OrderStatusActions } from "../../../../components/dashboard/OrderStatusActions";
 import { commerceApi } from "../../../../lib/commerceApi";
 import { formatCents } from "../../../../lib/money";
 
@@ -28,6 +29,10 @@ function OrderDetailInner({ orderId }: { orderId: string }): React.ReactElement 
       .catch(() => setError("Could not load this order."));
   }, [orderId]);
 
+  function handleStatusUpdated(status: OrderStatusValue) {
+    setOrder((current) => (current ? { ...current, status } : current));
+  }
+
   if (error) {
     return (
       <div className="banner banner-danger" role="alert">
@@ -48,11 +53,14 @@ function OrderDetailInner({ orderId }: { orderId: string }): React.ReactElement 
         maxWidth: 640,
       }}
     >
-      <div>
-        <Link href="/dashboard/orders" className="btn-link">
-          ← Back to orders
-        </Link>
-        <h1 style={{ marginTop: 12 }}>Order {order.orderNumber}</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div>
+          <Link href="/dashboard/orders" className="btn-link">
+            ← Back to orders
+          </Link>
+          <h1 style={{ marginTop: 12 }}>Order {order.orderNumber}</h1>
+        </div>
+        <OrderStatusActions orderId={orderId} status={order.status} onUpdated={handleStatusUpdated} />
       </div>
 
       <div

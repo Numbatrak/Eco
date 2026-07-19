@@ -9,6 +9,12 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Overview", end: true },
+  { to: "/tenants", label: "Tenants" },
+  { to: "/revenue", label: "Revenue" },
+  { to: "/affiliates", label: "Affiliates" },
+  { to: "/credits", label: "Credits" },
+  { to: "/business-metrics", label: "Business Numbers" },
+  { to: "/operations", label: "Operations" },
   { to: "/config", label: "Config" },
 ];
 

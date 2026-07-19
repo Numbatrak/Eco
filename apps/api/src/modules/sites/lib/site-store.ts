@@ -1,5 +1,13 @@
-import { and, eq, sql } from "drizzle-orm";
-import { organization, tenantSiteConfig, products, type Database } from "@platform/db";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import {
+  organization,
+  tenantSiteConfig,
+  products,
+  productVariants,
+  collections,
+  tenantAnalyticsSettings,
+  type Database,
+} from "@platform/db";
 import {
   defaultSiteConfig,
   siteConfigSchema,
@@ -131,19 +139,46 @@ export async function findPublishedSiteBySubdomain(
     return { kind: "suspended" };
   }
 
-  const publishedProducts = row.productsGridEnabled
-    ? await db
-        .select({
-          id: products.id,
-          name: products.name,
-          description: products.description,
-          priceCents: products.priceCents,
-          currency: products.currency,
-          imageUrl: products.imageUrl,
-        })
-        .from(products)
-        .where(and(eq(products.tenantId, row.tenantId), eq(products.status, "published")))
-    : [];
+  // Fetched unconditionally - productsGridEnabled only gates whether the
+  // homepage's ProductsSection renders this list, not whether the
+  // /collections and /products/:id catalog pages have data to show.
+  const publishedProducts = await db
+    .select({
+      id: products.id,
+      collectionId: products.collectionId,
+      name: products.name,
+      description: products.description,
+      priceCents: products.priceCents,
+      compareAtPriceCents: products.compareAtPriceCents,
+      currency: products.currency,
+      imageUrl: products.imageUrl,
+    })
+    .from(products)
+    .where(and(eq(products.tenantId, row.tenantId), eq(products.status, "published")));
+
+  const productIds = publishedProducts.map((product) => product.id);
+  const variantRows =
+    productIds.length > 0
+      ? await db.select().from(productVariants).where(inArray(productVariants.productId, productIds))
+      : [];
+  const variantsByProductId = new Map<string, typeof variantRows>();
+  for (const variant of variantRows) {
+    const existing = variantsByProductId.get(variant.productId) ?? [];
+    existing.push(variant);
+    variantsByProductId.set(variant.productId, existing);
+  }
+
+  const activeCollections = await db
+    .select()
+    .from(collections)
+    .where(and(eq(collections.tenantId, row.tenantId), eq(collections.isActive, true)))
+    .orderBy(collections.sortOrder);
+
+  const [analyticsSettings] = await db
+    .select({ metaPixelId: tenantAnalyticsSettings.metaPixelId, enabled: tenantAnalyticsSettings.enabled })
+    .from(tenantAnalyticsSettings)
+    .where(eq(tenantAnalyticsSettings.tenantId, row.tenantId))
+    .limit(1);
 
   const config = parseStoredSiteConfig(row.theme, row.sections);
 
@@ -154,7 +189,34 @@ export async function findPublishedSiteBySubdomain(
       theme: config.theme,
       sections: config.sections,
       productsGridEnabled: row.productsGridEnabled,
-      products: publishedProducts,
+      products: publishedProducts.map((product) => ({
+        ...product,
+        variants: (variantsByProductId.get(product.id) ?? []).map((variant) => ({
+          id: variant.id,
+          productId: variant.productId,
+          size: variant.size,
+          color: variant.color,
+          stockCount: variant.stockCount,
+          isAvailable: variant.isAvailable,
+          createdAt: variant.createdAt.toISOString(),
+          updatedAt: variant.updatedAt.toISOString(),
+        })),
+      })),
+      collections: activeCollections.map((collection) => ({
+        id: collection.id,
+        tenantId: collection.tenantId,
+        name: collection.name,
+        slug: collection.slug,
+        description: collection.description,
+        imageUrl: collection.imageUrl,
+        sortOrder: collection.sortOrder,
+        isActive: collection.isActive,
+        createdAt: collection.createdAt.toISOString(),
+        updatedAt: collection.updatedAt.toISOString(),
+      })),
+      analytics: {
+        metaPixelId: analyticsSettings?.enabled ? analyticsSettings.metaPixelId : null,
+      },
     },
   };
 }

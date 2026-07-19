@@ -4,18 +4,28 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Cart } from "@platform/shared-types";
 import { cartApi } from "../lib/cartApi";
 import { ApiError } from "../lib/apiClient";
+import { addToCart as fireAddToCartEvent } from "../lib/analytics/pixelEvents";
 
 interface CartContextValue {
   cart: Cart | null;
   loading: boolean;
   error: string | null;
-  addItem: (productId: string, quantity?: number) => Promise<void>;
+  addItem: (productId: string, quantity?: number, variantId?: string) => Promise<void>;
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
+
+function notifyAddToCart(cart: Cart, productId: string, variantId: string | undefined): void {
+  const item = cart.items.find(
+    (candidate) => candidate.productId === productId && (candidate.variantId ?? undefined) === variantId,
+  );
+  if (item && cart.currency) {
+    fireAddToCartEvent(productId, item.unitPriceSnapshotCents, cart.currency);
+  }
+}
 
 export function CartProvider({
   subdomain,
@@ -53,19 +63,21 @@ export function CartProvider({
   }, [refresh]);
 
   const addItem = useCallback(
-    async (productId: string, quantity = 1) => {
+    async (productId: string, quantity = 1, variantId?: string) => {
       setError(null);
       try {
-        const updated = await cartApi.addItem(subdomain, { productId, quantity });
+        const updated = await cartApi.addItem(subdomain, { productId, quantity, variantId });
         setCart(updated);
+        notifyAddToCart(updated, productId, variantId);
       } catch (addError) {
         // Cart cookie may have expired or been cleared. Create a fresh cart
         // and retry once so the shopper doesn't see a spurious failure.
         if (addError instanceof ApiError && addError.status === 404) {
           try {
             await cartApi.createCart(subdomain);
-            const updated = await cartApi.addItem(subdomain, { productId, quantity });
+            const updated = await cartApi.addItem(subdomain, { productId, quantity, variantId });
             setCart(updated);
+            notifyAddToCart(updated, productId, variantId);
             return;
           } catch (retryError) {
             setError(

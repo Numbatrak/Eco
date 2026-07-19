@@ -12,7 +12,10 @@ vi.mock("../lib/platformAdminApi", () => ({
     suspendTenant: vi.fn(),
     reactivateTenant: vi.fn(),
     updateTenantPlan: vi.fn(),
-    adjustTenantCredits: vi.fn(),
+    grantTenantCredits: vi.fn(),
+    extendTenantTrial: vi.fn(),
+    resetTenantPassword: vi.fn(),
+    deleteTenant: vi.fn(),
   },
 }));
 
@@ -20,13 +23,31 @@ const fakeTenant: PlatformAdminTenantDetail = {
   id: "tenant-1",
   name: "Acme Co",
   subdomain: "acme",
+  ownerEmail: "owner@acme.test",
   status: "active",
-  plan: "free",
-  creditBalance: 10,
-  orderCount: 2,
-  revenueCents: 5000,
+  planTier: "starter",
+  mrrContributionCents: 999900,
+  teamSize: 3,
+  signupSource: "google",
+  emailCredits: 100,
+  whatsappCredits: 50,
+  lastActiveAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
-  creditAdjustments: [],
+  subscription: null,
+  transactions: [],
+  capabilities: {
+    productCount: 0,
+    publishedProductCount: 0,
+    collectionCount: 0,
+    orderCount: 0,
+    storefrontPublished: false,
+    paymentConfigured: false,
+    analyticsConfigured: false,
+    deliveryConfigured: false,
+  },
+  team: [],
+  credits: { emailBalance: 100, whatsappBalance: 50, history: [] },
+  activity: [],
 };
 
 function renderPage() {
@@ -41,45 +62,46 @@ function renderPage() {
 
 describe("TenantDetailPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(platformAdminApi.getTenant).mockResolvedValue(fakeTenant);
   });
 
-  it("rejects a credit adjustment submission with an empty reason and never calls the API", async () => {
+  it("rejects a credit grant with an empty reason and never calls the API", async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(await screen.findByText("Acme Co")).toBeInTheDocument();
 
-    const deltaInput = screen.getByLabelText("Delta");
-    await user.clear(deltaInput);
-    await user.type(deltaInput, "50");
-    // Reason left blank on purpose.
-    await user.click(screen.getByRole("button", { name: /apply adjustment/i }));
+    const amountInput = screen.getByLabelText("Amount");
+    await user.clear(amountInput);
+    await user.type(amountInput, "50");
+    // Grant reason left blank on purpose.
+    await user.click(screen.getByRole("button", { name: /grant credits/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/at least 1 character/i);
-    expect(vi.mocked(platformAdminApi.adjustTenantCredits)).not.toHaveBeenCalled();
+    expect(vi.mocked(platformAdminApi.grantTenantCredits)).not.toHaveBeenCalled();
   });
 
-  it("shows the suspend confirmation modal with its effect explained, and only suspends on explicit confirm", async () => {
+  it("requires a reason before suspending, then suspends only on explicit confirm", async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(await screen.findByText("Acme Co")).toBeInTheDocument();
 
+    // Clicking suspend with no reason shows an error and opens no dialog.
     await user.click(screen.getByRole("button", { name: /^suspend tenant$/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/reason is required/i);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
+    // With a reason, the confirm dialog explains the effect.
+    await user.type(screen.getByLabelText("Suspension reason"), "non-payment");
+    await user.click(screen.getByRole("button", { name: /^suspend tenant$/i }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/lose dashboard access/i)).toBeInTheDocument();
-    expect(within(dialog).getByText(/temporarily-unavailable/i)).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: /cancel/i }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(vi.mocked(platformAdminApi.suspendTenant)).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: /^suspend tenant$/i }));
-    const secondDialog = await screen.findByRole("dialog");
-    await user.click(within(secondDialog).getByRole("button", { name: /^suspend$/i }));
-
-    expect(vi.mocked(platformAdminApi.suspendTenant)).toHaveBeenCalledWith("tenant-1");
+    await user.click(within(dialog).getByRole("button", { name: /^suspend$/i }));
+    expect(vi.mocked(platformAdminApi.suspendTenant)).toHaveBeenCalledWith("tenant-1", {
+      reason: "non-payment",
+    });
   });
 });

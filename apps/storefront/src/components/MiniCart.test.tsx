@@ -25,6 +25,8 @@ function makeCart(quantity: number): Cart {
       {
         id: "item-1",
         productId: "product-1",
+        variantId: null,
+        variantLabel: null,
         name: "Widget",
         quantity,
         unitPriceSnapshotCents: 500,

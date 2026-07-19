@@ -4,6 +4,7 @@ import type { RedisClient } from "../lib/redis.js";
 import cookiesPlugin from "../plugins/cookies.js";
 import betterAuthPlugin from "../plugins/better-auth.js";
 import orgAccessPlugin from "../plugins/org-access.js";
+import platformAdminAccessPlugin from "../plugins/platform-admin-access.js";
 
 export interface TestAppDeps {
   db?: Database;
@@ -29,6 +30,12 @@ export async function buildTestApp(deps: TestAppDeps): Promise<FastifyInstance> 
   await app.register(cookiesPlugin);
   await app.register(betterAuthPlugin);
   await app.register(orgAccessPlugin);
+  // Decorates app.requirePlatformAdminAuth so platform-admin route tests
+  // authenticate the admin cookie (from signUpPlatformAdmin) and populate
+  // request.platformAdminId — without it those preHandlers silently no-op and
+  // admin actions log a null adminId. The HTTP bridge plugin isn't needed:
+  // tests call platformAdminAuth.api directly, not /platform-admin/auth/*.
+  await app.register(platformAdminAccessPlugin);
   for (const route of deps.routes) {
     await app.register(route);
   }

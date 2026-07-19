@@ -300,6 +300,19 @@
   font-family: var(--font-heading);
 }
 
+.org-switcher {
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
 .dashboard-nav {
   display: flex;
   flex-direction: column;
@@ -378,9 +391,16 @@
   border: 1px solid var(--line);
 }
 
-.badge-paid {
+.badge-paid,
+.badge-shipped {
   background: var(--success-bg);
   color: var(--success);
+}
+
+.badge-delivered {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success);
 }
 
 .badge-failed,

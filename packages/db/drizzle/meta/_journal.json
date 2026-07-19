@@ -50,6 +50,69 @@
       "when": 1783584739079,
       "tag": "0006_rare_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783668052067,
+      "tag": "0007_unique_northstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783802796601,
+      "tag": "0008_freezing_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783802896601,
+      "tag": "0009_platform_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783802996601,
+      "tag": "0010_platform_metrics_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783803096601,
+      "tag": "0011_transactions_survive_tenant_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783803196601,
+      "tag": "0012_transaction_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1783803296601,
+      "tag": "0013_affiliates",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1783803396601,
+      "tag": "0014_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1783803496601,
+      "tag": "0015_credit_pricing",
+      "breakpoints": true
     }
   ]
 }

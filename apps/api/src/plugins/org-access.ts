@@ -4,6 +4,25 @@ import { fromNodeHeaders } from "better-auth/node";
 import { eq } from "drizzle-orm";
 import { organization, type Database } from "@platform/db";
 import { auth } from "../lib/auth.js";
+import { recordUserActivity } from "../modules/platform-billing/lib/metrics/activity-store.js";
+
+/**
+ * Best-effort "user was active today" record for DAU/MAU. Never allowed to
+ * break the request it rides on — any failure (including no REDIS/DB hiccup)
+ * is swallowed. Called from the shared auth decorators, so any authenticated
+ * member hitting an /org/* route counts as active.
+ */
+async function recordActivitySafe(
+  db: Database,
+  userId: string,
+  organizationId: string,
+): Promise<void> {
+  try {
+    await recordUserActivity(db, userId, organizationId, new Date());
+  } catch {
+    // Activity tracking is non-critical; ignore.
+  }
+}
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -76,6 +95,7 @@ export default fp(async (app) => {
         return;
       }
       request.activeOrganizationId = organizationId;
+      await recordActivitySafe(app.getDb(), session.user.id, organizationId);
     };
   });
 
@@ -103,6 +123,7 @@ export default fp(async (app) => {
         return;
       }
       request.activeOrganizationId = organizationId;
+      await recordActivitySafe(app.getDb(), session.user.id, organizationId);
     };
   });
 });

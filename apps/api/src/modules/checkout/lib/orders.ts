@@ -3,6 +3,10 @@ import type { FastifyBaseLogger } from "fastify";
 import { orders, orderItems, type Database } from "@platform/db";
 import { sendEmail } from "../../auth/lib/email.js";
 import { generateOrderNumber } from "./order-number.js";
+import { isUniqueViolation } from "../../../lib/db-errors.js";
+import { incrementCustomerStats } from "../../customers/lib/customers.js";
+import { findAnalyticsSettings } from "../../analytics/lib/analytics-settings-store.js";
+import { sendPurchaseCapiEvent } from "../../../lib/analytics/meta-capi.js";
 
 export type OrderRow = typeof orders.$inferSelect;
 
@@ -15,21 +19,34 @@ export interface OrderItemInput {
 
 export interface CreateOrderParams {
   tenantId: string;
+  customerId: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
   currency: string;
   subtotalCents: number;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryFeeCents: number;
+  vatRateBps: number | null;
+  vatAmountCents: number;
   totalCents: number;
   paymentProvider: "paystack" | "flutterwave";
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  referrer?: string;
+  landingPath?: string;
+  fbclid?: string;
+  ttclid?: string;
+  gclid?: string;
   items: OrderItemInput[];
 }
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
-
-function isUniqueViolation(err: unknown): boolean {
-  return typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
-}
 
 /**
  * Creates the order + snapshot line items in one transaction. Retries on an
@@ -48,14 +65,31 @@ export async function createPendingOrder(
           .insert(orders)
           .values({
             tenantId: params.tenantId,
+            customerId: params.customerId,
             orderNumber: generateOrderNumber(),
             customerName: params.customerName,
             customerEmail: params.customerEmail,
             customerPhone: params.customerPhone,
             currency: params.currency,
             subtotalCents: params.subtotalCents,
+            deliveryAddress: params.deliveryAddress,
+            deliveryCity: params.deliveryCity,
+            deliveryState: params.deliveryState,
+            deliveryFeeCents: params.deliveryFeeCents,
+            vatRateBps: params.vatRateBps,
+            vatAmountCents: params.vatAmountCents,
             totalCents: params.totalCents,
             paymentProvider: params.paymentProvider,
+            utmSource: params.utmSource,
+            utmMedium: params.utmMedium,
+            utmCampaign: params.utmCampaign,
+            utmTerm: params.utmTerm,
+            utmContent: params.utmContent,
+            referrer: params.referrer,
+            landingPath: params.landingPath,
+            fbclid: params.fbclid,
+            ttclid: params.ttclid,
+            gclid: params.gclid,
           })
           .returning();
         if (!order) {
@@ -144,6 +178,9 @@ export async function markOrderPaid(
   if (!transitioned) {
     return false;
   }
+  if (order.customerId) {
+    await incrementCustomerStats(db, order.customerId, order.totalCents);
+  }
   const amount = (order.totalCents / 100).toFixed(2);
   await sendEmail(logger, {
     to: order.customerEmail,
@@ -153,6 +190,30 @@ export async function markOrderPaid(
   // TODO(whatsapp): send an order-confirmation WhatsApp notification here once
   // that integration is built - explicitly out of scope for this task, this
   // comment marks the intended call site.
+
+  // Best-effort, same as the email above - a failed Conversions API call
+  // must never block the payment from settling.
+  try {
+    const analyticsSettings = await findAnalyticsSettings(db, order.tenantId);
+    if (analyticsSettings?.enabled && analyticsSettings.metaPixelId && analyticsSettings.metaCapiTokenEncrypted) {
+      await sendPurchaseCapiEvent(
+        {
+          id: order.id,
+          totalCents: order.totalCents,
+          currency: order.currency,
+          customerEmail: order.customerEmail,
+          customerPhone: order.customerPhone,
+        },
+        {
+          metaPixelId: analyticsSettings.metaPixelId,
+          metaCapiTokenEncrypted: analyticsSettings.metaCapiTokenEncrypted,
+        },
+      );
+    }
+  } catch (err) {
+    logger.warn({ err, orderId: order.id }, "Meta CAPI Purchase event failed");
+  }
+
   return true;
 }
 

@@ -20,6 +20,7 @@ interface AuthContextValue {
   activeOrganization: UserOrganizationMembership | null;
   organizations: UserOrganizationMembership[];
   refreshMe: () => Promise<void>;
+  switchOrganization: (organizationId: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -50,6 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
     void refreshMe();
   }, [refreshMe]);
 
+  const switchOrganization = useCallback(async (organizationId: string) => {
+    await authApi.setActiveOrganization(organizationId);
+    await refreshMe();
+  }, [refreshMe]);
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -67,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
   );
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, activeOrganization, organizations, refreshMe, logout }),
-    [status, user, activeOrganization, organizations, refreshMe, logout],
+    () => ({ status, user, activeOrganization, organizations, refreshMe, switchOrganization, logout }),
+    [status, user, activeOrganization, organizations, refreshMe, switchOrganization, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

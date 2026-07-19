@@ -3,7 +3,7 @@
 // repo's migration flow (packages/db/drizzle) rather than using a separate
 // Better-Auth-owned migration mechanism - see packages/db/src/schema.ts.
 import { relations } from "drizzle-orm";
-import { pgTable, pgEnum, text, timestamp, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, text, timestamp, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const organizationStatusEnum = pgEnum("organization_status", ["active", "suspended"]);
 
@@ -93,9 +93,23 @@ export const organization = pgTable(
     metadata: text("metadata"),
     // Platform-admin back-office additions (not part of Better Auth's own
     // organization model) - suspension state and the placeholder plan field
-    // ahead of the real credit/subscription system.
+    // (kept for legacy/display use), plus plan_id as the authoritative FK
+    // reference to platform_plans (constraint added via migration — cannot
+    // import platform_plans here without a circular dep with schema.ts).
     status: organizationStatusEnum("status").notNull().default("active"),
     plan: text("plan").notNull().default("free"),
+    planId: uuid("plan_id"),
+    // Signup attribution — captured at registration. The join key for the
+    // Super Admin Overview's acquisition-channel metrics and affiliate
+    // commission. Distinct from orders' UTM columns (shopper attribution);
+    // these attribute the *tenant signup* itself.
+    signupUtmSource: text("signup_utm_source"),
+    signupUtmMedium: text("signup_utm_medium"),
+    signupUtmCampaign: text("signup_utm_campaign"),
+    signupUtmContent: text("signup_utm_content"),
+    signupUtmTerm: text("signup_utm_term"),
+    signupReferrer: text("signup_referrer"),
+    signupLandingPath: text("signup_landing_path"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

@@ -8,6 +8,7 @@ import { getDb } from "@platform/db";
 import { ac, orgRoles } from "./access-control.js";
 import { isReservedSubdomain, isValidSubdomainFormat } from "../modules/sites/lib/subdomain.js";
 import { sendEmail } from "../modules/auth/lib/email.js";
+import { logSecurityEvent, type SecurityEventType } from "../modules/auth/lib/security-events.js";
 
 /**
  * Minimal console-backed logger so this module (and the `@better-auth/cli
@@ -76,11 +77,8 @@ async function findMemberRole(organizationId: string, userId: string): Promise<s
 
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
+  secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3001}`,
-  // Store-owner auth calls come from the storefront's /dashboard, proxied
-  // through Next's /api/:path* rewrite, so the Origin the API sees is
-  // STOREFRONT_APP_URL - not a tenant subdomain. Only two origins actually
-  // reach Better Auth: the platform-admin console and the storefront.
   trustedOrigins: [
     process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
     process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
@@ -201,6 +199,34 @@ export const auth = betterAuth({
           message: "Only an owner can remove or change the role of another owner",
         });
       }
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      const twoFactorEvents: Record<string, SecurityEventType> = {
+        "/two-factor/enable": "2fa_enabled",
+        "/two-factor/disable": "2fa_disabled",
+        "/two-factor/verify-totp": "2fa_verified",
+        "/two-factor/verify-otp": "2fa_verified",
+        "/two-factor/verify-backup-code": "backup_code_used",
+        "/two-factor/generate-backup-codes": "backup_codes_regenerated",
+      };
+      const eventType = twoFactorEvents[ctx.path];
+      if (!eventType) return;
+
+      const db = getDb();
+      const headers = ctx.headers as Headers | undefined;
+      const ip = headers?.get("x-forwarded-for")?.split(",")[0]?.trim();
+      const userAgent = headers?.get("user-agent") ?? undefined;
+
+      let userId: string | undefined;
+      const session = await getSessionFromCtx(ctx).catch(() => null);
+      if (session) {
+        userId = session.user.id;
+      } else {
+        const body = ctx.context?.returned as { user?: { id?: string } } | undefined;
+        userId = body?.user?.id;
+      }
+
+      await logSecurityEvent(db, { userId, eventType, ip, userAgent }).catch(() => {});
     }),
   },
 });

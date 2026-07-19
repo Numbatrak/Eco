@@ -5,11 +5,19 @@ import tenantDetailRoutes from "./tenant-detail.js";
 import tenantSuspendRoutes from "./tenant-suspend.js";
 import tenantReactivateRoutes from "./tenant-reactivate.js";
 import tenantPlanRoutes from "./tenant-plan.js";
-import tenantCreditsAdjustRoutes from "./tenant-credits-adjust.js";
-import metricsOverviewRoutes from "./metrics-overview.js";
+import tenantCreditsGrantRoutes from "./tenant-credits-grant.js";
+import tenantExtendTrialRoutes from "./tenant-extend-trial.js";
+import tenantResetPasswordRoutes from "./tenant-reset-password.js";
+import tenantDeleteRoutes from "./tenant-delete.js";
+import overviewRoutes from "./overview.js";
+import revenueRoutes from "./revenue.js";
+import affiliateRoutes from "./affiliates.js";
+import operationsRoutes from "./operations.js";
 import reservedSubdomainsRoutes from "./reserved-subdomains.js";
 import featureFlagsRoutes from "./feature-flags.js";
 import platformSettingsRoutes from "./settings.js";
+import creditsRoutes from "./credits.js";
+import businessMetricsRoutes from "./business-metrics.js";
 
 /**
  * Every route file registered here except login.ts sets
@@ -24,9 +32,17 @@ export default async function platformAdminRoutes(app: FastifyInstance): Promise
   await app.register(tenantSuspendRoutes);
   await app.register(tenantReactivateRoutes);
   await app.register(tenantPlanRoutes);
-  await app.register(tenantCreditsAdjustRoutes);
-  await app.register(metricsOverviewRoutes);
+  await app.register(tenantCreditsGrantRoutes);
+  await app.register(tenantExtendTrialRoutes);
+  await app.register(tenantResetPasswordRoutes);
+  await app.register(tenantDeleteRoutes);
+  await app.register(overviewRoutes);
+  await app.register(revenueRoutes);
+  await app.register(affiliateRoutes);
+  await app.register(operationsRoutes);
   await app.register(reservedSubdomainsRoutes);
   await app.register(featureFlagsRoutes);
   await app.register(platformSettingsRoutes);
+  await app.register(creditsRoutes);
+  await app.register(businessMetricsRoutes);
 }

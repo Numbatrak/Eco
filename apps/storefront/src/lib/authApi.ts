@@ -11,6 +11,24 @@ import type {
 } from "@platform/shared-types";
 import { apiRequest } from "./apiClient";
 
+export interface OrgMember {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: string;
+  createdAt: string;
+  user: { id: string; name: string; email: string; image?: string | null };
+}
+
+export interface OrgInvitation {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: string | null;
+  status: string;
+  expiresAt: string;
+}
+
 export interface EnableTwoFactorResponse {
   totpURI: string;
   backupCodes: string[];
@@ -83,4 +101,69 @@ export const authApi = {
     }),
 
   sendOtp: () => apiRequest<{ status: boolean }>("/api/auth/two-factor/send-otp", { method: "POST" }),
+
+  // --- Better Auth organization endpoints ---
+  setActiveOrganization: (organizationId: string) =>
+    apiRequest<{ id: string }>("/api/auth/organization/set-active", {
+      method: "POST",
+      body: { organizationId },
+    }),
+
+  createOrganization: (name: string, slug: string) =>
+    apiRequest<{ id: string; name: string; slug: string }>("/api/auth/organization/create", {
+      method: "POST",
+      body: { name, slug },
+    }),
+
+  // --- Team management ---
+  listMembers: (organizationId: string) =>
+    apiRequest<{ members: OrgMember[] }>("/api/auth/organization/get-members", {
+      method: "GET",
+    }),
+
+  listInvitations: () =>
+    apiRequest<{ invitations: OrgInvitation[] }>("/api/auth/organization/list-invitations", {
+      method: "GET",
+    }),
+
+  inviteMember: (email: string, role: string, organizationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/invite-member", {
+      method: "POST",
+      body: { email, role, organizationId },
+    }),
+
+  cancelInvitation: (invitationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/cancel-invitation", {
+      method: "POST",
+      body: { invitationId },
+    }),
+
+  acceptInvitation: (invitationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/accept-invitation", {
+      method: "POST",
+      body: { invitationId },
+    }),
+
+  rejectInvitation: (invitationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/reject-invitation", {
+      method: "POST",
+      body: { invitationId },
+    }),
+
+  getInvitation: (invitationId: string) =>
+    apiRequest<OrgInvitation>(`/api/auth/organization/get-invitation?id=${encodeURIComponent(invitationId)}`, {
+      method: "GET",
+    }),
+
+  removeMember: (memberIdOrEmail: string, organizationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/remove-member", {
+      method: "POST",
+      body: { memberIdOrEmail, organizationId },
+    }),
+
+  updateMemberRole: (memberId: string, role: string, organizationId: string) =>
+    apiRequest<unknown>("/api/auth/organization/update-member-role", {
+      method: "POST",
+      body: { memberId, role, organizationId },
+    }),
 };

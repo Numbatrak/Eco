@@ -4,14 +4,19 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/dashboard/AuthContext";
 import { siteConfigApi } from "../../../lib/siteConfigApi";
+import { commerceApi } from "../../../lib/commerceApi";
 import type {
   SiteConfig,
   TemplateId,
   SitePalette,
   SiteTypography,
   SiteSection,
+  SiteSectionKind,
+  SiteSocialLinks,
+  SiteFooter,
+  TrustBadgeItem,
 } from "@platform/shared-types";
-import { TEMPLATE_PRESETS, defaultSiteConfig } from "@platform/shared-types";
+import { TEMPLATE_PRESETS, FONT_PAIRINGS, SECTION_CATALOG, defaultSiteConfig } from "@platform/shared-types";
 import { StorefrontPreview } from "../../../components/storefront/StorefrontPreview";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,17 +40,76 @@ function useDebounce<T extends (...args: any[]) => any>(
   );
 }
 
+function ColorInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 w-8 cursor-pointer rounded border border-line bg-transparent p-0"
+        style={{ appearance: "none", WebkitAppearance: "none" }}
+      />
+      <div className="flex flex-col">
+        <span className="text-[10.5px] text-muted">{label}</span>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) onChange(v);
+          }}
+          className="w-[72px] rounded bg-transparent px-1 py-0.5 text-[11.5px] font-mono text-ink outline-none hover:bg-line-soft focus:bg-line-soft"
+        />
+      </div>
+    </div>
+  );
+}
+
+function newSection(kind: SiteSectionKind): SiteSection {
+  const id = `${kind}-${Date.now()}`;
+  switch (kind) {
+    case "announcement":
+      return { id, kind, visible: true, messages: ["Free shipping on all orders!"] };
+    case "hero":
+      return { id, kind, visible: true, eyebrow: "", headline: "Your headline here", sub: "A short description", ctaLabel: "Shop now" };
+    case "featured-collections":
+      return { id, kind, visible: true, eyebrow: "", title: "Collections", maxItems: 3 };
+    case "products":
+      return { id, kind, visible: true, title: "Featured products" };
+    case "brand-story":
+      return { id, kind, visible: true, eyebrow: "", headline: "Our story", body: "Tell your brand story here.", ctaLabel: "" };
+    case "trust-badges":
+      return { id, kind, visible: true, items: [
+        { title: "Fast delivery", body: "Ships within 24 hours." },
+        { title: "Secure payment", body: "Encrypted transactions." },
+      ] };
+    case "visit":
+      return { id, kind, visible: true, title: "Visit & hours", address: "", hours: "", contact: "" };
+  }
+}
+
 export default function BuilderPage(): React.ReactElement {
   const router = useRouter();
   const { activeOrganization } = useAuth();
-  
+
   const [draft, setDraft] = useState<SiteConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [activeTab, setActiveTab] = useState<"design" | "content">("design");
+  const [activeTab, setActiveTab] = useState<"design" | "content" | "social">("design");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState(false);
+  const [showAddSection, setShowAddSection] = useState(false);
 
   const saveConfig = useCallback(
     async (configToSave: SiteConfig) => {
@@ -67,15 +131,20 @@ export default function BuilderPage(): React.ReactElement {
     siteConfigApi
       .get()
       .then((cfg) => {
+        if (!cfg.social) cfg.social = {};
+        if (!cfg.footer) cfg.footer = { tagline: "", showSocial: true };
         setDraft(cfg);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Failed to load config", err);
-        // Fallback to default if load fails
         setDraft(defaultSiteConfig("market"));
         setLoading(false);
       });
+    commerceApi
+      .getTenantSettings()
+      .then((s) => setIsPublished(s.published))
+      .catch(() => {});
   }, []);
 
   const updateDraft = (newDraft: SiteConfig) => {
@@ -99,18 +168,17 @@ export default function BuilderPage(): React.ReactElement {
 
   const setPalette = (palette: SitePalette) => {
     if (!draft) return;
-    updateDraft({
-      ...draft,
-      theme: { ...draft.theme, palette },
-    });
+    updateDraft({ ...draft, theme: { ...draft.theme, palette } });
+  };
+
+  const updatePaletteField = (field: keyof SitePalette, value: string) => {
+    if (!draft) return;
+    setPalette({ ...draft.theme.palette, [field]: value });
   };
 
   const setTypography = (typography: SiteTypography) => {
     if (!draft) return;
-    updateDraft({
-      ...draft,
-      theme: { ...draft.theme, typography },
-    });
+    updateDraft({ ...draft, theme: { ...draft.theme, typography } });
   };
 
   const moveSection = (index: number, direction: "up" | "down") => {
@@ -142,11 +210,39 @@ export default function BuilderPage(): React.ReactElement {
     updateDraft({ ...draft, sections: newSections });
   };
 
-  const updateSectionField = (index: number, field: string, value: string) => {
+  const deleteSection = (index: number) => {
+    if (!draft) return;
+    const newSections = draft.sections.filter((_, i) => i !== index);
+    if (selectedSectionId === draft.sections[index]?.id) {
+      setSelectedSectionId(null);
+    }
+    updateDraft({ ...draft, sections: newSections });
+  };
+
+  const addSection = (kind: SiteSectionKind) => {
+    if (!draft) return;
+    const sec = newSection(kind);
+    updateDraft({ ...draft, sections: [...draft.sections, sec] });
+    setSelectedSectionId(sec.id);
+    setActiveTab("content");
+    setShowAddSection(false);
+  };
+
+  const updateSectionField = (index: number, field: string, value: unknown) => {
     if (!draft) return;
     const newSections = [...draft.sections];
     newSections[index] = { ...newSections[index], [field]: value } as SiteSection;
     updateDraft({ ...draft, sections: newSections });
+  };
+
+  const updateSocial = (field: keyof SiteSocialLinks, value: string) => {
+    if (!draft) return;
+    updateDraft({ ...draft, social: { ...draft.social, [field]: value || undefined } });
+  };
+
+  const updateFooter = (field: keyof SiteFooter, value: unknown) => {
+    if (!draft) return;
+    updateDraft({ ...draft, footer: { ...draft.footer, [field]: value } });
   };
 
   const handlePublish = async () => {
@@ -154,6 +250,7 @@ export default function BuilderPage(): React.ReactElement {
     try {
       await siteConfigApi.save(draft);
       await siteConfigApi.publish();
+      setIsPublished(true);
       const domain = `${activeOrganization?.slug}.localhost:3000`;
       showToast(`Published to ${domain}`);
     } catch (err) {
@@ -161,6 +258,8 @@ export default function BuilderPage(): React.ReactElement {
       showToast("Failed to publish");
     }
   };
+
+  const siteUrl = `http://${activeOrganization?.slug}.localhost:3000`;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -185,7 +284,7 @@ export default function BuilderPage(): React.ReactElement {
           title="Back to Dashboard"
           onClick={() => router.push("/dashboard")}
         >
-          ←
+          &larr;
         </button>
         <div className="flex flex-col leading-tight">
           <input
@@ -213,7 +312,7 @@ export default function BuilderPage(): React.ReactElement {
             onClick={() => setDevice("desktop")}
             title="Desktop view"
           >
-            ▭
+            &#x25AD;
           </button>
           <button
             className={`flex items-center px-2.5 py-1.5 ${
@@ -222,7 +321,7 @@ export default function BuilderPage(): React.ReactElement {
             onClick={() => setDevice("mobile")}
             title="Mobile view"
           >
-            ▯
+            &#x25AF;
           </button>
         </div>
         <button
@@ -231,6 +330,16 @@ export default function BuilderPage(): React.ReactElement {
         >
           Publish
         </button>
+        {isPublished && (
+          <a
+            href={siteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-[9px] border border-line px-4 py-2 text-[13.5px] font-semibold text-ink transition-transform hover:-translate-y-px hover:bg-line-soft active:translate-y-0"
+          >
+            Visit Site &nearr;
+          </a>
+        )}
       </div>
 
       {/* Workspace */}
@@ -262,9 +371,33 @@ export default function BuilderPage(): React.ReactElement {
             </div>
           </div>
           <div className="p-4">
-            <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Sections
-            </span>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Sections
+              </span>
+              <button
+                className="rounded-md bg-ink px-2 py-0.5 text-[10.5px] font-semibold text-paper hover:opacity-80"
+                onClick={() => setShowAddSection(!showAddSection)}
+              >
+                + Add
+              </button>
+            </div>
+
+            {showAddSection && (
+              <div className="mb-3 rounded-lg border border-line bg-paper p-2">
+                {SECTION_CATALOG.map((cat) => (
+                  <button
+                    key={cat.kind}
+                    className="flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left hover:bg-line-soft"
+                    onClick={() => addSection(cat.kind)}
+                  >
+                    <span className="text-[12.5px] font-medium">{cat.label}</span>
+                    <span className="text-[10.5px] text-muted">{cat.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex flex-col gap-1">
               {draft.sections.map((sec, idx) => (
                 <div
@@ -273,7 +406,7 @@ export default function BuilderPage(): React.ReactElement {
                     selectedSectionId === sec.id ? "bg-line-soft" : ""
                   }`}
                 >
-                  <span className="text-xs tracking-[1px] text-muted">⠿⠿</span>
+                  <span className="text-xs tracking-[1px] text-muted">&#x2807;&#x2807;</span>
                   <button
                     className={`flex-1 bg-transparent p-0 text-left text-[13px] font-medium ${
                       sec.visible ? "text-ink" : "text-muted line-through"
@@ -287,33 +420,31 @@ export default function BuilderPage(): React.ReactElement {
                   </button>
                   <button
                     className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-transparent text-[11px] text-muted hover:bg-panel hover:text-ink"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(idx, "up");
-                    }}
+                    onClick={(e) => { e.stopPropagation(); moveSection(idx, "up"); }}
                     title="Move up"
                   >
-                    ▲
+                    &#x25B2;
                   </button>
                   <button
                     className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-transparent text-[11px] text-muted hover:bg-panel hover:text-ink"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(idx, "down");
-                    }}
+                    onClick={(e) => { e.stopPropagation(); moveSection(idx, "down"); }}
                     title="Move down"
                   >
-                    ▼
+                    &#x25BC;
                   </button>
                   <button
                     className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-transparent text-[11px] text-muted hover:bg-panel hover:text-ink"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSectionVis(idx);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); toggleSectionVis(idx); }}
                     title="Toggle visibility"
                   >
-                    👁
+                    {sec.visible ? "◉" : "○"}
+                  </button>
+                  <button
+                    className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px] bg-transparent text-[11px] text-red-500 hover:bg-red-50 hover:text-red-700"
+                    onClick={(e) => { e.stopPropagation(); deleteSection(idx); }}
+                    title="Remove section"
+                  >
+                    &times;
                   </button>
                 </div>
               ))}
@@ -338,44 +469,39 @@ export default function BuilderPage(): React.ReactElement {
                 {activeOrganization?.slug}.localhost:3000
               </div>
             </div>
-            {/* The preview itself. We pass empty products list or sample ones to StorefrontPreview */}
-            <StorefrontPreview 
-              config={draft} 
-              products={[]} 
-              brandName={activeOrganization?.name || "Your Shop"} 
+            <StorefrontPreview
+              config={draft}
+              products={[]}
+              collections={[]}
+              brandName={activeOrganization?.name || "Your Shop"}
             />
           </div>
         </main>
 
         {/* Right Panel */}
-        <aside className="w-[250px] shrink-0 overflow-y-auto border-l border-line bg-panel">
+        <aside className="w-[280px] shrink-0 overflow-y-auto border-l border-line bg-panel">
           <div className="flex gap-0.5 px-4 pt-3">
-            <button
-              className={`flex-1 border-b-2 bg-transparent py-2 text-[12.5px] font-semibold ${
-                activeTab === "design"
-                  ? "border-ink text-ink"
-                  : "border-line text-muted hover:border-line-soft hover:text-ink"
-              }`}
-              onClick={() => setActiveTab("design")}
-            >
-              Design
-            </button>
-            <button
-              className={`flex-1 border-b-2 bg-transparent py-2 text-[12.5px] font-semibold ${
-                activeTab === "content"
-                  ? "border-ink text-ink"
-                  : "border-line text-muted hover:border-line-soft hover:text-ink"
-              }`}
-              onClick={() => setActiveTab("content")}
-            >
-              Content
-            </button>
+            {(["design", "content", "social"] as const).map((tab) => (
+              <button
+                key={tab}
+                className={`flex-1 border-b-2 bg-transparent py-2 text-[12.5px] font-semibold capitalize ${
+                  activeTab === tab
+                    ? "border-ink text-ink"
+                    : "border-line text-muted hover:border-line-soft hover:text-ink"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
+          {/* ─── Design Tab ─── */}
           <div className="p-4" style={{ display: activeTab === "design" ? "block" : "none" }}>
+            {/* Preset swatches */}
             <div className="mb-4">
               <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
-                Palette
+                Palette presets
               </span>
               <div className="flex flex-wrap gap-2.5">
                 {Object.values(TEMPLATE_PRESETS).map((preset, idx) => (
@@ -398,23 +524,26 @@ export default function BuilderPage(): React.ReactElement {
                 ))}
               </div>
             </div>
+
+            {/* Custom colors */}
+            <div className="mb-4">
+              <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Custom colors
+              </span>
+              <div className="flex flex-col gap-2.5">
+                <ColorInput label="Background" value={draft.theme.palette.bg} onChange={(v) => updatePaletteField("bg", v)} />
+                <ColorInput label="Text" value={draft.theme.palette.ink} onChange={(v) => updatePaletteField("ink", v)} />
+                <ColorInput label="Accent" value={draft.theme.palette.accent} onChange={(v) => updatePaletteField("accent", v)} />
+              </div>
+            </div>
+
+            {/* Typography */}
             <div className="mb-4">
               <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
                 Typography
               </span>
               <div className="flex flex-col gap-2">
-                {[
-                  {
-                    display: "bricolage",
-                    body: "space-grotesk",
-                    label: "Bricolage + Space Grotesk",
-                  },
-                  {
-                    display: "fraunces",
-                    body: "inter",
-                    label: "Fraunces + Inter",
-                  },
-                ].map((pair, idx) => (
+                {FONT_PAIRINGS.map((pair, idx) => (
                   <button
                     key={idx}
                     className={`flex items-center justify-between rounded-[9px] border-[1.5px] px-3 py-2 text-left ${
@@ -423,18 +552,17 @@ export default function BuilderPage(): React.ReactElement {
                         ? "border-ink"
                         : "border-line"
                     }`}
-                    onClick={() => setTypography(pair as SiteTypography)}
+                    onClick={() => setTypography({ display: pair.display, body: pair.body })}
                   >
                     <div>
-                      <div className="text-base" style={{ fontFamily: "var(--p-display)" }}>
-                        Aa Coffee
-                      </div>
-                      <div className="mt-0.5 text-[10.5px] text-muted">{pair.label}</div>
+                      <div className="text-[13px] font-semibold">{pair.label}</div>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Logo */}
             <div>
               <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
                 Logo
@@ -465,103 +593,164 @@ export default function BuilderPage(): React.ReactElement {
             </div>
           </div>
 
+          {/* ─── Content Tab ─── */}
           <div className="p-4" style={{ display: activeTab === "content" ? "block" : "none" }}>
             {selectedSection ? (
               <div className="flex flex-col gap-3">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  {selectedSection.kind}
+                </span>
+
+                {/* ── Announcement ── */}
+                {selectedSection.kind === "announcement" && (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11.5px] text-muted">Messages (one per line)</label>
+                      <textarea
+                        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
+                        rows={4}
+                        value={selectedSection.messages.join("\n")}
+                        onChange={(e) =>
+                          updateSectionField(
+                            selectedSectionIndex,
+                            "messages",
+                            e.target.value.split("\n").filter(Boolean),
+                          )
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── Hero ── */}
                 {selectedSection.kind === "hero" && (
                   <>
+                    <FieldInput label="Eyebrow" value={selectedSection.eyebrow || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "eyebrow", v)} />
+                    <FieldInput label="Headline" value={selectedSection.headline} onChange={(v) => updateSectionField(selectedSectionIndex, "headline", v)} />
+                    <FieldTextarea label="Subheading" value={selectedSection.sub} onChange={(v) => updateSectionField(selectedSectionIndex, "sub", v)} />
+                    <FieldInput label="Button label" value={selectedSection.ctaLabel} onChange={(v) => updateSectionField(selectedSectionIndex, "ctaLabel", v)} />
+                    <FieldInput label="Button URL" value={selectedSection.ctaUrl || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "ctaUrl", v)} />
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Headline</label>
+                      <label className="text-[11.5px] text-muted">Hero image</label>
                       <input
-                        className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        value={selectedSection.headline}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "headline", e.target.value)
-                        }
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              updateSectionField(selectedSectionIndex, "imageUrl", ev.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="text-xs"
                       />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Subheading</label>
-                      <textarea
-                        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        rows={3}
-                        value={selectedSection.sub}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "sub", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Button label</label>
-                      <input
-                        className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        value={selectedSection.ctaLabel}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "ctaLabel", e.target.value)
-                        }
-                      />
+                      {selectedSection.imageUrl && (
+                        <button
+                          className="mt-1 text-left text-[11px] text-red-500 hover:underline"
+                          onClick={() => updateSectionField(selectedSectionIndex, "imageUrl", undefined)}
+                        >
+                          Remove image
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
+
+                {/* ── Products ── */}
                 {selectedSection.kind === "products" && (
+                  <FieldInput label="Title" value={selectedSection.title || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "title", v)} />
+                )}
+
+                {/* ── Featured Collections ── */}
+                {selectedSection.kind === "featured-collections" && (
                   <>
+                    <FieldInput label="Eyebrow" value={selectedSection.eyebrow || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "eyebrow", v)} />
+                    <FieldInput label="Title" value={selectedSection.title || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "title", v)} />
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Title</label>
+                      <label className="text-[11.5px] text-muted">Max items</label>
                       <input
-                        className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        value={selectedSection.title || ""}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "title", e.target.value)
-                        }
+                        type="number"
+                        min={1}
+                        max={6}
+                        value={selectedSection.maxItems ?? 3}
+                        onChange={(e) => updateSectionField(selectedSectionIndex, "maxItems", parseInt(e.target.value) || 3)}
+                        className="w-16 rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
                       />
                     </div>
                   </>
                 )}
+
+                {/* ── Brand Story ── */}
+                {selectedSection.kind === "brand-story" && (
+                  <>
+                    <FieldInput label="Eyebrow" value={selectedSection.eyebrow || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "eyebrow", v)} />
+                    <FieldInput label="Headline" value={selectedSection.headline} onChange={(v) => updateSectionField(selectedSectionIndex, "headline", v)} />
+                    <FieldTextarea label="Body" value={selectedSection.body} rows={5} onChange={(v) => updateSectionField(selectedSectionIndex, "body", v)} />
+                    <FieldInput label="Link text" value={selectedSection.ctaLabel || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "ctaLabel", v)} />
+                    <FieldInput label="Link URL" value={selectedSection.ctaUrl || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "ctaUrl", v)} />
+                  </>
+                )}
+
+                {/* ── Trust Badges ── */}
+                {selectedSection.kind === "trust-badges" && (
+                  <>
+                    {selectedSection.items.map((item: TrustBadgeItem, i: number) => (
+                      <div key={i} className="rounded-lg border border-line p-2">
+                        <FieldInput
+                          label={`Badge ${i + 1} title`}
+                          value={item.title}
+                          onChange={(v) => {
+                            const newItems = [...selectedSection.items];
+                            newItems[i] = { title: v, body: newItems[i]!.body };
+                            updateSectionField(selectedSectionIndex, "items", newItems);
+                          }}
+                        />
+                        <FieldInput
+                          label="Description"
+                          value={item.body}
+                          onChange={(v) => {
+                            const newItems = [...selectedSection.items];
+                            newItems[i] = { title: newItems[i]!.title, body: v };
+                            updateSectionField(selectedSectionIndex, "items", newItems);
+                          }}
+                        />
+                        {selectedSection.items.length > 1 && (
+                          <button
+                            className="mt-1 text-[10.5px] text-red-500 hover:underline"
+                            onClick={() => {
+                              const newItems = selectedSection.items.filter((_: TrustBadgeItem, j: number) => j !== i);
+                              updateSectionField(selectedSectionIndex, "items", newItems);
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {selectedSection.items.length < 6 && (
+                      <button
+                        className="rounded-md border border-dashed border-line px-3 py-1.5 text-[12px] text-muted hover:bg-line-soft"
+                        onClick={() => {
+                          const newItems = [...selectedSection.items, { title: "New badge", body: "Description" }];
+                          updateSectionField(selectedSectionIndex, "items", newItems);
+                        }}
+                      >
+                        + Add badge
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* ── Visit ── */}
                 {selectedSection.kind === "visit" && (
                   <>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Title</label>
-                      <input
-                        className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        value={selectedSection.title || ""}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "title", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Address</label>
-                      <textarea
-                        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        rows={2}
-                        value={selectedSection.address || ""}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "address", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Hours</label>
-                      <textarea
-                        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        rows={2}
-                        value={selectedSection.hours || ""}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "hours", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11.5px] text-muted">Contact</label>
-                      <textarea
-                        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
-                        rows={2}
-                        value={selectedSection.contact || ""}
-                        onChange={(e) =>
-                          updateSectionField(selectedSectionIndex, "contact", e.target.value)
-                        }
-                      />
-                    </div>
+                    <FieldInput label="Title" value={selectedSection.title || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "title", v)} />
+                    <FieldTextarea label="Address" value={selectedSection.address || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "address", v)} />
+                    <FieldTextarea label="Hours" value={selectedSection.hours || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "hours", v)} />
+                    <FieldTextarea label="Contact" value={selectedSection.contact || ""} onChange={(v) => updateSectionField(selectedSectionIndex, "contact", v)} />
                   </>
                 )}
               </div>
@@ -570,6 +759,35 @@ export default function BuilderPage(): React.ReactElement {
                 Select a section from the left rail to edit its content.
               </div>
             )}
+          </div>
+
+          {/* ─── Social Tab ─── */}
+          <div className="p-4" style={{ display: activeTab === "social" ? "block" : "none" }}>
+            <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Social links
+            </span>
+            <div className="flex flex-col gap-2.5 mb-5">
+              <FieldInput label="Instagram URL" value={draft.social?.instagram || ""} onChange={(v) => updateSocial("instagram", v)} />
+              <FieldInput label="TikTok URL" value={draft.social?.tiktok || ""} onChange={(v) => updateSocial("tiktok", v)} />
+              <FieldInput label="Twitter / X URL" value={draft.social?.twitter || ""} onChange={(v) => updateSocial("twitter", v)} />
+              <FieldInput label="Facebook URL" value={draft.social?.facebook || ""} onChange={(v) => updateSocial("facebook", v)} />
+              <FieldInput label="WhatsApp number" value={draft.social?.whatsapp || ""} onChange={(v) => updateSocial("whatsapp", v)} />
+            </div>
+
+            <span className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Footer
+            </span>
+            <div className="flex flex-col gap-2.5">
+              <FieldInput label="Tagline" value={draft.footer?.tagline || ""} onChange={(v) => updateFooter("tagline", v)} />
+              <label className="flex items-center gap-2 text-[12.5px]">
+                <input
+                  type="checkbox"
+                  checked={draft.footer?.showSocial !== false}
+                  onChange={(e) => updateFooter("showSocial", e.target.checked)}
+                />
+                Show social links in footer
+              </label>
+            </div>
           </div>
         </aside>
       </div>
@@ -581,6 +799,51 @@ export default function BuilderPage(): React.ReactElement {
           {toastMessage}
         </div>
       )}
+    </div>
+  );
+}
+
+function FieldInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[11.5px] text-muted">{label}</label>
+      <input
+        className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+function FieldTextarea({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[11.5px] text-muted">{label}</label>
+      <textarea
+        className="w-full resize-y rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

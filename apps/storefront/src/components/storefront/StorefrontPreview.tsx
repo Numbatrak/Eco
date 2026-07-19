@@ -1,19 +1,22 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { PublicSiteProduct, SiteConfig } from "@platform/shared-types";
-import "./storefront.css";
-import { FONT_FAMILY } from "./fonts";
 import { HeroSection } from "./HeroSection";
 import { ProductsSection } from "./ProductsSection";
 import { VisitSection } from "./VisitSection";
-import { SiteNavBar } from "./SiteNavBar";
-import { SiteFooter } from "./SiteFooter";
+import { AnnouncementBar } from "./AnnouncementBar";
+import { FeaturedCollectionsSection, type CollectionItem } from "./FeaturedCollectionsSection";
+import { BrandStorySection } from "./BrandStorySection";
+import { TrustBadgesSection } from "./TrustBadgesSection";
+import { StorefrontShell } from "./StorefrontShell";
 
 export interface StorefrontPreviewProps {
   brandName: string;
   config: SiteConfig;
   products: PublicSiteProduct[];
+  collections?: CollectionItem[];
+  hasCollections?: boolean;
   /** Optional add-to-cart handler; when omitted, product cards render without the button. */
   onAddToCart?: (productId: string) => void | Promise<void>;
   addingProductId?: string | null;
@@ -27,6 +30,8 @@ export function StorefrontPreview({
   brandName,
   config,
   products,
+  collections = [],
+  hasCollections,
   onAddToCart,
   addingProductId,
   mobile,
@@ -34,25 +39,22 @@ export function StorefrontPreview({
 }: StorefrontPreviewProps): React.ReactElement {
   const { theme, sections } = config;
 
-  const style: CSSProperties = {
-    ["--st-ink" as string]: theme.palette.ink,
-    ["--st-bg" as string]: theme.palette.bg,
-    ["--st-accent" as string]: theme.palette.accent,
-    ["--st-display" as string]: FONT_FAMILY[theme.typography.display],
-    ["--st-body" as string]: FONT_FAMILY[theme.typography.body],
-  };
-
   return (
-    <div
-      className={`storefront-theme${mobile ? " mobile" : ""}`}
-      data-template={theme.templateId}
-      style={style}
-    >
-      <SiteNavBar brandName={brandName} theme={theme} cartSlot={cartSlot} />
+    <StorefrontShell brandName={brandName} theme={theme} social={config.social} footer={config.footer} hasCollections={hasCollections} mobile={mobile} cartSlot={cartSlot}>
       {sections.map((section) => {
         switch (section.kind) {
+          case "announcement":
+            return <AnnouncementBar key={section.id} section={section} />;
           case "hero":
             return <HeroSection key={section.id} section={section} />;
+          case "featured-collections":
+            return (
+              <FeaturedCollectionsSection
+                key={section.id}
+                section={section}
+                collections={collections}
+              />
+            );
           case "products":
             return (
               <ProductsSection
@@ -63,13 +65,16 @@ export function StorefrontPreview({
                 addingId={addingProductId}
               />
             );
+          case "brand-story":
+            return <BrandStorySection key={section.id} section={section} />;
+          case "trust-badges":
+            return <TrustBadgesSection key={section.id} section={section} />;
           case "visit":
             return <VisitSection key={section.id} section={section} />;
           default:
             return null;
         }
       })}
-      <SiteFooter brandName={brandName} />
-    </div>
+    </StorefrontShell>
   );
 }
