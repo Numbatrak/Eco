@@ -1,6 +1,5 @@
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState } from "react";
 import { Agent } from "../types/agent";
-import { fetchAgentMetricsMap } from "../services/agentMetrics";
 import type { AgentMetrics } from "../services/agentMetrics";
 import { AgentDialog } from "./agents/AgentDialog";
 import { AgentTable } from "./agents/AgentTable";
@@ -10,15 +9,18 @@ import { createAgent, updateAgent, removeAgent, setAgentActive } from "../servic
 import { usePermissions } from "../hooks/usePermissions";
 import { useOrganization } from "../contexts/OrganizationContext";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
-import { useCachedAgents } from "../hooks/useCachedData";
-import { useActivityLogger } from "../utils/activityLogger";
+import { useCachedAgents } from "../hooks/useCachedAgents";
 import { PageLayout } from "./layout/PageLayout";
 
+// NOTE: agent performance metrics (delivery rate, stock on hand) and the
+// activity-feed audit log are both sourced from features not yet ported off
+// Supabase (Orders/Stock, Activities) - agentMetrics stays permanently empty
+// and activity logging is skipped here until those land. AgentTable already
+// renders gracefully with no metrics data.
 export default function AgentsForm() {
   const { hasPermission } = usePermissions();
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
-  const { logActivityAction } = useActivityLogger();
   const canCreate = hasPermission("agents", "canCreate");
   const canUpdate = hasPermission("agents", "canUpdate");
   const canDelete = hasPermission("agents", "canDelete");
@@ -45,33 +47,9 @@ export default function AgentsForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [localError, setLocalError] = useState<string | null>(null);
-  const [agentMetrics, setAgentMetrics] = useState<Map<number, AgentMetrics>>(
-    new Map()
-  );
-  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [agentMetrics] = useState<Map<number, AgentMetrics>>(new Map());
+  const [metricsLoading] = useState(false);
   const [hideInactive, setHideInactive] = useState(false);
-
-  useEffect(() => {
-    if (!currentOrganization?.id) {
-      setAgentMetrics(new Map());
-      return;
-    }
-    let cancel = false;
-    (async () => {
-      try {
-        setMetricsLoading(true);
-        const map = await fetchAgentMetricsMap(currentOrganization.id);
-        if (!cancel) setAgentMetrics(map);
-      } catch (err) {
-        console.error("Error loading agent metrics:", err);
-      } finally {
-        if (!cancel) setMetricsLoading(false);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [currentOrganization?.id, agents.length]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -94,13 +72,6 @@ export default function AgentsForm() {
         });
         updateItem(updatedAgent); // Update cache
         setSuccess("Agent updated successfully!");
-        // Log activity
-        await logActivityAction(
-          'agent_updated',
-          'agent',
-          updatedAgent.id,
-          `Agent "${updatedAgent.name}" updated`
-        );
       } else {
         if (!currentOrganization) {
           return;
@@ -108,20 +79,12 @@ export default function AgentsForm() {
         const newAgent = await createAgent({
           name: agentName.trim(),
           locations: locationsToSave,
-          organization_id: currentOrganization.id,
           contact_person: contactPerson,
           contact_phone: contactPhone,
           contact_email: contactEmail,
         });
         updateItem(newAgent); // Update cache
         setSuccess("Agent created successfully!");
-        // Log activity
-        await logActivityAction(
-          'agent_created',
-          'agent',
-          newAgent.id,
-          `Agent "${newAgent.name}" created`
-        );
       }
 
       resetForm();
@@ -166,16 +129,9 @@ export default function AgentsForm() {
     if (!(await confirmDelete(confirm, "agent"))) return;
 
     try {
-      const agentToDelete = agents.find((a) => a.id === agentId);
       await removeAgent(agentId);
       removeItem(agentId);
       setSuccess("Agent deleted successfully!");
-      await logActivityAction(
-        "agent_deleted",
-        "agent",
-        agentId,
-        `Agent "${agentToDelete?.name || "Unknown"}" deleted`
-      );
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Error deleting agent:", err);
@@ -205,12 +161,6 @@ export default function AgentsForm() {
         active
           ? "Agent reactivated successfully!"
           : "Agent deactivated successfully!"
-      );
-      await logActivityAction(
-        active ? "agent_updated" : "agent_updated",
-        "agent",
-        updated.id,
-        `Agent "${updated.name}" ${active ? "reactivated" : "deactivated"}`
       );
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: unknown) {

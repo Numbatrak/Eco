@@ -57,7 +57,8 @@ export default defineConfig({
   },
   publicDir: "public", // Explicitly set public directory
   server: {
-    port: 3000,
+    // storefront=3000, api=3001, admin=3002, numbatrak=3003
+    port: 3003,
     open: true,
   },
 });

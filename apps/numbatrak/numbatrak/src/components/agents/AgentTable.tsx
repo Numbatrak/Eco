@@ -1,5 +1,5 @@
 import { Agent } from "../../types/agent";
-import { AgentMetrics } from "../../services/agentMetrics";
+import type { AgentMetrics } from "../../services/agentMetrics";
 import { AgentTableHeader } from "./AgentTableHeader";
 import { AgentTableRow } from "./AgentTableRow";
 import { AgentTableLoadingState } from "./AgentTableLoadingState";

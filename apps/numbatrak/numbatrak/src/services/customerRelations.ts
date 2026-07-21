@@ -1,38 +1,26 @@
-"use client";
-
-import { supabase } from "../supabaseClient";
+import { authApi } from "../lib/authApi";
 import { UserProfile } from "../types/user";
-import { fetchOrganizationMembers } from "./organizations";
 
 /**
- * Fetch Customer Relations users in the current organization (org role, not global profile role).
+ * Fetch Customer Relations (csr-role) users in the current organization.
+ * Reuses Better Auth's own org-members endpoint (no Numbatrak-specific
+ * backend route needed) rather than a user_profiles table lookup.
  */
 export async function fetchCustomerRelationsUsers(
   organizationId: string | null
 ): Promise<UserProfile[]> {
   if (!organizationId) return [];
 
-  const members = await fetchOrganizationMembers(organizationId);
-  const crMembers = members.filter((m) => m.role === "Customer Relations");
-  if (!crMembers.length) return [];
-
-  const userIds = crMembers.map((m) => m.user_id);
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select("id, email, full_name, role, created_at, updated_at")
-    .in("id", userIds)
-    .order("full_name", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return (data || []).map((profile) => ({
-    id: profile.id,
-    email: profile.email || null,
-    full_name: profile.full_name ?? null,
-    role: profile.role,
-    created_at: profile.created_at || null,
-    updated_at: profile.updated_at || null,
-  }));
+  const { members } = await authApi.listMembers();
+  return members
+    .filter((m) => m.role === "csr")
+    .map((m) => ({
+      id: m.user.id,
+      email: m.user.email || null,
+      full_name: m.user.name ?? null,
+      role: "Customer Relations",
+      email_verified: true,
+      created_at: m.createdAt || null,
+      updated_at: null,
+    }));
 }

@@ -1,22 +1,12 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from "react";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { OrganizationWithRole } from "../types/organization";
-import { fetchUserOrganizations } from "../services/organizations";
-import { supabase } from "../supabaseClient";
+import { mapOrgRoleToUserRole } from "../utils/roleMapping";
 import {
-  resolveOrganization,
   setDefaultOrganizationId,
   clearDefaultOrganizationId,
   isDefaultOrganization,
 } from "../utils/defaultOrganization";
-import { isInvalidRefreshTokenError } from "../utils/authErrors";
 
 interface OrganizationContextType {
   currentOrganization: OrganizationWithRole | null;
@@ -29,18 +19,32 @@ interface OrganizationContextType {
   refreshOrganizations: () => Promise<void>;
 }
 
-const OrganizationContext = createContext<OrganizationContextType | undefined>(
-  undefined,
-);
+const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, user, loading: authLoading } = useSupabaseAuth();
-  const [currentOrganization, setCurrentOrganizationState] =
-    useState<OrganizationWithRole | null>(null);
-  const [organizations, setOrganizations] = useState<OrganizationWithRole[]>(
-    [],
+  const { status, user, organizations: memberships, activeOrganizationId, refreshMe, switchOrganization } =
+    useAuth();
+  const [switching, setSwitching] = useState(false);
+
+  const organizations = useMemo<OrganizationWithRole[]>(
+    () =>
+      memberships.map((m) => ({
+        id: m.id,
+        name: m.name,
+        logo_url: null,
+        timezone: null,
+        currency: null,
+        created_at: null,
+        updated_at: null,
+        role: mapOrgRoleToUserRole(m.role),
+      })),
+    [memberships],
   );
-  const [loading, setLoading] = useState(true);
+
+  const currentOrganization = useMemo<OrganizationWithRole | null>(() => {
+    if (organizations.length === 0) return null;
+    return organizations.find((o) => o.id === activeOrganizationId) ?? organizations[0] ?? null;
+  }, [organizations, activeOrganizationId]);
 
   const persistDefault = useCallback(
     (org: OrganizationWithRole | null) => {
@@ -56,109 +60,37 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   const setCurrentOrganization = useCallback(
     (org: OrganizationWithRole | null) => {
-      setCurrentOrganizationState(org);
-      if (org) {
-        persistDefault(org);
-      }
+      if (!org || org.id === activeOrganizationId) return;
+      persistDefault(org);
+      setSwitching(true);
+      void switchOrganization(org.id).finally(() => setSwitching(false));
     },
-    [persistDefault],
+    [activeOrganizationId, persistDefault, switchOrganization],
   );
 
   const setDefaultOrganization = useCallback(
     (org: OrganizationWithRole) => {
-      setCurrentOrganizationState(org);
       persistDefault(org);
     },
     [persistDefault],
   );
 
-  const checkIsDefault = useCallback(
-    (orgId: string) => isDefaultOrganization(user?.id, orgId),
-    [user?.id],
-  );
+  const checkIsDefault = useCallback((orgId: string) => isDefaultOrganization(user?.id, orgId), [user?.id]);
 
-  const loadOrganizations = useCallback(async () => {
-    // Wait until auth has finished — prevents false "no org" on first paint
-    if (authLoading) {
-      setLoading(true);
-      return;
-    }
-
-    if (!isAuthenticated || !user?.id) {
-      setOrganizations([]);
-      setCurrentOrganizationState(null);
-      setLoading(false);
-      return;
-    }
-
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError && isInvalidRefreshTokenError(sessionError)) {
-      await supabase.auth.signOut();
-      setOrganizations([]);
-      setCurrentOrganizationState(null);
-      setLoading(false);
-      return;
-    }
-
-    if (!session) {
-      setOrganizations([]);
-      setCurrentOrganizationState(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const orgs = await fetchUserOrganizations();
-      setOrganizations(orgs);
-
-      setCurrentOrganizationState((prev) => {
-        const resolved = resolveOrganization(orgs, user.id, prev);
-        if (resolved) {
-          setDefaultOrganizationId(user.id, resolved.id);
-        }
-        return resolved;
-      });
-    } catch (error: unknown) {
-      console.error("Error loading organizations:", error);
-      if (isInvalidRefreshTokenError(error)) {
-        await supabase.auth.signOut();
-        setOrganizations([]);
-        setCurrentOrganizationState(null);
-        return;
-      }
-      // Keep prior org if refresh fails — don't send user to org picker on transient errors
-    } finally {
-      setLoading(false);
-    }
-  }, [authLoading, isAuthenticated, user?.id]);
-
-  useEffect(() => {
-    void loadOrganizations();
-  }, [loadOrganizations]);
-
-  const needsOrganizationSelection =
-    isAuthenticated &&
-    !authLoading &&
-    !loading &&
-    organizations.length === 0 &&
-    !currentOrganization;
+  const loading = status === "loading" || switching;
+  const needsOrganizationSelection = status === "authenticated" && organizations.length === 0;
 
   return (
     <OrganizationContext.Provider
       value={{
         currentOrganization,
         organizations,
-        loading: loading || authLoading,
+        loading,
         needsOrganizationSelection,
         setCurrentOrganization,
         setDefaultOrganization,
         isDefaultOrganization: checkIsDefault,
-        refreshOrganizations: loadOrganizations,
+        refreshOrganizations: refreshMe,
       }}
     >
       {children}
@@ -169,9 +101,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 export function useOrganization() {
   const context = useContext(OrganizationContext);
   if (context === undefined) {
-    throw new Error(
-      "useOrganization must be used within an OrganizationProvider",
-    );
+    throw new Error("useOrganization must be used within an OrganizationProvider");
   }
   return context;
 }

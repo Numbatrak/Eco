@@ -31,6 +31,18 @@ const statement = {
   settings: ["manage"],
   payments: ["manage"],
   orders: ["view", "manage"],
+  // Numbatrak domain resources (packages/db/src/schema/numbatrak/). Added
+  // incrementally, one per ported feature slice.
+  numbatrakAgents: ["view", "manage"],
+  // Distinct from the storefront's own `products` resource above - a
+  // different table/domain entirely. Read-only for now: the backing route
+  // is a minimal list-only endpoint (full Products CRUD is a later slice),
+  // needed here only so Orders can populate its line-item product picker.
+  numbatrakProducts: ["view"],
+  // Finer-grained than "view"/"manage" deliberately: the source app's own
+  // permission matrix gives CSR create+update but explicitly NOT delete, so
+  // a single "manage" bucket would over-grant delete to csr.
+  numbatrakOrders: ["view", "create", "update", "delete"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -50,6 +62,9 @@ export const ownerRole = ac.newRole({
   settings: ["manage"],
   payments: ["manage"],
   orders: ["view", "manage"],
+  numbatrakAgents: ["view", "manage"],
+  numbatrakProducts: ["view"],
+  numbatrakOrders: ["view", "create", "update", "delete"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -66,6 +81,9 @@ export const adminRole = ac.newRole({
   settings: ["manage"],
   payments: ["manage"],
   orders: ["view", "manage"],
+  numbatrakAgents: ["view", "manage"],
+  numbatrakProducts: ["view"],
+  numbatrakOrders: ["view", "create", "update", "delete"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -79,7 +97,9 @@ export const adminRole = ac.newRole({
  * Editor's grant list is closed/explicit per the product spec - unlike
  * viewer, it does NOT expand to include every `*.view` action, so it does
  * not get `orders.view` (nor `billing.view`), and has none of the
- * org/member-management resources either.
+ * org/member-management resources either. Storefront-only role - no
+ * Numbatrak grants (a Numbatrak-only business assigns owner/admin/manager/csr
+ * to its team instead, never editor/viewer).
  */
 export const editorRole = ac.newRole({
   site: ["edit"],
@@ -87,7 +107,10 @@ export const editorRole = ac.newRole({
   collections: ["edit", "view"],
 });
 
-/** Viewer gets every `*.view` action across all statements. */
+/**
+ * Viewer gets every `*.view` action across all statements. Storefront-only
+ * role - see editorRole's note; no Numbatrak grants.
+ */
 export const viewerRole = ac.newRole({
   billing: ["view"],
   products: ["view"],
@@ -95,9 +118,38 @@ export const viewerRole = ac.newRole({
   orders: ["view"],
 });
 
+/**
+ * Numbatrak's "Manager" - team/operational access, no billing/org/member
+ * management. No storefront grants (Numbatrak-specific role), same shape as
+ * editorRole in that respect.
+ */
+export const managerRole = ac.newRole({
+  numbatrakAgents: ["view", "manage"],
+  numbatrakProducts: ["view"],
+  numbatrakOrders: ["view", "create", "update", "delete"],
+});
+
+/**
+ * Numbatrak's "Customer Relations" - per the source app's own permission
+ * matrix (utils/permissions.ts), CSR can view+create+update orders but
+ * explicitly NOT delete - unlike numbatrakAgents/numbatrakOrders' other
+ * roles, deliberately omits "delete" here rather than granting it via a
+ * catch-all bucket. Row-level "own orders only" scoping (a CSR only sees
+ * orders assigned to them) is enforced in the list route
+ * (lib/orders.ts's csrScopeUserId param), not by this statement - this only
+ * gates the resource/actions, not which rows.
+ */
+export const csrRole = ac.newRole({
+  numbatrakAgents: ["view"],
+  numbatrakProducts: ["view"],
+  numbatrakOrders: ["view", "create", "update"],
+});
+
 export const orgRoles = {
   owner: ownerRole,
   admin: adminRole,
   editor: editorRole,
   viewer: viewerRole,
+  manager: managerRole,
+  csr: csrRole,
 };

@@ -1,4 +1,3 @@
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
 import { useOrganization } from "../contexts/OrganizationContext";
 import {
   hasPermission,

@@ -1,10 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { LogOut } from "lucide-react";
 import { usePermissions } from "../hooks/usePermissions";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
-import { fetchMyPendingInvitations } from "../services/organizationInvitations";
+import { useAuth } from "../auth/AuthProvider";
 import {
   NAV_GROUPS,
   isNavPathActive,
@@ -24,23 +23,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const logoVariant = resolvedTheme === "light" ? "onLight" : "onDark";
   const location = useLocation();
   const { hasPermission, hasAnyRole } = usePermissions();
-  const { isAuthenticated, signOut } = useSupabaseAuth();
-  const [pendingInvitationsCount, setPendingInvitationsCount] = useState(0);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadPendingInvitations();
-    }
-  }, [isAuthenticated]);
-
-  const loadPendingInvitations = async () => {
-    try {
-      const invitations = await fetchMyPendingInvitations();
-      setPendingInvitationsCount(invitations.length);
-    } catch (err) {
-      console.error("Error loading pending invitations:", err);
-    }
-  };
+  const { logout } = useAuth();
+  // Org invitations aren't ported off Supabase yet - no pending-invitation
+  // badge until that lands.
+  const [pendingInvitationsCount] = useState(0);
 
   const isItemVisible = (item: NavItemConfig): boolean => {
     if (item.showWhenPendingInvitations && pendingInvitationsCount === 0) {
@@ -123,7 +109,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               className="sidebar-nav-item sidebar-sign-out-btn"
               onClick={() => {
                 onClose?.();
-                void signOut();
+                void logout();
               }}
             >
               <LogOut className="sidebar-nav-item-icon" />

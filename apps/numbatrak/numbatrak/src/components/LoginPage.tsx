@@ -2,11 +2,10 @@
 
 import React, { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { supabase } from "../supabaseClient";
 import { Package, TrendingUp, Users, Shield, Eye, EyeOff } from "lucide-react";
-import { isEmailVerified } from "../services/emailVerification";
-import { fetchMyPendingInvitations } from "../services/organizationInvitations";
-import { buildVerifyEmailPath } from "../utils/emailVerificationRoutes";
+import { authApi } from "../lib/authApi";
+import { ApiError } from "../lib/apiClient";
+import { useAuth } from "../auth/AuthProvider";
 import { BrandTagline } from "./brand/BrandTagline";
 import { NumbatrakLogo } from "./brand/NumbatrakLogo";
 import "./LoginPage.css";
@@ -15,95 +14,44 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect");
+  const { refreshMe } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [showVerifyLink, setShowVerifyLink] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
-    setShowVerifyLink(false);
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await authApi.login(email, password);
 
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          setError(
-            "Your email isn't verified yet. Please check your inbox for the verification code.",
-          );
-          setShowVerifyLink(true);
-        } else if (error.message.includes("Invalid login credentials")) {
-          setError("Invalid email or password.");
-        } else {
-          setError(error.message);
-        }
+      if ("twoFactorRedirect" in result) {
+        // Two-factor accounts aren't supported by this app yet.
+        setError("This account requires two-factor authentication, which isn't supported here yet.");
         setLoading(false);
         return;
       }
 
-      // Login successful — require app email verification before app access
-      const verified = await isEmailVerified();
-      if (!verified) {
-        setMessage("Please verify your email to continue.");
-        setLoading(false);
-        navigate(
-          buildVerifyEmailPath({
-            from: "login",
-            redirect: redirectTo,
-          }),
-          { replace: true },
-        );
-        return;
-      }
-
-      // Check for pending invitations
-      setMessage("Logged in! Checking for invitations...");
-      setLoading(false);
-
-      // Check for pending invitations
-      try {
-        if (redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
-          setMessage("Logged in! Redirecting...");
-          setTimeout(() => {
-            navigate(redirectTo, { replace: true });
-          }, 300);
-          return;
-        }
-
-        const invitations = await fetchMyPendingInvitations();
-        if (invitations.length > 0) {
-          setMessage(
-            `Logged in! You have ${invitations.length} pending invitation(s). Redirecting...`,
-          );
-          setTimeout(() => {
-            navigate("/accept-invitation", { replace: true });
-          }, 1000);
-        } else {
-          setMessage("Logged in! Redirecting...");
-          setTimeout(() => {
-            navigate("/", { replace: true });
-          }, 300);
-        }
-      } catch (err) {
-        // If we can't check invitations, just redirect to dashboard
-        setMessage("Logged in! Redirecting...");
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 300);
-      }
+      await refreshMe();
+      setMessage("Logged in! Redirecting...");
+      const target =
+        redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/agents";
+      setTimeout(() => {
+        navigate(target, { replace: true });
+      }, 300);
     } catch (err) {
-      console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
+      if (err instanceof ApiError) {
+        setError(err.status === 401 ? "Invalid email or password." : err.message);
+      } else {
+        console.error("Login error:", err);
+        setError("An unexpected error occurred. Please try again.");
+      }
       setLoading(false);
     }
   };
@@ -300,23 +248,7 @@ export function LoginPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span>
-                      {error}
-                      {showVerifyLink && (
-                        <>
-                          {" "}
-                          <Link
-                            to={buildVerifyEmailPath({
-                              from: "login",
-                              redirect: redirectTo,
-                            })}
-                            className="login-footer-link"
-                          >
-                            Go to verification page
-                          </Link>
-                        </>
-                      )}
-                    </span>
+                    <span>{error}</span>
                   </div>
                 )}
                 {message && (

@@ -6,14 +6,12 @@ import { SuccessNotification } from "./agents/SuccessNotification";
 import { AugmentedFormResponse } from "../utils/customerOrderAdapters";
 import { usePermissions } from "../hooks/usePermissions";
 import { useOrganization } from "../contexts/OrganizationContext";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
+import { useAuth } from "../auth/AuthProvider";
 import { formatCsrSelectLabel } from "../utils/userDisplay";
 import { CsrUserOption } from "./users/CsrUserOption";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
-import { useCachedAgents } from "../hooks/useCachedData";
-import { useActivityLogger } from "../utils/activityLogger";
-import { fetchForms } from "../services/forms";
-import { fetchProducts } from "../services/products";
+import { useCachedAgents } from "../hooks/useCachedAgents";
+import { fetchProducts } from "../services/numbatrakProducts";
 import { Form } from "../types/form";
 import { Product } from "../types/product";
 import { fetchCustomerRelationsUsers } from "../services/customerRelations";
@@ -45,13 +43,12 @@ const DEFAULT_ORDER_FILTERS: FormResponseFilters = {
 
 export default function OrdersForm() {
   const { hasPermission, userRole } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
   const { data: agents = [] } = useCachedAgents(
     currentOrganization?.id ?? null
   );
-  const { logActivityAction } = useActivityLogger();
   const canUpdate = hasPermission("orders", "canUpdate");
   const canCreate = hasPermission("orders", "canCreate");
   const canDelete = hasPermission("orders", "canDelete");
@@ -76,7 +73,7 @@ export default function OrdersForm() {
   const [filters, setFilters] = useState<FormResponseFilters>(
     DEFAULT_ORDER_FILTERS
   );
-  const [forms, setForms] = useState<Form[]>([]);
+  const [forms] = useState<Form[]>([]);
   const [csrUsers, setCsrUsers] = useState<
     { id: string; full_name: string | null; email: string | null }[]
   >([]);
@@ -130,27 +127,24 @@ export default function OrdersForm() {
     return [...set].sort();
   }, [responses]);
 
+  // Forms aren't ported yet (see orderIntake.ts's header) - manual orders
+  // never have a form_id in this slice, so the "filter by form" dropdown
+  // just stays empty rather than fetching from Supabase.
   useEffect(() => {
     if (!currentOrganization) {
-      setForms([]);
       setProducts([]);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const [formList, productList] = await Promise.all([
-          fetchForms(currentOrganization.id),
-          fetchProducts(currentOrganization.id, { activeOnly: true }),
-        ]);
+        const productList = await fetchProducts(currentOrganization.id, { activeOnly: true });
         if (!cancelled) {
-          setForms(formList);
           setProducts(productList);
         }
       } catch (e) {
-        console.error("Error loading forms/products:", e);
+        console.error("Error loading products:", e);
         if (!cancelled) {
-          setForms([]);
           setProducts([]);
         }
       }
@@ -240,13 +234,6 @@ export default function OrdersForm() {
       await updateOrderIntake(editingResponse, updates);
       setSuccess("Order updated successfully!");
 
-      await logActivityAction(
-        "form_response_updated",
-        "form_response",
-        (editingResponse.form_response_id || editingResponse.id) as any,
-        `Order updated for ${editingResponse.customer_name || "customer"}`
-      );
-
       await loadFormResponses();
       setOpen(false);
       setEditingResponse(null);
@@ -310,7 +297,7 @@ export default function OrdersForm() {
     setSaving(true);
     setLocalError(null);
     try {
-      await markOrderFailedDelivery(editingResponse, { userId: user?.id });
+      await markOrderFailedDelivery(editingResponse);
       setSuccess("Order marked as failed delivery.");
       await refreshAfterAction();
       setTimeout(() => setSuccess(null), 3000);
@@ -399,17 +386,6 @@ export default function OrdersForm() {
       if (!responseToDelete) return;
       await deleteOrderIntake(responseToDelete);
       setSuccess("Order deleted successfully!");
-
-      await logActivityAction(
-        "form_response_deleted",
-        "form_response",
-        (responseToDelete?.form_response_id || responseId) as any,
-        `Order deleted${
-          responseToDelete
-            ? ` (${responseToDelete.customer_name || "customer"})`
-            : ""
-        }`
-      );
 
       await loadFormResponses();
       setTimeout(() => setSuccess(null), 3000);

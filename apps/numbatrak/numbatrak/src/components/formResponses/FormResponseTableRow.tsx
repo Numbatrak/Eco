@@ -23,7 +23,7 @@ import {
 } from "../../utils/formResponseHelpers";
 import { orderStatusLabel } from "../../constants/orderStatus";
 import { FormFieldRenderer } from "./FormFieldRenderer";
-import { fetchProducts } from "../../services/products";
+import { fetchProducts } from "../../services/numbatrakProducts";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import "./FormResponseTable.css";
 

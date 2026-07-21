@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Agent } from "../../types/agent";
-import { AgentMetrics, formatDeliveryRate } from "../../services/agentMetrics";
+import type { AgentMetrics } from "../../services/agentMetrics";
+import { formatDeliveryRate } from "../../utils/formatDeliveryRate";
 import { Pencil, Trash2, BarChart3, Ban, RotateCcw } from "lucide-react";
 import "./AgentTable.css";
 

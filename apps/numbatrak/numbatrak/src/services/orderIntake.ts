@@ -1,37 +1,33 @@
 import {
-  fetchFormResponses,
-  updateFormResponse,
-  deleteFormResponse,
-} from "./formResponses";
-import {
   fetchCustomerOrders,
   updateCustomerOrder,
   deleteCustomerOrderDeep,
   addOrderUpsellLine,
   createManualCustomerOrder,
+  advanceOrderStatusApi,
+  markOrderFailedDeliveryApi,
 } from "./customerOrders";
-import {
-  customerOrderToFormResponse,
-  AugmentedFormResponse,
-} from "../utils/customerOrderAdapters";
+import { customerOrderToFormResponse } from "../utils/customerOrderAdapters";
 import { FormResponseFilters, FormResponseWithItems } from "../types/formResponse";
 import type { MoneyReceivedBy } from "../constants/orderAttribution";
-import { moneyReceivedByToPaymentMethod } from "../constants/orderAttribution";
-import { isCustomerOrdersAvailable } from "./orderDataSource";
-import {
-  isDeliveredStatus,
-  toDeliveredStatus,
-  getNextStatus,
-  normalizeOrderStatus,
-} from "../constants/orderStatus";
-import { mergeOrderNotesOnSave } from "../utils/orderNotes";
-import {
-  assertCanMarkDelivered,
-  ensureDeliveryStockMovements,
-  recordFailedDeliveryExpense,
-} from "./orderDelivery";
+import { isDeliveredStatus, toDeliveredStatus, normalizeOrderStatus } from "../constants/orderStatus";
 
-export type OrderIntakeSource = "v2" | "v1" | "merged";
+/**
+ * Simplified vs. the source app: no more form_responses v1/v2 merge (see
+ * the Orders port plan - that merge existed for historical data that hasn't
+ * been migrated into this Postgres yet, and for a WordPress webhook intake
+ * path that isn't ported either; both are out of scope for now).
+ * `customer_orders` is the sole source. Every row is still adapted through
+ * `customerOrderToFormResponse` so OrdersForm.tsx and its dialog/table
+ * subcomponents (built against `FormResponseWithItems`) don't need to
+ * change at all.
+ *
+ * Business rules that used to live here client-side (notes stamping,
+ * mark-delivered stock movements, failed-delivery expense creation, status
+ * pipeline validation) now live server-side in apps/api's
+ * modules/numbatrak-orders/lib/orders.ts - this file is now a thin
+ * pass-through + adapter layer.
+ */
 
 export type OrderIntakeListParams = {
   organizationId: string;
@@ -41,7 +37,7 @@ export type OrderIntakeListParams = {
 
 export type OrderIntakeListResult = {
   rows: FormResponseWithItems[];
-  source: OrderIntakeSource;
+  source: "v2";
   supportsCsrFilter: boolean;
 };
 
@@ -54,13 +50,10 @@ export type OrderIntakeUpdate = {
   money_received_by?: MoneyReceivedBy;
 };
 
-export async function listOrderIntake(
-  params: OrderIntakeListParams
-): Promise<OrderIntakeListResult> {
+export async function listOrderIntake(params: OrderIntakeListParams): Promise<OrderIntakeListResult> {
   const { organizationId, filters, searchQuery } = params;
-  const search = searchQuery?.trim() || undefined;
-  const v2Filters = {
-    status: filters.status as any,
+  const orders = await fetchCustomerOrders(organizationId, {
+    status: filters.status as never,
     form_id: filters.form_id,
     csr_id: filters.csr_id,
     agent_id: filters.agent_id,
@@ -69,182 +62,45 @@ export async function listOrderIntake(
     sub_brand: filters.sub_brand,
     funnel_name: filters.funnel_name,
     offer_name: filters.offer_name,
-    search,
-  };
+    search: searchQuery?.trim() || undefined,
+  });
 
-  const v2Available = await isCustomerOrdersAvailable(organizationId);
-
-  if (v2Available) {
-    const v2 = await fetchCustomerOrders(organizationId, v2Filters);
-    const linkedFrIds = new Set(
-      v2
-        .map((o) => o.form_response_id)
-        .filter((id): id is string => id != null)
-    );
-
-    const legacyFilters: FormResponseFilters = { ...filters, search };
-    const legacyRows = await fetchFormResponses(organizationId, legacyFilters);
-    const orphans = legacyRows.filter((r) => !linkedFrIds.has(r.id));
-
-    const merged = [
-      ...v2.map(customerOrderToFormResponse),
-      ...orphans,
-    ] as FormResponseWithItems[];
-
-    merged.sort((a, b) => {
-      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return tb - ta;
-    });
-
-    return {
-      rows: merged,
-      source: orphans.length > 0 ? "merged" : "v2",
-      supportsCsrFilter: true,
-    };
-  }
-
-  const rows = await fetchFormResponses(organizationId, { ...filters, search });
-  return {
-    rows,
-    source: "v1",
-    supportsCsrFilter: true,
-  };
+  const rows = orders.map(customerOrderToFormResponse) as FormResponseWithItems[];
+  return { rows, source: "v2", supportsCsrFilter: true };
 }
 
-function resolveOrderIds(order: FormResponseWithItems) {
-  const maybeV2 = order as AugmentedFormResponse;
-  return {
-    customerOrderId: maybeV2._customerOrderId as string | undefined,
-    stockOrderId: (maybeV2._customerOrderId || order.id) as string,
-    organizationId: order.organization_id,
-  };
-}
-
-async function applyDeliveredSideEffects(
-  order: FormResponseWithItems,
-  agentId: number
-): Promise<void> {
-  const { stockOrderId, organizationId } = resolveOrderIds(order);
-  await ensureDeliveryStockMovements({
-    organization_id: organizationId,
-    order_id: stockOrderId,
-    agent_id: agentId,
-    items: order.items.map((i) => ({
-      product_id: i.product_id,
-      quantity: i.quantity,
-      unit_cost_at_submission: i.unit_cost_at_submission,
-    })),
+export async function updateOrderIntake(order: FormResponseWithItems, updates: OrderIntakeUpdate): Promise<void> {
+  const orderId = (order as { _customerOrderId?: string })._customerOrderId ?? order.id;
+  await updateCustomerOrder(orderId, {
+    status: updates.status as never,
+    notes: updates.notes,
+    delivery_fee: updates.delivery_fee,
+    amount_paid: updates.amount_paid,
+    agent_id: updates.agent_id,
+    money_received_by: updates.money_received_by,
   });
 }
 
-export async function updateOrderIntake(
-  order: FormResponseWithItems,
-  updates: OrderIntakeUpdate
-): Promise<void> {
-  const stampedNotes =
-    updates.notes !== undefined
-      ? mergeOrderNotesOnSave(order.notes, updates.notes)
-      : undefined;
-
-  const payload: OrderIntakeUpdate = {
-    ...updates,
-    ...(stampedNotes !== undefined ? { notes: stampedNotes } : {}),
-  };
-
-  const nextStatus = payload.status;
-  const becomingDelivered =
-    nextStatus != null &&
-    isDeliveredStatus(nextStatus) &&
-    !isDeliveredStatus(order.status);
-
-  if (becomingDelivered) {
-    const agentId = payload.agent_id ?? order.agent_id;
-    assertCanMarkDelivered({ status: order.status, agent_id: agentId });
-    payload.status = toDeliveredStatus();
-    await applyDeliveredSideEffects(order, agentId!);
-  }
-
-  const maybeV2 = order as AugmentedFormResponse;
-  if (maybeV2._customerOrderId) {
-    const v2Updates: Parameters<typeof updateCustomerOrder>[1] = {
-      status: payload.status as any,
-      notes: payload.notes,
-      delivery_fee: payload.delivery_fee,
-      amount_paid: payload.amount_paid,
-      agent_id: payload.agent_id ?? null,
-      money_received_by: payload.money_received_by,
-    };
-    if (becomingDelivered) {
-      v2Updates.completed_at = new Date().toISOString();
-    }
-    await updateCustomerOrder(maybeV2._customerOrderId, v2Updates);
-    return;
-  }
-
-  const legacyUpdates: Record<string, unknown> = { ...payload };
-  if (payload.money_received_by != null) {
-    legacyUpdates.payment_method = moneyReceivedByToPaymentMethod(
-      payload.money_received_by
-    );
-  }
-  if (becomingDelivered) {
-    legacyUpdates.completed_at = new Date().toISOString();
-  }
-  await updateFormResponse(order.id, legacyUpdates as any);
+export async function updateOrderIntakeNotes(order: FormResponseWithItems, notes: string): Promise<void> {
+  return updateOrderIntake(order, { notes });
 }
 
-export async function updateOrderIntakeNotes(
-  order: FormResponseWithItems,
-  notes: string
-): Promise<void> {
-  const stamped = mergeOrderNotesOnSave(order.notes, notes);
-  if (stamped === undefined) return;
-  return updateOrderIntake(order, { notes: stamped });
-}
-
-export async function markOrderDelivered(
-  order: FormResponseWithItems
-): Promise<void> {
+export async function markOrderDelivered(order: FormResponseWithItems): Promise<void> {
   return updateOrderIntake(order, { status: toDeliveredStatus() });
 }
 
-export async function advanceOrderStatus(
-  order: FormResponseWithItems
-): Promise<void> {
-  const next = getNextStatus(order.status);
-  if (!next) {
-    throw new Error("No further status to advance.");
-  }
-  return updateOrderIntake(order, { status: next });
+export async function advanceOrderStatus(order: FormResponseWithItems): Promise<void> {
+  const orderId = (order as { _customerOrderId?: string })._customerOrderId ?? order.id;
+  await advanceOrderStatusApi(orderId);
 }
 
 export async function markOrderFailedDelivery(
   order: FormResponseWithItems,
-  options?: { expenseAmount?: number; userId?: string | null }
+  options?: { expenseAmount?: number }
 ): Promise<void> {
-  if (isDeliveredStatus(order.status)) {
-    throw new Error("Cannot mark a delivered order as failed.");
-  }
-
-  const expenseAmount =
-    options?.expenseAmount ??
-    (order.delivery_fee != null ? Number(order.delivery_fee) : 0);
-
-  await updateOrderIntake(order, { status: "failed" });
-
-  const { stockOrderId, organizationId } = resolveOrderIds(order);
-  const primaryProductId = order.items?.[0]?.product_id ?? null;
-
-  await recordFailedDeliveryExpense({
-    organization_id: organizationId,
-    order_id: stockOrderId,
-    agent_id: order.agent_id,
-    amount: expenseAmount,
-    product_id: primaryProductId,
-    note: `Failed delivery — ${order.customer_name || "order"}`,
-    created_by: options?.userId ?? null,
-  });
+  const orderId = (order as { _customerOrderId?: string })._customerOrderId ?? order.id;
+  const expenseAmount = options?.expenseAmount ?? (order.delivery_fee != null ? Number(order.delivery_fee) : 0);
+  await markOrderFailedDeliveryApi(orderId, expenseAmount);
 }
 
 export async function addOrderUpsell(
@@ -259,11 +115,8 @@ export async function addOrderUpsell(
   if (isDeliveredStatus(order.status)) {
     throw new Error("Cannot add upsell to a delivered order.");
   }
-  const maybeV2 = order as AugmentedFormResponse;
-  if (!maybeV2._customerOrderId) {
-    throw new Error("Upsell is only supported on migrated customer orders.");
-  }
-  await addOrderUpsellLine(maybeV2._customerOrderId, line);
+  const orderId = (order as { _customerOrderId?: string })._customerOrderId ?? order.id;
+  await addOrderUpsellLine(orderId, line);
 }
 
 export async function createManualOrder(
@@ -273,12 +126,8 @@ export async function createManualOrder(
 }
 
 export async function deleteOrderIntake(order: FormResponseWithItems): Promise<void> {
-  const maybeV2 = order as AugmentedFormResponse;
-  if (maybeV2._customerOrderId) {
-    await deleteCustomerOrderDeep(maybeV2._customerOrderId);
-    return;
-  }
-  await deleteFormResponse(order.id);
+  const orderId = (order as { _customerOrderId?: string })._customerOrderId ?? order.id;
+  await deleteCustomerOrderDeep(orderId);
 }
 
 export { normalizeOrderStatus };

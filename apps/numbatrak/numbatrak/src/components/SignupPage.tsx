@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { useNavigate, Link } from "react-router-dom";
 import { CheckCircle2, Eye, EyeOff } from "lucide-react";
-import { registerUser } from "../services/emailVerification";
-import { buildVerifyEmailPath } from "../utils/emailVerificationRoutes";
+import { authApi } from "../lib/authApi";
+import { ApiError } from "../lib/apiClient";
 import { BrandTagline } from "./brand/BrandTagline";
 import { NumbatrakLogo } from "./brand/NumbatrakLogo";
 import "./SignupPage.css";
@@ -51,8 +50,7 @@ function getPasswordStrength(password: string, email: string) {
 
 export function SignupPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
+  const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -73,53 +71,32 @@ export function SignupPage() {
     setError(null);
     setMessage(null);
 
+    if (!businessName.trim()) {
+      setError("Business name is required");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters");
       return;
     }
 
     setLoading(true);
 
     try {
-      const registerResult = await registerUser(email, password);
-
-      if (!registerResult.success) {
-        setError(registerResult.error || "Failed to create account");
-        return;
-      }
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase().trim(),
-        password,
-      });
-
-      if (signInError) {
-        setError(
-          "Account created, but sign-in failed. Please log in and verify your email.",
-        );
-        setTimeout(() => navigate("/login"), 2500);
-        return;
-      }
-
-      setMessage(
-        "Account created! Check your email for the verification code.",
-      );
-      setTimeout(
-        () =>
-          navigate(
-            buildVerifyEmailPath({ from: "signup", redirect: redirectTo }),
-          ),
-        1500,
-      );
-    } catch (err: any) {
-      setError(
-        err.message || "An unexpected error occurred. Please try again.",
-      );
+      // Always a generic message regardless of outcome - registration never
+      // reveals whether the email was already taken, and never returns a
+      // session (see apps/api's /auth/register).
+      await authApi.register({ email: email.toLowerCase().trim(), password, businessName: businessName.trim() });
+      setMessage("Account created! You can log in now.");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -242,6 +219,21 @@ export function SignupPage() {
             {/* Form Card */}
             <div className="signup-form-card">
               <form className="signup-form" onSubmit={handleSignup}>
+                <div className="signup-form-group">
+                  <label htmlFor="businessName" className="signup-label">
+                    Business name
+                  </label>
+                  <input
+                    id="businessName"
+                    type="text"
+                    placeholder="Your business name"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    required
+                    className="signup-input"
+                  />
+                </div>
+
                 <div className="signup-form-group">
                   <label htmlFor="email" className="signup-label">
                     Email address

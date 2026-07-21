@@ -1,58 +1,83 @@
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
-import { DashboardPage } from "./components/dashboard/DashboardPage";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { Menu, Building2, ChevronDown, Moon, Sun, Star } from "lucide-react";
-import { useSupabaseAuth } from "./auth/SupabaseAuthProvider";
+import { useAuth } from "./auth/AuthProvider";
 import { getDisplayName } from "./utils/userDisplay";
 import { UserAvatar } from "./components/profile/UserAvatar";
-import { ProfilePage } from "./components/profile/ProfilePage";
 import { useOrganization } from "./contexts/OrganizationContext";
 import { useTheme } from "next-themes";
-import AgentsForm from "./components/AgentsForm";
-import AgentDetailPage from "./components/agents/AgentDetailPage";
-import ProductsForm from "./components/ProductsForm";
-import FormsForm from "./components/FormsForm";
-import FormBuilderPage from "./components/forms/FormBuilderPage";
-import DeliveriesForm from "./components/DeliveriesForm";
-import { DeliveryAnalyticsPage } from "./components/deliveryAnalytics/DeliveryAnalyticsPage";
-import { WalletPage } from "./components/wallet/WalletPage";
-import { PlaceholderPage } from "./components/PlaceholderPage";
-import InventoryForm from "./components/InventoryForm";
-import { LoginPage } from "./components/LoginPage";
-import { SignupPage } from "./components/SignupPage";
-import { EmailVerificationPage } from "./components/EmailVerificationPage";
-import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { ResetPasswordPage } from "./components/ResetPasswordPage";
-import { TermsOfServicePage } from "./components/TermsOfServicePage";
-import { PrivacyPolicyPage } from "./components/PrivacyPolicyPage";
-import { ImportWaybills } from "./components/ImportWaybills";
-import UnifiedExpensesForm from "./components/UnifiedExpensesForm";
-import OrdersForm from "./components/OrdersForm";
-import AbandonedCartsForm from "./components/AbandonedCartsForm";
-import FollowUpsForm from "./components/FollowUpsForm";
-import { FollowUpNotifications } from "./components/followUps/FollowUpNotifications";
-import { OrganizationSelectionPage } from "./components/organizations/OrganizationSelectionPage";
-import { OrganizationSettingsPage } from "./components/organizations/OrganizationSettingsPage";
-import { AcceptInvitationPage } from "./components/organizations/AcceptInvitationPage";
-import { InvitationNotification } from "./components/organizations/InvitationNotification";
-import { DashboardAlertsProvider } from "./contexts/DashboardAlertsContext";
-import { DashboardNotificationBell } from "./components/dashboard/DashboardNotificationBell";
 import { FaviconPreloader } from "./components/ui/FaviconPreloader";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
-import { useState, useEffect } from "react";
 import "./components/Dashboard.css";
 
+// Every route is lazy-loaded so that visiting an already-ported page (right
+// now: only /agents) never pulls in supabaseClient.ts (which throws
+// synchronously without VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY - no longer
+// set, since the app talks to apps/api now) through some other still-Supabase
+// -backed page's static import. Every page below /agents is not yet ported
+// and will error if actually visited - that's an explicit, incremental
+// interim state, not a bug. See numbatrak frontend-port plan.
+const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const AgentsForm = lazy(() => import("./components/AgentsForm"));
+const AgentDetailPage = lazy(() => import("./components/agents/AgentDetailPage"));
+const ProductsForm = lazy(() => import("./components/ProductsForm"));
+const FormsForm = lazy(() => import("./components/FormsForm"));
+const FormBuilderPage = lazy(() => import("./components/forms/FormBuilderPage"));
+const DeliveriesForm = lazy(() => import("./components/DeliveriesForm"));
+const DeliveryAnalyticsPage = lazy(() =>
+  import("./components/deliveryAnalytics/DeliveryAnalyticsPage").then((m) => ({ default: m.DeliveryAnalyticsPage })),
+);
+const WalletPage = lazy(() => import("./components/wallet/WalletPage").then((m) => ({ default: m.WalletPage })));
+const PlaceholderPage = lazy(() => import("./components/PlaceholderPage").then((m) => ({ default: m.PlaceholderPage })));
+const InventoryForm = lazy(() => import("./components/InventoryForm"));
+const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
+const EmailVerificationPage = lazy(() =>
+  import("./components/EmailVerificationPage").then((m) => ({ default: m.EmailVerificationPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("./components/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("./components/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })),
+);
+const TermsOfServicePage = lazy(() =>
+  import("./components/TermsOfServicePage").then((m) => ({ default: m.TermsOfServicePage })),
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("./components/PrivacyPolicyPage").then((m) => ({ default: m.PrivacyPolicyPage })),
+);
+const ImportWaybills = lazy(() => import("./components/ImportWaybills").then((m) => ({ default: m.ImportWaybills })));
+const UnifiedExpensesForm = lazy(() => import("./components/UnifiedExpensesForm"));
+const OrdersForm = lazy(() => import("./components/OrdersForm"));
+const AbandonedCartsForm = lazy(() => import("./components/AbandonedCartsForm"));
+const FollowUpsForm = lazy(() => import("./components/FollowUpsForm"));
+const OrganizationSelectionPage = lazy(() =>
+  import("./components/organizations/OrganizationSelectionPage").then((m) => ({ default: m.OrganizationSelectionPage })),
+);
+const OrganizationSettingsPage = lazy(() =>
+  import("./components/organizations/OrganizationSettingsPage").then((m) => ({ default: m.OrganizationSettingsPage })),
+);
+const AcceptInvitationPage = lazy(() =>
+  import("./components/organizations/AcceptInvitationPage").then((m) => ({ default: m.AcceptInvitationPage })),
+);
+const ProfilePage = lazy(() => import("./components/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const ProtectedRoute = lazy(() => import("./components/auth/ProtectedRoute").then((m) => ({ default: m.ProtectedRoute })));
+
+function RouteFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+      <FaviconPreloader size={80} />
+    </div>
+  );
+}
+
 function AppContent() {
-  const {
-    isAuthenticated,
-    user,
-    userProfile,
-    emailVerified,
-    profileLoaded,
-    signOut,
-    loading: authLoading,
-  } = useSupabaseAuth();
+  const { status, user, logout } = useAuth();
+  const isAuthenticated = status === "authenticated";
+  const authLoading = status === "loading";
   const {
     currentOrganization,
     organizations,
@@ -97,106 +122,73 @@ function AppContent() {
 
   const isAcceptInvitationPage = location.pathname === "/accept-invitation";
 
-  const emailVerificationRedirect = () => {
-    const params = new URLSearchParams({ from: "login" });
-    const returnPath = `${location.pathname}${location.search}`;
-    if (
-      returnPath &&
-      returnPath !== "/verify-email" &&
-      returnPath !== "/login" &&
-      returnPath !== "/signup"
-    ) {
-      params.set("redirect", returnPath);
-    }
-    return `/verify-email?${params.toString()}`;
-  };
-
   // Accept invitation works logged in or out — no org chrome required
   if (isAcceptInvitationPage) {
-    if (authLoading || (isAuthenticated && !profileLoaded)) {
-      return (
-        <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-          <FaviconPreloader size={80} />
-        </div>
-      );
-    }
-    if (isAuthenticated && !emailVerified) {
-      return <Navigate to={emailVerificationRedirect()} replace />;
+    if (authLoading) {
+      return <RouteFallback />;
     }
     return (
-      <>
-        <Routes>
-          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-          <Route path="*" element={<Navigate to="/accept-invitation" replace />} />
-        </Routes>
-        <Toaster position="top-right" />
-      </>
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+            <Route path="*" element={<Navigate to="/accept-invitation" replace />} />
+          </Routes>
+          <Toaster position="top-right" />
+        </Suspense>
+      </RouteErrorBoundary>
     );
   }
 
   // Render auth and legal pages without the app chrome (no sidebar/header)
   if (isPublicPage) {
     return (
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/terms" element={<TermsOfServicePage />} />
-        <Route path="/privacy" element={<PrivacyPolicyPage />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+      </RouteErrorBoundary>
     );
   }
 
-  // Show loading state while auth or org is loading
-  if (authLoading || (isAuthenticated && !profileLoaded)) {
+  // Show loading state while auth is resolving
+  if (authLoading) {
+    return <RouteFallback />;
+  }
+
+  // Authenticated user with no org membership — create/join flow only
+  // (shouldn't normally happen: registration creates the org in one step)
+  if (isAuthenticated && needsOrganizationSelection) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <FaviconPreloader size={80} />
-      </div>
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/select-organization" element={<OrganizationSelectionPage />} />
+            <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+            <Route path="*" element={<Navigate to="/select-organization" replace />} />
+          </Routes>
+        </Suspense>
+      </RouteErrorBoundary>
     );
-  }
-
-  // Block app access until email is verified (OTP flow)
-  if (isAuthenticated && !emailVerified) {
-    return <Navigate to={emailVerificationRedirect()} replace />;
   }
 
   // Show loading state while org is loading
   if (orgLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <FaviconPreloader size={80} />
-      </div>
-    );
-  }
-
-  // Authenticated user with no org membership — create/join flow only
-  if (isAuthenticated && needsOrganizationSelection) {
-    return (
-      <Routes>
-        <Route
-          path="/select-organization"
-          element={<OrganizationSelectionPage />}
-        />
-        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-        <Route
-          path="*"
-          element={<Navigate to="/select-organization" replace />}
-        />
-      </Routes>
-    );
+    return <RouteFallback />;
   }
 
   // Org list loaded but selection not applied yet (should be brief)
   if (isAuthenticated && !currentOrganization) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <FaviconPreloader size={80} />
-      </div>
-    );
+    return <RouteFallback />;
   }
 
   return (
@@ -204,8 +196,6 @@ function AppContent() {
       className="dashboard-container"
       style={{ display: "flex", minHeight: "100vh" }}
     >
-      {isAuthenticated && <FollowUpNotifications />}
-      {isAuthenticated && <InvitationNotification />}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main style={{ flex: 1, minWidth: 0 }}>
         <div
@@ -339,7 +329,6 @@ function AppContent() {
                 minWidth: 0,
               }}
             >
-              <DashboardNotificationBell />
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="p-2 text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
@@ -356,19 +345,13 @@ function AppContent() {
                   onClick={() => setShowUserMenu((prev) => !prev)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-border bg-muted hover:bg-accent transition-colors cursor-pointer max-w-full"
                 >
-                  <UserAvatar
-                    profile={userProfile ?? { email: user.email ?? null }}
-                    size={30}
-                  />
+                  <UserAvatar profile={{ email: user.email }} size={30} />
                   <div className="hidden sm:block min-w-0 text-right">
                     <p
                       className="text-foreground truncate"
                       style={{ fontSize: 13, fontWeight: 500, margin: 0, maxWidth: 160 }}
                     >
-                      {getDisplayName(
-                        userProfile ?? { email: user.email ?? null },
-                        user.email?.split("@")[0] ?? "User"
-                      )}
+                      {getDisplayName({ email: user.email }, user.email?.split("@")[0] ?? "User")}
                     </p>
                     {user.email && (
                       <p
@@ -400,7 +383,7 @@ function AppContent() {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        void signOut();
+                        void logout();
                       }}
                       className="w-full text-left px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-t border-border"
                     >
@@ -433,141 +416,148 @@ function AppContent() {
             </div>
           )}
         </div>
-        <Routes key={currentOrganization?.id ?? "app"}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route
-            path="/select-organization"
-            element={<OrganizationSelectionPage />}
-          />
-          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-          {isAuthenticated && currentOrganization ? (
-            <>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/agents/:agentId" element={<AgentDetailPage />} />
-              <Route path="/agents" element={<AgentsForm />} />
-              <Route path="/agent" element={<AgentsForm />} />
-              <Route path="/products" element={<ProductsForm />} />
-              <Route path="/forms" element={<FormsForm />} />
-              <Route
-                path="/forms/create"
-                element={
-                  <ProtectedRoute permission={{ resource: "forms", action: "canCreate" }}>
-                    <FormBuilderPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/forms/:id/edit"
-                element={
-                  <ProtectedRoute permission={{ resource: "forms", action: "canUpdate" }}>
-                    <FormBuilderPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/orders" element={<OrdersForm />} />
-              <Route path="/abandoned-carts" element={<AbandonedCartsForm />} />
-              <Route path="/follow-ups" element={<FollowUpsForm />} />
-              <Route path="/expenses" element={<UnifiedExpensesForm />} />
-              <Route
-                path="/crs"
-                element={<Navigate to="/expenses?tab=agent" replace />}
-              />
-              <Route path="/waybills" element={<DeliveriesForm />} />
-              <Route
-                path="/delivery-analytics"
-                element={<DeliveryAnalyticsPage />}
-              />
-              <Route path="/wallet" element={<WalletPage />} />
-              <Route path="/inventory" element={<InventoryForm />} />
-              <Route
-                path="/integrations"
-                element={
-                  <PlaceholderPage
-                    title="Integrations"
-                    description="Connect email, SMS, payment gateway, Meta Pixel, and Conversion API. Phase 1 placeholder."
-                  />
-                }
-              />
-              <Route
-                path="/invoicing"
-                element={
-                  <PlaceholderPage
-                    title="Invoicing"
-                    description="Auto-generated invoices per order with PDF and WhatsApp sharing. Coming in Phase 2."
-                  />
-                }
-              />
-              <Route
-                path="/accounting"
-                element={
-                  <PlaceholderPage
-                    title="Accounting"
-                    description="Business financial summary: revenue, expenses by category, and net profit. Coming in Phase 2."
-                  />
-                }
-              />
-              <Route
-                path="/funnel-analytics"
-                element={
-                  <PlaceholderPage
-                    title="Funnel Analytics"
-                    description="Per-funnel ad performance: spend, orders, delivery rate, CPA, and profit. Coming in Phase 2."
-                  />
-                }
-              />
-              <Route
-                path="/business-analytics"
-                element={
-                  <PlaceholderPage
-                    title="Business Analytics"
-                    description="Business-level ROAS vs ROI across all funnels. Coming in Phase 2."
-                  />
-                }
-              />
-              {/* Legacy paths → new structure (Developer Brief §03) */}
-              <Route
-                path="/remittance"
-                element={<Navigate to="/wallet" replace />}
-              />
-              <Route
-                path="/reports"
-                element={<Navigate to="/delivery-analytics" replace />}
-              />
-              <Route
-                path="/summary"
-                element={<Navigate to="/delivery-analytics" replace />}
-              />
-              <Route
-                path="/automation"
-                element={<Navigate to="/integrations" replace />}
-              />
-              <Route
-                path="/waybill-statistics"
-                element={<Navigate to="/delivery-analytics" replace />}
-              />
-              <Route
-                path="/import"
-                element={
-                  <ProtectedRoute roles={["Owner", "Admin", "Manager"]}>
-                    <ImportWaybills />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route
-                path="/organization-settings"
-                element={<OrganizationSettingsPage />}
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          ) : (
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          )}
-        </Routes>
+        <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes key={currentOrganization?.id ?? "app"}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route
+              path="/select-organization"
+              element={<OrganizationSelectionPage />}
+            />
+            <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+            {isAuthenticated && currentOrganization ? (
+              <>
+                {/* Dashboard isn't ported off Supabase yet - land on the one
+                    fully-working page instead of a page guaranteed to error. */}
+                <Route path="/" element={<Navigate to="/agents" replace />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/agents/:agentId" element={<AgentDetailPage />} />
+                <Route path="/agents" element={<AgentsForm />} />
+                <Route path="/agent" element={<AgentsForm />} />
+                <Route path="/products" element={<ProductsForm />} />
+                <Route path="/forms" element={<FormsForm />} />
+                <Route
+                  path="/forms/create"
+                  element={
+                    <ProtectedRoute permission={{ resource: "forms", action: "canCreate" }}>
+                      <FormBuilderPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/forms/:id/edit"
+                  element={
+                    <ProtectedRoute permission={{ resource: "forms", action: "canUpdate" }}>
+                      <FormBuilderPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/orders" element={<OrdersForm />} />
+                <Route path="/abandoned-carts" element={<AbandonedCartsForm />} />
+                <Route path="/follow-ups" element={<FollowUpsForm />} />
+                <Route path="/expenses" element={<UnifiedExpensesForm />} />
+                <Route
+                  path="/crs"
+                  element={<Navigate to="/expenses?tab=agent" replace />}
+                />
+                <Route path="/waybills" element={<DeliveriesForm />} />
+                <Route
+                  path="/delivery-analytics"
+                  element={<DeliveryAnalyticsPage />}
+                />
+                <Route path="/wallet" element={<WalletPage />} />
+                <Route path="/inventory" element={<InventoryForm />} />
+                <Route
+                  path="/integrations"
+                  element={
+                    <PlaceholderPage
+                      title="Integrations"
+                      description="Connect email, SMS, payment gateway, Meta Pixel, and Conversion API. Phase 1 placeholder."
+                    />
+                  }
+                />
+                <Route
+                  path="/invoicing"
+                  element={
+                    <PlaceholderPage
+                      title="Invoicing"
+                      description="Auto-generated invoices per order with PDF and WhatsApp sharing. Coming in Phase 2."
+                    />
+                  }
+                />
+                <Route
+                  path="/accounting"
+                  element={
+                    <PlaceholderPage
+                      title="Accounting"
+                      description="Business financial summary: revenue, expenses by category, and net profit. Coming in Phase 2."
+                    />
+                  }
+                />
+                <Route
+                  path="/funnel-analytics"
+                  element={
+                    <PlaceholderPage
+                      title="Funnel Analytics"
+                      description="Per-funnel ad performance: spend, orders, delivery rate, CPA, and profit. Coming in Phase 2."
+                    />
+                  }
+                />
+                <Route
+                  path="/business-analytics"
+                  element={
+                    <PlaceholderPage
+                      title="Business Analytics"
+                      description="Business-level ROAS vs ROI across all funnels. Coming in Phase 2."
+                    />
+                  }
+                />
+                {/* Legacy paths → new structure (Developer Brief §03) */}
+                <Route
+                  path="/remittance"
+                  element={<Navigate to="/wallet" replace />}
+                />
+                <Route
+                  path="/reports"
+                  element={<Navigate to="/delivery-analytics" replace />}
+                />
+                <Route
+                  path="/summary"
+                  element={<Navigate to="/delivery-analytics" replace />}
+                />
+                <Route
+                  path="/automation"
+                  element={<Navigate to="/integrations" replace />}
+                />
+                <Route
+                  path="/waybill-statistics"
+                  element={<Navigate to="/delivery-analytics" replace />}
+                />
+                <Route
+                  path="/import"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin", "Manager"]}>
+                      <ImportWaybills />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route
+                  path="/organization-settings"
+                  element={<OrganizationSettingsPage />}
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            ) : (
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            )}
+          </Routes>
+        </Suspense>
+        </RouteErrorBoundary>
         <Toaster position="top-right" />
       </main>
     </div>
@@ -575,10 +565,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <DashboardAlertsProvider>
-      <AppContent />
-    </DashboardAlertsProvider>
-  );
+  return <AppContent />;
 }
-
