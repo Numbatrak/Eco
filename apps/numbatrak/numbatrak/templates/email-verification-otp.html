@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - Mail9ja</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .otp-box {
+            background-color: #f3f4f6;
+            border: 2px dashed #2563eb;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2563eb;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        .instructions {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1e40af;
+            font-size: 16px;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+        }
+        .warning {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning p {
+            margin: 0;
+            color: #92400e;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .expiry {
+            color: #dc2626;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Mail9ja</div>
+            <h1 class="title">Verify Your Email Address</h1>
+        </div>
+
+        <p>Hello,</p>
+        
+        <p>Thank you for signing up! To complete your registration and verify your email address, please use the One-Time Password (OTP) below:</p>
+
+        <div class="otp-box">
+            <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Your verification code is:</p>
+            <div class="otp-code">{{OTP_CODE}}</div>
+            <p class="expiry">This code expires in 15 minutes</p>
+        </div>
+
+        <div class="instructions">
+            <h3>How to verify:</h3>
+            <ul>
+                <li>Copy the 6-digit code above</li>
+                <li>Go to the verification page in your Mail9ja account</li>
+                <li>Enter the code when prompted</li>
+                <li>Click "Verify Email" to complete the process</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <p><strong>⚠️ Security Notice:</strong> Never share this code with anyone. Mail9ja staff will never ask for your verification code. If you didn't request this code, please ignore this email.</p>
+        </div>
+
+        <p style="margin-top: 30px;">If you have any questions or need assistance, please contact our support team.</p>
+
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; 2024 Mail9ja. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

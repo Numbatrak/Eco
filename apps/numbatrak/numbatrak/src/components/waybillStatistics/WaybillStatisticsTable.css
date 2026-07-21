@@ -1,0 +1,253 @@
+/* Waybill Statistics Table — theme-aware (light/dark) */
+
+.waybill-statistics-table-container {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.waybill-statistics-table-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.waybill-statistics-table-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.waybill-statistics-table-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.waybill-statistics-table-icon {
+  padding: 0.5rem;
+  background: var(--primary);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waybill-statistics-table-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--primary-foreground);
+}
+
+.waybill-statistics-table-title {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.waybill-statistics-table-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.waybill-statistics-table-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.waybill-statistics-table-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.waybill-statistics-table-filter-button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  position: relative;
+}
+
+.waybill-statistics-table-filter-button:hover {
+  background-color: var(--accent);
+  border-color: var(--muted-foreground);
+}
+
+.waybill-statistics-table-filter-button.active {
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.waybill-statistics-table-filter-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.waybill-statistics-table-filter-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  margin-left: 0.25rem;
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.waybill-statistics-table-filter-remove:hover {
+  background-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.waybill-statistics-table-filter-remove-icon {
+  width: 0.625rem;
+  height: 0.625rem;
+  color: var(--primary);
+}
+
+.waybill-statistics-table-filter-dropdowns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+}
+
+.waybill-statistics-table-filter-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 12.5rem;
+}
+
+.waybill-statistics-table-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.waybill-statistics-table-filter-label-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.waybill-statistics-table-filter-input,
+.waybill-statistics-table-filter-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.waybill-statistics-table-filter-input:focus,
+.waybill-statistics-table-filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.waybill-statistics-table-filter-select {
+  cursor: pointer;
+}
+
+.waybill-statistics-table-wrapper {
+  overflow-x: auto;
+}
+
+.waybill-statistics-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.waybill-statistics-summary-card {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.waybill-statistics-summary-card.blue {
+  background-color: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.waybill-statistics-summary-card.green {
+  background-color: color-mix(in srgb, var(--primary) 18%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+
+.waybill-statistics-summary-card.purple {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+}
+
+.waybill-statistics-summary-card-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--muted-foreground);
+}
+
+.waybill-statistics-summary-card-label.blue,
+.waybill-statistics-summary-card-value.blue {
+  color: var(--primary);
+}
+
+.waybill-statistics-summary-card-label.green,
+.waybill-statistics-summary-card-value.green {
+  color: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+}
+
+.waybill-statistics-summary-card-label.purple,
+.waybill-statistics-summary-card-value.purple {
+  color: var(--foreground);
+}
+
+.waybill-statistics-summary-card-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.waybill-statistics-summary-card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}

@@ -1,0 +1,363 @@
+.order-assignment-settings-container {
+  width: 100%;
+}
+
+.order-assignment-settings-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.order-assignment-settings-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 0.5rem 0;
+}
+
+.order-assignment-settings-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.order-assignment-settings-message {
+  margin-bottom: 1.5rem;
+}
+
+.order-assignment-settings-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
+  border-radius: 0.5rem;
+  color: var(--destructive);
+  font-size: 0.875rem;
+}
+
+.order-assignment-settings-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 0.5rem;
+  color: var(--primary);
+  font-size: 0.875rem;
+}
+
+.order-assignment-settings-method {
+  margin-bottom: 2rem;
+}
+
+.order-assignment-settings-label {
+  display: block;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.75rem;
+}
+
+.order-assignment-settings-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.order-assignment-settings-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.order-assignment-settings-radio:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+
+.order-assignment-settings-radio input[type="radio"] {
+  margin-top: 0.25rem;
+  cursor: pointer;
+}
+
+.order-assignment-settings-radio > span {
+  font-weight: 600;
+  color: var(--foreground);
+  flex: 1;
+}
+
+.order-assignment-settings-radio-description {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0.25rem 0 0 0;
+  width: 100%;
+}
+
+.order-assignment-settings-radio input[type="radio"]:checked + span {
+  color: var(--primary);
+}
+
+.order-assignment-settings-radio:has(input[type="radio"]:checked) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+
+.order-assignment-settings-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.order-assignment-settings-save-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 85%, black);
+}
+
+.order-assignment-settings-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-assignment-settings-weights {
+  margin-top: 2rem;
+}
+
+.order-assignment-settings-weights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.order-assignment-settings-total-warning {
+  padding: 0.5rem 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 0.5rem;
+  color: #fbbf24;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.order-assignment-settings-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.order-assignment-settings-weights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-assignment-settings-weight-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  gap: 1rem;
+}
+
+.order-assignment-settings-weight-item.paused {
+  opacity: 0.6;
+  background: rgba(107, 114, 128, 0.1);
+}
+
+.order-assignment-settings-weight-info {
+  flex: 1;
+}
+
+.order-assignment-settings-weight-name {
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 0.25rem 0;
+}
+
+.order-assignment-settings-weight-email {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.order-assignment-settings-weight-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-assignment-settings-weight-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-assignment-settings-weight-input {
+  width: 80px;
+  padding: 0.5rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.order-assignment-settings-weight-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-assignment-settings-weight-percent {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.order-assignment-settings-weight-save-btn,
+.order-assignment-settings-weight-pause-btn,
+.order-assignment-settings-weight-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.order-assignment-settings-weight-save-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.order-assignment-settings-weight-pause-btn:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+}
+
+.order-assignment-settings-weight-pause-btn.paused {
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  color: var(--primary);
+}
+
+.order-assignment-settings-weight-remove-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.order-assignment-settings-weight-add-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.order-assignment-settings-weight-add-btn:hover {
+  background: color-mix(in srgb, var(--primary) 85%, black);
+}
+
+.order-assignment-settings-round-robin-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: 0.5rem;
+}
+
+.order-assignment-settings-info-text {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.order-assignment-settings-pause-list {
+  margin-top: 2rem;
+}
+
+.order-assignment-settings-pause-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.order-assignment-settings-pause-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.order-assignment-settings-pause-info {
+  flex: 1;
+}
+
+.order-assignment-settings-pause-name {
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 0.25rem 0;
+}
+
+.order-assignment-settings-pause-email {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.order-assignment-settings-pause-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-assignment-settings-pause-label {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.order-assignment-settings-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--muted-foreground);
+}
+

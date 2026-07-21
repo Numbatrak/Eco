@@ -1,0 +1,26 @@
+---
+description: Numbatrak / Mall9ja core project context and invariants
+alwaysApply: true
+---
+
+# Numbatrak (Mall9ja) — Project Context
+
+Multi-tenant logistics / e-commerce operations app. Frontend: React 18 + Vite SPA,
+React Router 6, Tailwind 4, Radix UI + shadcn/ui, Recharts, react-hook-form.
+Backend: Supabase — Postgres + Auth + Row Level Security (RLS) + Edge Functions (Deno).
+
+## Invariants — never violate
+- **Org scoping:** every data query is scoped to the currently selected organization.
+  Never write a query that can return rows from more than one org.
+- **Permissions:** authorization derives from the user's role *in the current org*,
+  not a global profile role. Check the existing permission matrix before gating an action.
+- **Order economics are immutable:** unit price, cost, and computed profit are
+  snapshotted at order-creation time. Never recompute historical orders from the live catalog.
+- **RLS is the security boundary, not the UI.** Every new table needs RLS policies.
+  Hiding a button is not access control.
+
+## Working conventions
+- Read neighboring files first and match existing patterns before introducing new ones.
+- Reuse the existing Supabase client, shadcn/ui components, and react-hook-form setup.
+- Dark theme is the default (next-themes); keep the responsive sidebar/overlay behavior intact.
+- When unsure whether something already exists, search the codebase and cite the file — do not assume.

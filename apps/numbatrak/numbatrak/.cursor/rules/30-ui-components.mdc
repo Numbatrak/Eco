@@ -1,0 +1,24 @@
+---
+description: UI components, forms, charts, and dashboard conventions
+globs:
+  - "src/components/**/*.{tsx,ts}"
+  - "src/pages/**/*.{tsx,ts}"
+  - "src/features/**/*.{tsx,ts}"
+alwaysApply: false
+---
+
+# UI / Components
+
+> Adjust the globs above to match the repo's actual folder layout.
+
+- Use the shadcn/ui + Radix primitives already in the repo. Do not add a competing
+  component or styling library.
+- Forms use react-hook-form; follow the existing validation pattern (e.g. a zod resolver
+  if one is already used).
+- Charts use Recharts.
+- Gate every action-triggering control on the RBAC permission for that resource + action.
+  A user lacking permission should neither see nor be able to trigger the action.
+- Respect role-specific dashboard variants (Customer Relations differs from Manager/Admin,
+  and an Agent view is being added). When adding a widget, decide explicitly which roles see it.
+- Keep tables/lists usable on typical ops datasets and the layout responsive
+  (overlay sidebar on small screens).

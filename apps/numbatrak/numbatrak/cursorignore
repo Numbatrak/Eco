@@ -1,0 +1,21 @@
+# Keep Cursor's index clean and fast, and keep secrets out of context.
+node_modules/
+dist/
+build/
+.vercel/
+.next/
+coverage/
+*.log
+
+# Lockfiles (large, low value for the AI index)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Never index secrets
+.env
+.env.*
+
+# Large static / embed assets — uncomment / adjust if present
+# public/assets/**
+# src/wordpress-embed/**

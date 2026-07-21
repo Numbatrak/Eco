@@ -1,0 +1,24 @@
+name: Supabase Heartbeat
+
+on:
+    schedule:
+        # Runs at 12:00 UTC every day
+        - cron: "0 12 * * *"
+    workflow_dispatch: # Lets you click a button in GitHub to run it manually
+
+jobs:
+    heartbeat:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Ping Supabase Database
+              env:
+                  # Your specific project URL
+                  SUPABASE_URL: "https://tgyetavhkukcclnwrroz.supabase.co"
+                  # We will put this in GitHub Secrets
+                  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+                  # REPLACE 'users' WITH A REAL TABLE IN YOUR DATABASE (replaced it with 'products')
+                  TABLE_NAME: "products"
+              run: |
+                  curl -sSf -X GET "$SUPABASE_URL/rest/v1/$TABLE_NAME?select=*&limit=1" \
+                  -H "apikey: $SUPABASE_ANON_KEY" \
+                  -H "Authorization: Bearer $SUPABASE_ANON_KEY" > /dev/null

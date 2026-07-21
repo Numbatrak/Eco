@@ -1,0 +1,311 @@
+/* Select Component Styles */
+[data-slot="select-trigger"] {
+  display: flex;
+  width: 100%;
+  max-width: 400px;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--input);
+  background-color: var(--input-background);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  cursor: pointer;
+}
+
+[data-slot="select-trigger"][data-size="default"] {
+  height: 2.25rem;
+}
+
+[data-slot="select-trigger"][data-size="sm"] {
+  height: 2rem;
+}
+
+[data-slot="select-trigger"]:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(var(--ring-rgb, 112, 112, 112), 0.5);
+}
+
+[data-slot="select-trigger"][aria-invalid="true"] {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px rgba(212, 24, 61, 0.2);
+}
+
+[data-slot="select-trigger"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+[data-slot="select-trigger"][data-placeholder] {
+  color: var(--muted-foreground);
+}
+
+[data-slot="select-trigger"] svg {
+  pointer-events: none;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+}
+
+[data-slot="select-trigger"] [data-slot="select-value"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Select Content */
+[data-slot="select-content"] {
+  position: relative;
+  z-index: 9999;
+  max-height: var(--radix-select-content-available-height, 300px);
+  min-width: 8rem;
+  max-width: var(--radix-select-trigger-width, 20rem);
+  width: var(--radix-select-trigger-width, 100%);
+  transform-origin: var(--radix-select-content-transform-origin);
+  overflow: hidden;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-slot="select-content"][data-state="open"] {
+  animation: select-in 0.15s ease-out;
+}
+
+[data-slot="select-content"][data-state="closed"] {
+  animation: select-out 0.15s ease-in;
+}
+
+@keyframes select-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes select-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+[data-slot="select-content"][data-side="bottom"] {
+  animation-name: select-in, slide-in-from-top;
+}
+
+[data-slot="select-content"][data-side="top"] {
+  animation-name: select-in, slide-in-from-bottom;
+}
+
+[data-slot="select-content"][data-side="left"] {
+  animation-name: select-in, slide-in-from-left;
+}
+
+[data-slot="select-content"][data-side="right"] {
+  animation-name: select-in, slide-in-from-right;
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-4px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(4px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Select Viewport */
+[data-slot="select-content"] [data-slot="select-viewport"],
+[data-slot="select-content"] [data-radix-select-viewport],
+[data-slot="select-content"] [data-radix-scroll-area-viewport] {
+  padding: 0.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+[data-slot="select-content"][data-position="popper"] .select-viewport-popper {
+  height: var(--radix-select-trigger-height);
+  width: 100%;
+  min-width: var(--radix-select-trigger-width);
+  max-width: var(--radix-select-trigger-width);
+  scroll-margin: 0.25rem;
+}
+
+/* Custom scrollbar for select viewport */
+[data-slot="select-content"] [data-slot="select-viewport"]::-webkit-scrollbar,
+[data-slot="select-content"] [data-radix-select-viewport]::-webkit-scrollbar,
+[data-slot="select-content"] [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-slot="select-content"] [data-slot="select-viewport"]::-webkit-scrollbar-track,
+[data-slot="select-content"] [data-radix-select-viewport]::-webkit-scrollbar-track,
+[data-slot="select-content"] [data-radix-scroll-area-viewport]::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+[data-slot="select-content"] [data-slot="select-viewport"]::-webkit-scrollbar-thumb,
+[data-slot="select-content"] [data-radix-select-viewport]::-webkit-scrollbar-thumb,
+[data-slot="select-content"] [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+[data-slot="select-content"] [data-slot="select-viewport"]::-webkit-scrollbar-thumb:hover,
+[data-slot="select-content"] [data-radix-select-viewport]::-webkit-scrollbar-thumb:hover,
+[data-slot="select-content"] [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Select Item */
+[data-slot="select-item"] {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  padding-right: 2rem;
+  font-size: 0.875rem;
+  outline: none;
+  user-select: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  color: var(--popover-foreground);
+}
+
+[data-slot="select-item"]:hover,
+[data-slot="select-item"]:focus,
+[data-slot="select-item"][data-highlighted] {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+[data-slot="select-item"][data-state="checked"] {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+[data-slot="select-item"][data-disabled] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+[data-slot="select-item"] svg {
+  pointer-events: none;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+}
+
+[data-slot="select-item"] > span:first-child {
+  position: absolute;
+  right: 0.75rem;
+  display: flex;
+  width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-slot="select-item"] > span:first-child svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--popover-foreground);
+}
+
+[data-slot="select-item"][data-state="checked"] > span:first-child svg {
+  color: var(--accent-foreground);
+}
+
+/* Select Label */
+[data-slot="select-label"] {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Select Group */
+[data-slot="select-group"] {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Select Separator */
+[data-slot="select-separator"] {
+  background-color: var(--border);
+  height: 1px;
+  margin: 0.25rem -0.25rem;
+  pointer-events: none;
+}
+
+/* Select Scroll Buttons */
+[data-slot="select-scroll-up-button"],
+[data-slot="select-scroll-down-button"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  cursor: default;
+}
+
+[data-slot="select-scroll-up-button"] svg,
+[data-slot="select-scroll-down-button"] svg {
+  width: 1rem;
+  height: 1rem;
+}
+

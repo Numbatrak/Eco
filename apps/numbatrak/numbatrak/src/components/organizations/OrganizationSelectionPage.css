@@ -1,0 +1,246 @@
+.org-selection-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  padding: 2rem;
+}
+
+.org-selection-content {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px color-mix(in srgb, var(--foreground) 8%, transparent);
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+}
+
+.org-selection-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.org-selection-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.org-selection-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.org-selection-subtitle {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.org-selection-error {
+  background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
+  color: var(--destructive);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.org-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.org-selection-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.org-selection-card:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.org-selection-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.org-selection-card-text {
+  flex: 1;
+}
+
+.org-selection-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.25rem;
+}
+
+.org-selection-card-role {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.org-selection-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.org-selection-empty-icon {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.org-selection-empty-text {
+  color: var(--muted-foreground);
+  margin-bottom: 1.5rem;
+}
+
+.org-selection-invitation-card {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.org-selection-invitation-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+}
+
+.org-selection-invitations-divider {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.org-selection-create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.org-selection-create-btn:hover {
+  background: color-mix(in srgb, var(--primary) 90%, black);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.org-selection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.org-selection-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.org-selection-form-label {
+  font-weight: 600;
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.org-selection-form-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background: var(--background);
+  color: var(--foreground);
+  transition: border-color 0.2s;
+}
+
+.org-selection-form-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.org-selection-form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.org-selection-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.org-selection-form-cancel {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.org-selection-form-cancel:hover {
+  border-color: var(--muted-foreground);
+  background: var(--accent);
+}
+
+.org-selection-form-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.org-selection-form-submit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 90%, black);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.org-selection-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

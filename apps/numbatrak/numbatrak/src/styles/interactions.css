@@ -1,0 +1,62 @@
+/* Interactive elements — pointer cursor baseline (light/dark safe) */
+
+button:not(:disabled):not([disabled]),
+[type="button"]:not(:disabled):not([disabled]),
+[type="submit"]:not(:disabled):not([disabled]),
+[type="reset"]:not(:disabled):not([disabled]),
+[role="button"]:not([aria-disabled="true"]),
+[data-slot="tabs-trigger"],
+[data-slot="dialog-close"],
+[data-slot="select-trigger"]:not([data-disabled]),
+[data-slot="toggle"],
+a[href],
+label[for],
+select:not(:disabled),
+summary,
+.cursor-pointer {
+  cursor: pointer;
+}
+
+button:disabled,
+button[disabled],
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[aria-disabled="true"],
+select:disabled {
+  cursor: not-allowed;
+}
+
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Navigation */
+.sidebar-nav-item,
+.sidebar-overlay.open {
+  cursor: pointer;
+}
+
+/* Modals & toasts */
+.dialog-cancel-button,
+.page-toast-dismiss,
+.page-toast-action-btn,
+.page-alert-dismiss {
+  cursor: pointer;
+}
+
+/* Table toolbars & row actions */
+[class*="-action-button"]:not(:disabled),
+[class*="-filter-button"],
+[class*="-sort-button"],
+[class*="pagination-button"]:not(:disabled),
+[class*="pagination-page"]:not(:disabled),
+.table-pagination-button:not(:disabled),
+.table-pagination-page {
+  cursor: pointer;
+}
+
+/* Expandable / clickable rows */
+.form-response-table-row {
+  cursor: pointer;
+}
