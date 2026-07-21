@@ -23,7 +23,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "migrate:numbatrak": "tsx --env-file=.env scripts/migrate-numbatrak.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
@@ -34,6 +35,7 @@
     "@types/node": "^22.10.5",
     "drizzle-kit": "^0.31.10",
     "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }
