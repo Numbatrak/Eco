@@ -1,35 +1,57 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
-import {
-  ProductOffer,
-  ProductOfferBundleItem,
-  ProductOfferType,
-} from "../types/product";
+import { apiRequest } from "../lib/apiClient";
+import { ProductOffer, ProductOfferBundleItem, ProductOfferType } from "../types/product";
 import { emptyWithoutOrg } from "./orgQuery";
+import { fetchProductsWithDetails } from "./products";
 
-function mapOfferRow(row: Record<string, unknown>): ProductOffer {
+interface OfferDto {
+  id: string;
+  organizationId: string;
+  productId: string;
+  variantId: string | null;
+  offerType: ProductOfferType;
+  label: string;
+  minQuantity: number;
+  freeQuantity: number;
+  bundleItems: ProductOfferBundleItem[] | null;
+  price: string;
+  unitCost: string;
+  active: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  displayOrder: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+function offerFromDto(dto: OfferDto): ProductOffer {
   return {
-    id: row.id as string,
-    organization_id: row.organization_id as string,
-    product_id: row.product_id as string,
-    variant_id: (row.variant_id as string | null) ?? null,
-    offer_type: (row.offer_type as ProductOfferType) ?? "single",
-    label: (row.label as string) ?? "Offer",
-    min_quantity: Number(row.min_quantity ?? 1),
-    free_quantity: Number(row.free_quantity ?? 0),
-    bundle_items: (row.bundle_items as ProductOfferBundleItem[] | null) ?? null,
-    price: Number(row.price ?? 0),
-    unit_cost: Number(row.unit_cost ?? 0),
-    active: row.active !== false,
-    starts_at: (row.starts_at as string | null) ?? null,
-    ends_at: (row.ends_at as string | null) ?? null,
-    display_order: Number(row.display_order ?? 0),
-    created_at: (row.created_at as string) ?? null,
-    updated_at: (row.updated_at as string) ?? null,
+    id: dto.id,
+    organization_id: dto.organizationId,
+    product_id: dto.productId,
+    variant_id: dto.variantId,
+    offer_type: dto.offerType,
+    label: dto.label,
+    min_quantity: dto.minQuantity,
+    free_quantity: dto.freeQuantity,
+    bundle_items: dto.bundleItems,
+    price: Number(dto.price),
+    unit_cost: Number(dto.unitCost),
+    active: dto.active,
+    starts_at: dto.startsAt,
+    ends_at: dto.endsAt,
+    display_order: dto.displayOrder,
+    created_at: dto.createdAt,
+    updated_at: dto.updatedAt,
   };
 }
 
+/**
+ * Offers are already embedded on each product row returned by
+ * fetchProductsWithDetails - same reasoning as productVariants.ts's
+ * "by product(s)" reads.
+ */
 export async function fetchOffersByProduct(
   organizationId: string | null,
   productId: string
@@ -37,16 +59,8 @@ export async function fetchOffersByProduct(
   const empty = emptyWithoutOrg<ProductOffer>(organizationId);
   if (empty) return empty;
 
-  const { data, error } = await supabase
-    .from("product_offers")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .eq("product_id", productId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []).map(mapOfferRow);
+  const products = await fetchProductsWithDetails(organizationId);
+  return products.find((p) => p.id === productId)?.offers ?? [];
 }
 
 export async function fetchOffersForProducts(
@@ -56,18 +70,10 @@ export async function fetchOffersForProducts(
   const result: Record<string, ProductOffer[]> = {};
   if (!organizationId || productIds.length === 0) return result;
 
-  const { data, error } = await supabase
-    .from("product_offers")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .in("product_id", productIds)
-    .order("display_order", { ascending: true });
-
-  if (error) throw error;
-  for (const row of data ?? []) {
-    const o = mapOfferRow(row);
-    if (!result[o.product_id]) result[o.product_id] = [];
-    result[o.product_id].push(o);
+  const products = await fetchProductsWithDetails(organizationId);
+  for (const p of products) {
+    if (!productIds.includes(p.id)) continue;
+    result[p.id] = p.offers ?? [];
   }
   return result;
 }
@@ -87,32 +93,23 @@ export async function createProductOffer(input: {
   ends_at?: string | null;
   display_order?: number;
 }): Promise<ProductOffer> {
-  const { data, error } = await supabase
-    .from("product_offers")
-    .insert([
-      {
-        organization_id: input.organization_id,
-        product_id: input.product_id,
-        variant_id: input.variant_id ?? null,
-        offer_type: input.offer_type,
-        label: input.label.trim(),
-        min_quantity: input.min_quantity ?? 1,
-        free_quantity: input.free_quantity ?? 0,
-        bundle_items: input.bundle_items ?? null,
-        price: input.price,
-        unit_cost: input.unit_cost,
-        starts_at: input.starts_at ?? null,
-        ends_at: input.ends_at ?? null,
-        display_order: input.display_order ?? 0,
-        active: true,
-      },
-    ])
-    .select()
-    .single();
-
-  if (error) throw error;
-  if (!data) throw new Error("No data returned from insert");
-  return mapOfferRow(data);
+  const dto = await apiRequest<OfferDto>(`/org/numbatrak/products/${input.product_id}/offers`, {
+    method: "POST",
+    body: {
+      variantId: input.variant_id ?? null,
+      offerType: input.offer_type,
+      label: input.label.trim(),
+      minQuantity: input.min_quantity ?? 1,
+      freeQuantity: input.free_quantity ?? 0,
+      bundleItems: input.bundle_items ?? null,
+      price: input.price,
+      unitCost: input.unit_cost,
+      startsAt: input.starts_at ?? null,
+      endsAt: input.ends_at ?? null,
+      displayOrder: input.display_order ?? 0,
+    },
+  });
+  return offerFromDto(dto);
 }
 
 export async function updateProductOffer(
@@ -135,49 +132,30 @@ export async function updateProductOffer(
     >
   >
 ): Promise<ProductOffer> {
-  const updateData: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  };
-  if (input.variant_id !== undefined) updateData.variant_id = input.variant_id;
-  if (input.offer_type !== undefined) updateData.offer_type = input.offer_type;
-  if (input.label !== undefined) updateData.label = input.label;
-  if (input.min_quantity !== undefined)
-    updateData.min_quantity = input.min_quantity;
-  if (input.free_quantity !== undefined)
-    updateData.free_quantity = input.free_quantity;
-  if (input.bundle_items !== undefined)
-    updateData.bundle_items = input.bundle_items;
-  if (input.price !== undefined) updateData.price = input.price;
-  if (input.unit_cost !== undefined) updateData.unit_cost = input.unit_cost;
-  if (input.active !== undefined) updateData.active = input.active;
-  if (input.starts_at !== undefined) updateData.starts_at = input.starts_at;
-  if (input.ends_at !== undefined) updateData.ends_at = input.ends_at;
-  if (input.display_order !== undefined)
-    updateData.display_order = input.display_order;
-
-  const { data, error } = await supabase
-    .from("product_offers")
-    .update(updateData)
-    .eq("id", offerId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  if (!data) throw new Error("No data returned from update");
-  return mapOfferRow(data);
+  const dto = await apiRequest<OfferDto>(`/org/numbatrak/product-offers/${offerId}`, {
+    method: "PATCH",
+    body: {
+      variantId: input.variant_id,
+      offerType: input.offer_type,
+      label: input.label,
+      minQuantity: input.min_quantity,
+      freeQuantity: input.free_quantity,
+      bundleItems: input.bundle_items,
+      price: input.price,
+      unitCost: input.unit_cost,
+      active: input.active,
+      startsAt: input.starts_at,
+      endsAt: input.ends_at,
+      displayOrder: input.display_order,
+    },
+  });
+  return offerFromDto(dto);
 }
 
 export async function removeProductOffer(offerId: string): Promise<void> {
-  const { error } = await supabase
-    .from("product_offers")
-    .delete()
-    .eq("id", offerId);
-  if (error) throw error;
+  await apiRequest<void>(`/org/numbatrak/product-offers/${offerId}`, { method: "DELETE" });
 }
 
-export async function setProductOfferActive(
-  offerId: string,
-  active: boolean
-): Promise<ProductOffer> {
+export async function setProductOfferActive(offerId: string, active: boolean): Promise<ProductOffer> {
   return updateProductOffer(offerId, { active });
 }

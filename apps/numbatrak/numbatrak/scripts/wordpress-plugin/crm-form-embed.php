@@ -56,8 +56,7 @@ class CRM_Form_Embed {
     public function activate() {
         // Set default options
         $defaults = array(
-            'supabase_url' => 'https://tgyetavhkukcclnwrroz.supabase.co',
-            'supabase_anon_key' => '',
+            'api_base_url' => '',
             'embed_js_url' => 'https://mail9ja.vercel.app/embed.js',
             'embed_css_url' => 'https://mail9ja.vercel.app/embed.css',
         );
@@ -132,16 +131,12 @@ class CRM_Form_Embed {
         );
         
         // Add inline script to configure SDK
-        $supabase_url = !empty($settings['supabase_url']) ? esc_js($settings['supabase_url']) : '';
-        $supabase_key = !empty($settings['supabase_anon_key']) ? esc_js($settings['supabase_anon_key']) : '';
+        $api_base_url = !empty($settings['api_base_url']) ? esc_js($settings['api_base_url']) : '';
         $debug = defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false';
-        
+
         $html .= '<script>';
-        $html .= 'if (typeof window.CRM_SUPABASE_URL === "undefined") {';
-        $html .= sprintf('window.CRM_SUPABASE_URL = "%s";', $supabase_url);
-        $html .= '}';
-        $html .= 'if (typeof window.CRM_SUPABASE_ANON_KEY === "undefined") {';
-        $html .= sprintf('window.CRM_SUPABASE_ANON_KEY = "%s";', $supabase_key);
+        $html .= 'if (typeof window.CRM_API_BASE_URL === "undefined") {';
+        $html .= sprintf('window.CRM_API_BASE_URL = "%s";', $api_base_url);
         $html .= '}';
         $html .= sprintf('window.CRM_DEBUG = %s;', $debug);
         $html .= '</script>';
@@ -249,28 +244,20 @@ class CRM_Form_Embed {
             array($this, 'sanitize_settings')
         );
         
-        // Supabase Settings Section
+        // API Settings Section
         add_settings_section(
-            'crm_form_embed_supabase_section',
-            __('Supabase Configuration', 'crm-form-embed'),
-            array($this, 'render_supabase_section'),
+            'crm_form_embed_api_section',
+            __('API Configuration', 'crm-form-embed'),
+            array($this, 'render_api_section'),
             'crm-form-embed'
         );
-        
+
         add_settings_field(
-            'supabase_url',
-            __('Supabase URL', 'crm-form-embed'),
-            array($this, 'render_supabase_url_field'),
+            'api_base_url',
+            __('API Base URL', 'crm-form-embed'),
+            array($this, 'render_api_base_url_field'),
             'crm-form-embed',
-            'crm_form_embed_supabase_section'
-        );
-        
-        add_settings_field(
-            'supabase_anon_key',
-            __('Supabase Anon Key', 'crm-form-embed'),
-            array($this, 'render_supabase_anon_key_field'),
-            'crm-form-embed',
-            'crm_form_embed_supabase_section'
+            'crm_form_embed_api_section'
         );
         
         // SDK Settings Section
@@ -303,15 +290,11 @@ class CRM_Form_Embed {
      */
     public function sanitize_settings($input) {
         $sanitized = array();
-        
-        if (isset($input['supabase_url'])) {
-            $sanitized['supabase_url'] = esc_url_raw($input['supabase_url']);
+
+        if (isset($input['api_base_url'])) {
+            $sanitized['api_base_url'] = esc_url_raw($input['api_base_url']);
         }
-        
-        if (isset($input['supabase_anon_key'])) {
-            $sanitized['supabase_anon_key'] = sanitize_text_field($input['supabase_anon_key']);
-        }
-        
+
         if (isset($input['embed_js_url'])) {
             $sanitized['embed_js_url'] = esc_url_raw($input['embed_js_url']);
         }
@@ -381,10 +364,10 @@ class CRM_Form_Embed {
     }
     
     /**
-     * Render Supabase section
+     * Render API section
      */
-    public function render_supabase_section() {
-        echo '<p>' . __('Configure your Supabase project credentials. These are used by the embed SDK to fetch form schemas and submit orders.', 'crm-form-embed') . '</p>';
+    public function render_api_section() {
+        echo '<p>' . __('Configure the base URL of your CRM API. This is used by the embed SDK to fetch form schemas and submit orders.', 'crm-form-embed') . '</p>';
     }
     
     /**
@@ -395,34 +378,18 @@ class CRM_Form_Embed {
     }
     
     /**
-     * Render Supabase URL field
+     * Render API Base URL field
      */
-    public function render_supabase_url_field() {
+    public function render_api_base_url_field() {
         $settings = get_option('crm_form_embed_settings', array());
-        $value = isset($settings['supabase_url']) ? $settings['supabase_url'] : '';
+        $value = isset($settings['api_base_url']) ? $settings['api_base_url'] : '';
         ?>
-        <input type="url" 
-               name="crm_form_embed_settings[supabase_url]" 
-               value="<?php echo esc_attr($value); ?>" 
+        <input type="url"
+               name="crm_form_embed_settings[api_base_url]"
+               value="<?php echo esc_attr($value); ?>"
                class="regular-text"
-               placeholder="https://tgyetavhkukcclnwrroz.supabase.co">
-        <p class="description"><?php _e('Your Supabase project URL. Found in Settings → API.', 'crm-form-embed'); ?></p>
-        <?php
-    }
-    
-    /**
-     * Render Supabase Anon Key field
-     */
-    public function render_supabase_anon_key_field() {
-        $settings = get_option('crm_form_embed_settings', array());
-        $value = isset($settings['supabase_anon_key']) ? $settings['supabase_anon_key'] : '';
-        ?>
-        <input type="text" 
-               name="crm_form_embed_settings[supabase_anon_key]" 
-               value="<?php echo esc_attr($value); ?>" 
-               class="regular-text"
-               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-        <p class="description"><?php _e('Your Supabase anon/public key. Found in Settings → API. Safe to use in client-side code.', 'crm-form-embed'); ?></p>
+               placeholder="https://api.yourcrm.com">
+        <p class="description"><?php _e('The base URL of your CRM API (no trailing slash). The SDK calls /public/numbatrak/forms/{token} on this host.', 'crm-form-embed'); ?></p>
         <?php
     }
     

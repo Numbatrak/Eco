@@ -1,5 +1,5 @@
 import { FormEvent, useState, useMemo, useEffect } from "react";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
+import { useAuth } from "../auth/AuthProvider";
 import { WaybillBatchDialog } from "./deliveries/WaybillBatchDialog";
 import { DeliveryWithRelations } from "../types/delivery";
 import { DeliveryDialog } from "./deliveries/DeliveryDialog";
@@ -11,19 +11,19 @@ import {
   removeDelivery,
 } from "../services/deliveries";
 import { intakeWaybill, intakeDeliveryRecord } from "../services/waybillIntake";
-import { fetchDashboardFilterOptions } from "../services/dashboardMetrics";
 import { usePermissions } from "../hooks/usePermissions";
 import { useOrganization } from "../contexts/OrganizationContext";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
-import { useCachedDeliveries, useCachedAgents, useCachedProducts } from "../hooks/useCachedData";
+import { useCachedDeliveries } from "../hooks/useCachedDeliveries";
+import { useCachedAgents } from "../hooks/useCachedAgents";
+import { useCachedProducts } from "../hooks/useCachedProducts";
 import { invalidateStoreCache, deliveriesStore } from "../stores/dataStore";
 import { PageLayout } from "./layout/PageLayout";
 import { useClientPagination } from "../hooks/useClientPagination";
-import { useActivityLogger } from "../utils/activityLogger";
 import { agentsForAssignment, filterStockHolders } from "../utils/agentFilters";
 
 export default function DeliveriesForm() {
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
@@ -59,22 +59,15 @@ export default function DeliveriesForm() {
   }>({});
   const [subBrandOptions, setSubBrandOptions] = useState<string[]>([]);
   const [waybillOpen, setWaybillOpen] = useState(false);
-  const { logActivityAction } = useActivityLogger();
 
+  // Dashboard's own cross-domain sub-brand aggregation isn't ported yet -
+  // this just uses what's visible in the loaded deliveries themselves.
   useEffect(() => {
-    if (!currentOrganization?.id) {
-      setSubBrandOptions([]);
-      return;
-    }
-    fetchDashboardFilterOptions(currentOrganization.id).then((opts) => {
-      const fromDeliveries = deliveries
-        .map((d) => d.sub_brand?.trim())
-        .filter(Boolean) as string[];
-      setSubBrandOptions(
-        [...new Set([...opts.subBrands, ...fromDeliveries])].sort()
-      );
-    });
-  }, [currentOrganization?.id, deliveries]);
+    const fromDeliveries = deliveries
+      .map((d) => d.sub_brand?.trim())
+      .filter(Boolean) as string[];
+    setSubBrandOptions([...new Set(fromDeliveries)].sort());
+  }, [deliveries]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -113,42 +106,31 @@ export default function DeliveriesForm() {
 
       if (dialogMode === "edit" && editingDelivery) {
         await updateDelivery(editingDelivery.id, deliveryData);
-        await logActivityAction(
-          "delivery_updated",
-          "delivery",
-          editingDelivery.id,
-          `Updated delivery #${editingDelivery.id} (${status})`
-        );
         setSuccess("Delivery updated successfully!");
       } else {
         if (!currentOrganization) {
           setLocalError("No organization selected");
           return;
         }
-        const created =
-          status === "Waybilled" && deliveryData.agent_id
-            ? await intakeWaybill({
-                organization_id: currentOrganization.id,
-                date: deliveryData.date,
-                csr: deliveryData.csr,
-                agent_id: deliveryData.agent_id,
-                product_id: deliveryData.product_id,
-                quantity: deliveryData.quantity,
-                cost: deliveryData.cost,
-                waybilling_fee: deliveryData.waybilling_fee,
-                sub_brand: deliveryData.sub_brand,
-                recorded_by_user_id: user?.id ?? null,
-              })
-            : await intakeDeliveryRecord({
-                organization_id: currentOrganization.id,
-                ...deliveryData,
-              });
-        await logActivityAction(
-          "delivery_created",
-          "delivery",
-          created.id,
-          `Created delivery #${created.id} (${status})`
-        );
+        if (status === "Waybilled" && deliveryData.agent_id) {
+          await intakeWaybill({
+            organization_id: currentOrganization.id,
+            date: deliveryData.date,
+            csr: deliveryData.csr,
+            agent_id: deliveryData.agent_id,
+            product_id: deliveryData.product_id,
+            quantity: deliveryData.quantity,
+            cost: deliveryData.cost,
+            waybilling_fee: deliveryData.waybilling_fee,
+            sub_brand: deliveryData.sub_brand,
+            recorded_by_user_id: user?.id ?? null,
+          });
+        } else {
+          await intakeDeliveryRecord({
+            organization_id: currentOrganization.id,
+            ...deliveryData,
+          });
+        }
         setSuccess("Delivery created successfully!");
       }
 
@@ -193,12 +175,6 @@ export default function DeliveriesForm() {
     try {
       setLocalError(null);
       await removeDelivery(deliveryId);
-      await logActivityAction(
-        "delivery_deleted",
-        "delivery",
-        deliveryId,
-        `Deleted delivery #${deliveryId}`
-      );
       setSuccess("Delivery deleted successfully!");
       // Invalidate cache and refetch
       invalidateStoreCache(deliveriesStore, currentOrganization?.id || null);

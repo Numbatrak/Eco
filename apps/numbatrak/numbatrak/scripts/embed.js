@@ -28,8 +28,7 @@
   const SDK_BUILD_DATE = "2026-01-25";
 
   const CONFIG = {
-    SUPABASE_URL: window.CRM_SUPABASE_URL || "https://your-project.supabase.co",
-    SUPABASE_ANON_KEY: window.CRM_SUPABASE_ANON_KEY || "",
+    API_BASE_URL: (window.CRM_API_BASE_URL || "https://api.example.com").replace(/\/$/, ""),
     INACTIVITY_TIMEOUT: 30000, // 30 seconds
     DEBUG: true,
   };
@@ -252,24 +251,20 @@
         return;
       }
 
-      fetch(`${CONFIG.SUPABASE_URL}/functions/v1/create-order-from-form`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      fetch(
+        `${CONFIG.API_BASE_URL}/public/numbatrak/forms/${encodeURIComponent(this.formToken)}/submit`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fieldValues,
+            items: [],
+            offerName: this.selectedOfferTitle || null,
+            source: "embed",
+            pageUrl: window.location.href,
+          }),
         },
-        body: JSON.stringify({
-          form_token: this.formToken,
-          customer_name: customerName,
-          customer_phone: phoneNumber || whatsappNumber,
-          field_values: fieldValues,
-          items: [],
-          selected_products: selectedProductsArray,
-          offer_name: this.selectedOfferTitle || null,
-          source: "embed",
-          page_url: window.location.href,
-        }),
-      }).catch((err) => {
+      ).catch((err) => {
         this.abandonedCartSent = false;
         error("Failed to send abandoned cart event:", err);
       });
@@ -317,89 +312,21 @@
     async fetchFormSchema(formToken) {
       try {
         const response = await fetch(
-          `${CONFIG.SUPABASE_URL}/rest/v1/forms?form_token=eq.${formToken}&select=*`,
-          {
-            headers: {
-              apikey: CONFIG.SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-            },
-          },
+          `${CONFIG.API_BASE_URL}/public/numbatrak/forms/${encodeURIComponent(formToken)}`,
         );
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch form: ${response.statusText}`);
-        }
-
         const data = await response.json();
-        if (!data || data.length === 0) {
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to fetch form: ${response.statusText}`);
+        }
+        if (!data || !data.form) {
           throw new Error("Form not found");
         }
 
-        const form = data[0];
-        if (!form.active) {
-          throw new Error("Form is not active");
-        }
-
-        // Extract all product IDs referenced in the form schema
-        const productIds = new Set();
-        if (form.schema && form.schema.fields) {
-          form.schema.fields.forEach((field) => {
-            if (field.type === "radio-group" && field.radioOptions) {
-              field.radioOptions.forEach((option) => {
-                if (option.products) {
-                  option.products.forEach((p) => {
-                    productIds.add(p.product_id);
-                  });
-                }
-              });
-            }
-          });
-        }
-
-        // Fetch product details if we have any product IDs
-        let allProducts = [];
-        if (productIds.size > 0) {
-          const productIdsArray = Array.from(productIds);
-          log("Fetching products with IDs:", productIdsArray);
-
-          // Build query - Supabase 'in' filter syntax
-          // For UUIDs: id=in.(uuid1,uuid2)
-          // For numbers: id=in.(1,2,3)
-          // We'll try to detect and format appropriately
-          const formattedIds = productIdsArray
-            .map((id) => {
-              // If it looks like a UUID or contains non-numeric chars, quote it
-              if (typeof id === "string" && (id.includes("-") || isNaN(id))) {
-                return `"${id}"`;
-              }
-              return id;
-            })
-            .join(",");
-
-          const productsResponse = await fetch(
-            `${CONFIG.SUPABASE_URL}/rest/v1/products?id=in.(${formattedIds})&select=id,name`,
-            {
-              headers: {
-                apikey: CONFIG.SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                Pragma: "no-cache",
-                Expires: "0",
-              },
-            },
-          );
-
-          if (productsResponse.ok) {
-            allProducts = await productsResponse.json();
-            log("Fetched products for radio groups:", allProducts);
-          } else {
-            log("Failed to fetch products, status:", productsResponse.status);
-          }
-        }
-
         return {
-          form,
-          allProducts, // Return as array for easy lookup
+          form: data.form,
+          allProducts: data.products || [], // [{id, name}], already scoped to this form's schema
         };
       } catch (err) {
         error("Error fetching form schema:", err);
@@ -409,21 +336,24 @@
 
     async submitOrder(formToken, orderData) {
       try {
+        const items = (orderData.items || []).map((item) => ({
+          productId: item.product_id,
+          quantity: item.quantity,
+          ...(item.variant_id ? { variantId: item.variant_id } : {}),
+          ...(item.offer_id ? { offerId: item.offer_id } : {}),
+        }));
+
         const response = await fetch(
-          `${CONFIG.SUPABASE_URL}/functions/v1/create-order-from-form`,
+          `${CONFIG.API_BASE_URL}/public/numbatrak/forms/${encodeURIComponent(formToken)}/submit`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              form_token: formToken,
-              customer_name: orderData.customer_name,
-              customer_phone: orderData.customer_phone || null,
-              field_values: orderData.field_values || {},
-              items: orderData.items,
-              offer_name: orderData.offer_name || null,
+              fieldValues: orderData.field_values || {},
+              items,
+              offerName: orderData.offer_name || null,
+              source: "wordpress",
+              pageUrl: window.location.href,
             }),
           },
         );

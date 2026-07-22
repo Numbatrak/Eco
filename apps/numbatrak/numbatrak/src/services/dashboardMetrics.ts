@@ -1,14 +1,7 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
-import {
-  isDeliveredStatus,
-  statusFilterToDbValues,
-  orderStatusLabel,
-} from "../constants/orderStatus";
-import { withinDateRange } from "./dashboardProjection";
-import { fetchMetricsOrderRows, type OrderScopeFilters } from "./orderDataSource";
-import { isAdvertisingCategory } from "../utils/expenseCategoryHelpers";
+import { apiRequest } from "../lib/apiClient";
+import { statusFilterToDbValues, orderStatusLabel } from "../constants/orderStatus";
 
 /** Order row fields used for business-performance metrics. */
 export type MetricsOrderRow = {
@@ -107,46 +100,6 @@ export const EMPTY_LOSS_METRICS: LossMetrics = {
   byStatus: [],
 };
 
-function num(v: number | string | null | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function isGeneratedOrder(row: MetricsOrderRow): boolean {
-  return row.status !== "cancelled";
-}
-
-function isDeliveredOrder(row: MetricsOrderRow): boolean {
-  return isDeliveredStatus(row.status);
-}
-
-function inGeneratedPeriod(
-  row: MetricsOrderRow,
-  startDate?: string,
-  endDate?: string
-): boolean {
-  return withinDateRange(row.created_at, startDate, endDate);
-}
-
-function inDeliveredPeriod(
-  row: MetricsOrderRow,
-  startDate?: string,
-  endDate?: string
-): boolean {
-  const anchor = row.completed_at || row.created_at;
-  return withinDateRange(anchor, startDate, endDate);
-}
-
-function scopeToOrderFilters(scope: DashboardMetricsScope): OrderScopeFilters {
-  return {
-    formId: scope.formId,
-    csrId: scope.csrId,
-    funnelName: scope.funnelName,
-    subBrand: scope.subBrand,
-    agentId: scope.agentId,
-  };
-}
-
 /** Client-side status filter (supports legacy alias groups). */
 export function filterOrdersByStatus<T extends { status: string }>(
   orders: T[],
@@ -157,211 +110,32 @@ export function filterOrdersByStatus<T extends { status: string }>(
   return orders.filter((o) => dbValues.includes(o.status));
 }
 
-export function computeBusinessPerformanceMetrics(input: {
-  orders: MetricsOrderRow[];
-  adSpend: number;
-  totalNonAdExpenses: number;
-  startDate?: string;
-  endDate?: string;
-}): BusinessPerformanceMetrics {
-  const { orders, adSpend, totalNonAdExpenses, startDate, endDate } = input;
-
-  const generated = orders.filter(
-    (o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate)
-  );
-  const delivered = orders.filter(
-    (o) => isDeliveredOrder(o) && inDeliveredPeriod(o, startDate, endDate)
-  );
-
-  const totalOrdersGenerated = generated.length;
-  const totalOrdersDelivered = delivered.length;
-
-  const deliveryRate =
-    totalOrdersGenerated > 0
-      ? (totalOrdersDelivered / totalOrdersGenerated) * 100
-      : 0;
-
-  const totalDeliveredSales = delivered.reduce(
-    (s, o) => s + num(o.order_revenue),
-    0
-  );
-  const totalCogs = delivered.reduce((s, o) => s + num(o.order_cost), 0);
-  const totalDeliveryFees = delivered.reduce(
-    (s, o) => s + num(o.delivery_fee),
-    0
-  );
-
-  const averageOrderValue =
-    totalOrdersDelivered > 0 ? totalDeliveredSales / totalOrdersDelivered : 0;
-  const averageCogs =
-    totalOrdersDelivered > 0 ? totalCogs / totalOrdersDelivered : 0;
-  const averageDeliveryFee =
-    totalOrdersDelivered > 0 ? totalDeliveryFees / totalOrdersDelivered : 0;
-
-  const platformCpa =
-    totalOrdersGenerated > 0 && adSpend > 0 ? adSpend / totalOrdersGenerated : 0;
-  const realCpa =
-    totalOrdersDelivered > 0 && adSpend > 0 ? adSpend / totalOrdersDelivered : 0;
-  const cpaGap = realCpa - platformCpa;
-
-  const profitPerOrder =
-    averageOrderValue - realCpa - averageCogs - averageDeliveryFee;
-  const totalProfit = profitPerOrder * totalOrdersDelivered;
-
-  const roas = adSpend > 0 ? totalDeliveredSales / adSpend : 0;
-
-  const totalInvestment = adSpend + totalNonAdExpenses;
-  const netProfitAfterAllExpenses =
-    totalDeliveredSales - totalCogs - totalDeliveryFees - totalInvestment;
-  const businessRoi =
-    totalInvestment > 0 ? netProfitAfterAllExpenses / totalInvestment : 0;
-
-  return {
-    totalOrdersGenerated,
-    totalOrdersDelivered,
-    deliveryRate,
-    totalDeliveredSales,
-    averageOrderValue,
-    adSpend,
-    platformCpa,
-    realCpa,
-    cpaGap,
-    totalCogs,
-    averageCogs,
-    totalDeliveryFees,
-    averageDeliveryFee,
-    profitPerOrder,
-    totalProfit,
-    roas,
-    businessRoi,
-    totalNonAdExpenses,
-    totalInvestment,
-    netProfitAfterAllExpenses,
-  };
+interface SummaryDto {
+  businessMetrics: BusinessPerformanceMetrics;
+  lossMetrics: Omit<LossMetrics, "byStatus"> & { byStatus: Array<{ status: string; count: number; wouldBeSales: number }> };
 }
 
-export function computeLossMetrics(input: {
-  orders: MetricsOrderRow[];
-  adSpend: number;
-  failedDeliveryCost: number;
-  startDate?: string;
-  endDate?: string;
-}): LossMetrics {
-  const { orders, adSpend, failedDeliveryCost, startDate, endDate } = input;
-
-  const generated = orders.filter(
-    (o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate)
-  );
-  const undelivered = generated.filter((o) => !isDeliveredOrder(o));
-
-  const undeliveredCount = undelivered.length;
-  const wouldBeSales = undelivered.reduce((s, o) => s + num(o.order_revenue), 0);
-  const allocatedAdSpend =
-    generated.length > 0 && adSpend > 0
-      ? adSpend * (undeliveredCount / generated.length)
-      : 0;
-
-  const statusMap = new Map<string, LossStatusBreakdown>();
-  for (const row of undelivered) {
-    const status = row.status || "unknown";
-    const existing = statusMap.get(status);
-    const revenue = num(row.order_revenue);
-    if (existing) {
-      existing.count += 1;
-      existing.wouldBeSales += revenue;
-    } else {
-      statusMap.set(status, {
-        status,
-        label: orderStatusLabel(status),
-        count: 1,
-        wouldBeSales: revenue,
-      });
-    }
-  }
-
-  const byStatus = [...statusMap.values()].sort((a, b) => b.count - a.count);
-
-  return {
-    undeliveredCount,
-    wouldBeSales,
-    allocatedAdSpend,
-    failedDeliveryCost,
-    byStatus,
-  };
+function buildScopeParams(scope: DashboardMetricsScope, dateFrom?: string, dateTo?: string): URLSearchParams {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  if (scope.formId) params.set("formId", scope.formId);
+  if (scope.csrId) params.set("csrId", scope.csrId);
+  if (scope.funnelName) params.set("funnelName", scope.funnelName);
+  if (scope.subBrand) params.set("subBrand", scope.subBrand);
+  if (scope.agentId != null) params.set("agentId", String(scope.agentId));
+  if (scope.status) params.set("status", scope.status);
+  return params;
 }
 
-async function fetchOrderRows(
-  organizationId: string,
+async function fetchSummary(
+  _organizationId: string,
+  startDate: string | undefined,
+  endDate: string | undefined,
   scope: DashboardMetricsScope
-): Promise<MetricsOrderRow[]> {
-  const orderScope = scopeToOrderFilters(scope);
-  const rows = await fetchMetricsOrderRows(
-    organizationId,
-    scope.formId,
-    scope.csrId,
-    orderScope
-  );
-  return filterOrdersByStatus(rows, scope.status);
-}
-
-async function fetchExpenseTotals(
-  organizationId: string,
-  startDate?: string,
-  endDate?: string
-): Promise<{ adSpend: number; totalNonAdExpenses: number }> {
-  const { data, error } = await supabase
-    .from("unified_expenses")
-    .select("amount, occurred_at, category")
-    .eq("organization_id", organizationId);
-
-  if (error) {
-    console.warn("dashboardMetrics: unified_expenses", error);
-    return { adSpend: 0, totalNonAdExpenses: 0 };
-  }
-
-  let adSpend = 0;
-  let totalNonAdExpenses = 0;
-
-  for (const row of data || []) {
-    const t = row.occurred_at as string;
-    if (startDate && t < startDate) continue;
-    if (endDate && t > endDate) continue;
-
-    const amount = num(row.amount);
-    if (isAdvertisingCategory(row.category)) {
-      adSpend += amount;
-    } else {
-      totalNonAdExpenses += amount;
-    }
-  }
-
-  return { adSpend, totalNonAdExpenses };
-}
-
-async function fetchFailedDeliveryCost(
-  organizationId: string,
-  startDate?: string,
-  endDate?: string
-): Promise<number> {
-  const { data, error } = await supabase
-    .from("unified_expenses")
-    .select("amount, occurred_at, subcategory")
-    .eq("organization_id", organizationId)
-    .eq("subcategory", "failed_delivery");
-
-  if (error) {
-    console.warn("dashboardMetrics: failed_delivery expenses", error);
-    return 0;
-  }
-
-  let total = 0;
-  for (const row of data || []) {
-    const t = row.occurred_at as string;
-    if (startDate && t < startDate) continue;
-    if (endDate && t > endDate) continue;
-    total += num(row.amount);
-  }
-  return total;
+): Promise<SummaryDto> {
+  const params = buildScopeParams(scope, startDate, endDate);
+  return apiRequest<SummaryDto>(`/org/numbatrak/dashboard/summary?${params.toString()}`);
 }
 
 export async function fetchDashboardFilterOptions(
@@ -370,30 +144,7 @@ export async function fetchDashboardFilterOptions(
   if (!organizationId) {
     return { funnelNames: [], subBrands: [] };
   }
-
-  const { data, error } = await supabase
-    .from("customer_orders")
-    .select("funnel_name, sub_brand")
-    .eq("organization_id", organizationId);
-
-  if (error) {
-    console.warn("dashboardMetrics: filter options", error);
-    return { funnelNames: [], subBrands: [] };
-  }
-
-  const funnelSet = new Set<string>();
-  const subBrandSet = new Set<string>();
-  for (const row of data || []) {
-    const funnel = (row as { funnel_name?: string }).funnel_name?.trim();
-    const subBrand = (row as { sub_brand?: string }).sub_brand?.trim();
-    if (funnel) funnelSet.add(funnel);
-    if (subBrand) subBrandSet.add(subBrand);
-  }
-
-  return {
-    funnelNames: [...funnelSet].sort(),
-    subBrands: [...subBrandSet].sort(),
-  };
+  return apiRequest<{ funnelNames: string[]; subBrands: string[] }>("/org/numbatrak/dashboard/filter-options");
 }
 
 export async function fetchBusinessPerformanceMetrics(
@@ -405,19 +156,8 @@ export async function fetchBusinessPerformanceMetrics(
   if (!organizationId) {
     return EMPTY_BUSINESS_METRICS;
   }
-
-  const [orders, expenses] = await Promise.all([
-    fetchOrderRows(organizationId, scope),
-    fetchExpenseTotals(organizationId, startDate, endDate),
-  ]);
-
-  return computeBusinessPerformanceMetrics({
-    orders,
-    adSpend: expenses.adSpend,
-    totalNonAdExpenses: expenses.totalNonAdExpenses,
-    startDate,
-    endDate,
-  });
+  const { businessMetrics } = await fetchSummary(organizationId, startDate, endDate, scope);
+  return businessMetrics;
 }
 
 export async function fetchLossMetrics(
@@ -429,20 +169,11 @@ export async function fetchLossMetrics(
   if (!organizationId) {
     return EMPTY_LOSS_METRICS;
   }
-
-  const [orders, expenses, failedDeliveryCost] = await Promise.all([
-    fetchOrderRows(organizationId, scope),
-    fetchExpenseTotals(organizationId, startDate, endDate),
-    fetchFailedDeliveryCost(organizationId, startDate, endDate),
-  ]);
-
-  return computeLossMetrics({
-    orders,
-    adSpend: expenses.adSpend,
-    failedDeliveryCost,
-    startDate,
-    endDate,
-  });
+  const { lossMetrics } = await fetchSummary(organizationId, startDate, endDate, scope);
+  return {
+    ...lossMetrics,
+    byStatus: lossMetrics.byStatus.map((s) => ({ ...s, label: orderStatusLabel(s.status) })),
+  };
 }
 
 /** @deprecated Use deliveryRateBand from utils/dashboardHealth */

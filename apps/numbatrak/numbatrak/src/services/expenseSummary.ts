@@ -1,12 +1,12 @@
 "use client";
 
+import { apiRequest } from "../lib/apiClient";
 import { OrgExpenseCategory } from "../constants/expenseCategories";
 import { DateFilter, resolveDateRange, withinDateRange } from "../utils/dateRange";
 import {
   isAdvertisingCategory,
   normalizeExpenseRow,
 } from "../utils/expenseCategoryHelpers";
-import { fetchMetricsOrderRows } from "./orderDataSource";
 import { fetchUnifiedExpenses } from "./unifiedExpenses";
 import { UnifiedExpenseWithRelations } from "../types/unifiedExpense";
 
@@ -43,6 +43,8 @@ export function filterExpensesByDateRange(
   return rows.filter((r) => withinDateRange(r.occurred_at, startDate, endDate));
 }
 
+/** Pure local computation (no revenue) - used for on-the-fly totals over an
+ * already-loaded/filtered row set, e.g. a dialog's live category preview. */
 export function computeExpenseSummary(
   rows: UnifiedExpenseWithRelations[],
   deliveredRevenue: number
@@ -96,21 +98,20 @@ export function computeExpenseSummary(
   };
 }
 
-async function fetchDeliveredRevenue(
-  organizationId: string,
-  startDate?: string,
-  endDate?: string
-): Promise<number> {
-  const orders = await fetchMetricsOrderRows(organizationId);
-  return orders
-    .filter((o) => o.status === "completed")
-    .filter((o) => {
-      const anchor = o.completed_at || o.created_at;
-      return withinDateRange(anchor, startDate, endDate);
-    })
-    .reduce((sum, o) => sum + (Number(o.order_revenue) || 0), 0);
+interface SummaryDto {
+  byCategory: ExpenseCategoryTotals;
+  totalOrgExpenses: number;
+  totalAgentExpenses: number;
+  totalExpenses: number;
+  advertisingSpend: number;
+  nonAdvertisingOrgExpenses: number;
+  deliveredRevenue: number;
+  expensePercentOfRevenue: number;
+  advertisingRoas: number;
 }
 
+/** Computed server-side (byCategory bucketing + delivered revenue join) -
+ * see apps/api's numbatrak-expenses/lib/summary.ts. */
 export async function fetchExpenseSummary(
   organizationId: string | null,
   dateFilter?: DateFilter
@@ -120,13 +121,11 @@ export async function fetchExpenseSummary(
   }
 
   const { startDate, endDate } = resolveDateRange(dateFilter);
-  const [rows, deliveredRevenue] = await Promise.all([
-    fetchUnifiedExpenses(organizationId),
-    fetchDeliveredRevenue(organizationId, startDate, endDate),
-  ]);
+  const params = new URLSearchParams();
+  if (startDate) params.set("dateFrom", startDate);
+  if (endDate) params.set("dateTo", endDate);
 
-  const filtered = filterExpensesByDateRange(rows, startDate, endDate);
-  return computeExpenseSummary(filtered, deliveredRevenue);
+  return apiRequest<SummaryDto>(`/org/numbatrak/expenses/summary?${params.toString()}`);
 }
 
 /** Dashboard legacy fields: agent vs org totals from unified ledger. */
@@ -139,24 +138,12 @@ export async function fetchUnifiedExpenseTotals(
     return { totalAgentExpenses: 0, totalGeneralExpenses: 0 };
   }
 
-  const rows = filterExpensesByDateRange(
-    await fetchUnifiedExpenses(organizationId),
-    startDate,
-    endDate
-  );
+  const params = new URLSearchParams();
+  if (startDate) params.set("dateFrom", startDate);
+  if (endDate) params.set("dateTo", endDate);
 
-  let totalAgentExpenses = 0;
-  let totalGeneralExpenses = 0;
-  for (const row of rows) {
-    const amount = Number(row.amount) || 0;
-    if (row.scope === "agent") {
-      totalAgentExpenses += amount;
-    } else {
-      totalGeneralExpenses += amount;
-    }
-  }
-
-  return { totalAgentExpenses, totalGeneralExpenses };
+  const summary = await apiRequest<SummaryDto>(`/org/numbatrak/expenses/summary?${params.toString()}`);
+  return { totalAgentExpenses: summary.totalAgentExpenses, totalGeneralExpenses: summary.totalOrgExpenses };
 }
 
 export type MonthlyExpensePoint = {

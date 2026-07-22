@@ -35,14 +35,29 @@ const statement = {
   // incrementally, one per ported feature slice.
   numbatrakAgents: ["view", "manage"],
   // Distinct from the storefront's own `products` resource above - a
-  // different table/domain entirely. Read-only for now: the backing route
-  // is a minimal list-only endpoint (full Products CRUD is a later slice),
-  // needed here only so Orders can populate its line-item product picker.
-  numbatrakProducts: ["view"],
+  // different table/domain entirely. Source app's own matrix gives CSR
+  // view-only (unlike numbatrakOrders, CSR gets no create/update/delete here).
+  numbatrakProducts: ["view", "create", "update", "delete"],
   // Finer-grained than "view"/"manage" deliberately: the source app's own
   // permission matrix gives CSR create+update but explicitly NOT delete, so
   // a single "manage" bucket would over-grant delete to csr.
   numbatrakOrders: ["view", "create", "update", "delete"],
+  // Deliveries/Waybills - CSR is fully read-only here (unlike numbatrakOrders,
+  // which grants CSR create+update).
+  numbatrakDeliveries: ["view", "create", "update", "delete"],
+  // Wallet has no view-only tier in the source app - CSR gets nothing at all
+  // (not even view), the one resource where that's true.
+  numbatrakWallet: ["view", "manage"],
+  numbatrakExpenses: ["view", "create", "update", "delete"],
+  // Source app reuses the "orders" resource for follow-ups - same shape here.
+  numbatrakFollowUps: ["view", "create", "update", "delete"],
+  // Every role (including csr) can view the dashboard - csr just sees a
+  // cut-down version (no money tiles) via client-side UI gating, mirroring
+  // the source app's own role-based section visibility, not a resource-level
+  // access difference like numbatrakWallet has.
+  numbatrakDashboard: ["view"],
+  // CSR gets view-only, like numbatrakProducts (not numbatrakOrders' create+update grant).
+  numbatrakForms: ["view", "create", "update", "delete"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -63,8 +78,14 @@ export const ownerRole = ac.newRole({
   payments: ["manage"],
   orders: ["view", "manage"],
   numbatrakAgents: ["view", "manage"],
-  numbatrakProducts: ["view"],
+  numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
+  numbatrakDeliveries: ["view", "create", "update", "delete"],
+  numbatrakWallet: ["view", "manage"],
+  numbatrakExpenses: ["view", "create", "update", "delete"],
+  numbatrakFollowUps: ["view", "create", "update", "delete"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view", "create", "update", "delete"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -82,8 +103,14 @@ export const adminRole = ac.newRole({
   payments: ["manage"],
   orders: ["view", "manage"],
   numbatrakAgents: ["view", "manage"],
-  numbatrakProducts: ["view"],
+  numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
+  numbatrakDeliveries: ["view", "create", "update", "delete"],
+  numbatrakWallet: ["view", "manage"],
+  numbatrakExpenses: ["view", "create", "update", "delete"],
+  numbatrakFollowUps: ["view", "create", "update", "delete"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view", "create", "update", "delete"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -125,8 +152,14 @@ export const viewerRole = ac.newRole({
  */
 export const managerRole = ac.newRole({
   numbatrakAgents: ["view", "manage"],
-  numbatrakProducts: ["view"],
+  numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
+  numbatrakDeliveries: ["view", "create", "update", "delete"],
+  numbatrakWallet: ["view", "manage"],
+  numbatrakExpenses: ["view", "create", "update", "delete"],
+  numbatrakFollowUps: ["view", "create", "update", "delete"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view", "create", "update", "delete"],
 });
 
 /**
@@ -143,6 +176,14 @@ export const csrRole = ac.newRole({
   numbatrakAgents: ["view"],
   numbatrakProducts: ["view"],
   numbatrakOrders: ["view", "create", "update"],
+  numbatrakDeliveries: ["view"],
+  numbatrakExpenses: ["view"],
+  // CSR gets create+update but not delete here too, mirroring numbatrakOrders
+  // (the source app literally reuses the "orders" resource for follow-ups).
+  numbatrakFollowUps: ["view", "create", "update"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view"],
+  // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
 });
 
 export const orgRoles = {

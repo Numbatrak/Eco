@@ -38,7 +38,7 @@ function serializeItem(row: OrderItemRow): NumbatrakOrderItem {
   };
 }
 
-async function attachRelations(
+export async function attachRelations(
   db: Database,
   rows: OrderRow[],
 ): Promise<NumbatrakOrder[]> {
@@ -109,6 +109,7 @@ async function attachRelations(
     offerName: row.offerName,
     funnelName: row.funnelName,
     subBrand: row.subBrand,
+    abandonedCartId: row.abandonedCartId,
     moneyReceivedBy: (row.moneyReceivedBy ?? "agent_collected") as NumbatrakOrder["moneyReceivedBy"],
     items: itemsByOrder.get(row.id) ?? [],
     csr: row.csrId ? (csrMap.get(row.csrId) ?? null) : null,

@@ -1,10 +1,8 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
+import { apiRequest } from "../lib/apiClient";
 import { Delivery } from "../types/delivery";
 import { createDelivery } from "./deliveries";
-import { bulkWaybillToAgent } from "./stockMovements";
-import { createUnifiedExpenseIdempotent } from "./unifiedExpenses";
 
 export type WaybillIntakeLine = {
   agent_id: number;
@@ -16,58 +14,45 @@ export type WaybillIntakeLine = {
   sub_brand?: string | null;
 };
 
-async function recordWaybillFeeExpense(input: {
-  organization_id: string;
-  amount: number;
-  agent_id: number;
-  product_id: string;
-  delivery_id: number;
-  waybill_batch_id?: string | null;
-  occurred_at: string;
-  created_by?: string | null;
-}) {
-  if (input.amount <= 0) return;
-
-  const batchNote = input.waybill_batch_id
-    ? ` (batch ${input.waybill_batch_id.slice(0, 8)})`
-    : "";
-
-  await createUnifiedExpenseIdempotent({
-    organization_id: input.organization_id,
-    scope: "org",
-    category: "operational",
-    subcategory: "logistics_delivery_fees",
-    amount: input.amount,
-    agent_id: input.agent_id,
-    product_id: input.product_id,
-    note: `Waybill fee — delivery #${input.delivery_id}${batchNote}`,
-    occurred_at: input.occurred_at,
-    created_by: input.created_by ?? null,
-    source_type: "waybill_fee",
-    source_id: String(input.delivery_id),
-  });
+interface DeliveryDto {
+  id: number;
+  date: string;
+  csr: string | null;
+  agentId: number | null;
+  agentName: string | null;
+  status: "Waybilled" | "Delivered";
+  productId: string | null;
+  productName: string | null;
+  quantity: number;
+  cost: string;
+  waybillingFee: string;
+  subBrand: string | null;
+  waybillBatchId: string | null;
+  createdAt: string | null;
 }
 
-function mapDeliveryRow(data: Record<string, unknown>): Delivery {
+function deliveryFromDto(dto: DeliveryDto): Delivery {
   return {
-    id: Number(data.id),
-    date: String(data.date),
-    csr: (data.csr as string | null) ?? null,
-    agent_id: data.agent_id != null ? Number(data.agent_id) : null,
-    status: data.status as "Waybilled" | "Delivered",
-    product_id: String(data.product_id),
-    quantity: Number(data.quantity),
-    cost: Number(data.cost),
-    waybilling_fee: Number(data.waybilling_fee || 0),
-    sub_brand: (data.sub_brand as string | null) ?? null,
-    waybill_batch_id: (data.waybill_batch_id as string | null) ?? null,
-    created_at: (data.created_at as string | null) ?? null,
+    id: dto.id,
+    date: dto.date,
+    csr: dto.csr,
+    agent_id: dto.agentId,
+    status: dto.status,
+    product_id: dto.productId ?? "",
+    quantity: dto.quantity,
+    cost: Number(dto.cost),
+    waybilling_fee: Number(dto.waybillingFee ?? 0),
+    sub_brand: dto.subBrand,
+    waybill_batch_id: dto.waybillBatchId,
+    created_at: dto.createdAt,
   };
 }
 
 /**
- * Post a waybill: delivery row (Waybilled) + stock-in to agent + fee-only expense.
- * Product cost is inventory value, not booked as operational expense here.
+ * Post a waybill: delivery row (Waybilled) + stock-in to agent + fee-only
+ * expense, all atomic server-side (POST /deliveries/waybill-batch with a
+ * single line). Product cost is inventory value, not booked as an
+ * operational expense.
  */
 export async function intakeWaybill(input: {
   organization_id: string;
@@ -89,56 +74,29 @@ export async function intakeWaybill(input: {
     throw new Error("Quantity must be positive.");
   }
 
-  const fee = input.waybilling_fee ?? 0;
-  const occurredAt = new Date(input.date + "T12:00:00").toISOString();
-
-  const delivery = await createDelivery({
-    organization_id: input.organization_id,
-    date: input.date,
-    csr: input.csr ?? null,
-    agent_id: input.agent_id,
-    status: "Waybilled",
-    product_id: input.product_id,
-    quantity: input.quantity,
-    cost: input.cost,
-    waybilling_fee: fee,
-    sub_brand: input.sub_brand ?? null,
-    waybill_batch_id: input.waybill_batch_id ?? null,
+  const { deliveries } = await apiRequest<{ deliveries: DeliveryDto[] }>("/org/numbatrak/deliveries/waybill-batch", {
+    method: "POST",
+    body: {
+      date: input.date,
+      csr: input.csr ?? null,
+      subBrand: input.sub_brand ?? null,
+      lines: [
+        {
+          agentId: input.agent_id,
+          productId: input.product_id,
+          quantity: input.quantity,
+          cost: input.cost,
+          waybillingFee: input.waybilling_fee ?? 0,
+        },
+      ],
+    },
   });
-
-  await bulkWaybillToAgent({
-    organization_id: input.organization_id,
-    waybill_batch_id: input.waybill_batch_id ?? crypto.randomUUID(),
-    occurred_at: occurredAt,
-    recorded_by_user_id: input.recorded_by_user_id ?? null,
-    lines: [
-      {
-        to_agent_id: input.agent_id,
-        product_id: input.product_id,
-        quantity: input.quantity,
-        cost: input.cost,
-        fee,
-        legacy_delivery_id: delivery.id,
-      },
-    ],
-  });
-
-  await recordWaybillFeeExpense({
-    organization_id: input.organization_id,
-    amount: fee,
-    agent_id: input.agent_id,
-    product_id: input.product_id,
-    delivery_id: delivery.id,
-    waybill_batch_id: input.waybill_batch_id ?? null,
-    occurred_at: occurredAt,
-    created_by: input.recorded_by_user_id ?? null,
-  });
-
-  return delivery;
+  return deliveryFromDto(deliveries[0]!);
 }
 
 /**
- * Bulk waybill: one delivery row per line, linked stock movements, fee expenses only.
+ * Bulk waybill: one delivery row per line, linked stock movements, fee
+ * expenses only - all atomic server-side, one shared batch id.
  */
 export async function intakeWaybillBatch(input: {
   organization_id: string;
@@ -151,69 +109,27 @@ export async function intakeWaybillBatch(input: {
     throw new Error("Add at least one waybill line.");
   }
 
-  const batchId = crypto.randomUUID();
   const date = input.occurred_at.slice(0, 10);
+  const subBrand = input.lines[0]!.sub_brand ?? null;
 
-  const deliveryRows = input.lines.map((line) => ({
-    organization_id: input.organization_id,
-    date,
-    csr: line.csr ?? input.csr ?? null,
-    agent_id: line.agent_id,
-    status: "Waybilled" as const,
-    product_id: line.product_id,
-    quantity: line.quantity,
-    cost: line.cost,
-    waybilling_fee: line.waybilling_fee ?? 0,
-    sub_brand: line.sub_brand ?? null,
-    waybill_batch_id: batchId,
-  }));
-
-  const { data: inserted, error } = await supabase
-    .from("deliveries")
-    .insert(deliveryRows)
-    .select("*");
-
-  if (error) {
-    throw error;
-  }
-  if (!inserted?.length) {
-    throw new Error("No delivery rows returned from batch insert.");
-  }
-
-  const deliveries = inserted.map(mapDeliveryRow);
-
-  await bulkWaybillToAgent({
-    organization_id: input.organization_id,
-    waybill_batch_id: batchId,
-    occurred_at: input.occurred_at,
-    recorded_by_user_id: input.recorded_by_user_id ?? null,
-    lines: input.lines.map((line, i) => ({
-      to_agent_id: line.agent_id,
-      product_id: line.product_id,
-      quantity: line.quantity,
-      cost: line.cost,
-      fee: line.waybilling_fee ?? 0,
-      legacy_delivery_id: deliveries[i].id,
-    })),
+  const { deliveries } = await apiRequest<{ deliveries: DeliveryDto[] }>("/org/numbatrak/deliveries/waybill-batch", {
+    method: "POST",
+    body: {
+      date,
+      csr: input.csr ?? input.lines[0]!.csr ?? null,
+      subBrand,
+      lines: input.lines.map((line) => ({
+        agentId: line.agent_id,
+        productId: line.product_id,
+        quantity: line.quantity,
+        cost: line.cost,
+        waybillingFee: line.waybilling_fee ?? 0,
+      })),
+    },
   });
 
-  for (let i = 0; i < input.lines.length; i++) {
-    const line = input.lines[i];
-    const fee = line.waybilling_fee ?? 0;
-    if (fee <= 0) continue;
-    await recordWaybillFeeExpense({
-      organization_id: input.organization_id,
-      amount: fee,
-      agent_id: line.agent_id,
-      product_id: line.product_id,
-      delivery_id: deliveries[i].id,
-      waybill_batch_id: batchId,
-      occurred_at: input.occurred_at,
-      created_by: input.recorded_by_user_id ?? null,
-    });
-  }
-
-  return { batchId, deliveries };
+  const mapped = deliveries.map(deliveryFromDto);
+  return { batchId: mapped[0]?.waybill_batch_id ?? "", deliveries: mapped };
 }
 
 /**

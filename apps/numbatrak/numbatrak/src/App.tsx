@@ -431,9 +431,7 @@ function AppContent() {
             <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
             {isAuthenticated && currentOrganization ? (
               <>
-                {/* Dashboard isn't ported off Supabase yet - land on the one
-                    fully-working page instead of a page guaranteed to error. */}
-                <Route path="/" element={<Navigate to="/agents" replace />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/agents/:agentId" element={<AgentDetailPage />} />
                 <Route path="/agents" element={<AgentsForm />} />

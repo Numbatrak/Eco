@@ -9,10 +9,10 @@
 // weights. Ordering is by user id (a stable but not otherwise meaningful
 // rotation order, same as the source).
 import { and, asc, eq, sql } from "drizzle-orm";
-import { member, numbatrakOrderAssignmentSettings, numbatrakOrderAssignmentWeights, type Database } from "@platform/db";
+import { member, numbatrakOrderAssignmentSettings, numbatrakOrderAssignmentWeights, type Queryable } from "@platform/db";
 
 async function csrCandidatePool(
-  db: Database,
+  db: Queryable,
   organizationId: string,
 ): Promise<{ userId: string; percentage: string | null; isPaused: boolean }[]> {
   const rows = await db
@@ -34,7 +34,7 @@ async function csrCandidatePool(
   return rows.map((r) => ({ userId: r.userId, percentage: r.percentage, isPaused: r.isPaused ?? false }));
 }
 
-async function getNextRoundRobinUser(db: Database, organizationId: string): Promise<string | null> {
+async function getNextRoundRobinUser(db: Queryable, organizationId: string): Promise<string | null> {
   const [settings] = await db
     .select({ lastAssignedUserId: numbatrakOrderAssignmentSettings.lastAssignedUserId })
     .from(numbatrakOrderAssignmentSettings)
@@ -60,7 +60,7 @@ async function getNextRoundRobinUser(db: Database, organizationId: string): Prom
   return next.userId;
 }
 
-async function getPercentageAssignedUser(db: Database, organizationId: string): Promise<string | null> {
+async function getPercentageAssignedUser(db: Queryable, organizationId: string): Promise<string | null> {
   const pool = (await csrCandidatePool(db, organizationId)).filter(
     (c) => !c.isPaused && c.percentage != null && Number(c.percentage) > 0,
   );
@@ -77,7 +77,7 @@ async function getPercentageAssignedUser(db: Database, organizationId: string): 
 }
 
 /** Auto-assign the next CSR for a new order, per the org's assignment_method (default round_robin). */
-export async function getNextAssignedUser(db: Database, organizationId: string): Promise<string | null> {
+export async function getNextAssignedUser(db: Queryable, organizationId: string): Promise<string | null> {
   const [settings] = await db
     .select({ assignmentMethod: numbatrakOrderAssignmentSettings.assignmentMethod })
     .from(numbatrakOrderAssignmentSettings)

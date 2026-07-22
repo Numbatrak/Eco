@@ -7,7 +7,7 @@ import {
   TrendingUp,
   Package,
 } from "lucide-react";
-import { fetchWaybillsByState, WaybillByState } from "../../services/dashboard";
+import { fetchWaybillsByState, WaybillByState } from "../../services/waybillsByState";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { nigeriaStates } from "../../constants/nigeriaStates";
 import { WaybillStatisticsTableHeader } from "./WaybillStatisticsTableHeader";

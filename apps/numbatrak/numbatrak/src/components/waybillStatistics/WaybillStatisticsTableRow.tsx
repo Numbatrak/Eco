@@ -1,4 +1,4 @@
-import { WaybillByState } from "../../services/dashboard";
+import { WaybillByState } from "../../services/waybillsByState";
 import "../deliveries/DeliveryTable.css";
 import "./WaybillStatisticsTable.css";
 

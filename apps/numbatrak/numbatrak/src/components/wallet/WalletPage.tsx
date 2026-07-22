@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { PageLayout } from "../layout/PageLayout";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 import { SuccessNotification } from "../agents/SuccessNotification";
 import { WalletDateFilterBar } from "./WalletDateFilterBar";
 import { WalletSummaryCards } from "./WalletSummaryCards";
@@ -48,7 +48,7 @@ const STATUS_FILTER_OPTIONS: { value: RemittanceStatusFilter; label: string }[] 
 export function WalletPage() {
   const { currentOrganization } = useOrganization();
   const { hasAnyRole } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const agentFromUrl = searchParams.get("agent");
 

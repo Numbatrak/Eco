@@ -1,41 +1,12 @@
-// Server-side port of the on-hand check + delivery-movement insert used by
-// the source app's src/services/stockMovements.ts (assertSufficientOnHand /
-// createDeliveryMovement) and the agent_stock_v view's per-movement-type
-// sign logic (packages/db/src/schema/numbatrak/inventory.ts's Phase 1 notes:
-// that view was never ported as a Drizzle object, so this is a plain
-// aggregate query reproducing the same signed-sum logic for one agent+product
-// pair, not a view).
-import { and, eq, sql } from "drizzle-orm";
+// Server-side port of the delivery-movement insert used by the source app's
+// src/services/stockMovements.ts (assertSufficientOnHand / createDeliveryMovement).
+// The on-hand computation itself now lives in apps/api/src/lib/numbatrak-stock.ts,
+// shared with numbatrak-deliveries (which also writes to this ledger).
+import { and, eq } from "drizzle-orm";
 import { numbatrakStockMovements, type Database } from "@platform/db";
+import { getAgentProductOnHand } from "../../../lib/numbatrak-stock.js";
 
-export async function getAgentProductOnHand(
-  db: Database,
-  organizationId: string,
-  agentId: number,
-  productId: string,
-): Promise<number> {
-  const rows = await db.execute<{ on_hand: string | null }>(sql`
-    SELECT COALESCE(SUM(
-      CASE
-        WHEN movement_type = 'waybill_to_agent' AND to_agent_id = ${agentId} THEN quantity
-        WHEN movement_type = 'deliver_to_customer' AND from_agent_id = ${agentId} THEN -quantity
-        WHEN movement_type = 'return_to_lagos' AND from_agent_id = ${agentId} THEN -quantity
-        WHEN movement_type = 'transfer' AND to_agent_id = ${agentId} THEN quantity
-        WHEN movement_type = 'transfer' AND from_agent_id = ${agentId} THEN -quantity
-        WHEN movement_type = 'adjust' AND from_agent_id = ${agentId} AND to_agent_id IS NULL THEN -quantity
-        WHEN movement_type = 'adjust' AND (from_agent_id = ${agentId} OR to_agent_id = ${agentId}) THEN quantity
-        WHEN movement_type IN ('damaged', 'missing') AND from_agent_id = ${agentId} THEN -quantity
-        ELSE 0
-      END
-    ), 0) AS on_hand
-    FROM ${numbatrakStockMovements}
-    WHERE organization_id = ${organizationId}
-      AND product_id = ${productId}
-      AND (from_agent_id = ${agentId} OR to_agent_id = ${agentId})
-  `);
-  const row = (rows as unknown as { on_hand: string | null }[])[0];
-  return row ? Number(row.on_hand ?? 0) : 0;
-}
+export { getAgentProductOnHand };
 
 export async function createDeliveryMovement(
   db: Database,

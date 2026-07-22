@@ -2,7 +2,6 @@
 
 import { supabase } from "../supabaseClient";
 import { isAdvertisingCategory } from "../utils/expenseCategoryHelpers";
-import { fetchTotalProfit } from "./dashboard";
 
 /**
  * Cost per acquisition (ad spend / new orders in the period)
@@ -94,18 +93,19 @@ export async function cpaForPeriod(params: {
   return { cpa, adSpend, newOrders };
 }
 
+/**
+ * @deprecated Confirmed dead - zero callers anywhere in src/. Its dependency
+ * (dashboard.ts's fetchTotalProfit) was itself dead code and has been
+ * removed as part of the Dashboard port. Kept as a throwing stub rather
+ * than deleted, matching this port's "flag, don't silently drop" convention
+ * for confirmed-unused exports.
+ */
 export async function totalProfitV2(
-  organizationId: string,
-  startDate?: string,
-  endDate?: string,
-  formId?: string | null,
-  csrId?: string | null
+  _organizationId: string,
+  _startDate?: string,
+  _endDate?: string,
+  _formId?: string | null,
+  _csrId?: string | null
 ): Promise<number> {
-  return fetchTotalProfit(
-    organizationId,
-    startDate,
-    endDate,
-    formId ?? undefined,
-    csrId ?? undefined
-  );
+  throw new Error("totalProfitV2 is dead code (no callers) and its dependency was removed during the Dashboard port.");
 }

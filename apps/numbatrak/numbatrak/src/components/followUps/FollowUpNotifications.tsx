@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../supabaseClient";
 import { FollowUpWithRelations } from "../../types/followUp";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
+import { useOrganization } from "../../contexts/OrganizationContext";
+import { fetchFollowUps } from "../../services/followUps";
 import { Bell, X, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
 import { formatWorkHours, meetsSLA } from "../../utils/workHours";
-import {
-  activeStatusFilterValues,
-  normalizeFollowUpStatus,
-} from "../../utils/followUpStatus";
+import { activeStatusFilterValues } from "../../utils/followUpStatus";
 
 interface Notification {
   id: string;
@@ -17,85 +15,50 @@ interface Notification {
   timestamp: Date;
 }
 
+/**
+ * The source app also used a Supabase Realtime channel (postgres_changes on
+ * follow_ups) for instant "new assignment"/"completed" toasts, on top of
+ * this 60s poll for SLA warnings. There's no equivalent against the new
+ * backend, so the Realtime half is dropped - only the poll-derived
+ * sla_warning/sla_overdue notification types fire now; new_assignment and
+ * completed toasts no longer appear. Flagged as an accepted downgrade, not
+ * silently dropped - reinstating "new assignment" toasts would need either
+ * polling-with-diffing against previously-seen follow-up ids, or a
+ * WebSocket/SSE push channel on the backend.
+ */
 export function FollowUpNotifications() {
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel("follow-ups-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "follow_ups",
-          filter: `assigned_to=eq.${user.id}`,
-        },
-        (payload) => {
-          handleFollowUpChange(payload);
-        }
-      )
-      .subscribe();
+    if (!user || !currentOrganization) return;
 
     checkForNotifications();
-
     const interval = setInterval(() => {
       checkForNotifications();
     }, 60000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [user]);
-
-  const handleFollowUpChange = async (payload: any) => {
-    if (payload.eventType === "INSERT") {
-      const followUp = payload.new as FollowUpWithRelations;
-      addNotification({
-        id: `new-${followUp.id}`,
-        type: "new_assignment",
-        followUp,
-        message: `New follow-up assigned: ${followUp.order_id ? `Order #${followUp.order_id}` : `Cart #${followUp.abandoned_cart_id}`}`,
-        timestamp: new Date(),
-      });
-    } else if (payload.eventType === "UPDATE") {
-      const followUp = payload.new as FollowUpWithRelations;
-      if (normalizeFollowUpStatus(followUp.status) === "resolved") {
-        addNotification({
-          id: `completed-${followUp.id}`,
-          type: "completed",
-          followUp,
-          message: `Follow-up completed: ${followUp.order_id ? `Order #${followUp.order_id}` : `Cart #${followUp.abandoned_cart_id}`}`,
-          timestamp: new Date(),
-        });
-      }
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentOrganization?.id]);
 
   const checkForNotifications = async () => {
-    if (!user) return;
+    if (!user || !currentOrganization) return;
 
     try {
-      const { data: followUps, error } = await supabase
-        .from("follow_ups")
-        .select("*")
-        .eq("assigned_to", user.id)
-        .in("status", activeStatusFilterValues());
-
-      if (error) {
-        console.error("Error checking notifications:", error);
-        return;
-      }
+      const followUps = await fetchFollowUps(currentOrganization.id, 0, 200, "desc", {
+        assigned_to: user.id,
+      });
+      const active = followUps.filter((fu) => activeStatusFilterValues().includes(fu.status));
 
       const now = new Date();
       const newNotifications: Notification[] = [];
 
-      followUps?.forEach((fu: any) => {
+      active.forEach((fu) => {
         if (fu.first_contact_at) {
           const responseTime = fu.response_time_minutes;
           if (responseTime !== null) {
@@ -103,7 +66,7 @@ export function FollowUpNotifications() {
               newNotifications.push({
                 id: `overdue-${fu.id}`,
                 type: "sla_overdue",
-                followUp: fu as FollowUpWithRelations,
+                followUp: fu,
                 message: `Follow-up overdue: ${fu.order_id ? `Order #${fu.order_id}` : `Cart #${fu.abandoned_cart_id}`} - Response time: ${formatWorkHours(responseTime)}`,
                 timestamp: now,
               });
@@ -111,22 +74,20 @@ export function FollowUpNotifications() {
               newNotifications.push({
                 id: `warning-${fu.id}`,
                 type: "sla_warning",
-                followUp: fu as FollowUpWithRelations,
+                followUp: fu,
                 message: `Follow-up approaching SLA: ${fu.order_id ? `Order #${fu.order_id}` : `Cart #${fu.abandoned_cart_id}`} - ${formatWorkHours(responseTime)}`,
                 timestamp: now,
               });
             }
           }
-        } else {
+        } else if (fu.created_at) {
           const created = new Date(fu.created_at);
-          const diffMinutes = Math.floor(
-            (now.getTime() - created.getTime()) / (1000 * 60)
-          );
+          const diffMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
           if (diffMinutes >= 50) {
             newNotifications.push({
               id: `warning-${fu.id}`,
               type: "sla_warning",
-              followUp: fu as FollowUpWithRelations,
+              followUp: fu,
               message: `Follow-up needs attention: ${fu.order_id ? `Order #${fu.order_id}` : `Cart #${fu.abandoned_cart_id}`}`,
               timestamp: now,
             });
@@ -142,15 +103,6 @@ export function FollowUpNotifications() {
     } catch (err) {
       console.error("Error checking notifications:", err);
     }
-  };
-
-  const addNotification = (notification: Notification) => {
-    setNotifications((prev) => {
-      if (prev.some((n) => n.id === notification.id)) {
-        return prev;
-      }
-      return [notification, ...prev].slice(0, 10);
-    });
   };
 
   const removeNotification = (id: string) => {

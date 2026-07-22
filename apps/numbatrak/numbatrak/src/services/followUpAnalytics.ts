@@ -1,10 +1,10 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
-import { FollowUpMetrics, FollowUpAnalytics } from "../types/followUp";
+import { FollowUpMetrics, FollowUpAnalytics, FollowUpWithRelations } from "../types/followUp";
 import { meetsSLA } from "../utils/workHours";
 import { getDisplayName } from "../utils/userDisplay";
 import { statusMatchesBucket } from "../utils/followUpStatus";
+import { fetchFollowUps } from "./followUps";
 
 const EMPTY_ANALYTICS: FollowUpAnalytics = {
   total_follow_ups: 0,
@@ -20,7 +20,9 @@ const EMPTY_ANALYTICS: FollowUpAnalytics = {
 };
 
 /**
- * Fetch analytics data for follow-ups
+ * Fetch analytics data for follow-ups. Each row already carries its
+ * assignee's name/email (joined server-side), so no separate profile lookup
+ * is needed here - all pure client-side aggregation over one bulk fetch.
  */
 export async function fetchFollowUpAnalytics(
   organizationId: string | null,
@@ -32,69 +34,17 @@ export async function fetchFollowUpAnalytics(
     return EMPTY_ANALYTICS;
   }
 
-  let query = supabase
-    .from("follow_ups")
-    .select("*")
-    .eq("organization_id", organizationId);
-
-  if (dateFrom) {
-    query = query.gte("created_at", dateFrom);
-  }
-  if (dateTo) {
-    query = query.lte("created_at", dateTo);
-  }
-  if (repId) {
-    query = query.eq("assigned_to", repId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  const followUps = data || [];
-
-  const assigneeIds = [
-    ...new Set(
-      followUps
-        .map((f) => f.assigned_to)
-        .filter((id): id is string => Boolean(id))
-    ),
-  ];
-
-  const profileMap = new Map<string, { email: string | null; full_name: string | null }>();
-  if (assigneeIds.length) {
-    const { data: profiles, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("id, email, full_name")
-      .in("id", assigneeIds);
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    (profiles || []).forEach((profile) => {
-      profileMap.set(profile.id, {
-        email: profile.email,
-        full_name: profile.full_name,
-      });
-    });
-  }
+  const followUps = await fetchFollowUps(organizationId, 0, 2000, "desc", {
+    dateFrom,
+    dateTo,
+    assigned_to: repId,
+  });
 
   const totalFollowUps = followUps.length;
-  const awaitingCount = followUps.filter((f) =>
-    statusMatchesBucket(f.status, "awaiting")
-  ).length;
-  const followedUpCount = followUps.filter((f) =>
-    statusMatchesBucket(f.status, "followed_up")
-  ).length;
-  const resolvedCount = followUps.filter((f) =>
-    statusMatchesBucket(f.status, "resolved")
-  ).length;
-  const cancelledCount = followUps.filter((f) =>
-    statusMatchesBucket(f.status, "cancelled")
-  ).length;
+  const awaitingCount = followUps.filter((f) => statusMatchesBucket(f.status, "awaiting")).length;
+  const followedUpCount = followUps.filter((f) => statusMatchesBucket(f.status, "followed_up")).length;
+  const resolvedCount = followUps.filter((f) => statusMatchesBucket(f.status, "resolved")).length;
+  const cancelledCount = followUps.filter((f) => statusMatchesBucket(f.status, "cancelled")).length;
 
   const responseTimes = followUps
     .map((f) => f.response_time_minutes)
@@ -116,7 +66,7 @@ export async function fetchFollowUpAnalytics(
   const overallSlaComplianceRate =
     responseTimes.length > 0 ? (slaCompliant / responseTimes.length) * 100 : 0;
 
-  const repMap = new Map<string, typeof followUps>();
+  const repMap = new Map<string, FollowUpWithRelations[]>();
   followUps.forEach((fu) => {
     if (fu.assigned_to) {
       if (!repMap.has(fu.assigned_to)) {
@@ -128,7 +78,7 @@ export async function fetchFollowUpAnalytics(
 
   const repMetrics: FollowUpMetrics[] = Array.from(repMap.entries()).map(
     ([repIdKey, repsFollowUps]) => {
-      const rep = profileMap.get(repIdKey);
+      const rep = repsFollowUps[0];
       const repResponseTimes = repsFollowUps
         .map((f) => f.response_time_minutes)
         .filter((t): t is number => t !== null && t !== undefined);
@@ -172,10 +122,10 @@ export async function fetchFollowUpAnalytics(
       return {
         rep_id: repIdKey,
         rep_name: getDisplayName(
-          { full_name: rep?.full_name, email: rep?.email },
+          { full_name: rep?.assigned_user_name ?? null, email: rep?.assigned_user_email ?? null },
           "Unnamed CSR"
         ),
-        rep_email: rep?.email || "",
+        rep_email: rep?.assigned_user_email || "",
         total_follow_ups: repsFollowUps.length,
         awaiting_count: repsFollowUps.filter((f) =>
           statusMatchesBucket(f.status, "awaiting")

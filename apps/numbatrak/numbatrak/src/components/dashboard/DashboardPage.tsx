@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { DashboardSummary } from "./DashboardSummary";
 import { LatestDeliveries } from "./LatestDeliveries";
-import { ActivityFeed } from "../ActivityFeed";
+import { RouteErrorBoundary } from "../RouteErrorBoundary";
 import { DeliveryRateByLocationComponent } from "./DeliveryRateByLocation";
 import { NewOrders } from "./NewOrders";
 import { AbandonedCarts } from "./AbandonedCarts";
@@ -20,8 +20,7 @@ import { computeDashboardAlerts, type DashboardAlert } from "../../services/dash
 import { loadDashboardAlertThresholds } from "../../services/dashboardAlertSettings";
 import { usePermissions } from "../../hooks/usePermissions";
 import { useOrganization } from "../../contexts/OrganizationContext";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
-import { fetchForms } from "../../services/forms";
+import { useAuth } from "../../auth/AuthProvider";
 import { fetchCustomerRelationsUsers } from "../../services/customerRelations";
 import { fetchAgents } from "../../services/agents";
 import {
@@ -38,9 +37,15 @@ import { PageLayout } from "../layout/PageLayout";
 import { csrScopeFilter } from "../../utils/specRoles";
 import { resolveDateRange, type DateFilterType } from "../../utils/dateRange";
 
+// Activities isn't ported off Supabase yet - lazy + its own error boundary
+// so a load failure only takes out this one widget, not the whole
+// already-rendered Dashboard page (unlike the route-level RouteErrorBoundary,
+// which would blank everything above it too).
+const ActivityFeed = lazy(() => import("../ActivityFeed").then((m) => ({ default: m.ActivityFeed })));
+
 export function DashboardPage() {
   const { hasAnyRole, hasRole, userRole } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const { currentOrganization } = useOrganization();
 
   const canViewAnalytics = hasAnyRole(["Manager", "Admin", "Owner"]);
@@ -116,14 +121,25 @@ export function DashboardPage() {
     }
     let cancelled = false;
     (async () => {
+      // Forms isn't ported off Supabase yet - dynamic import + its own
+      // try/catch so a module-load failure there only empties the forms
+      // filter dropdown instead of blocking agents/funnel/sub-brand options
+      // (which are already-ported) from loading too.
       try {
-        const [formList, agentList, attrOptions] = await Promise.all([
-          fetchForms(currentOrganization.id),
+        const { fetchForms } = await import("../../services/forms");
+        const formList = await fetchForms(currentOrganization.id);
+        if (!cancelled) setForms(formList);
+      } catch (e) {
+        console.error("Error loading dashboard forms:", e);
+        if (!cancelled) setForms([]);
+      }
+
+      try {
+        const [agentList, attrOptions] = await Promise.all([
           fetchAgents(currentOrganization.id, { activeOnly: true }),
           fetchDashboardFilterOptions(currentOrganization.id),
         ]);
         if (!cancelled) {
-          setForms(formList);
           setAgents(agentList);
           setFunnelNames(attrOptions.funnelNames);
           setSubBrands(attrOptions.subBrands);
@@ -131,7 +147,6 @@ export function DashboardPage() {
       } catch (e) {
         console.error("Error loading dashboard filter data:", e);
         if (!cancelled) {
-          setForms([]);
           setAgents([]);
           setFunnelNames([]);
           setSubBrands([]);
@@ -373,7 +388,11 @@ export function DashboardPage() {
           ) : (
             <>
               <LatestDeliveries />
-              <ActivityFeed />
+              <RouteErrorBoundary>
+                <Suspense fallback={null}>
+                  <ActivityFeed />
+                </Suspense>
+              </RouteErrorBoundary>
             </>
           )}
         </div>

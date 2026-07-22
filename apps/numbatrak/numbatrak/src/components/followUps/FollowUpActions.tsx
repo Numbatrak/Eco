@@ -8,7 +8,7 @@ import {
   isActiveFollowUpStatus,
   isResolvedFollowUpStatus,
 } from "../../utils/followUpStatus";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import "./FollowUpActions.css";
 
@@ -36,7 +36,7 @@ export function FollowUpActions({
   onError,
   compact = true,
 }: FollowUpActionsProps) {
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const cartId = normalizeCartId(abandonedCartId);
   const [followUps, setFollowUps] = useState<FollowUpWithRelations[]>([]);

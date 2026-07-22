@@ -91,4 +91,4 @@ export {
   exitSurveyTypeEnum,
   expenseParentCategoryEnum,
 } from "./schema.js";
-export { getDb, type Database } from "./client.js";
+export { getDb, type Database, type Transaction, type Queryable } from "./client.js";

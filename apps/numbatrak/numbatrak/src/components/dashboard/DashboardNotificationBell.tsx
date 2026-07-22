@@ -11,7 +11,7 @@ import { computeDashboardAlerts, type DashboardAlert } from "../../services/dash
 import { loadDashboardAlertThresholds } from "../../services/dashboardAlertSettings";
 import { resolveDateRange, type DateFilter } from "../../utils/dateRange";
 import { csrScopeFilter } from "../../utils/specRoles";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 import { useDashboardAlertsContext } from "../../contexts/DashboardAlertsContext";
 import type { DashboardMetricsScope } from "../../services/dashboardMetrics";
 
@@ -41,7 +41,7 @@ export function DashboardNotificationBell(_props: DashboardNotificationBellProps
   const { dateFilter, scope, viewMode } = useDashboardAlertsContext();
   const { currentOrganization } = useOrganization();
   const { hasAnyRole, userRole } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const canView = hasAnyRole(["Manager", "Admin", "Owner"]);
 
   const [open, setOpen] = useState(false);

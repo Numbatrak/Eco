@@ -23,7 +23,7 @@ import {
 } from "../ui/select";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { fetchWaybillsByState, WaybillByState } from "../../services/dashboard";
+import { fetchWaybillsByState, WaybillByState } from "../../services/waybillsByState";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { nigeriaStates } from "../../constants/nigeriaStates";
 import { TrendingUp, Package, Calendar, MapPin } from "lucide-react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { OrgExpenseCategory } from "../constants/expenseCategories";
-import { supabase } from "../supabaseClient";
+import { apiRequest } from "../lib/apiClient";
 import { emptyWithoutOrg } from "./orgQuery";
 
 export interface ExpenseSubcategoryRow {
@@ -11,6 +11,25 @@ export interface ExpenseSubcategoryRow {
   slug: string;
   label: string;
   created_at?: string | null;
+}
+
+interface SubcategoryDto {
+  id: string;
+  parentCategory: string;
+  slug: string;
+  label: string;
+  createdAt: string | null;
+}
+
+function fromDto(dto: SubcategoryDto, organizationId: string): ExpenseSubcategoryRow {
+  return {
+    id: dto.id,
+    organization_id: organizationId,
+    parent_category: dto.parentCategory as OrgExpenseCategory,
+    slug: dto.slug,
+    label: dto.label,
+    created_at: dto.createdAt,
+  };
 }
 
 function slugify(label: string): string {
@@ -28,21 +47,8 @@ export async function fetchCustomExpenseSubcategories(
   const empty = emptyWithoutOrg<ExpenseSubcategoryRow>(organizationId);
   if (empty) return empty;
 
-  const { data, error } = await supabase
-    .from("expense_subcategories")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .order("label", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    organization_id: row.organization_id,
-    parent_category: row.parent_category as OrgExpenseCategory,
-    slug: row.slug,
-    label: row.label,
-    created_at: row.created_at ?? null,
-  }));
+  const { subcategories } = await apiRequest<{ subcategories: SubcategoryDto[] }>("/org/numbatrak/expense-subcategories");
+  return subcategories.map((s) => fromDto(s, organizationId!));
 }
 
 export async function createCustomExpenseSubcategory(input: {
@@ -53,37 +59,17 @@ export async function createCustomExpenseSubcategory(input: {
   const label = input.label.trim();
   if (!label) throw new Error("Subcategory label is required");
 
-  const slug = slugify(label);
-  const { data, error } = await supabase
-    .from("expense_subcategories")
-    .insert([
-      {
-        organization_id: input.organization_id,
-        parent_category: input.parent_category,
-        slug,
-        label,
-      },
-    ])
-    .select("*")
-    .single();
-
-  if (error) throw error;
-  if (!data) throw new Error("No data returned from insert");
-
-  return {
-    id: data.id,
-    organization_id: data.organization_id,
-    parent_category: data.parent_category as OrgExpenseCategory,
-    slug: data.slug,
-    label: data.label,
-    created_at: data.created_at ?? null,
-  };
+  const dto = await apiRequest<SubcategoryDto>("/org/numbatrak/expense-subcategories", {
+    method: "POST",
+    body: {
+      parentCategory: input.parent_category,
+      slug: slugify(label),
+      label,
+    },
+  });
+  return fromDto(dto, input.organization_id);
 }
 
 export async function deleteCustomExpenseSubcategory(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("expense_subcategories")
-    .delete()
-    .eq("id", id);
-  if (error) throw error;
+  await apiRequest<void>(`/org/numbatrak/expense-subcategories/${id}`, { method: "DELETE" });
 }

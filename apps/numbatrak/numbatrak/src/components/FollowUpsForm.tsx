@@ -13,14 +13,14 @@ import {
   fetchFollowUpsCount,
 } from "../services/followUps";
 import { usePermissions } from "../hooks/usePermissions";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
+import { useAuth } from "../auth/AuthProvider";
 import { useOrganization } from "../contexts/OrganizationContext";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
 import { PageLayout } from "./layout/PageLayout";
 
 export default function FollowUpsForm() {
   const { hasPermission, userRole } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
   

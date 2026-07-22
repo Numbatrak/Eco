@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
+import { apiRequest } from "../lib/apiClient";
 import { AbandonedCartWithRelations } from "../types/abandonedCart";
 import { emptyWithoutOrg } from "./orgQuery";
 
@@ -37,34 +37,109 @@ export function parseCartSelectedProducts(
     }));
 }
 
-function applyAbandonedCartFilters<T extends ReturnType<typeof supabase.from>>(
-  query: T,
-  filters?: AbandonedCartFilters
-) {
-  if (filters?.converted !== undefined) {
-    query = query.eq("converted_to_order", filters.converted) as T;
-  }
-  if (filters?.dateFrom) {
-    query = query.gte("abandoned_at", filters.dateFrom) as T;
-  }
-  if (filters?.dateTo) {
-    query = query.lte("abandoned_at", filters.dateTo) as T;
-  }
-  if (filters?.formId) {
-    query = query.eq("form_id", filters.formId) as T;
-  }
-  if (filters?.funnelName) {
-    query = query.eq("funnel_name", filters.funnelName) as T;
-  }
-  if (filters?.productId) {
-    query = query.contains("selected_products", [{ product_id: filters.productId }]) as T;
-  }
-  return query;
+interface CartDto {
+  id: string;
+  organizationId: string;
+  formId: string | null;
+  customerName: string | null;
+  phoneNumber: string | null;
+  whatsappNumber: string | null;
+  deliveryAddress: string | null;
+  state: string | null;
+  location: string | null;
+  selectedPackage: string | null;
+  selectedItems: string | null;
+  productName: string | null;
+  mailQuan: number | null;
+  agentQuan: number | null;
+  quantity: number | null;
+  product2: string | null;
+  mailQuan2: number | null;
+  agentQuan2: number | null;
+  quantity2: number | null;
+  salesPrice: string | null;
+  costPrice: string | null;
+  deliveryFee: string | null;
+  profit: string | null;
+  pageUrl: string | null;
+  filledFieldsCount: number;
+  filledFields: string[] | null;
+  fieldValues: Record<string, unknown> | null;
+  selectedProducts: unknown[] | null;
+  abandonedAt: string;
+  convertedToOrder: boolean;
+  convertedOrderId: string | null;
+  funnelName: string | null;
+  offerName: string | null;
+  subBrand: string | null;
+  note: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
-/**
- * Fetch all abandoned carts with pagination (filtered by organization)
- */
+function cartFromDto(dto: CartDto): AbandonedCartWithRelations {
+  return {
+    id: dto.id,
+    organization_id: dto.organizationId,
+    form_id: dto.formId,
+    customer_name: dto.customerName,
+    phone_number: dto.phoneNumber,
+    whatsapp_number: dto.whatsappNumber,
+    delivery_address: dto.deliveryAddress,
+    state: dto.state,
+    location: dto.location,
+    selected_package: dto.selectedPackage,
+    selected_items: dto.selectedItems,
+    product_name: dto.productName,
+    mail_quan: dto.mailQuan,
+    agent_quan: dto.agentQuan,
+    quantity: dto.quantity,
+    product2: dto.product2,
+    mail_quan2: dto.mailQuan2,
+    agent_quan2: dto.agentQuan2,
+    quantity2: dto.quantity2,
+    sales_price: dto.salesPrice != null ? Number(dto.salesPrice) : null,
+    cost_price: dto.costPrice != null ? Number(dto.costPrice) : null,
+    delivery_fee: dto.deliveryFee != null ? Number(dto.deliveryFee) : null,
+    profit: dto.profit != null ? Number(dto.profit) : null,
+    page_url: dto.pageUrl,
+    filled_fields_count: dto.filledFieldsCount,
+    filled_fields: dto.filledFields,
+    field_values: dto.fieldValues,
+    selected_products: dto.selectedProducts,
+    abandoned_at: dto.abandonedAt,
+    converted_to_order: dto.convertedToOrder,
+    converted_order_id: dto.convertedOrderId,
+    funnel_name: dto.funnelName,
+    offer_name: dto.offerName,
+    sub_brand: dto.subBrand,
+    note: dto.note,
+    created_at: dto.createdAt,
+    updated_at: dto.updatedAt,
+  };
+}
+
+function buildQuery(
+  offset: number,
+  limit: number,
+  sortOrder: "asc" | "desc",
+  searchQuery?: string,
+  filters?: AbandonedCartFilters
+): string {
+  const params = new URLSearchParams();
+  params.set("offset", String(offset));
+  params.set("limit", String(limit));
+  params.set("sortOrder", sortOrder);
+  if (searchQuery?.trim()) params.set("search", searchQuery.trim());
+  if (filters?.converted !== undefined) params.set("converted", String(filters.converted));
+  if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters?.formId) params.set("formId", filters.formId);
+  if (filters?.funnelName) params.set("funnelName", filters.funnelName);
+  if (filters?.productId) params.set("productId", filters.productId);
+  return `?${params.toString()}`;
+}
+
 export async function fetchAbandonedCarts(
   organizationId: string | null,
   offset: number = 0,
@@ -76,33 +151,12 @@ export async function fetchAbandonedCarts(
   const empty = emptyWithoutOrg<AbandonedCartWithRelations>(organizationId);
   if (empty) return empty;
 
-  let query = supabase
-    .from("abandoned_carts")
-    .select("*")
-    .eq("organization_id", organizationId)
-    .order("abandoned_at", { ascending: sortOrder === "asc" })
-    .range(offset, offset + limit - 1);
-
-  if (searchQuery && searchQuery.trim()) {
-    query = query.or(
-      `customer_name.ilike.%${searchQuery}%,phone_number.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`
-    );
-  }
-
-  query = applyAbandonedCartFilters(query, filters);
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return (data || []) as AbandonedCartWithRelations[];
+  const { carts } = await apiRequest<{ carts: CartDto[] }>(
+    `/org/numbatrak/abandoned-carts${buildQuery(offset, limit, sortOrder, searchQuery, filters)}`
+  );
+  return carts.map(cartFromDto);
 }
 
-/**
- * Get total count of abandoned carts (filtered by organization)
- */
 export async function fetchAbandonedCartsCount(
   organizationId: string | null,
   searchQuery?: string,
@@ -110,102 +164,37 @@ export async function fetchAbandonedCartsCount(
 ): Promise<number> {
   if (!organizationId) return 0;
 
-  let query = supabase
-    .from("abandoned_carts")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", organizationId);
+  const params = new URLSearchParams();
+  if (searchQuery?.trim()) params.set("search", searchQuery.trim());
+  if (filters?.converted !== undefined) params.set("converted", String(filters.converted));
+  if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters?.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters?.formId) params.set("formId", filters.formId);
+  if (filters?.funnelName) params.set("funnelName", filters.funnelName);
+  if (filters?.productId) params.set("productId", filters.productId);
 
-  if (searchQuery && searchQuery.trim()) {
-    query = query.or(
-      `customer_name.ilike.%${searchQuery}%,phone_number.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`
-    );
-  }
-
-  query = applyAbandonedCartFilters(query, filters);
-
-  const { count, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return count || 0;
+  const { count } = await apiRequest<{ count: number }>(`/org/numbatrak/abandoned-carts/count?${params.toString()}`);
+  return count;
 }
 
-/**
- * Distinct funnel names on abandoned carts for filter dropdowns.
- */
-export async function fetchAbandonedCartFunnels(
-  organizationId: string | null
-): Promise<string[]> {
+export async function fetchAbandonedCartFunnels(organizationId: string | null): Promise<string[]> {
   if (!organizationId) return [];
-
-  const { data, error } = await supabase
-    .from("abandoned_carts")
-    .select("funnel_name")
-    .eq("organization_id", organizationId)
-    .not("funnel_name", "is", null);
-
-  if (error) throw error;
-
-  const names = new Set<string>();
-  for (const row of data ?? []) {
-    const name = (row as { funnel_name?: string }).funnel_name?.trim();
-    if (name) names.add(name);
-  }
-  return Array.from(names).sort((a, b) => a.localeCompare(b));
-}
-
-/** Resolve catalog prices for cart line items at convert time. */
-export async function resolveCartLinePrices(
-  organizationId: string,
-  lines: CartLineInput[]
-): Promise<
-  Array<{
-    product_id: string;
-    quantity: number;
-    unit_price_at_submission: number;
-    unit_cost_at_submission: number;
-  }>
-> {
-  if (lines.length === 0) return [];
-
-  const productIds = [...new Set(lines.map((l) => l.product_id))];
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, base_price, cost_price")
-    .eq("organization_id", organizationId)
-    .in("id", productIds);
-
-  if (error) throw error;
-
-  const priceById = new Map(
-    (data ?? []).map((row: { id: string; base_price: number; cost_price: number }) => [
-      row.id,
-      {
-        price: Number(row.base_price) || 0,
-        cost: Number(row.cost_price) || 0,
-      },
-    ])
-  );
-
-  return lines
-    .map((line) => {
-      const prices = priceById.get(line.product_id);
-      if (!prices) return null;
-      return {
-        product_id: line.product_id,
-        quantity: line.quantity,
-        unit_price_at_submission: prices.price,
-        unit_cost_at_submission: prices.cost,
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
+  const { funnels } = await apiRequest<{ funnels: string[] }>("/org/numbatrak/abandoned-carts/funnels");
+  return funnels;
 }
 
 /**
- * Create a new abandoned cart
+ * @deprecated Pricing resolution now happens server-side inside the convert
+ * endpoint (POST /abandoned-carts/:id/convert) - kept for signature
+ * compatibility with any not-yet-repointed caller. Always returns [].
  */
+export async function resolveCartLinePrices(
+  _organizationId: string,
+  _lines: CartLineInput[]
+): Promise<Array<{ product_id: string; quantity: number; unit_price_at_submission: number; unit_cost_at_submission: number }>> {
+  return [];
+}
+
 export async function createAbandonedCart(input: {
   customer_name?: string | null;
   phone_number?: string | null;
@@ -234,56 +223,39 @@ export async function createAbandonedCart(input: {
   sub_brand?: string | null;
   abandoned_at?: string;
 }): Promise<AbandonedCartWithRelations> {
-  const now = new Date();
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  const { data, error } = await supabase
-    .from("abandoned_carts")
-    .insert([
-      {
-        ...input,
-        order_date: now.toISOString().split("T")[0],
-        order_month: monthNames[now.getMonth()],
-        order_year: now.getFullYear().toString(),
-        order_status: "Pending",
-        cost_price: null,
-        delivery_fee: null,
-        profit: null,
-        delivery_date: null,
-        delivery_month: null,
-        delivery_year: null,
-        confirmed_delivery: false,
-        agent_name: null,
-        subject: "Abandoned Cart",
-        abandoned_at: input.abandoned_at ?? now.toISOString(),
-      },
-    ])
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data as AbandonedCartWithRelations;
+  const dto = await apiRequest<CartDto>("/org/numbatrak/abandoned-carts", {
+    method: "POST",
+    body: {
+      customerName: input.customer_name,
+      phoneNumber: input.phone_number,
+      whatsappNumber: input.whatsapp_number,
+      deliveryAddress: input.delivery_address,
+      state: input.state,
+      location: input.location,
+      selectedPackage: input.selected_package,
+      selectedItems: input.selected_items,
+      productName: input.product_name,
+      mailQuan: input.mail_quan,
+      agentQuan: input.agent_quan,
+      quantity: input.quantity,
+      product2: input.product2,
+      mailQuan2: input.mail_quan2,
+      agentQuan2: input.agent_quan2,
+      quantity2: input.quantity2,
+      salesPrice: input.sales_price,
+      pageUrl: input.page_url,
+      filledFieldsCount: input.filled_fields_count,
+      note: input.note,
+      formId: input.form_id,
+      funnelName: input.funnel_name,
+      offerName: input.offer_name,
+      subBrand: input.sub_brand,
+      abandonedAt: input.abandoned_at,
+    },
+  });
+  return cartFromDto(dto);
 }
 
-/**
- * Update an abandoned cart
- */
 export async function updateAbandonedCart(
   id: string,
   input: Partial<{
@@ -314,41 +286,48 @@ export async function updateAbandonedCart(
     note: string | null;
   }>
 ): Promise<AbandonedCartWithRelations> {
-  const { data, error } = await supabase
-    .from("abandoned_carts")
-    .update({ ...input, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data as AbandonedCartWithRelations;
+  const dto = await apiRequest<CartDto>(`/org/numbatrak/abandoned-carts/${id}`, {
+    method: "PATCH",
+    body: {
+      customerName: input.customer_name,
+      phoneNumber: input.phone_number,
+      whatsappNumber: input.whatsapp_number,
+      deliveryAddress: input.delivery_address,
+      state: input.state,
+      location: input.location,
+      selectedPackage: input.selected_package,
+      selectedItems: input.selected_items,
+      productName: input.product_name,
+      mailQuan: input.mail_quan,
+      agentQuan: input.agent_quan,
+      quantity: input.quantity,
+      product2: input.product2,
+      mailQuan2: input.mail_quan2,
+      agentQuan2: input.agent_quan2,
+      quantity2: input.quantity2,
+      salesPrice: input.sales_price,
+      pageUrl: input.page_url,
+      filledFieldsCount: input.filled_fields_count,
+      convertedToOrder: input.converted_to_order,
+      convertedOrderId: input.converted_order_id,
+      funnelName: input.funnel_name,
+      offerName: input.offer_name,
+      subBrand: input.sub_brand,
+      note: input.note,
+    },
+  });
+  return cartFromDto(dto);
 }
 
-/**
- * Delete an abandoned cart
- */
 export async function removeAbandonedCart(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("abandoned_carts")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    throw error;
-  }
+  await apiRequest<void>(`/org/numbatrak/abandoned-carts/${id}`, { method: "DELETE" });
 }
 
 /**
- * Mark an abandoned cart as converted to a customer order
+ * Note-overwrite behavior (destroys any prior note) is preserved from the
+ * source app - not a bug to fix without a product decision.
  */
-export async function markAsConverted(
-  cartId: string,
-  customerOrderId: string
-): Promise<AbandonedCartWithRelations> {
+export async function markAsConverted(cartId: string, customerOrderId: string): Promise<AbandonedCartWithRelations> {
   return updateAbandonedCart(cartId, {
     converted_to_order: true,
     converted_order_id: customerOrderId,

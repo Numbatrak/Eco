@@ -254,11 +254,15 @@ export async function markOrderFailedDeliveryApi(orderId: string, expenseAmount?
 }
 
 /**
- * Abandoned-cart → order conversion is its own future slice (still
- * Supabase-based, per the Orders port plan) - this stub exists only so
- * AbandonedCartsForm.tsx and the dead services/ordersV2.ts re-export
- * still resolve at compile/import time. Throws if actually called.
+ * Conversion (pricing resolution, order+items insert, marking the cart
+ * converted) now happens atomically server-side in one call - the cart id
+ * is the only input actually needed. `_input`'s other fields (customer
+ * snapshot, pre-priced lines, etc.) were only ever derived from the cart
+ * itself client-side, so they're superseded rather than forwarded.
  */
-export async function createCustomerOrderFromAbandonedCart(_input: unknown): Promise<string> {
-  throw new Error("Abandoned cart conversion isn't ported to the new backend yet.");
+export async function createCustomerOrderFromAbandonedCart(input: { abandoned_cart_id: string }): Promise<string> {
+  const dto = await apiRequest<OrderDto>(`/org/numbatrak/abandoned-carts/${input.abandoned_cart_id}/convert`, {
+    method: "POST",
+  });
+  return dto.id;
 }

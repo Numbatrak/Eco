@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { BRAND_CHART } from "../../brand/tokens";
-import { MonthlyExpensePoint } from "../services/expenseSummary";
+import { MonthlyExpensePoint } from "../../services/expenseSummary";
 import { LoadingState } from "../ui/LoadingState";
 
 const axisProps = {

@@ -8,12 +8,9 @@ import { SuccessAlert } from "./agents/SuccessAlert";
 import {
   fetchAbandonedCarts,
   removeAbandonedCart,
-  markAsConverted,
   fetchAbandonedCartsCount,
   updateAbandonedCart,
   fetchAbandonedCartFunnels,
-  parseCartSelectedProducts,
-  resolveCartLinePrices,
   AbandonedCartFilters,
 } from "../services/abandonedCarts";
 import { createCustomerOrderFromAbandonedCart } from "../services/customerOrders";
@@ -21,7 +18,6 @@ import { resolveFollowUpsForConvertedCart } from "../services/followUps";
 import { usePermissions } from "../hooks/usePermissions";
 import { useOrganization } from "../contexts/OrganizationContext";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
-import { fetchForms } from "../services/forms";
 import { fetchProducts } from "../services/products";
 import { PageLayout } from "./layout/PageLayout";
 import { Form } from "../types/form";
@@ -64,22 +60,30 @@ export default function AbandonedCartsForm() {
     }
     let cancelled = false;
     (async () => {
+      // Forms isn't ported off Supabase yet - a dynamic import means a
+      // module-load failure there (env vars missing, etc.) only empties the
+      // forms dropdown instead of crashing the whole page, and doesn't block
+      // the (already-ported) funnels/products loads below.
       try {
-        const [list, funnels, products] = await Promise.all([
-          fetchForms(currentOrganization.id),
+        const { fetchForms } = await import("../services/forms");
+        const list = await fetchForms(currentOrganization.id);
+        if (!cancelled) setForms(list);
+      } catch (e) {
+        console.error("Error loading forms:", e);
+        if (!cancelled) setForms([]);
+      }
+
+      try {
+        const [funnels, products] = await Promise.all([
           fetchAbandonedCartFunnels(currentOrganization.id),
           fetchProducts(currentOrganization.id, { activeOnly: true }),
         ]);
         if (!cancelled) {
-          setForms(list);
           setFunnelOptions(funnels);
           setProductOptions(products.map((p) => ({ id: p.id, name: p.name })));
         }
       } catch (e) {
-        console.error("Error loading forms:", e);
-        if (!cancelled) {
-          setForms([]);
-        }
+        console.error("Error loading funnels/products:", e);
       }
     })();
     return () => {
@@ -172,44 +176,17 @@ export default function AbandonedCartsForm() {
         return;
       }
 
-      // Create order from cart data with catalog line items when available
-      const cartLines = parseCartSelectedProducts(cart);
-      const pricedLines =
-        cartLines.length > 0
-          ? await resolveCartLinePrices(currentOrganization.id, cartLines)
-          : [];
+      // Pricing resolution, order+items creation, and marking the cart
+      // converted all happen atomically server-side now.
+      const newId = await createCustomerOrderFromAbandonedCart({ abandoned_cart_id: cart.id });
 
-      const linkedForm = cart.form_id
-        ? forms.find((f) => f.id === cart.form_id)
-        : undefined;
-
-      const newId = await createCustomerOrderFromAbandonedCart({
-        organization_id: currentOrganization.id,
-        customer_name: cart.customer_name || "Unknown Customer",
-        phone_number: cart.phone_number || null,
-        whatsapp_number: cart.whatsapp_number || null,
-        state: cart.state ?? null,
-        delivery_address: cart.delivery_address ?? null,
-        form_id: cart.form_id ?? null,
-        order_revenue: cart.sales_price != null ? Number(cart.sales_price) : null,
-        order_cost: cart.cost_price != null ? Number(cart.cost_price) : null,
-        delivery_fee: cart.delivery_fee != null ? Number(cart.delivery_fee) : null,
-        amount_paid: null,
-        profit: cart.profit != null ? Number(cart.profit) : null,
-        notes: `Converted from abandoned cart #${cart.id}. Page: ${cart.page_url || "N/A"}`,
-        abandoned_cart_id: cart.id,
-        funnel_name: cart.funnel_name ?? linkedForm?.funnel_name ?? linkedForm?.name ?? null,
-        offer_name: cart.offer_name ?? cart.selected_package ?? null,
-        sub_brand: cart.sub_brand ?? linkedForm?.sub_brand ?? null,
-        items: pricedLines,
-      });
-
-      await markAsConverted(cart.id, newId);
-      await resolveFollowUpsForConvertedCart(
-        currentOrganization.id,
-        cart.id,
-        newId
-      );
+      // Own try/catch so a follow-up-resolution failure doesn't get reported
+      // as "conversion failed" when the order/cart update above already succeeded.
+      try {
+        await resolveFollowUpsForConvertedCart(currentOrganization.id, cart.id, newId);
+      } catch (followUpErr) {
+        console.error("Error resolving follow-ups for converted cart:", followUpErr);
+      }
 
       setSuccess(
         `Cart converted to order successfully! Reference: ${newId}`

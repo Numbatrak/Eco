@@ -4,8 +4,7 @@ import { Plus } from "lucide-react";
 import { useOrganization } from "../contexts/OrganizationContext";
 import { useConfirm, confirmDelete } from "../contexts/ConfirmContext";
 import { usePermissions } from "../hooks/usePermissions";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
-import { useActivityLogger } from "../utils/activityLogger";
+import { useAuth } from "../auth/AuthProvider";
 import { SuccessNotification } from "./agents/SuccessNotification";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
@@ -52,7 +51,7 @@ import {
   UnifiedExpenseScope,
   UnifiedExpenseWithRelations,
 } from "../types/unifiedExpense";
-import { useCachedAgents } from "../hooks/useCachedData";
+import { useCachedAgents } from "../hooks/useCachedAgents";
 import { agentsForAssignment } from "../utils/agentFilters";
 import { PageLayout } from "./layout/PageLayout";
 import { LoadingState } from "./ui/LoadingState";
@@ -71,9 +70,8 @@ const TAB_LABELS: Record<ExpensesTab, string> = {
 export default function UnifiedExpensesForm() {
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
-  const { logActivityAction } = useActivityLogger();
   const { hasPermission } = usePermissions();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const canView =
@@ -226,16 +224,9 @@ export default function UnifiedExpensesForm() {
           patch.occurred_at = values.occurred_at;
         }
         await updateUnifiedExpense(editingExpense.id, patch);
-        await logActivityAction(
-          "expense_updated",
-          "expense",
-          null,
-          `Updated ${expenseTableCategoryLabel(editingExpense)} expense (${values.amount.toLocaleString("en-NG", { style: "currency", currency: "NGN" })})`,
-          { expense_id: editingExpense.id, category: values.category }
-        );
         setSuccess("Expense updated.");
       } else {
-        const created = await createUnifiedExpense({
+        await createUnifiedExpense({
           organization_id: currentOrganization.id,
           scope: dialogScope,
           category: values.category,
@@ -248,13 +239,6 @@ export default function UnifiedExpensesForm() {
           occurred_at: values.occurred_at,
           created_by: user?.id || null,
         });
-        await logActivityAction(
-          "expense_created",
-          "expense",
-          null,
-          `Recorded ${formatExpenseSubcategoryLabel(values.category, values.subcategory)} expense`,
-          { expense_id: created.id, category: values.category }
-        );
         setSuccess("Expense added.");
       }
 
@@ -273,13 +257,6 @@ export default function UnifiedExpensesForm() {
   const handleDelete = async (id: string) => {
     if (!(await confirmDelete(confirm, "expense"))) return;
     await deleteUnifiedExpense(id);
-    await logActivityAction(
-      "expense_deleted",
-      "expense",
-      null,
-      "Deleted an expense record",
-      { expense_id: id }
-    );
     setSuccess("Expense removed.");
     await load();
     setTimeout(() => setSuccess(null), 3000);

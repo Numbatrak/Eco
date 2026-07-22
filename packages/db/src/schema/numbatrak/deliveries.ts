@@ -16,6 +16,7 @@ import { bigint, check, index, numeric, pgTable, text, timestamp, uuid, date, in
 
 import { organization } from "../../auth-schema.js";
 import { numbatrakAgents } from "./agents.js";
+import { numbatrakProducts } from "./products.js";
 
 export const numbatrakDeliveries = pgTable(
   "numbatrak_deliveries",
@@ -32,8 +33,18 @@ export const numbatrakDeliveries = pgTable(
     status: text("status").notNull(),
     // ANOMALY (flagged in migration report): `bigint` in source with NO FK to
     // numbatrak_products.id (uuid) - app's own type comment calls this out:
-    // "legacy int or UUID depending on deployment". Preserved verbatim.
-    productId: bigint("product_id", { mode: "number" }).notNull(),
+    // "legacy int or UUID depending on deployment". Preserved verbatim,
+    // nullable here (was NOT NULL in source) since new rows use productUuid
+    // below instead - this column is now populated only by migrated legacy
+    // rows, never written to going forward.
+    productId: bigint("product_id", { mode: "number" }),
+    // Stabilization addition (this port): the greenfield app's products
+    // table uses uuid ids, which the bigint productId column above cannot
+    // hold. New deliveries/waybills reference the product here instead;
+    // productId is left null for every row created after this column
+    // existed. Both columns coexist rather than retyping the legacy one,
+    // per this schema's own "preserve verbatim, don't fix" precedent.
+    productUuid: uuid("product_uuid").references(() => numbatrakProducts.id, { onDelete: "restrict" }),
     quantity: integer("quantity").notNull(),
     cost: numeric("cost", { precision: 14, scale: 2 }).notNull(),
     waybillingFee: numeric("waybilling_fee", { precision: 14, scale: 2 }).notNull().default("0"),
@@ -46,6 +57,7 @@ export const numbatrakDeliveries = pgTable(
     index("numbatrak_deliveries_agent_idx").on(table.agentId),
     index("numbatrak_deliveries_date_idx").on(table.date),
     index("numbatrak_deliveries_org_idx").on(table.organizationId),
+    index("numbatrak_deliveries_product_uuid_idx").on(table.productUuid),
     index("numbatrak_deliveries_status_idx").on(table.status),
     index("numbatrak_deliveries_sub_brand_idx")
       .on(table.organizationId, table.subBrand)
