@@ -1,6 +1,4 @@
-import { FormEvent, useState, useEffect, useMemo, useCallback } from "react";
-import { InventoryWithRelations } from "../types/inventory";
-import { InventoryDialog } from "./inventory/InventoryDialog";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   TransferDialog,
   TransferFormValues,
@@ -9,18 +7,12 @@ import {
   AdjustStockDialog,
   AdjustStockFormValues,
 } from "./inventory/AdjustStockDialog";
-import { InventoryTable } from "./inventory/InventoryTable";
 import { PageHeader } from "./inventory/PageHeader";
 import { SuccessNotification } from "./agents/SuccessNotification";
-import { upsertInventory } from "../services/inventory";
 import { useOrganization } from "../contexts/OrganizationContext";
-import { useSupabaseAuth } from "../auth/SupabaseAuthProvider";
-import {
-  useCachedInventory,
-  useCachedAgents,
-  useCachedProducts,
-} from "../hooks/useCachedData";
-import { invalidateStoreCache, inventoryStore } from "../stores/dataStore";
+import { useAuth } from "../auth/AuthProvider";
+import { useCachedAgents } from "../hooks/useCachedAgents";
+import { useCachedProducts } from "../hooks/useCachedProducts";
 import {
   fetchAgentStockOnHand,
   buildOnHandMap,
@@ -40,19 +32,11 @@ import {
   InventoryFilters,
   InventoryLedgerFilters,
 } from "./inventory/InventoryFilters";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { agentsForAssignment } from "../utils/agentFilters";
 
 export default function InventoryForm() {
   const { currentOrganization } = useOrganization();
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
 
-  const {
-    data: inventory,
-    loading: inventoryLoading,
-    error: inventoryError,
-    refetch: refetchInventory,
-  } = useCachedInventory(currentOrganization?.id || null);
   const { data: agents, loading: agentsLoading } = useCachedAgents(
     currentOrganization?.id || null
   );
@@ -60,33 +44,21 @@ export default function InventoryForm() {
     currentOrganization?.id || null
   );
 
-  const loading = inventoryLoading || agentsLoading || productsLoading;
-  const error = inventoryError;
+  const loading = agentsLoading || productsLoading;
 
-  const [open, setOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
-  const [editingInventory, setEditingInventory] =
-    useState<InventoryWithRelations | null>(null);
-  const [saving, setSaving] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [ledgerOnHand, setLedgerOnHand] = useState<AgentStockOnHandRow[]>([]);
   const [ledgerMov, setLedgerMov] = useState<StockMovement[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("ledger");
   const [ledgerFilters, setLedgerFilters] = useState<InventoryLedgerFilters>(
     {}
   );
 
-  const inventoryAssignableAgents = useMemo(
-    () => agentsForAssignment(agents, editingInventory?.agent_id ?? null),
-    [agents, editingInventory?.agent_id]
-  );
   const activeProducts = useMemo(
     () => products.filter((product) => product.active !== false),
     [products]
@@ -128,64 +100,11 @@ export default function InventoryForm() {
     } finally {
       setLedgerLoading(false);
     }
-  }, [currentOrganization?.id, ledgerFilters, refreshTrigger]);
+  }, [currentOrganization?.id, ledgerFilters]);
 
   useEffect(() => {
     loadLedger();
   }, [loadLedger]);
-
-  const refreshAll = async () => {
-    setRefreshTrigger((prev) => prev + 1);
-    invalidateStoreCache(inventoryStore, currentOrganization?.id || null);
-    await refetchInventory();
-  };
-
-  const handleLegacySubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const agentId = formData.get("agent_id") as string;
-    const productId = formData.get("product_id") as string;
-    const totalQuantity = formData.get("total_quantity") as string;
-
-    if (!productId || !totalQuantity) {
-      setLocalError("Please fill in all required fields.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setLocalError(null);
-      if (!currentOrganization) {
-        setLocalError("No organization selected");
-        return;
-      }
-
-      await upsertInventory({
-        agent_id: agentId ? parseInt(agentId, 10) : null,
-        product_id: productId,
-        total_quantity: parseInt(totalQuantity, 10),
-        organization_id: currentOrganization.id,
-      });
-
-      setSuccess(
-        dialogMode === "edit"
-          ? "Legacy inventory updated."
-          : "Legacy inventory added."
-      );
-      await refreshAll();
-      setOpen(false);
-      setEditingInventory(null);
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: unknown) {
-      const msg =
-        err && typeof err === "object" && "message" in err
-          ? String((err as { message?: string }).message)
-          : "Failed to save inventory.";
-      setLocalError(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleTransfer = async (values: TransferFormValues) => {
     if (!currentOrganization) return;
@@ -203,7 +122,7 @@ export default function InventoryForm() {
       });
       setSuccess("Stock transferred on the ledger.");
       setTransferOpen(false);
-      await refreshAll();
+      await loadLedger();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transfer failed.";
@@ -234,7 +153,7 @@ export default function InventoryForm() {
           : "Missing stock recorded."
       );
       setAdjustOpen(false);
-      await refreshAll();
+      await loadLedger();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to record.";
@@ -245,29 +164,8 @@ export default function InventoryForm() {
     }
   };
 
-  const handleStartCreateLegacy = () => {
-    setDialogMode("create");
-    setEditingInventory(null);
-    setOpen(true);
-  };
-
   return (
     <>
-      <InventoryDialog
-        open={open}
-        onOpenChange={(open) => {
-          setOpen(open);
-          if (!open) setEditingInventory(null);
-        }}
-        mode={dialogMode}
-        inventory={editingInventory}
-        agents={inventoryAssignableAgents}
-        products={activeProducts}
-        error={localError || error}
-        saving={saving}
-        onSubmit={handleLegacySubmit}
-      />
-
       <TransferDialog
         open={transferOpen}
         onOpenChange={(open) => {
@@ -277,7 +175,7 @@ export default function InventoryForm() {
         agents={agents}
         products={activeProducts}
         onHandByAgentProduct={onHandByAgentProduct}
-        error={localError || error}
+        error={localError}
         saving={transferring}
         onSubmit={handleTransfer}
       />
@@ -291,7 +189,7 @@ export default function InventoryForm() {
         agents={agents}
         products={activeProducts}
         onHandByAgentProduct={onHandByAgentProduct}
-        error={localError || error}
+        error={localError}
         saving={adjusting}
         onSubmit={handleAdjust}
       />
@@ -313,58 +211,32 @@ export default function InventoryForm() {
             setLocalError(null);
             setAdjustOpen(true);
           }}
-          showLegacyActions={activeTab === "legacy"}
-          onAddLegacy={handleStartCreateLegacy}
         />
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full"
-        >
-          <TabsList className="mb-4">
-            <TabsTrigger value="ledger" className="cursor-pointer">
-              Stock grid
-            </TabsTrigger>
-            <TabsTrigger value="legacy" className="cursor-pointer">
-              Legacy totals (deprecated)
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="ledger" className="space-y-4">
-            <InventoryFilters
-              agents={agents}
-              products={activeProducts}
-              filters={ledgerFilters}
-              onChange={setLedgerFilters}
-            />
-            <StockGrid
-              onHandRows={ledgerOnHand}
-              agents={agents}
-              products={activeProducts}
-              loading={ledgerLoading || loading}
-              filterAgentId={ledgerFilters.agent_id}
-              filterProductId={ledgerFilters.product_id}
-            />
-            <h3 className="text-sm font-semibold text-foreground">
-              Movement history
-            </h3>
-            <StockMovementsLog
-              movements={ledgerMov}
-              loading={ledgerLoading}
-              agents={agents}
-            />
-          </TabsContent>
-
-          <TabsContent value="legacy">
-            <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-muted-foreground">
-              Deprecated: manual inventory totals table. The stock grid uses{" "}
-              <code className="text-xs">stock_movements</code> as the single
-              source of truth for agent holdings.
-            </p>
-            <InventoryTable refreshTrigger={refreshTrigger} />
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-4">
+          <InventoryFilters
+            agents={agents}
+            products={activeProducts}
+            filters={ledgerFilters}
+            onChange={setLedgerFilters}
+          />
+          <StockGrid
+            onHandRows={ledgerOnHand}
+            agents={agents}
+            products={activeProducts}
+            loading={ledgerLoading || loading}
+            filterAgentId={ledgerFilters.agent_id}
+            filterProductId={ledgerFilters.product_id}
+          />
+          <h3 className="text-sm font-semibold text-foreground">
+            Movement history
+          </h3>
+          <StockMovementsLog
+            movements={ledgerMov}
+            loading={ledgerLoading}
+            agents={agents}
+          />
+        </div>
       </PageLayout>
     </>
   );

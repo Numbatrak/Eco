@@ -300,6 +300,13 @@ export const numbatrakCustomerOrderItems = pgTable(
     quantityPaid: integer("quantity_paid"),
     freeQuantity: integer("free_quantity").notNull().default(0),
     trueUnitCount: integer("true_unit_count"),
+    // Set only when this line was added as an upsell (via addOrderUpsellLine)
+    // after the order's original creation - null for lines inserted as part
+    // of the initial order. Non-null is definitionally "this is an upsell
+    // line," so no separate isUpsell flag is needed. Drives Payroll's
+    // per-staff upsell-bonus count (the person who added the upsell earns
+    // the bonus, per the Orders module's own confirmed decision).
+    addedByUserId: text("added_by_user_id").references(() => user.id, { onDelete: "set null" }),
   },
   (table) => [
     index("numbatrak_customer_order_items_order_idx").on(table.orderId),

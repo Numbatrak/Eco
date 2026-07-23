@@ -4,6 +4,7 @@ import createAgentRoutes from "./create.js";
 import updateAgentRoutes from "./update.js";
 import setAgentActiveRoutes from "./set-active.js";
 import deleteAgentRoutes from "./delete.js";
+import ensureWarehouseRoutes from "./ensure-warehouse.js";
 
 export default async function numbatrakAgentsRoutes(app: FastifyInstance): Promise<void> {
   await app.register(listAgentsRoutes);
@@ -11,4 +12,5 @@ export default async function numbatrakAgentsRoutes(app: FastifyInstance): Promi
   await app.register(updateAgentRoutes);
   await app.register(setAgentActiveRoutes);
   await app.register(deleteAgentRoutes);
+  await app.register(ensureWarehouseRoutes);
 }

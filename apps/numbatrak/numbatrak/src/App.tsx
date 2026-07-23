@@ -32,6 +32,8 @@ const DeliveryAnalyticsPage = lazy(() =>
 const WalletPage = lazy(() => import("./components/wallet/WalletPage").then((m) => ({ default: m.WalletPage })));
 const PlaceholderPage = lazy(() => import("./components/PlaceholderPage").then((m) => ({ default: m.PlaceholderPage })));
 const InventoryForm = lazy(() => import("./components/InventoryForm"));
+const StaffForm = lazy(() => import("./components/StaffForm"));
+const StaffDetailPage = lazy(() => import("./components/staff/StaffDetailPage"));
 const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
 const EmailVerificationPage = lazy(() =>
@@ -469,6 +471,8 @@ function AppContent() {
                 />
                 <Route path="/wallet" element={<WalletPage />} />
                 <Route path="/inventory" element={<InventoryForm />} />
+                <Route path="/staff/:staffId" element={<StaffDetailPage />} />
+                <Route path="/staff" element={<StaffForm />} />
                 <Route
                   path="/integrations"
                   element={

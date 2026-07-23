@@ -58,6 +58,17 @@ const statement = {
   numbatrakDashboard: ["view"],
   // CSR gets view-only, like numbatrakProducts (not numbatrakOrders' create+update grant).
   numbatrakForms: ["view", "create", "update", "delete"],
+  // Per the Feature Spec's confirmed decision: "Both CRS and manager can
+  // manage stock numbers, transfers, and adjustments... self-service, not
+  // admin-only" - one of the few Numbatrak resources where csr gets "manage",
+  // not just view.
+  numbatrakInventory: ["view", "manage"],
+  // Staff (HR/team roster) - view-only vs manage split matters here: bank
+  // details and role assignment are sensitive, so "manage" is deliberately
+  // narrower than the other resources' owner/admin/manager-all-get-CRUD
+  // pattern (see managerRole/csrRole below - csr is row-scoped to their own
+  // record, not resource-gated here at all).
+  numbatrakStaff: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -86,6 +97,8 @@ export const ownerRole = ac.newRole({
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   numbatrakDashboard: ["view"],
   numbatrakForms: ["view", "create", "update", "delete"],
+  numbatrakInventory: ["view", "manage"],
+  numbatrakStaff: ["view", "manage"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -111,6 +124,8 @@ export const adminRole = ac.newRole({
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   numbatrakDashboard: ["view"],
   numbatrakForms: ["view", "create", "update", "delete"],
+  numbatrakInventory: ["view", "manage"],
+  numbatrakStaff: ["view", "manage"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -160,6 +175,8 @@ export const managerRole = ac.newRole({
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   numbatrakDashboard: ["view"],
   numbatrakForms: ["view", "create", "update", "delete"],
+  numbatrakInventory: ["view", "manage"],
+  numbatrakStaff: ["view", "manage"],
 });
 
 /**
@@ -183,6 +200,14 @@ export const csrRole = ac.newRole({
   numbatrakFollowUps: ["view", "create", "update"],
   numbatrakDashboard: ["view"],
   numbatrakForms: ["view"],
+  // Unlike most other csr grants here, this IS "manage" not "view" - the
+  // Feature Spec explicitly gives csr stock transfer/adjust rights, same as
+  // manager (see the statement's own comment above).
+  numbatrakInventory: ["view", "manage"],
+  // View-only, row-scoped to their own record by the list route (same
+  // pattern as numbatrakOrders' csrScopeUserId) - a csr can see but not edit
+  // their own HR/bank details.
+  numbatrakStaff: ["view"],
   // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
 });
 

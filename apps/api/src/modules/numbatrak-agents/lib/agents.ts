@@ -103,3 +103,40 @@ export async function deleteAgent(db: Database, organizationId: string, agentId:
     .returning({ id: numbatrakAgents.id });
   return result.length > 0;
 }
+
+/**
+ * Find-or-create the org's single warehouse agent ("Warehouse (HQ)", holds
+ * stock, never delivers) - the Feature Spec's "the warehouse is an agent"
+ * locked rule. Race-safe under concurrent calls via the schema's own partial
+ * unique index (numbatrak_agents_one_warehouse_per_org_idx): the insert
+ * no-ops on conflict, then a final re-select reliably returns whichever row
+ * won, rather than relying on catching a specific driver error code.
+ */
+export async function ensureWarehouseAgent(db: Database, organizationId: string): Promise<AgentRow> {
+  const existing = await findWarehouseAgent(db, organizationId);
+  if (existing) return existing;
+
+  await db
+    .insert(numbatrakAgents)
+    .values({
+      organizationId,
+      name: "Warehouse (HQ)",
+      locations: "HQ",
+      isWarehouse: true,
+      canDeliver: false,
+    })
+    .onConflictDoNothing();
+
+  const row = await findWarehouseAgent(db, organizationId);
+  if (!row) throw new Error("Failed to ensure warehouse agent");
+  return row;
+}
+
+async function findWarehouseAgent(db: Database, organizationId: string): Promise<AgentRow | null> {
+  const [row] = await db
+    .select()
+    .from(numbatrakAgents)
+    .where(and(eq(numbatrakAgents.organizationId, organizationId), eq(numbatrakAgents.isWarehouse, true)))
+    .limit(1);
+  return row ?? null;
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { supabase } from "../supabaseClient";
 import { isDeliveredStatus } from "../constants/orderStatus";
 import { fetchAgentStockOnHand } from "./agentStock";
+import { fetchCustomerOrders } from "./customerOrders";
 import { fetchWalletRemittanceLines } from "./wallet";
 import type { WalletRemittanceLine } from "../types/wallet";
 
@@ -36,18 +36,10 @@ export async function fetchAgentMetricsMap(
 ): Promise<Map<number, AgentMetrics>> {
   const map = new Map<number, AgentMetrics>();
 
-  const [stockRows, ordersResult] = await Promise.all([
+  const [stockRows, orders] = await Promise.all([
     fetchAgentStockOnHand(organizationId),
-    supabase
-      .from("customer_orders")
-      .select("agent_id, status")
-      .eq("organization_id", organizationId)
-      .not("agent_id", "is", null),
+    fetchCustomerOrders(organizationId),
   ]);
-
-  if (ordersResult.error) {
-    throw ordersResult.error;
-  }
 
   for (const row of stockRows) {
     const id = row.agent_id;
@@ -56,10 +48,10 @@ export async function fetchAgentMetricsMap(
     map.set(id, existing);
   }
 
-  for (const row of ordersResult.data || []) {
-    const id = Number((row as { agent_id: number }).agent_id);
+  for (const order of orders) {
+    const id = order.agent_id;
     if (!id) continue;
-    const status = String((row as { status: string }).status);
+    const status = order.status;
     const existing = map.get(id) ?? EMPTY_METRICS(id);
     if (isGeneratedOrder(status)) {
       existing.orders_generated += 1;

@@ -966,3 +966,295 @@ export const submitPublicNumbatrakFormResultSchema = z.object({
     .optional(),
 });
 export type SubmitPublicNumbatrakFormResult = z.infer<typeof submitPublicNumbatrakFormResultSchema>;
+
+// ---------- inventory (per-agent stock ledger) ----------
+
+export const numbatrakStockMovementTypeSchema = z.enum([
+  "waybill_to_agent",
+  "deliver_to_customer",
+  "return_to_lagos",
+  "transfer",
+  "adjust",
+  "damaged",
+  "missing",
+]);
+export type NumbatrakStockMovementType = z.infer<typeof numbatrakStockMovementTypeSchema>;
+
+export const numbatrakShrinkageMovementTypeSchema = z.enum(["damaged", "missing"]);
+export type NumbatrakShrinkageMovementType = z.infer<typeof numbatrakShrinkageMovementTypeSchema>;
+
+export const numbatrakStockMovementSchema = z.object({
+  id: z.string().uuid(),
+  movementType: numbatrakStockMovementTypeSchema,
+  productId: z.string().uuid(),
+  productName: z.string().nullable(),
+  quantity: z.number().int(),
+  fromAgentId: z.number().int().nullable(),
+  fromAgentName: z.string().nullable(),
+  toAgentId: z.number().int().nullable(),
+  toAgentName: z.string().nullable(),
+  orderId: z.string().uuid().nullable(),
+  waybillBatchId: z.string().uuid().nullable(),
+  occurredAt: z.string(),
+  cost: z.string(),
+  fee: z.string(),
+  notes: z.string().nullable(),
+  createdAt: z.string().nullable(),
+});
+export type NumbatrakStockMovement = z.infer<typeof numbatrakStockMovementSchema>;
+
+export const createNumbatrakTransferMovementRequestSchema = z.object({
+  fromAgentId: z.number().int(),
+  toAgentId: z.number().int(),
+  productId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+  notes: z.string().trim().min(1),
+});
+export type CreateNumbatrakTransferMovementRequest = z.infer<typeof createNumbatrakTransferMovementRequestSchema>;
+
+export const createNumbatrakShrinkageMovementRequestSchema = z.object({
+  movementType: numbatrakShrinkageMovementTypeSchema,
+  fromAgentId: z.number().int(),
+  productId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+  notes: z.string().trim().min(1),
+});
+export type CreateNumbatrakShrinkageMovementRequest = z.infer<typeof createNumbatrakShrinkageMovementRequestSchema>;
+
+export const numbatrakAgentStockOnHandRowSchema = z.object({
+  agentId: z.number().int(),
+  agentName: z.string(),
+  isWarehouse: z.boolean(),
+  productId: z.string().uuid(),
+  productName: z.string(),
+  quantityOnHand: z.number(),
+});
+export type NumbatrakAgentStockOnHandRow = z.infer<typeof numbatrakAgentStockOnHandRowSchema>;
+
+export const listNumbatrakStockMovementsQuerySchema = z.object({
+  productId: z.string().uuid().optional(),
+  agentId: z.coerce.number().int().optional(),
+  movementType: numbatrakStockMovementTypeSchema.optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type ListNumbatrakStockMovementsQuery = z.infer<typeof listNumbatrakStockMovementsQuerySchema>;
+
+// ---------- staff ----------
+
+export const numbatrakSpecRoleSchema = z.enum(["CRS", "Manager", "Admin", "Media", "Accountant", "Founder"]);
+export type NumbatrakSpecRole = z.infer<typeof numbatrakSpecRoleSchema>;
+
+/**
+ * Six-role spec vocabulary → which real Better-Auth org roles (member.role,
+ * always lowercase: owner/admin/manager/csr/editor/viewer) satisfy it. Single
+ * source of truth for the primaryRole-vs-member.role compatibility check -
+ * apps/api validates directly against this (member.role is already this
+ * lowercase shape); the numbatrak frontend's utils/specRoles.ts (which deals
+ * in its own display-string UserRole type, e.g. "Customer Relations") derives
+ * its own mapping from this instead of hand-duplicating the value set, so the
+ * two can't drift out of sync.
+ */
+export const NUMBATRAK_SPEC_ROLE_COMPATIBLE_MEMBER_ROLES: Record<NumbatrakSpecRole, string[]> = {
+  CRS: ["csr"],
+  Manager: ["manager"],
+  Admin: ["admin"],
+  Founder: ["owner"],
+  // Media/Accountant aren't real login roles yet (per docs/ROLE-MAPPING.md) -
+  // treated as an HR-only designation held by an admin or owner today.
+  Media: ["admin", "owner"],
+  Accountant: ["admin", "owner"],
+};
+
+export const numbatrakStaffSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string(),
+  userName: z.string().nullable(),
+  userEmail: z.string().nullable(),
+  memberRole: z.string().nullable(),
+  primaryRole: numbatrakSpecRoleSchema,
+  extraRoles: z.array(numbatrakSpecRoleSchema),
+  subBrands: z.array(z.string()),
+  phone: z.string().nullable(),
+  bankName: z.string().nullable(),
+  bankAccountNumber: z.string().nullable(),
+  bankAccountName: z.string().nullable(),
+  active: z.boolean(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakStaff = z.infer<typeof numbatrakStaffSchema>;
+
+const numbatrakStaffRequestBaseSchema = z.object({
+  userId: z.string().trim().min(1),
+  primaryRole: numbatrakSpecRoleSchema,
+  extraRoles: z.array(numbatrakSpecRoleSchema).default([]),
+  subBrands: z.array(z.string().trim().min(1)).default([]),
+  phone: z.string().trim().max(50).nullable().optional(),
+  bankName: z.string().trim().max(200).nullable().optional(),
+  bankAccountNumber: z.string().trim().max(50).nullable().optional(),
+  bankAccountName: z.string().trim().max(200).nullable().optional(),
+});
+
+export const createNumbatrakStaffRequestSchema = numbatrakStaffRequestBaseSchema;
+export type CreateNumbatrakStaffRequest = z.infer<typeof createNumbatrakStaffRequestSchema>;
+
+export const updateNumbatrakStaffRequestSchema = numbatrakStaffRequestBaseSchema.partial().extend({
+  active: z.boolean().optional(),
+});
+export type UpdateNumbatrakStaffRequest = z.infer<typeof updateNumbatrakStaffRequestSchema>;
+
+export const numbatrakEligibleMemberSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  email: z.string(),
+  memberRole: z.string(),
+  hasStaffRecord: z.boolean(),
+});
+export type NumbatrakEligibleMember = z.infer<typeof numbatrakEligibleMemberSchema>;
+
+// ---------- payroll ----------
+
+export const numbatrakCommissionBasisSchema = z.enum(["flat_per_order", "percentage_of_sale"]);
+export type NumbatrakCommissionBasis = z.infer<typeof numbatrakCommissionBasisSchema>;
+
+export const numbatrakPayStructureScopeTypeSchema = z.enum(["role", "staff"]);
+export type NumbatrakPayStructureScopeType = z.infer<typeof numbatrakPayStructureScopeTypeSchema>;
+
+export const numbatrakPayStructureSchema = z.object({
+  id: z.string().uuid(),
+  scopeType: numbatrakPayStructureScopeTypeSchema,
+  role: numbatrakSpecRoleSchema.nullable(),
+  staffId: z.string().uuid().nullable(),
+  staffName: z.string().nullable(),
+  baseSalaryEnabled: z.boolean(),
+  baseSalaryAmount: z.number(),
+  commissionEnabled: z.boolean(),
+  commissionBasis: numbatrakCommissionBasisSchema.nullable(),
+  commissionRate: z.number(),
+  commissionGateEnabled: z.boolean(),
+  commissionGateThresholdPercent: z.number(),
+  upsellBonusEnabled: z.boolean(),
+  upsellBonusAmount: z.number(),
+  sotmBonusEnabled: z.boolean(),
+  sotmBonusAmount: z.number(),
+  managerBonusEnabled: z.boolean(),
+  managerBonusAmount: z.number(),
+  managerGateEnabled: z.boolean(),
+  managerGateTeamRatioPercent: z.number(),
+  managerGateKpiThresholdPercent: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakPayStructure = z.infer<typeof numbatrakPayStructureSchema>;
+
+const numbatrakPayStructureRequestBaseSchema = z.object({
+  scopeType: numbatrakPayStructureScopeTypeSchema,
+  role: numbatrakSpecRoleSchema.nullable().optional(),
+  staffId: z.string().uuid().nullable().optional(),
+  baseSalaryEnabled: z.boolean().default(false),
+  baseSalaryAmount: z.number().nonnegative().default(0),
+  commissionEnabled: z.boolean().default(false),
+  commissionBasis: numbatrakCommissionBasisSchema.nullable().optional(),
+  commissionRate: z.number().nonnegative().default(0),
+  commissionGateEnabled: z.boolean().default(false),
+  commissionGateThresholdPercent: z.number().min(0).max(100).default(0),
+  upsellBonusEnabled: z.boolean().default(false),
+  upsellBonusAmount: z.number().nonnegative().default(0),
+  sotmBonusEnabled: z.boolean().default(false),
+  sotmBonusAmount: z.number().nonnegative().default(0),
+  managerBonusEnabled: z.boolean().default(false),
+  managerBonusAmount: z.number().nonnegative().default(0),
+  managerGateEnabled: z.boolean().default(false),
+  managerGateTeamRatioPercent: z.number().min(0).max(100).default(50),
+  managerGateKpiThresholdPercent: z.number().min(0).max(100).default(0),
+});
+
+export const createNumbatrakPayStructureRequestSchema = numbatrakPayStructureRequestBaseSchema;
+export type CreateNumbatrakPayStructureRequest = z.infer<typeof createNumbatrakPayStructureRequestSchema>;
+
+export const updateNumbatrakPayStructureRequestSchema = numbatrakPayStructureRequestBaseSchema
+  .omit({ scopeType: true, role: true, staffId: true })
+  .partial();
+export type UpdateNumbatrakPayStructureRequest = z.infer<typeof updateNumbatrakPayStructureRequestSchema>;
+
+export const numbatrakPayrollLineSchema = z.object({
+  id: z.string().uuid(),
+  runId: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  primaryRole: numbatrakSpecRoleSchema.nullable(),
+  calculatedBaseSalary: z.number(),
+  calculatedCommission: z.number(),
+  calculatedUpsellBonus: z.number(),
+  calculatedSotmBonus: z.number(),
+  calculatedManagerBonus: z.number(),
+  overrideBaseSalary: z.number().nullable(),
+  overrideCommission: z.number().nullable(),
+  manualAdjustment: z.number(),
+  manualAdjustmentNote: z.string().nullable(),
+  deliveryRatePercent: z.number().nullable(),
+  commissionGateMissed: z.boolean(),
+  upsellCount: z.number(),
+  managerGateMissed: z.boolean().nullable(),
+  sotmAwarded: z.boolean(),
+  paid: z.boolean(),
+  paidAt: z.string().nullable(),
+  totalPay: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakPayrollLine = z.infer<typeof numbatrakPayrollLineSchema>;
+
+export const numbatrakPayrollRunSchema = z.object({
+  id: z.string().uuid(),
+  month: z.string(),
+  lines: z.array(numbatrakPayrollLineSchema),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakPayrollRun = z.infer<typeof numbatrakPayrollRunSchema>;
+
+export const runNumbatrakPayrollRequestSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/, "month must be in YYYY-MM format"),
+});
+export type RunNumbatrakPayrollRequest = z.infer<typeof runNumbatrakPayrollRequestSchema>;
+
+export const overrideNumbatrakPayrollLineRequestSchema = z.object({
+  overrideBaseSalary: z.number().nullable().optional(),
+  overrideCommission: z.number().nullable().optional(),
+});
+export type OverrideNumbatrakPayrollLineRequest = z.infer<typeof overrideNumbatrakPayrollLineRequestSchema>;
+
+export const setNumbatrakPayrollManualAdjustmentRequestSchema = z.object({
+  manualAdjustment: z.number(),
+  manualAdjustmentNote: z.string().trim().nullable().optional(),
+});
+export type SetNumbatrakPayrollManualAdjustmentRequest = z.infer<
+  typeof setNumbatrakPayrollManualAdjustmentRequestSchema
+>;
+
+export const awardNumbatrakSotmRequestSchema = z.object({
+  sotmAwarded: z.boolean(),
+});
+export type AwardNumbatrakSotmRequest = z.infer<typeof awardNumbatrakSotmRequestSchema>;
+
+export const markNumbatrakPayrollLinePaidRequestSchema = z.object({
+  paid: z.boolean(),
+});
+export type MarkNumbatrakPayrollLinePaidRequest = z.infer<typeof markNumbatrakPayrollLinePaidRequestSchema>;
+
+export const numbatrakMyEarningsSchema = z.object({
+  month: z.string(),
+  baseSalary: z.number(),
+  commissionSoFar: z.number(),
+  commissionGateMissed: z.boolean(),
+  deliveryRatePercent: z.number().nullable(),
+  commissionGateThresholdPercent: z.number().nullable(),
+  upsellCount: z.number(),
+  upsellBonusSoFar: z.number(),
+  onTrackTotal: z.number(),
+  gateStatusMessage: z.string().nullable(),
+});
+export type NumbatrakMyEarnings = z.infer<typeof numbatrakMyEarningsSchema>;

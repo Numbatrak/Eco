@@ -390,6 +390,7 @@ export async function addOrderUpsellLine(
   organizationId: string,
   orderId: string,
   line: { productId: string; quantity: number; unitPriceAtSubmission: number; unitCostAtSubmission: number },
+  addedByUserId: string | null,
 ): Promise<NumbatrakOrder | null> {
   const current = await findOrderForOrg(db, organizationId, orderId);
   if (!current) return null;
@@ -412,6 +413,10 @@ export async function addOrderUpsellLine(
     totalPrice: String(totalPrice),
     totalCost: String(totalCost),
     profit: String(totalPrice - totalCost),
+    // Whoever adds the upsell earns the payroll upsell-bonus credit for it
+    // (Orders module's own confirmed decision) - null only if called with
+    // no resolvable session, which shouldn't happen for an authenticated route.
+    addedByUserId,
   });
   await refreshOrderTotals(db, orderId);
 

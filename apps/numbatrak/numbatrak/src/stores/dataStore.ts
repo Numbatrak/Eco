@@ -10,6 +10,7 @@ import type { FollowUpWithRelations } from "../types/followUp";
 import type { AgentExpenseWithRelations } from "../types/expense";
 import type { GeneralExpenseWithRelations } from "../types/generalExpense";
 import type { InventoryWithRelations } from "../types/inventory";
+import type { Staff } from "../types/staff";
 
 // Store structure for each organization
 type OrganizationData<T> = {
@@ -67,6 +68,11 @@ export const inventoryStore = chunk<
   Record<string, OrganizationData<InventoryWithRelations>>
 >({} as Record<string, OrganizationData<InventoryWithRelations>>);
 
+// Staff store - keyed by organizationId
+export const staffStore = chunk<Record<string, OrganizationData<Staff>>>(
+  {} as Record<string, OrganizationData<Staff>>
+);
+
 // Helper function to check if data is stale
 function isStale(lastFetched: number | null): boolean {
   if (!lastFetched) return true;
@@ -120,10 +126,11 @@ export function clearAllCaches(): void {
   expensesStore.set(reset<AgentExpenseWithRelations>());
   generalExpensesStore.set(reset<GeneralExpenseWithRelations>());
   inventoryStore.set(reset<InventoryWithRelations>());
+  staffStore.set(reset<Staff>());
 }
 
 // Helper function to add/update a single item in store
-export function updateStoreItem<T extends { id: number }>(
+export function updateStoreItem<T extends { id: number | string }>(
   store: ReturnType<typeof chunk<Record<string, OrganizationData<T>>>>,
   organizationId: string | null,
   item: T

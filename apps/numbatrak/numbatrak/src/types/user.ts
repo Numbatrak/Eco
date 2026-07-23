@@ -31,4 +31,5 @@ export interface RolePermissions {
   inventory: Permission;
   forms: Permission;
   users: Permission;
+  staff: Permission;
 }

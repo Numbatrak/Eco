@@ -14,6 +14,9 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     inventory: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     forms: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     users: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    // No hard delete for staff records - bank details feed a future Payroll
+    // payment run, so deactivate (canUpdate) is the only "removal" path.
+    staff: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
   },
   Admin: {
     agents: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
@@ -25,6 +28,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     inventory: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     forms: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     users: { canView: true, canCreate: false, canUpdate: false, canDelete: false }, // Cannot manage user roles
+    staff: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
   },
   Manager: {
     agents: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
@@ -36,6 +40,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     inventory: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     forms: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     users: { canView: false, canCreate: false, canUpdate: false, canDelete: false },
+    staff: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
   },
   "Customer Relations": {
     agents: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
@@ -47,6 +52,9 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     inventory: { canView: true, canCreate: true, canUpdate: false, canDelete: false }, // Can add inventory
     forms: { canView: true, canCreate: false, canUpdate: false, canDelete: false }, // Read-only access to forms
     users: { canView: false, canCreate: false, canUpdate: false, canDelete: false },
+    // View-only, own record only - server enforces the row-level scoping
+    // (numbatrak-staff/routes/list.ts), this is just the UI-hiding layer.
+    staff: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
   },
 };
 

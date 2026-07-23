@@ -21,6 +21,8 @@ import numbatrakExpensesRoutes from "./modules/numbatrak-expenses/routes/index.j
 import numbatrakFollowUpsRoutes from "./modules/numbatrak-follow-ups/routes/index.js";
 import numbatrakDashboardRoutes from "./modules/numbatrak-dashboard/routes/index.js";
 import numbatrakFormsRoutes from "./modules/numbatrak-forms/routes/index.js";
+import numbatrakInventoryRoutes from "./modules/numbatrak-inventory/routes/index.js";
+import numbatrakStaffRoutes from "./modules/numbatrak-staff/routes/index.js";
 import collectionsRoutes from "./modules/collections/routes/index.js";
 import cartRoutes from "./modules/cart/routes/index.js";
 import checkoutRoutes from "./modules/checkout/routes/index.js";
@@ -58,6 +60,8 @@ await app.register(numbatrakExpensesRoutes);
 await app.register(numbatrakFollowUpsRoutes);
 await app.register(numbatrakDashboardRoutes);
 await app.register(numbatrakFormsRoutes);
+await app.register(numbatrakInventoryRoutes);
+await app.register(numbatrakStaffRoutes);
 await app.register(collectionsRoutes);
 await app.register(cartRoutes);
 await app.register(checkoutRoutes);
