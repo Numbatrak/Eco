@@ -18,6 +18,10 @@ import {
   Settings,
   Mail,
   Upload,
+  Users,
+  DollarSign,
+  Calendar,
+  AlertTriangle,
 } from "lucide-react";
 
 export type NavPermission = {
@@ -182,6 +186,40 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/accounting",
         requiredPermission: null,
         requiredRoles: ["Manager", "Admin", "Owner"],
+      },
+    ],
+  },
+  {
+    id: "staff-management",
+    label: "Staff Management",
+    items: [
+      {
+        id: "staff",
+        label: "Staff",
+        icon: Users,
+        path: "/staff",
+        requiredPermission: { resource: "staff", action: "canView" },
+      },
+      {
+        id: "payroll",
+        label: "Payroll",
+        icon: DollarSign,
+        path: "/payroll",
+        requiredPermission: { resource: "payroll", action: "canView" },
+      },
+      {
+        id: "attendance",
+        label: "Attendance",
+        icon: Calendar,
+        path: "/attendance",
+        requiredPermission: { resource: "attendance", action: "canView" },
+      },
+      {
+        id: "strikes",
+        label: "Strikes",
+        icon: AlertTriangle,
+        path: "/strikes",
+        requiredPermission: { resource: "strikes", action: "canView" },
       },
     ],
   },

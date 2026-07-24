@@ -69,6 +69,9 @@ const statement = {
   // pattern (see managerRole/csrRole below - csr is row-scoped to their own
   // record, not resource-gated here at all).
   numbatrakStaff: ["view", "manage"],
+  numbatrakPayroll: ["view", "manage"],
+  numbatrakAttendance: ["view", "manage"],
+  numbatrakStrikes: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -99,6 +102,9 @@ export const ownerRole = ac.newRole({
   numbatrakForms: ["view", "create", "update", "delete"],
   numbatrakInventory: ["view", "manage"],
   numbatrakStaff: ["view", "manage"],
+  numbatrakPayroll: ["view", "manage"],
+  numbatrakAttendance: ["view", "manage"],
+  numbatrakStrikes: ["view", "manage"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -126,6 +132,9 @@ export const adminRole = ac.newRole({
   numbatrakForms: ["view", "create", "update", "delete"],
   numbatrakInventory: ["view", "manage"],
   numbatrakStaff: ["view", "manage"],
+  numbatrakPayroll: ["view", "manage"],
+  numbatrakAttendance: ["view", "manage"],
+  numbatrakStrikes: ["view", "manage"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -177,6 +186,9 @@ export const managerRole = ac.newRole({
   numbatrakForms: ["view", "create", "update", "delete"],
   numbatrakInventory: ["view", "manage"],
   numbatrakStaff: ["view", "manage"],
+  numbatrakPayroll: ["view", "manage"],
+  numbatrakAttendance: ["view", "manage"],
+  numbatrakStrikes: ["view", "manage"],
 });
 
 /**
@@ -208,6 +220,9 @@ export const csrRole = ac.newRole({
   // pattern as numbatrakOrders' csrScopeUserId) - a csr can see but not edit
   // their own HR/bank details.
   numbatrakStaff: ["view"],
+  numbatrakPayroll: ["view"],
+  numbatrakAttendance: ["view"],
+  numbatrakStrikes: ["view"],
   // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
 });
 

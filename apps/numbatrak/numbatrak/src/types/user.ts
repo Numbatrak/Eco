@@ -32,4 +32,7 @@ export interface RolePermissions {
   forms: Permission;
   users: Permission;
   staff: Permission;
+  payroll: Permission;
+  attendance: Permission;
+  strikes: Permission;
 }

@@ -1258,3 +1258,119 @@ export const numbatrakMyEarningsSchema = z.object({
   gateStatusMessage: z.string().nullable(),
 });
 export type NumbatrakMyEarnings = z.infer<typeof numbatrakMyEarningsSchema>;
+
+// ---------------------------------------------------------------------------
+// Attendance
+// ---------------------------------------------------------------------------
+
+export const numbatrakAttendanceSettingsSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.boolean(),
+  autoCloseWindowMinutes: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakAttendanceSettings = z.infer<typeof numbatrakAttendanceSettingsSchema>;
+
+export const updateNumbatrakAttendanceSettingsRequestSchema = z.object({
+  enabled: z.boolean().optional(),
+  autoCloseWindowMinutes: z.number().int().min(1).optional(),
+});
+export type UpdateNumbatrakAttendanceSettingsRequest = z.infer<
+  typeof updateNumbatrakAttendanceSettingsRequestSchema
+>;
+
+export const numbatrakAttendanceEventSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  eventDate: z.string(),
+  status: z.enum(["open", "closed"]),
+  closedAt: z.string().nullable(),
+  createdBy: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakAttendanceEvent = z.infer<typeof numbatrakAttendanceEventSchema>;
+
+export const numbatrakAttendanceRecordSchema = z.object({
+  id: z.string().uuid(),
+  eventId: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  status: z.enum(["present", "late", "absent", "exempt"]),
+  markedAt: z.string().nullable(),
+  exemptReason: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakAttendanceRecord = z.infer<typeof numbatrakAttendanceRecordSchema>;
+
+export const numbatrakAttendanceEventDetailSchema = numbatrakAttendanceEventSchema.extend({
+  records: z.array(numbatrakAttendanceRecordSchema),
+});
+export type NumbatrakAttendanceEventDetail = z.infer<typeof numbatrakAttendanceEventDetailSchema>;
+
+export const createNumbatrakAttendanceEventRequestSchema = z.object({
+  title: z.string().trim().min(1),
+  description: z.string().trim().nullable().optional(),
+  eventDate: z.string(),
+});
+export type CreateNumbatrakAttendanceEventRequest = z.infer<
+  typeof createNumbatrakAttendanceEventRequestSchema
+>;
+
+export const markNumbatrakAttendanceRequestSchema = z.object({
+  staffId: z.string().uuid(),
+  status: z.enum(["present", "late", "absent"]),
+});
+export type MarkNumbatrakAttendanceRequest = z.infer<typeof markNumbatrakAttendanceRequestSchema>;
+
+export const exemptNumbatrakAttendanceRequestSchema = z.object({
+  staffId: z.string().uuid(),
+  exemptReason: z.string().trim().min(1),
+});
+export type ExemptNumbatrakAttendanceRequest = z.infer<typeof exemptNumbatrakAttendanceRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Strikes
+// ---------------------------------------------------------------------------
+
+export const numbatrakStrikeSettingsSchema = z.object({
+  id: z.string().uuid(),
+  threshold: z.number().int(),
+  thresholdPeriod: z.enum(["month", "quarter", "year"]),
+  consequence: z.string(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakStrikeSettings = z.infer<typeof numbatrakStrikeSettingsSchema>;
+
+export const updateNumbatrakStrikeSettingsRequestSchema = z.object({
+  threshold: z.number().int().min(1).optional(),
+  thresholdPeriod: z.enum(["month", "quarter", "year"]).optional(),
+  consequence: z.string().trim().min(1).optional(),
+});
+export type UpdateNumbatrakStrikeSettingsRequest = z.infer<typeof updateNumbatrakStrikeSettingsRequestSchema>;
+
+export const numbatrakStrikeSchema = z.object({
+  id: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  reason: z.string(),
+  issuedBy: z.string().nullable(),
+  issuedByName: z.string().nullable(),
+  issuedAt: z.string(),
+  cleared: z.boolean(),
+  clearedBy: z.string().nullable(),
+  clearedAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakStrike = z.infer<typeof numbatrakStrikeSchema>;
+
+export const issueNumbatrakStrikeRequestSchema = z.object({
+  staffIds: z.array(z.string().uuid()).min(1),
+  reason: z.string().trim().min(1),
+});
+export type IssueNumbatrakStrikeRequest = z.infer<typeof issueNumbatrakStrikeRequestSchema>;

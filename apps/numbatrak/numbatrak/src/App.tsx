@@ -34,6 +34,9 @@ const PlaceholderPage = lazy(() => import("./components/PlaceholderPage").then((
 const InventoryForm = lazy(() => import("./components/InventoryForm"));
 const StaffForm = lazy(() => import("./components/StaffForm"));
 const StaffDetailPage = lazy(() => import("./components/staff/StaffDetailPage"));
+const PayrollPage = lazy(() => import("./components/payroll/PayrollPage").then((m) => ({ default: m.PayrollPage })));
+const AttendancePage = lazy(() => import("./components/attendance/AttendancePage").then((m) => ({ default: m.AttendancePage })));
+const StrikesPage = lazy(() => import("./components/strikes/StrikesPage").then((m) => ({ default: m.StrikesPage })));
 const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
 const EmailVerificationPage = lazy(() =>
@@ -473,6 +476,9 @@ function AppContent() {
                 <Route path="/inventory" element={<InventoryForm />} />
                 <Route path="/staff/:staffId" element={<StaffDetailPage />} />
                 <Route path="/staff" element={<StaffForm />} />
+                <Route path="/payroll" element={<PayrollPage />} />
+                <Route path="/attendance" element={<AttendancePage />} />
+                <Route path="/strikes" element={<StrikesPage />} />
                 <Route
                   path="/integrations"
                   element={
