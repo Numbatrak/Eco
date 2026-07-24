@@ -1578,3 +1578,428 @@ export const upsertNumbatrakOrderAssignmentWeightRequestSchema = z.object({
 export type UpsertNumbatrakOrderAssignmentWeightRequest = z.infer<
   typeof upsertNumbatrakOrderAssignmentWeightRequestSchema
 >;
+
+// ---------------------------------------------------------------------------
+// Media Buyers
+// ---------------------------------------------------------------------------
+
+export const numbatrakMediaBuyerSettingsSchema = z.object({
+  id: z.string().uuid(),
+  weeklyReviewEnabled: z.boolean(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakMediaBuyerSettings = z.infer<typeof numbatrakMediaBuyerSettingsSchema>;
+
+export const updateNumbatrakMediaBuyerSettingsRequestSchema = z.object({
+  weeklyReviewEnabled: z.boolean().optional(),
+});
+export type UpdateNumbatrakMediaBuyerSettingsRequest = z.infer<typeof updateNumbatrakMediaBuyerSettingsRequestSchema>;
+
+export const numbatrakContractorRoleSchema = z.enum(["vo_artist", "video_editor"]);
+export type NumbatrakContractorRole = z.infer<typeof numbatrakContractorRoleSchema>;
+
+export const numbatrakContractorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  role: numbatrakContractorRoleSchema,
+  rate: z.number(),
+  active: z.boolean(),
+  piecesDone: z.number().int(),
+  piecesPaid: z.number().int(),
+  piecesUnpaid: z.number().int(),
+  amountOwed: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakContractor = z.infer<typeof numbatrakContractorSchema>;
+
+export const createNumbatrakContractorRequestSchema = z.object({
+  name: z.string().trim().min(1),
+  role: numbatrakContractorRoleSchema,
+  rate: z.number().nonnegative(),
+});
+export type CreateNumbatrakContractorRequest = z.infer<typeof createNumbatrakContractorRequestSchema>;
+
+export const numbatrakCreativeTypeSchema = z.enum(["voiceover", "ugc", "ai_story", "sound", "other"]);
+export type NumbatrakCreativeType = z.infer<typeof numbatrakCreativeTypeSchema>;
+
+export const numbatrakProductionBatchStatusSchema = z.enum(["briefed", "shooting", "editing", "done"]);
+export type NumbatrakProductionBatchStatus = z.infer<typeof numbatrakProductionBatchStatusSchema>;
+
+export const numbatrakProductionBatchSchema = z.object({
+  id: z.string().uuid(),
+  buyerId: z.string().nullable(),
+  buyerName: z.string().nullable(),
+  brand: z.string().nullable(),
+  productId: z.string().nullable(),
+  creativeType: numbatrakCreativeTypeSchema,
+  description: z.string().nullable(),
+  voArtistId: z.string().uuid().nullable(),
+  voArtistName: z.string().nullable(),
+  editorId: z.string().uuid().nullable(),
+  editorName: z.string().nullable(),
+  videoCount: z.number().int(),
+  status: numbatrakProductionBatchStatusSchema,
+  driveLink: z.string().nullable(),
+  doneAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakProductionBatch = z.infer<typeof numbatrakProductionBatchSchema>;
+
+export const createNumbatrakProductionBatchRequestSchema = z.object({
+  buyerId: z.string().nullable().optional(),
+  brand: z.string().trim().nullable().optional(),
+  productId: z.string().nullable().optional(),
+  creativeType: numbatrakCreativeTypeSchema,
+  description: z.string().trim().nullable().optional(),
+  voArtistId: z.string().uuid().nullable().optional(),
+  editorId: z.string().uuid().nullable().optional(),
+  videoCount: z.number().int().min(1).default(1),
+});
+export type CreateNumbatrakProductionBatchRequest = z.infer<typeof createNumbatrakProductionBatchRequestSchema>;
+
+export const numbatrakContractorPaymentSchema = z.object({
+  id: z.string().uuid(),
+  contractorId: z.string().uuid(),
+  contractorName: z.string().nullable(),
+  pieces: z.number().int(),
+  amount: z.number(),
+  brand: z.string().nullable(),
+  paidAt: z.string(),
+  createdAt: z.string().nullable(),
+});
+export type NumbatrakContractorPayment = z.infer<typeof numbatrakContractorPaymentSchema>;
+
+export const numbatrakAdCatalogEntrySchema = z.object({
+  id: z.string().uuid(),
+  batchId: z.string().uuid().nullable(),
+  name: z.string(),
+  hookType: z.string().nullable(),
+  creativeType: z.string().nullable(),
+  brand: z.string().nullable(),
+  productId: z.string().nullable(),
+  offerId: z.string().nullable(),
+  driveLink: z.string().nullable(),
+  editorName: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakAdCatalogEntry = z.infer<typeof numbatrakAdCatalogEntrySchema>;
+
+export const numbatrakAdSpendEntrySchema = z.object({
+  id: z.string().uuid(),
+  buyerId: z.string().nullable(),
+  buyerName: z.string().nullable(),
+  spendDate: z.string(),
+  brand: z.string().nullable(),
+  productId: z.string().nullable(),
+  offerId: z.string().nullable(),
+  platform: z.string().nullable(),
+  spend: z.number(),
+  orders: z.number().int(),
+  cpa: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakAdSpendEntry = z.infer<typeof numbatrakAdSpendEntrySchema>;
+
+export const createNumbatrakAdSpendRequestSchema = z.object({
+  spendDate: z.string(),
+  brand: z.string().trim().nullable().optional(),
+  productId: z.string().nullable().optional(),
+  offerId: z.string().nullable().optional(),
+  platform: z.string().trim().nullable().optional(),
+  spend: z.number().nonnegative(),
+  orders: z.number().int().nonnegative(),
+});
+export type CreateNumbatrakAdSpendRequest = z.infer<typeof createNumbatrakAdSpendRequestSchema>;
+
+export const numbatrakCpaTargetSchema = z.object({
+  id: z.string().uuid(),
+  buyerId: z.string().nullable(),
+  buyerName: z.string().nullable(),
+  brand: z.string().nullable(),
+  productId: z.string().nullable(),
+  offerId: z.string().nullable(),
+  cpaTarget: z.number(),
+  weeklyBudget: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakCpaTarget = z.infer<typeof numbatrakCpaTargetSchema>;
+
+export const upsertNumbatrakCpaTargetRequestSchema = z.object({
+  buyerId: z.string().nullable().optional(),
+  brand: z.string().trim().nullable().optional(),
+  productId: z.string().nullable().optional(),
+  offerId: z.string().nullable().optional(),
+  cpaTarget: z.number().nonnegative(),
+  weeklyBudget: z.number().nonnegative(),
+});
+export type UpsertNumbatrakCpaTargetRequest = z.infer<typeof upsertNumbatrakCpaTargetRequestSchema>;
+
+export const numbatrakWeeklyReviewVerdictSchema = z.enum(["on_track", "needs_attention", "critical"]);
+export type NumbatrakWeeklyReviewVerdict = z.infer<typeof numbatrakWeeklyReviewVerdictSchema>;
+
+export const numbatrakWeeklyReviewSchema = z.object({
+  id: z.string().uuid(),
+  buyerId: z.string(),
+  buyerName: z.string().nullable(),
+  weekStart: z.string(),
+  adsToScale: z.string().nullable(),
+  adsToPause: z.string().nullable(),
+  adsToKill: z.string().nullable(),
+  biggestWin: z.string().nullable(),
+  biggestIssue: z.string().nullable(),
+  verdict: numbatrakWeeklyReviewVerdictSchema,
+  nextWeekDecisions: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakWeeklyReview = z.infer<typeof numbatrakWeeklyReviewSchema>;
+
+export const createNumbatrakWeeklyReviewRequestSchema = z.object({
+  weekStart: z.string(),
+  adsToScale: z.string().trim().nullable().optional(),
+  adsToPause: z.string().trim().nullable().optional(),
+  adsToKill: z.string().trim().nullable().optional(),
+  biggestWin: z.string().trim().nullable().optional(),
+  biggestIssue: z.string().trim().nullable().optional(),
+  verdict: numbatrakWeeklyReviewVerdictSchema,
+  nextWeekDecisions: z.string().trim().nullable().optional(),
+});
+export type CreateNumbatrakWeeklyReviewRequest = z.infer<typeof createNumbatrakWeeklyReviewRequestSchema>;
+
+export const numbatrakPerformanceAnalyticsSchema = z.object({
+  brand: z.string().nullable(),
+  productId: z.string().nullable(),
+  offerId: z.string().nullable(),
+  platform: z.string().nullable(),
+  buyerName: z.string().nullable(),
+  totalSpend: z.number(),
+  totalOrders: z.number().int(),
+  cpa: z.number(),
+  revenue: z.number(),
+  roas: z.number(),
+});
+export type NumbatrakPerformanceAnalytics = z.infer<typeof numbatrakPerformanceAnalyticsSchema>;
+
+// ---------------------------------------------------------------------------
+// CRM (Customer Management)
+// ---------------------------------------------------------------------------
+
+export const numbatrakCustomerSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phone: z.string(),
+  email: z.string().nullable(),
+  whatsapp: z.string().nullable(),
+  location: z.string().nullable(),
+  firstClickSource: z.string().nullable(),
+  lastClickSource: z.string().nullable(),
+  notes: z.string().nullable(),
+  ltv: z.number(),
+  orderRevenue: z.number(),
+  morePurchaseRevenue: z.number(),
+  orderCount: z.number().int(),
+  morePurchaseCount: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakCustomer = z.infer<typeof numbatrakCustomerSchema>;
+
+export const createNumbatrakCustomerRequestSchema = z.object({
+  name: z.string().trim().min(1),
+  phone: z.string().trim().min(1),
+  email: z.string().trim().email().nullable().optional(),
+  whatsapp: z.string().trim().nullable().optional(),
+  location: z.string().trim().nullable().optional(),
+  firstClickSource: z.string().trim().nullable().optional(),
+  lastClickSource: z.string().trim().nullable().optional(),
+  notes: z.string().trim().nullable().optional(),
+});
+export type CreateNumbatrakCustomerRequest = z.infer<typeof createNumbatrakCustomerRequestSchema>;
+
+export const updateNumbatrakCustomerRequestSchema = createNumbatrakCustomerRequestSchema.partial();
+export type UpdateNumbatrakCustomerRequest = z.infer<typeof updateNumbatrakCustomerRequestSchema>;
+
+export const numbatrakFeedbackSettingsSchema = z.object({
+  id: z.string().uuid(),
+  callWindowDays: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakFeedbackSettings = z.infer<typeof numbatrakFeedbackSettingsSchema>;
+
+export const numbatrakFeedbackCallDispositionSchema = z.enum([
+  "answered", "no_answer", "wrong_number", "switched_off", "unreachable", "callback_requested",
+]);
+export type NumbatrakFeedbackCallDisposition = z.infer<typeof numbatrakFeedbackCallDispositionSchema>;
+
+export const numbatrakReorderLikelihoodSchema = z.enum(["definitely", "maybe", "no", "unlikely"]);
+export type NumbatrakReorderLikelihood = z.infer<typeof numbatrakReorderLikelihoodSchema>;
+
+export const numbatrakFeedbackCallSchema = z.object({
+  id: z.string().uuid(),
+  customerId: z.string().uuid(),
+  customerName: z.string().nullable(),
+  customerPhone: z.string().nullable(),
+  orderId: z.string().nullable(),
+  assignedTo: z.string().nullable(),
+  assignedToName: z.string().nullable(),
+  scheduledAt: z.string(),
+  disposition: numbatrakFeedbackCallDispositionSchema.nullable(),
+  satisfactionScore: z.number().int().nullable(),
+  reorderLikelihood: numbatrakReorderLikelihoodSchema.nullable(),
+  callbackAt: z.string().nullable(),
+  attempts: z.number().int(),
+  completedAt: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakFeedbackCall = z.infer<typeof numbatrakFeedbackCallSchema>;
+
+export const dispositionNumbatrakFeedbackCallRequestSchema = z.object({
+  disposition: numbatrakFeedbackCallDispositionSchema,
+  satisfactionScore: z.number().int().min(1).max(5).nullable().optional(),
+  reorderLikelihood: numbatrakReorderLikelihoodSchema.nullable().optional(),
+  callbackAt: z.string().nullable().optional(),
+});
+export type DispositionNumbatrakFeedbackCallRequest = z.infer<typeof dispositionNumbatrakFeedbackCallRequestSchema>;
+
+export const numbatrakComplaintTypeSchema = z.enum([
+  "wrong_size", "damaged", "never_received", "wrong_product", "quality_issue", "other",
+]);
+export type NumbatrakComplaintType = z.infer<typeof numbatrakComplaintTypeSchema>;
+
+export const numbatrakComplaintStatusSchema = z.enum(["open", "escalated", "resolved"]);
+export type NumbatrakComplaintStatus = z.infer<typeof numbatrakComplaintStatusSchema>;
+
+export const numbatrakComplaintResolutionTypeSchema = z.enum(["refund", "replacement", "other"]);
+export type NumbatrakComplaintResolutionType = z.infer<typeof numbatrakComplaintResolutionTypeSchema>;
+
+export const numbatrakComplaintSchema = z.object({
+  id: z.string().uuid(),
+  customerId: z.string().uuid(),
+  customerName: z.string().nullable(),
+  orderId: z.string().nullable(),
+  complaintType: numbatrakComplaintTypeSchema.nullable(),
+  description: z.string(),
+  attachments: z.string().nullable(),
+  status: numbatrakComplaintStatusSchema,
+  resolution: z.string().nullable(),
+  resolutionType: numbatrakComplaintResolutionTypeSchema.nullable(),
+  escalatedAt: z.string().nullable(),
+  resolvedAt: z.string().nullable(),
+  resolvedBy: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakComplaint = z.infer<typeof numbatrakComplaintSchema>;
+
+export const createNumbatrakComplaintRequestSchema = z.object({
+  customerId: z.string().uuid(),
+  orderId: z.string().nullable().optional(),
+  complaintType: numbatrakComplaintTypeSchema.nullable().optional(),
+  description: z.string().trim().min(1),
+  attachments: z.string().trim().nullable().optional(),
+});
+export type CreateNumbatrakComplaintRequest = z.infer<typeof createNumbatrakComplaintRequestSchema>;
+
+export const resolveNumbatrakComplaintRequestSchema = z.object({
+  resolution: z.string().trim().min(1),
+  resolutionType: numbatrakComplaintResolutionTypeSchema,
+});
+export type ResolveNumbatrakComplaintRequest = z.infer<typeof resolveNumbatrakComplaintRequestSchema>;
+
+export const numbatrakMorePurchaseSchema = z.object({
+  id: z.string().uuid(),
+  customerId: z.string().uuid(),
+  customerName: z.string().nullable(),
+  feedbackCallId: z.string().uuid().nullable(),
+  productId: z.string().nullable(),
+  productName: z.string().nullable(),
+  quantity: z.number().int(),
+  amount: z.number(),
+  cogs: z.number(),
+  deliveryCost: z.number(),
+  profit: z.number(),
+  agentId: z.string().nullable(),
+  status: z.string(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakMorePurchase = z.infer<typeof numbatrakMorePurchaseSchema>;
+
+export const createNumbatrakMorePurchaseRequestSchema = z.object({
+  customerId: z.string().uuid(),
+  feedbackCallId: z.string().uuid().nullable().optional(),
+  productId: z.string().nullable().optional(),
+  productName: z.string().trim().nullable().optional(),
+  quantity: z.number().int().min(1).default(1),
+  amount: z.number().nonnegative(),
+  cogs: z.number().nonnegative().default(0),
+  deliveryCost: z.number().nonnegative().default(0),
+});
+export type CreateNumbatrakMorePurchaseRequest = z.infer<typeof createNumbatrakMorePurchaseRequestSchema>;
+
+export const numbatrakCampaignSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  channel: z.enum(["email", "whatsapp"]),
+  segmentFilter: z.string().nullable(),
+  subject: z.string().nullable(),
+  body: z.string(),
+  recipientCount: z.number().int(),
+  sentCount: z.number().int(),
+  failedCount: z.number().int(),
+  status: z.enum(["draft", "sending", "sent", "failed"]),
+  sentAt: z.string().nullable(),
+  createdBy: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakCampaign = z.infer<typeof numbatrakCampaignSchema>;
+
+export const createNumbatrakCampaignRequestSchema = z.object({
+  name: z.string().trim().min(1),
+  channel: z.enum(["email", "whatsapp"]),
+  segmentFilter: z.string().trim().nullable().optional(),
+  subject: z.string().trim().nullable().optional(),
+  body: z.string().trim().min(1),
+});
+export type CreateNumbatrakCampaignRequest = z.infer<typeof createNumbatrakCampaignRequestSchema>;
+
+export const numbatrakCrmCreditSchema = z.object({
+  channel: z.enum(["email", "whatsapp"]),
+  balance: z.number().int(),
+});
+export type NumbatrakCrmCredit = z.infer<typeof numbatrakCrmCreditSchema>;
+
+export const numbatrakFeedbackDashboardSchema = z.object({
+  totalCalls: z.number().int(),
+  attempted: z.number().int(),
+  answerRate: z.number(),
+  avgAttemptsToReach: z.number(),
+  avgSatisfaction: z.number(),
+  happyRate: z.number(),
+  unhappyRate: z.number(),
+  morePurchaseRevenue: z.number(),
+  morePurchaseProfit: z.number(),
+  profitPerCall: z.number(),
+});
+export type NumbatrakFeedbackDashboard = z.infer<typeof numbatrakFeedbackDashboardSchema>;
+
+export const numbatrakComplaintDashboardSchema = z.object({
+  total: z.number().int(),
+  open: z.number().int(),
+  escalated: z.number().int(),
+  resolved: z.number().int(),
+  resolutionRate: z.number(),
+  refundCount: z.number().int(),
+  replacementCount: z.number().int(),
+  byType: z.array(z.object({ type: z.string(), count: z.number().int() })),
+});
+export type NumbatrakComplaintDashboard = z.infer<typeof numbatrakComplaintDashboardSchema>;

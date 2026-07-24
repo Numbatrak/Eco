@@ -38,4 +38,6 @@ export interface RolePermissions {
   stars: Permission;
   leave: Permission;
   orderAssignment: Permission;
+  mediaBuyers: Permission;
+  crm: Permission;
 }

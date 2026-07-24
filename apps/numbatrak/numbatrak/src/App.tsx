@@ -40,6 +40,8 @@ const StrikesPage = lazy(() => import("./components/strikes/StrikesPage").then((
 const StarsPage = lazy(() => import("./components/stars/StarsPage").then((m) => ({ default: m.StarsPage })));
 const LeavePage = lazy(() => import("./components/leave/LeavePage").then((m) => ({ default: m.LeavePage })));
 const OrderAssignmentPage = lazy(() => import("./components/order-assignment/OrderAssignmentPage").then((m) => ({ default: m.OrderAssignmentPage })));
+const MediaBuyersPage = lazy(() => import("./components/media-buyers/MediaBuyersPage").then((m) => ({ default: m.MediaBuyersPage })));
+const CrmPage = lazy(() => import("./components/crm/CrmPage").then((m) => ({ default: m.CrmPage })));
 const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
 const EmailVerificationPage = lazy(() =>
@@ -485,6 +487,8 @@ function AppContent() {
                 <Route path="/stars" element={<StarsPage />} />
                 <Route path="/leave" element={<LeavePage />} />
                 <Route path="/order-assignment" element={<OrderAssignmentPage />} />
+                <Route path="/media-buyers" element={<MediaBuyersPage />} />
+                <Route path="/crm" element={<CrmPage />} />
                 <Route
                   path="/integrations"
                   element={

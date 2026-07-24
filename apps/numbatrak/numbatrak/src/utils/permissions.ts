@@ -21,6 +21,8 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     stars: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   Admin: {
     agents: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
@@ -39,6 +41,8 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     stars: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   Manager: {
     agents: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
@@ -57,6 +61,8 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     stars: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   "Customer Relations": {
     agents: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
@@ -75,6 +81,8 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     stars: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
     leave: { canView: true, canCreate: true, canUpdate: false, canDelete: false },
     orderAssignment: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
+    mediaBuyers: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
+    crm: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
   },
 };
 

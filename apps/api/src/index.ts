@@ -29,6 +29,8 @@ import numbatrakStrikesRoutes from "./modules/numbatrak-strikes/routes/index.js"
 import numbatrakStarsRoutes from "./modules/numbatrak-stars/routes/index.js";
 import numbatrakLeaveRoutes from "./modules/numbatrak-leave/routes/index.js";
 import numbatrakOrderAssignmentRoutes from "./modules/numbatrak-order-assignment/routes/index.js";
+import numbatrakMediaBuyersRoutes from "./modules/numbatrak-media-buyers/routes/index.js";
+import numbatrakCrmRoutes from "./modules/numbatrak-crm/routes/index.js";
 import collectionsRoutes from "./modules/collections/routes/index.js";
 import cartRoutes from "./modules/cart/routes/index.js";
 import checkoutRoutes from "./modules/checkout/routes/index.js";
@@ -74,6 +76,8 @@ await app.register(numbatrakStrikesRoutes);
 await app.register(numbatrakStarsRoutes);
 await app.register(numbatrakLeaveRoutes);
 await app.register(numbatrakOrderAssignmentRoutes);
+await app.register(numbatrakMediaBuyersRoutes);
+await app.register(numbatrakCrmRoutes);
 await app.register(collectionsRoutes);
 await app.register(cartRoutes);
 await app.register(checkoutRoutes);

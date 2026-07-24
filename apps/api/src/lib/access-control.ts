@@ -75,6 +75,8 @@ const statement = {
   numbatrakStars: ["view", "manage"],
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
+  numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakCrm: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -111,6 +113,8 @@ export const ownerRole = ac.newRole({
   numbatrakStars: ["view", "manage"],
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
+  numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakCrm: ["view", "manage"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -144,6 +148,8 @@ export const adminRole = ac.newRole({
   numbatrakStars: ["view", "manage"],
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
+  numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakCrm: ["view", "manage"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -201,6 +207,8 @@ export const managerRole = ac.newRole({
   numbatrakStars: ["view", "manage"],
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
+  numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakCrm: ["view", "manage"],
 });
 
 /**
@@ -238,6 +246,8 @@ export const csrRole = ac.newRole({
   numbatrakStars: ["view"],
   numbatrakLeave: ["view"],
   numbatrakOrderAssignment: ["view"],
+  numbatrakMediaBuyers: ["view"],
+  numbatrakCrm: ["view"],
   // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
 });
 

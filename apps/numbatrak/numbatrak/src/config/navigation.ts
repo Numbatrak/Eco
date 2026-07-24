@@ -25,6 +25,8 @@ import {
   Star,
   CalendarOff,
   Shuffle,
+  Megaphone,
+  HeartHandshake,
 } from "lucide-react";
 
 export type NavPermission = {
@@ -237,6 +239,26 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: CalendarOff,
         path: "/leave",
         requiredPermission: { resource: "leave", action: "canView" },
+      },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      {
+        id: "media-buyers",
+        label: "Media Buyers",
+        icon: Megaphone,
+        path: "/media-buyers",
+        requiredPermission: { resource: "mediaBuyers", action: "canView" },
+      },
+      {
+        id: "crm",
+        label: "Customer Management",
+        icon: HeartHandshake,
+        path: "/crm",
+        requiredPermission: { resource: "crm", action: "canView" },
       },
     ],
   },
