@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTheme } from "next-themes";
-import { LogOut } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { usePermissions } from "../hooks/usePermissions";
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -59,6 +59,37 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     [location.pathname, pendingInvitationsCount, hasPermission, hasAnyRole]
   );
 
+  const groupHasActiveItem = useCallback(
+    (items: NavItemConfig[]) =>
+      items.some((item) => isNavPathActive(location.pathname, item.path)),
+    [location.pathname]
+  );
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    for (const group of NAV_GROUPS) {
+      if (groupHasActiveItem(group.items)) {
+        initial.add(group.id);
+      }
+    }
+    if (initial.size === 0 && NAV_GROUPS.length > 0) {
+      initial.add(NAV_GROUPS[0].id);
+    }
+    return initial;
+  });
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  };
+
   return (
     <>
       <div
@@ -74,34 +105,60 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         </div>
 
         <nav className="sidebar-nav">
-          {visibleGroups.map((group) => (
-            <div key={group.id} className="sidebar-section">
-              <p className="sidebar-section-title">{group.label}</p>
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = isNavPathActive(location.pathname, item.path);
-                const badge =
-                  item.id === "accept-invitation" && pendingInvitationsCount > 0
-                    ? pendingInvitationsCount
-                    : undefined;
+          {visibleGroups.map((group) => {
+            const isExpanded = expandedGroups.has(group.id);
 
-                return (
-                  <NavLink
-                    key={item.id}
-                    to={item.path}
-                    className={`sidebar-nav-item ${isActive ? "active" : ""}`}
-                    onClick={onClose}
-                  >
-                    <Icon className="sidebar-nav-item-icon" />
-                    <span className="sidebar-nav-item-text">{item.label}</span>
-                    {badge != null && badge > 0 && (
-                      <span className="sidebar-nav-badge">{badge}</span>
-                    )}
-                  </NavLink>
-                );
-              })}
-            </div>
-          ))}
+            return (
+              <div key={group.id} className="sidebar-section">
+                <button
+                  type="button"
+                  className="sidebar-section-toggle"
+                  onClick={() => toggleGroup(group.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="sidebar-section-title">{group.label}</span>
+                  <ChevronDown
+                    className={`sidebar-section-chevron ${isExpanded ? "expanded" : ""}`}
+                  />
+                </button>
+                <div
+                  className={`sidebar-section-items ${isExpanded ? "expanded" : ""}`}
+                >
+                  <div className="sidebar-section-items-inner">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = isNavPathActive(
+                        location.pathname,
+                        item.path
+                      );
+                      const badge =
+                        item.id === "accept-invitation" &&
+                        pendingInvitationsCount > 0
+                          ? pendingInvitationsCount
+                          : undefined;
+
+                      return (
+                        <NavLink
+                          key={item.id}
+                          to={item.path}
+                          className={`sidebar-nav-item ${isActive ? "active" : ""}`}
+                          onClick={onClose}
+                        >
+                          <Icon className="sidebar-nav-item-icon" />
+                          <span className="sidebar-nav-item-text">
+                            {item.label}
+                          </span>
+                          {badge != null && badge > 0 && (
+                            <span className="sidebar-nav-badge">{badge}</span>
+                          )}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
 
           <div className="sidebar-section sidebar-section-footer">
             <button
