@@ -35,4 +35,7 @@ export interface RolePermissions {
   payroll: Permission;
   attendance: Permission;
   strikes: Permission;
+  stars: Permission;
+  leave: Permission;
+  orderAssignment: Permission;
 }

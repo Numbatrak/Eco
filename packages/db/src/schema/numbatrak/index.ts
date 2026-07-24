@@ -28,6 +28,8 @@ export * from "./staff.js";
 export * from "./payroll.js";
 export * from "./attendance.js";
 export * from "./strikes.js";
+export * from "./stars.js";
+export * from "./leave.js";
 
 import { numbatrakAgents, numbatrakCsrNameAliases } from "./agents.js";
 import {
@@ -60,6 +62,8 @@ import { numbatrakStaff, numbatrakStaffSubBrands } from "./staff.js";
 import { numbatrakPayStructures, numbatrakPayrollRuns, numbatrakPayrollLines } from "./payroll.js";
 import { numbatrakAttendanceSettings, numbatrakAttendanceEvents, numbatrakAttendanceRecords } from "./attendance.js";
 import { numbatrakStrikeSettings, numbatrakStrikes } from "./strikes.js";
+import { numbatrakStarSettings, numbatrakStarTiers, numbatrakStars } from "./stars.js";
+import { numbatrakLeaveSettings, numbatrakLeaveBalances, numbatrakLeaveRequests } from "./leave.js";
 
 // Flat aggregate for merging into the main `schema` object in ../../schema.ts
 // (drizzle(client, { schema }) needs every table as a top-level key for
@@ -101,4 +105,10 @@ export const numbatrakSchema = {
   numbatrakAttendanceRecords,
   numbatrakStrikeSettings,
   numbatrakStrikes,
+  numbatrakStarSettings,
+  numbatrakStarTiers,
+  numbatrakStars,
+  numbatrakLeaveSettings,
+  numbatrakLeaveBalances,
+  numbatrakLeaveRequests,
 };

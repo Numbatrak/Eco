@@ -1374,3 +1374,207 @@ export const issueNumbatrakStrikeRequestSchema = z.object({
   reason: z.string().trim().min(1),
 });
 export type IssueNumbatrakStrikeRequest = z.infer<typeof issueNumbatrakStrikeRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Stars & Leaderboard
+// ---------------------------------------------------------------------------
+
+export const numbatrakSotmCriteriaSchema = z.enum([
+  "manual",
+  "highest_delivery",
+  "highest_delivery_rate",
+  "highest_revenue",
+  "highest_revenue_per_order",
+  "highest_star_tier",
+  "most_upsells",
+]);
+export type NumbatrakSotmCriteria = z.infer<typeof numbatrakSotmCriteriaSchema>;
+
+export const numbatrakStarSettingsSchema = z.object({
+  id: z.string().uuid(),
+  enabled: z.boolean(),
+  sotmEnabled: z.boolean(),
+  sotmCriteria: numbatrakSotmCriteriaSchema,
+  sotmMinStarTier: z.number().int(),
+  sotmWinnerCount: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakStarSettings = z.infer<typeof numbatrakStarSettingsSchema>;
+
+export const updateNumbatrakStarSettingsRequestSchema = z.object({
+  enabled: z.boolean().optional(),
+  sotmEnabled: z.boolean().optional(),
+  sotmCriteria: numbatrakSotmCriteriaSchema.optional(),
+  sotmMinStarTier: z.number().int().min(0).optional(),
+  sotmWinnerCount: z.number().int().min(1).optional(),
+});
+export type UpdateNumbatrakStarSettingsRequest = z.infer<typeof updateNumbatrakStarSettingsRequestSchema>;
+
+export const numbatrakStarTierSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  minPoints: z.number().int(),
+  displayOrder: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakStarTier = z.infer<typeof numbatrakStarTierSchema>;
+
+export const createNumbatrakStarTierRequestSchema = z.object({
+  name: z.string().trim().min(1),
+  minPoints: z.number().int().min(0),
+  displayOrder: z.number().int().optional(),
+});
+export type CreateNumbatrakStarTierRequest = z.infer<typeof createNumbatrakStarTierRequestSchema>;
+
+export const numbatrakStarSchema = z.object({
+  id: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  points: z.number().int(),
+  reason: z.string(),
+  awardedBy: z.string().nullable(),
+  awardedByName: z.string().nullable(),
+  awardedAt: z.string(),
+  month: z.string(),
+  createdAt: z.string().nullable(),
+});
+export type NumbatrakStar = z.infer<typeof numbatrakStarSchema>;
+
+export const awardNumbatrakStarRequestSchema = z.object({
+  staffId: z.string().uuid(),
+  points: z.number().int().min(1).default(1),
+  reason: z.string().trim().min(1),
+});
+export type AwardNumbatrakStarRequest = z.infer<typeof awardNumbatrakStarRequestSchema>;
+
+export const numbatrakLeaderboardEntrySchema = z.object({
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  totalPoints: z.number().int(),
+  tierName: z.string().nullable(),
+  rank: z.number().int(),
+});
+export type NumbatrakLeaderboardEntry = z.infer<typeof numbatrakLeaderboardEntrySchema>;
+
+// ---------------------------------------------------------------------------
+// Leave
+// ---------------------------------------------------------------------------
+
+export const numbatrakLeaveTypeSchema = z.enum(["annual", "sick", "emergency", "unpaid"]);
+export type NumbatrakLeaveType = z.infer<typeof numbatrakLeaveTypeSchema>;
+
+export const numbatrakLeaveStatusSchema = z.enum(["pending", "approved", "declined"]);
+export type NumbatrakLeaveStatus = z.infer<typeof numbatrakLeaveStatusSchema>;
+
+export const numbatrakLeaveSettingsSchema = z.object({
+  id: z.string().uuid(),
+  annualDays: z.number().int(),
+  sickDays: z.number().int(),
+  emergencyDays: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakLeaveSettings = z.infer<typeof numbatrakLeaveSettingsSchema>;
+
+export const updateNumbatrakLeaveSettingsRequestSchema = z.object({
+  annualDays: z.number().int().min(0).optional(),
+  sickDays: z.number().int().min(0).optional(),
+  emergencyDays: z.number().int().min(0).optional(),
+});
+export type UpdateNumbatrakLeaveSettingsRequest = z.infer<typeof updateNumbatrakLeaveSettingsRequestSchema>;
+
+export const numbatrakLeaveBalanceSchema = z.object({
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  year: z.number().int(),
+  annualEntitled: z.number().int(),
+  annualUsed: z.number().int(),
+  annualRemaining: z.number().int(),
+  sickEntitled: z.number().int(),
+  sickUsed: z.number().int(),
+  sickRemaining: z.number().int(),
+  emergencyEntitled: z.number().int(),
+  emergencyUsed: z.number().int(),
+  emergencyRemaining: z.number().int(),
+  unpaidUsed: z.number().int(),
+});
+export type NumbatrakLeaveBalance = z.infer<typeof numbatrakLeaveBalanceSchema>;
+
+export const numbatrakLeaveRequestSchema = z.object({
+  id: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  leaveType: numbatrakLeaveTypeSchema,
+  startDate: z.string(),
+  endDate: z.string(),
+  days: z.number().int(),
+  reason: z.string().nullable(),
+  status: numbatrakLeaveStatusSchema,
+  decidedBy: z.string().nullable(),
+  decidedByName: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  decisionNote: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakLeaveRequest = z.infer<typeof numbatrakLeaveRequestSchema>;
+
+export const createNumbatrakLeaveRequestSchema = z.object({
+  leaveType: numbatrakLeaveTypeSchema,
+  startDate: z.string(),
+  endDate: z.string(),
+  days: z.number().int().min(1),
+  reason: z.string().trim().nullable().optional(),
+});
+export type CreateNumbatrakLeaveRequestInput = z.infer<typeof createNumbatrakLeaveRequestSchema>;
+
+export const decideNumbatrakLeaveRequestSchema = z.object({
+  status: z.enum(["approved", "declined"]),
+  decisionNote: z.string().trim().nullable().optional(),
+});
+export type DecideNumbatrakLeaveRequestInput = z.infer<typeof decideNumbatrakLeaveRequestSchema>;
+
+// ---------------------------------------------------------------------------
+// Order Assignment
+// ---------------------------------------------------------------------------
+
+export const numbatrakOrderAssignmentMethodSchema = z.enum(["round_robin", "percentage"]);
+export type NumbatrakOrderAssignmentMethod = z.infer<typeof numbatrakOrderAssignmentMethodSchema>;
+
+export const numbatrakOrderAssignmentSettingsSchema = z.object({
+  id: z.string().uuid(),
+  assignmentMethod: numbatrakOrderAssignmentMethodSchema,
+  lastAssignedUserId: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakOrderAssignmentSettings = z.infer<typeof numbatrakOrderAssignmentSettingsSchema>;
+
+export const updateNumbatrakOrderAssignmentSettingsRequestSchema = z.object({
+  assignmentMethod: numbatrakOrderAssignmentMethodSchema,
+});
+export type UpdateNumbatrakOrderAssignmentSettingsInput = z.infer<
+  typeof updateNumbatrakOrderAssignmentSettingsRequestSchema
+>;
+
+export const numbatrakOrderAssignmentWeightSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string(),
+  userName: z.string().nullable(),
+  percentage: z.number(),
+  isPaused: z.boolean(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakOrderAssignmentWeight = z.infer<typeof numbatrakOrderAssignmentWeightSchema>;
+
+export const upsertNumbatrakOrderAssignmentWeightRequestSchema = z.object({
+  userId: z.string().trim().min(1),
+  percentage: z.number().min(0).max(100),
+  isPaused: z.boolean().optional(),
+});
+export type UpsertNumbatrakOrderAssignmentWeightRequest = z.infer<
+  typeof upsertNumbatrakOrderAssignmentWeightRequestSchema
+>;

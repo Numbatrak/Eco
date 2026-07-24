@@ -37,6 +37,9 @@ const StaffDetailPage = lazy(() => import("./components/staff/StaffDetailPage"))
 const PayrollPage = lazy(() => import("./components/payroll/PayrollPage").then((m) => ({ default: m.PayrollPage })));
 const AttendancePage = lazy(() => import("./components/attendance/AttendancePage").then((m) => ({ default: m.AttendancePage })));
 const StrikesPage = lazy(() => import("./components/strikes/StrikesPage").then((m) => ({ default: m.StrikesPage })));
+const StarsPage = lazy(() => import("./components/stars/StarsPage").then((m) => ({ default: m.StarsPage })));
+const LeavePage = lazy(() => import("./components/leave/LeavePage").then((m) => ({ default: m.LeavePage })));
+const OrderAssignmentPage = lazy(() => import("./components/order-assignment/OrderAssignmentPage").then((m) => ({ default: m.OrderAssignmentPage })));
 const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
 const EmailVerificationPage = lazy(() =>
@@ -479,6 +482,9 @@ function AppContent() {
                 <Route path="/payroll" element={<PayrollPage />} />
                 <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/strikes" element={<StrikesPage />} />
+                <Route path="/stars" element={<StarsPage />} />
+                <Route path="/leave" element={<LeavePage />} />
+                <Route path="/order-assignment" element={<OrderAssignmentPage />} />
                 <Route
                   path="/integrations"
                   element={

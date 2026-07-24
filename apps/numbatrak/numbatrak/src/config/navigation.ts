@@ -22,6 +22,9 @@ import {
   DollarSign,
   Calendar,
   AlertTriangle,
+  Star,
+  CalendarOff,
+  Shuffle,
 } from "lucide-react";
 
 export type NavPermission = {
@@ -221,12 +224,33 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         path: "/strikes",
         requiredPermission: { resource: "strikes", action: "canView" },
       },
+      {
+        id: "stars",
+        label: "Stars & Leaderboard",
+        icon: Star,
+        path: "/stars",
+        requiredPermission: { resource: "stars", action: "canView" },
+      },
+      {
+        id: "leave",
+        label: "Leave",
+        icon: CalendarOff,
+        path: "/leave",
+        requiredPermission: { resource: "leave", action: "canView" },
+      },
     ],
   },
   {
     id: "settings",
     label: "Settings",
     items: [
+      {
+        id: "order-assignment",
+        label: "Order Assignment",
+        icon: Shuffle,
+        path: "/order-assignment",
+        requiredPermission: { resource: "orderAssignment", action: "canView" },
+      },
       {
         id: "integrations",
         label: "Integrations",

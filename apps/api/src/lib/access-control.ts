@@ -72,6 +72,9 @@ const statement = {
   numbatrakPayroll: ["view", "manage"],
   numbatrakAttendance: ["view", "manage"],
   numbatrakStrikes: ["view", "manage"],
+  numbatrakStars: ["view", "manage"],
+  numbatrakLeave: ["view", "manage"],
+  numbatrakOrderAssignment: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -105,6 +108,9 @@ export const ownerRole = ac.newRole({
   numbatrakPayroll: ["view", "manage"],
   numbatrakAttendance: ["view", "manage"],
   numbatrakStrikes: ["view", "manage"],
+  numbatrakStars: ["view", "manage"],
+  numbatrakLeave: ["view", "manage"],
+  numbatrakOrderAssignment: ["view", "manage"],
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -135,6 +141,9 @@ export const adminRole = ac.newRole({
   numbatrakPayroll: ["view", "manage"],
   numbatrakAttendance: ["view", "manage"],
   numbatrakStrikes: ["view", "manage"],
+  numbatrakStars: ["view", "manage"],
+  numbatrakLeave: ["view", "manage"],
+  numbatrakOrderAssignment: ["view", "manage"],
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -189,6 +198,9 @@ export const managerRole = ac.newRole({
   numbatrakPayroll: ["view", "manage"],
   numbatrakAttendance: ["view", "manage"],
   numbatrakStrikes: ["view", "manage"],
+  numbatrakStars: ["view", "manage"],
+  numbatrakLeave: ["view", "manage"],
+  numbatrakOrderAssignment: ["view", "manage"],
 });
 
 /**
@@ -223,6 +235,9 @@ export const csrRole = ac.newRole({
   numbatrakPayroll: ["view"],
   numbatrakAttendance: ["view"],
   numbatrakStrikes: ["view"],
+  numbatrakStars: ["view"],
+  numbatrakLeave: ["view"],
+  numbatrakOrderAssignment: ["view"],
   // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
 });
 
