@@ -105,6 +105,7 @@ export {
   numbatrakMorePurchases,
   numbatrakCampaigns,
   numbatrakCrmCredits,
+  numbatrakInvoices,
   numbatrakProductTypeEnum,
   numbatrakProductOfferTypeEnum,
   securityEventTypeEnum,

@@ -32,6 +32,7 @@ export * from "./stars.js";
 export * from "./leave.js";
 export * from "./media-buyers.js";
 export * from "./crm.js";
+export * from "./invoices.js";
 
 import { numbatrakAgents, numbatrakCsrNameAliases } from "./agents.js";
 import {
@@ -85,6 +86,7 @@ import {
   numbatrakCampaigns,
   numbatrakCrmCredits,
 } from "./crm.js";
+import { numbatrakInvoices } from "./invoices.js";
 
 // Flat aggregate for merging into the main `schema` object in ../../schema.ts
 // (drizzle(client, { schema }) needs every table as a top-level key for
@@ -147,4 +149,5 @@ export const numbatrakSchema = {
   numbatrakMorePurchases,
   numbatrakCampaigns,
   numbatrakCrmCredits,
+  numbatrakInvoices,
 };

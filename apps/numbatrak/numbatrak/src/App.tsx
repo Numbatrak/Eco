@@ -42,6 +42,8 @@ const LeavePage = lazy(() => import("./components/leave/LeavePage").then((m) => 
 const OrderAssignmentPage = lazy(() => import("./components/order-assignment/OrderAssignmentPage").then((m) => ({ default: m.OrderAssignmentPage })));
 const MediaBuyersPage = lazy(() => import("./components/media-buyers/MediaBuyersPage").then((m) => ({ default: m.MediaBuyersPage })));
 const CrmPage = lazy(() => import("./components/crm/CrmPage").then((m) => ({ default: m.CrmPage })));
+const AccountingPage = lazy(() => import("./components/accounting/AccountingPage").then((m) => ({ default: m.AccountingPage })));
+const InvoicingPage = lazy(() => import("./components/invoicing/InvoicingPage").then((m) => ({ default: m.InvoicingPage })));
 const LoginPage = lazy(() => import("./components/LoginPage").then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import("./components/SignupPage").then((m) => ({ default: m.SignupPage })));
 const EmailVerificationPage = lazy(() =>
@@ -498,24 +500,8 @@ function AppContent() {
                     />
                   }
                 />
-                <Route
-                  path="/invoicing"
-                  element={
-                    <PlaceholderPage
-                      title="Invoicing"
-                      description="Auto-generated invoices per order with PDF and WhatsApp sharing. Coming in Phase 2."
-                    />
-                  }
-                />
-                <Route
-                  path="/accounting"
-                  element={
-                    <PlaceholderPage
-                      title="Accounting"
-                      description="Business financial summary: revenue, expenses by category, and net profit. Coming in Phase 2."
-                    />
-                  }
-                />
+                <Route path="/invoicing" element={<InvoicingPage />} />
+                <Route path="/accounting" element={<AccountingPage />} />
                 <Route
                   path="/funnel-analytics"
                   element={

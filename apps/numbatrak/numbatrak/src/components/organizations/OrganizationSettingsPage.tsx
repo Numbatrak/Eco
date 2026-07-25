@@ -16,11 +16,12 @@ import {
 } from "../../services/organizationInvitations";
 import { OrganizationMember } from "../../types/organization";
 import { OrganizationInvitation } from "../../types/organization";
-import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy, Check, Clock, Moon, Sun, Edit2, Save, Bell, UserCircle } from "lucide-react";
+import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy, Check, Clock, Moon, Sun, Edit2, Save, Bell, UserCircle, CreditCard } from "lucide-react";
 import { InvitationDialog } from "./InvitationDialog";
 import { OrderAssignmentSettings } from "./OrderAssignmentSettings";
 import { OrganizationBrandingSettings } from "./OrganizationBrandingSettings";
 import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSettings";
+import { SubscriptionSection } from "./SubscriptionSection";
 import { Switch } from "../ui/switch";
 import { PageLayout } from "../layout/PageLayout";
 import { getDisplayName } from "../../utils/userDisplay";
@@ -727,6 +728,11 @@ export function OrganizationSettingsPage() {
           <DashboardAlertThresholdsSettings
             organizationId={currentOrganization.id}
           />
+        )}
+
+        {/* Subscription & Billing */}
+        {(isOwner || isAdmin) && (
+          <SubscriptionSection />
         )}
       </div>
 
