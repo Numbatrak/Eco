@@ -1,0 +1,28 @@
+---
+description: Supabase data access, queries, and RLS conventions
+globs:
+  - "src/services/**/*.{ts,tsx}"
+  - "src/hooks/**/*.{ts,tsx}"
+  - "src/lib/**/*.{ts,tsx}"
+  - "src/api/**/*.{ts,tsx}"
+  - "**/*supabase*"
+alwaysApply: false
+---
+
+# Supabase Data Access
+
+> Adjust the globs above to match the repo's actual folder layout.
+
+- Filter by the org foreign key (e.g. `organization_id`) on **every** select/insert/update/delete.
+  Confirm the exact column name from an existing query before writing a new one.
+- Tenant isolation must live in the query AND be backed by RLS. Never rely on client-side
+  filtering to keep one org's data away from another.
+- Adding a new table means delivering three things together:
+  1. the migration,
+  2. RLS policies (select/insert/update/delete, per role), and
+  3. the typed data-access function.
+  Do not ship a table without policies.
+- Reuse the existing Supabase client singleton — do not instantiate new clients.
+- Surface errors through the existing toast pattern (sonner); do not silently swallow them.
+- Match the repo's existing data-fetching / caching approach. Do not introduce a new
+  data library (react-query, swr, etc.) unless one is already in use.

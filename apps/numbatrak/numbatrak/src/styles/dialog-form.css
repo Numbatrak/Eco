@@ -1,0 +1,231 @@
+/* Shared add/edit modal layout — light/dark safe */
+
+/* Fixed hero header — does not scroll with body */
+.dialog-hero-band {
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-hero-band-inner {
+  position: relative;
+  padding: 1.5rem 2rem;
+}
+
+.dialog-hero-title,
+.dialog-hero-band [data-slot="dialog-title"] {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground) !important;
+  text-shadow: none !important;
+  margin: 0 0 0.25rem 0;
+}
+
+.dialog-hero-description,
+.dialog-hero-band [data-slot="dialog-description"],
+.dialog-hero-band .text-on-dark {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground) !important;
+  margin: 0;
+}
+
+.dialog-hero-icon-wrap {
+  flex-shrink: 0;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-hero-icon-wrap svg,
+.dialog-hero-icon-wrap .lucide {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--primary) !important;
+}
+
+.dialog-hero-band h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground) !important;
+  text-shadow: none !important;
+  margin: 0 0 0.25rem 0;
+}
+
+.dialog-body-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+.dialog-body-scroll.max-h-tall {
+  max-height: calc(95vh - 280px);
+}
+
+.dialog-body-scroll.max-h-standard {
+  max-height: none;
+}
+
+.dialog-footer-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--card);
+}
+
+.dialog-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.dialog-field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.dialog-field-hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.dialog-readonly-panel {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 50%, var(--card));
+}
+
+.dialog-readonly-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.dialog-readonly-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Agent modal — location dropdown scrollbars */
+.agent-location-dropdown-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--muted);
+}
+
+.agent-location-dropdown-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.agent-location-dropdown-list::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+.agent-location-dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.agent-location-dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Icon-prefixed inputs inside modals */
+.dialog-input-icon-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.dialog-input-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dialog-input-icon-wrap [data-slot="input"],
+.dialog-input-icon-wrap input {
+  width: 100%;
+  max-width: 100%;
+  padding-left: 2.625rem;
+}
+
+/* Date inputs — calendar icon on the right */
+.dialog-date-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.dialog-date-input-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dialog-date-input-icon:disabled {
+  cursor: not-allowed;
+}
+
+.dialog-date-input-wrap .dialog-date-input,
+.dialog-date-input-wrap [data-slot="input"] {
+  width: 100%;
+  max-width: 100%;
+  padding-right: 2.5rem;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Hide native date picker icon — custom calendar icon is shown instead */
+.dialog-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dialog-date-input-wrap input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+/* Full-width fields inside modals */
+.dialog-form-field {
+  width: 100%;
+}
+
+.dialog-form-field [data-slot="select-trigger"],
+.dialog-form-field [data-slot="input"],
+.dialog-form-field [data-slot="textarea"] {
+  width: 100%;
+  max-width: 100%;
+}

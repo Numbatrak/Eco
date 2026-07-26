@@ -82,6 +82,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
     process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
+    process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003",
   ],
   emailAndPassword: {
     enabled: true,

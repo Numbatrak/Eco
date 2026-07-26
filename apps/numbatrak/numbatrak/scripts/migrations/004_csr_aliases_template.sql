@@ -1,0 +1,11 @@
+-- After deployment, map free-text CSR names (e.g. from deliveries.csr) to user_profiles.
+-- See also 006_csr_resolution_and_form_responses_csr.sql for `resolve_csr_user_id()` and `form_responses.csr_id`.
+-- Replace :org_id and :user_id_nuella / :user_id_crs1 with real UUIDs from your org.
+--
+-- INSERT INTO public.csr_name_aliases (organization_id, match_pattern, user_id) VALUES
+--   ('00000000-0000-0000-0000-000000000001', 'nuella', '...user uuid...'),
+--   ('00000000-0000-0000-0000-000000000001', 'crs1', '...user uuid...'),
+--   ('00000000-0000-0000-0000-000000000001', 'crs', '...user uuid...')
+-- ON CONFLICT (organization_id, match_pattern) DO UPDATE SET user_id = EXCLUDED.user_id;
+
+-- No default rows: CSRs must be real users in user_profiles.

@@ -1,0 +1,27 @@
+name: Supabase DB Backup
+
+on:
+    schedule:
+        # Runs every Sunday at 02:00 UTC
+        - cron: "0 2 * * 0"
+    workflow_dispatch: # Lets you click a button in GitHub to run it manually
+
+jobs:
+    backup:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Create DB Dump using Postgres 17
+              env:
+                  PG_URL: ${{ secrets.SUPABASE_DB_URL }}
+              # We use a Docker container running PG 17 to execute pg_dump
+              run: |
+                  docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace postgres:17 pg_dump "$PG_URL" -F c -f supabase_backup.dump
+
+            - name: Upload Backup as Artifact
+              uses: actions/upload-artifact@v4
+              env:
+                  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+              with:
+                  name: db-backup-${{ github.run_id }}
+                  path: supabase_backup.dump
+                  retention-days: 14 # Keeps the backup in GitHub for 2 weeks

@@ -1,0 +1,783 @@
+
+NUMBATRAK
+Performance Intelligence Platform
+
+Brand Identity Guidelines
+Version 1.0  ·  Confidential  ·  2026
+
+
+
+Know Your Numbers.
+This document defines every visual and verbal decision behind the Numbatrak brand. It is the single source of truth for any designer, developer, marketer, or partner who represents this product publicly.
+
+— SECTION 01 —
+What Numbatrak Is
+
+
+Numbatrak is a performance intelligence platform. It tracks the numbers behind business growth — revenue, ad spend, ROAS, campaign results, and the metrics that tell operators whether their growth is real or just activity.
+
+It was built to solve a specific problem: founders and operators running paid media across multiple campaigns, products, and markets have no single place where all their performance data makes sense together. Numbatrak is that place.
+
+The One-Line Truth
+"Numbatrak makes the numbers that matter impossible to ignore."
+What Numbatrak Is
+A performance intelligence platform for growth operators
+A SaaS tool that tracks paid media performance across campaigns and brands
+A clarity layer between raw ad data and business decisions
+A global product — built for operators anywhere, not one market
+A standalone brand that speaks entirely for itself
+
+What Numbatrak Is Not
+An agency tool or white-label dashboard
+An African-only product or regional brand
+A financial services platform or payment processor
+A lifestyle or emotional brand
+A tool for casual users — it is built for serious operators
+
+Who Uses Numbatrak
+Numbatrak is built for performance operators — the founders, media buyers, growth leads, and marketing directors who live inside paid media data and need to see it clearly, fast, and in one place.
+
+E-commerce founders running multiple product lines and campaigns
+Media buyers managing ad spend across several brands or clients
+Growth leads at funded startups who report performance to stakeholders
+Marketing directors who need clean performance visibility without analyst overhead
+
+Emotional Territory
+When someone opens Numbatrak, they should feel five things:
+
+Precision — every number is exactly where it should be
+Control — I can see everything that matters from one screen
+Clarity — no noise, no confusion, no guessing
+Confidence — I know what's working and what isn't
+Intelligence — this tool thinks the way I think
+
+— SECTION 02 —
+Brand Strategy
+
+
+Positioning Statement
+"Numbatrak is a performance intelligence platform for growth operators. It turns the noise of paid media data into clear, actionable visibility — so founders and operators always know exactly where their growth comes from."
+
+Brand Tagline
+
+Know Your Numbers.
+
+Three words that communicate everything the product does. It is not aspirational — it is direct. It is an instruction and a promise simultaneously. Every founder who has ever felt lost in their ad data understands immediately what this means.
+
+TAGLINE USAGE RULES
+Always used in full: 'Know Your Numbers.' — including the period
+Never abbreviated, reworded, or split across lines in logo lockups
+Appears in Emerald (#10B981) on dark backgrounds
+Appears in Midnight (#0F172A) on light backgrounds
+Never appears in gray, white, or any color that reduces its authority
+
+Brand Personality
+Numbatrak should feel like the smartest tool in the room — not the loudest. It does not need to shout. It earns trust through precision, consistency, and the feeling that everything is under control.
+
+FIVE PERSONALITY TRAITS
+every number, every label, every data point is exactly right Precise —
+nothing exists in the interface or the brand that does not serve a purpose Minimal —
+the product and the brand reflect structured, clear thinking Intelligent —
+understated confidence, not aggressive marketing Confident —
+speaks to operators anywhere, not positioned as a regional product Global —
+
+Brand Archetype
+Numbatrak operates as The Sage — the brand that gives people knowledge, clarity, and the tools to understand their situation accurately. Secondary archetype: The Ruler — structured, in control, everything in its place.
+The Sage earns loyalty not through emotion but through consistent accuracy. Every time Numbatrak shows a user their numbers clearly, it builds the brand.
+
+— SECTION 03 —
+Visual Identity
+
+
+The Two Hero Colors
+Numbatrak's identity is built on two colors. Everything else in the system supports these two. A designer or developer who knows only these two colors can build recognizable Numbatrak materials.
+
+Midnight  #0F172A   +   Emerald  #10B981
+Midnight is the foundation — deep, authoritative, premium. Emerald is the signal — performance, growth, numbers in the green. Together they communicate exactly what the product does before a single word is read.
+
+Full 6-Color System
+The two hero colors are supported by four functional colors that give designers the tools to build complete interfaces, documents, and marketing materials without ever needing to introduce off-brand colors.
+
+PRIMARY COLORS
+
+
+Midnight
+#0F172A
+Foundation
+Primary backgrounds, hero sections, dominant surfaces. The brand's core.
+
+
+
+
+Deep Navy
+#1E293B
+Depth
+Cards, secondary panels, containers. Creates layering and depth on Midnight.
+
+
+
+
+Emerald
+#10B981
+Accent & Action
+CTAs, data highlights, key metrics, brand moments. The hero accent — use with intention.
+
+
+SUPPORT COLORS
+
+
+Soft Emerald
+#34D399
+Light Accent
+Gradient partner to Emerald. Used in the wordmark gradient, hover states, progress indicators.
+
+
+
+
+Pure White
+#FFFFFF
+Base & Text
+All body text on dark surfaces, reversed logo, clean breathing space.
+
+
+
+
+Cool Gray
+#94A3B8
+Muted
+Captions, metadata, secondary labels, supporting information. Never for primary text.
+
+
+COLOR USAGE RULES
+Midnight (#0F172A) is the dominant color — use it as the background for all hero, marketing, and product surfaces
+Emerald (#10B981) is the accent — powerful because it is used sparingly. Never use it as a large background
+The Emerald gradient (#10B981 → #34D399) is used exclusively in the wordmark and the logo mark — do not apply it to other elements without approval
+Never introduce colors outside this 6-color system — not in marketing materials, not in product UI, not in presentations
+Cool Gray (#94A3B8) is for supporting text only — never use it for primary headlines or CTAs
+
+APPROVED COMBINATIONS
+✓  DO
+Midnight background + White headlines + Emerald CTAs + Cool Gray captions → Primary dark layout
+
+
+✓  DO
+Deep Navy cards on Midnight background + Emerald data highlights → Dashboard UI
+
+
+✓  DO
+Emerald gradient text on Midnight → Wordmark and hero statements only
+
+
+✓  DO
+White background + Midnight headlines + Emerald accents → Light-mode documents and reports
+
+
+✗  DON'T
+Emerald as a large background color — it loses its signal value entirely
+
+
+✗  DON'T
+Cool Gray for headlines or primary calls to action — too weak, no authority
+
+
+✗  DON'T
+Adding new colors to the system without brand approval — consistency is the brand
+
+
+— SECTION 04 —
+Logo System
+
+
+Logo Architecture
+The Numbatrak logo consists of two elements used together or independently depending on context: the Symbol Mark and the Wordmark.
+
+The Symbol Mark
+Five ascending vertical bars representing tracked performance data — a bar chart rising from left to right. The mark is abstract enough to be ownable as a standalone icon, clear enough that its meaning (tracking, performance, growth) is immediately understood.
+
+SYMBOL MARK CONSTRUCTION
+Five bars of ascending height: approximately 40%, 65%, 50%, 100%, 80% — the tallest bar is the fourth, not the last, reflecting real data rather than a perfect ramp
+Bar width to gap ratio: 4:3 — bars are slightly wider than the gaps between them
+Corner radius on bars: 2px at standard size, scale proportionally at other sizes
+The mark sits inside a rounded square container at 11-12px corner radius
+
+SYMBOL MARK VERSIONS
+Primary: Emerald gradient fill (#10B981 → #34D399) container, white bars — for use on Midnight and dark backgrounds
+Outlined: Midnight container with Emerald border (1.5px), Emerald bars — for use on light backgrounds
+Ghost: Deep Navy container with Emerald bars at 80% opacity — for subtle placements
+Monochrome White: All white — for use on Emerald backgrounds or special contexts
+
+The Wordmark
+The Numbatrak wordmark is set in Inter ExtraBold (weight 900) with a deliberate split color treatment that makes the brand name visually distinctive and immediately memorable.
+
+WORDMARK CONSTRUCTION
+Typeface: Inter ExtraBold · Weight: 900
+Letter spacing: -0.04em — tight, confident, modern
+'Numba' — rendered in Emerald gradient (#10B981 → #34D399 left to right)
+'trak' — rendered in Pure White (#FFFFFF)
+The gradient flows naturally from the green portion into the white portion — no hard break
+No italic, no outline, no shadow — clean and precise
+
+WORDMARK SIZE HIERARCHY
+Hero / Cover: 48-72px — full wordmark with tagline below
+Standard: 28-40px — most common usage in marketing materials
+UI / Navigation: 16-20px — product interface, app header
+Minimum legible size: 14px — below this, use the symbol mark alone
+
+Full Logo Lockup
+The primary logo is the symbol mark + wordmark in a horizontal arrangement. The mark sits to the left of the wordmark, vertically centered. Below the wordmark, the tagline 'Know Your Numbers.' appears in Cool Gray at 45% of the wordmark's point size.
+
+LOCKUP SPACING RULES
+Gap between mark and wordmark: equal to the height of the mark
+Tagline sits 8px below the wordmark baseline
+Minimum clear space around the full lockup: equal to the height of the symbol mark on all sides
+Never crowd the logo — it needs breathing room to carry authority
+
+Logo File Specifications
+Every designer working with Numbatrak must have access to the following file formats. Request these from the brand lead before beginning any design work.
+
+REQUIRED FILE FORMATS
+SVG — Primary format for all digital use. Scales infinitely without quality loss. Used for web, app, and screen-based materials
+PNG (transparent background) — For use in documents, presentations, and contexts where SVG is not supported. Minimum export at 1000px wide at 2x resolution
+PNG (dark background) — Pre-composed version on Midnight for quick use in social media and content
+PNG (light background) — Pre-composed version on white/light gray for documents and print
+PDF — For print applications. Vector-based, CMYK color profile
+ICO / favicon — 16x16, 32x32, 64x64 — symbol mark only
+
+COLOR PROFILES
+Digital (screen): RGB color mode — use hex values as specified in this document
+Print: CMYK conversion — Emerald (#10B981) converts to approximately C:78 M:0 Y:45 K:28
+Single color print: All Midnight or all Emerald — never grayscale unless no other option
+
+Logo Do's and Don'ts
+✓  DO
+Always use the approved logo files — never redraw, recreate, or approximate the logo
+
+
+✓  DO
+Maintain minimum clear space — equal to the symbol mark height on all four sides
+
+
+✓  DO
+Use only approved background colors: Midnight, Deep Navy, Pure White, or light gray
+
+
+✗  DON'T
+Stretch, compress, skew, or alter the proportions of the logo in any way
+
+
+✗  DON'T
+Add drop shadows, gradients, glows, or effects to the logo
+
+
+✗  DON'T
+Change the wordmark colors — 'Numba' is always gradient green, 'trak' is always white on dark
+
+
+✗  DON'T
+Place the logo on busy or photographic backgrounds without a clear zone or overlay
+
+
+✗  DON'T
+Use the wordmark below 14px — use the symbol mark alone at small sizes
+
+
+✗  DON'T
+Place the logo on any color outside the approved background colors
+
+
+— SECTION 05 —
+Typography
+
+
+Typography is the voice of Numbatrak made visible. The system is deliberately minimal — two typefaces, a clear hierarchy, and rules that ensure everything reads with the same precision the product delivers.
+
+Primary Typeface: Inter
+Inter is the brand's display, headline, and wordmark typeface. Designed specifically for screen legibility, it is geometric, clean, and carries authority at every weight. Used for all headlines, the wordmark, stat numbers, navigation, and any text that leads.
+
+DOWNLOAD: FONTS.GOOGLE.COM/SPECIMEN/INTER
+
+Secondary Typeface: DM Sans
+DM Sans is the body and supporting text typeface. Slightly more humanist than Inter, it provides warmth and readability in long-form content, descriptions, and captions without competing with headlines.
+
+DOWNLOAD: FONTS.GOOGLE.COM/SPECIMEN/DM+SANS
+
+Monospace Typeface: DM Mono
+DM Mono is used exclusively for data, metrics, hex codes, technical values, and any content that is number or code-based. It signals precision and reinforces the data-first product identity.
+
+DOWNLOAD: FONTS.GOOGLE.COM/SPECIMEN/DM+MONO
+
+Type Hierarchy
+
+STYLE   ·   FONT   ·   WEIGHT / SIZE   ·   USAGE
+Display Hero
+Inter
+Black 900 / 64–96px
+Campaign headlines, cover statements, full-width hero text
+
+
+Heading 1
+Inter
+ExtraBold 800 / 36–48px
+Section titles, page headings, major feature headlines
+
+
+Heading 2
+Inter
+Bold 700 / 24–32px
+Sub-sections, card headers, modal titles
+
+
+Heading 3
+Inter
+SemiBold 600 / 18–22px
+Inline section breaks, sidebar headers, table headings
+
+
+Data / Metrics
+DM Mono
+Medium 500 / 24–64px
+All performance numbers, ROAS, revenue figures, percentages
+
+
+Body Text
+DM Sans
+Regular 400 / 14–16px
+All descriptive copy, feature descriptions, documentation
+
+
+Body Emphasis
+DM Sans
+SemiBold 600 / 14–16px
+Key terms, inline emphasis, important callouts
+
+
+UI Labels
+Inter
+Medium 500 / 12–13px
+Navigation items, button text, form labels, tab labels
+
+
+Captions
+DM Sans
+Regular 400 / 11–12px
+Image captions, footnotes, secondary metadata
+
+
+Code / Technical
+DM Mono
+Regular 400 / 12–14px
+API references, technical values, hex codes, IDs
+
+
+Typography Rules
+Headlines always left-aligned in content layouts — center alignment only for full-width hero statements
+All performance metrics and numbers use DM Mono — never Inter or DM Sans for numerical data
+Minimum body text: 14px on screen — never smaller
+Line height for body: 1.6 to 1.75 — never tight on paragraphs
+Maximum line length for body copy: 680px or 75 characters — beyond this, readability drops
+Never use ALL CAPS for body text — uppercase is reserved for labels and category tags at 10-12px
+Letter spacing for uppercase labels: 0.10 to 0.15em
+
+— SECTION 06 —
+Imagery & Design Elements
+
+
+Photography Philosophy
+Numbatrak is a data product. Photography is not the primary visual language — data visualization, interface screenshots, and structured graphic compositions are. When photography appears, it must feel intentional, not decorative.
+
+APPROVED PHOTOGRAPHY STYLE
+Real operators at work — founders at desks, media buyers reviewing dashboards, growth leads in meetings. Always authentic, never staged-looking
+Technology in context — screens showing real data, devices in real work environments, tools being used
+Dark, moody environments that echo the Midnight brand palette — avoid bright, airy stock photography
+Monochromatic or low-saturation images work best — they don't compete with the Emerald accent
+
+PHOTOGRAPHY DON'TS
+✗  DON'T
+Use bright, saturated stock photography with people smiling at cameras — it contradicts the brand's precision positioning
+
+
+✗  DON'T
+Use abstract concept photography (lightbulbs, handshakes, growing plants) — Numbatrak communicates through data, not metaphor
+
+
+✗  DON'T
+Use photographs as backgrounds behind text without a dark overlay — always ensure text legibility
+
+
+Data Visualization
+Data visualization is Numbatrak's primary visual language. Charts, graphs, metric cards, and performance displays are the most authentic expression of what the brand is. These should appear in marketing materials, presentations, and social content.
+
+VISUALIZATION STANDARDS
+Primary chart color: Emerald (#10B981) for positive metrics, Cool Gray (#94A3B8) for neutral data
+All chart backgrounds: Deep Navy (#1E293B) or Midnight (#0F172A)
+Chart labels and axis text: Cool Gray (#94A3B8) in DM Mono
+Highlighted data points: Soft Emerald (#34D399) with subtle glow effect
+Never use red for negative metrics in marketing materials — Cool Gray communicates neutrality without alarm
+
+Design Elements
+Beyond photography and data visualization, Numbatrak uses a set of consistent graphic elements that can appear across all brand touchpoints.
+
+APPROVED GRAPHIC ELEMENTS
+Subtle grid or dot-matrix backgrounds on Midnight — used sparingly to add depth without clutter
+Thin horizontal rules in Cool Gray at 1px — used to separate sections, never as decoration
+Emerald glow/bloom effect — a soft radial gradient of Emerald at 6-8% opacity, used behind hero elements on dark backgrounds
+Rounded rectangles for cards and containers: 12-16px corner radius consistently
+Thin Emerald left border on blockquotes and highlighted callouts
+
+ELEMENTS TO AVOID
+Gradients across large background areas — reserved for the wordmark and logo mark only
+Decorative illustration or iconography that is not geometric and precise
+Drop shadows heavier than 0 4px 24px rgba(0,0,0,0.3) — Numbatrak uses restraint
+Animated elements that distract from data — motion should serve information, never decorate it
+
+— SECTION 07 —
+Brand Voice & Tone
+
+
+How Numbatrak speaks is as important as how it looks. Every headline, tooltip, onboarding message, marketing copy, and social post is a brand moment. The voice must always feel like a precise, intelligent instrument — never a salesperson, never a cheerleader.
+
+The Voice in Three Words
+
+Precise.  Minimal.  Intelligent.
+Writing Principles
+Specificity over generality — 'tracks ROAS, revenue, and spend across 9 campaigns' beats 'tracks your performance'
+Function over promise — describe what the product does, not what it will make you feel
+Short sentences, active voice — 'Numbatrak shows you where your money goes' not 'Revenue visibility is provided'
+Data language where possible — numbers, metrics, and specifics are more credible than adjectives
+Neutral confidence — never hype, never shout, never oversell. State the truth clearly
+Zero filler words — remove 'simply', 'easily', 'just', 'powerful', 'seamless', 'robust' from all copy
+
+Tone by Context
+
+PRODUCT UI / MICROCOPY
+Ultra-concise. Every word earns its place. Labels are factual, not cute. Error messages are specific and actionable, not apologetic. Success states are quiet and clear.
+
+✓  DO
+'Revenue · Last 30 days' as a chart label — specific, clean
+
+
+✗  DON'T
+'Awesome! Your data is ready!' as a success state — never this
+
+
+MARKETING & LANDING PAGE
+Confident, benefit-led, data-grounded. Lead with what the product does for the user. Use real numbers where possible. CTAs are direct — never 'Learn More', always a specific action.
+
+✓  DO
+'See exactly where your growth comes from.' as a headline — precise, intriguing
+
+
+✗  DON'T
+'The ultimate performance tracking solution for modern businesses' — vague, forgettable
+
+
+SOCIAL MEDIA
+Educational and specific. Share insights, data observations, and framework thinking. Never motivational. Never generic. The content should make operators feel smarter for reading it.
+
+✓  DO
+'Most founders misread ROAS because they include brand campaigns in the average. Here is how to read it correctly.'
+
+
+✗  DON'T
+'Growth is a mindset. Track your numbers and scale what works!' — this is not Numbatrak's voice
+
+
+ONBOARDING & SUPPORT
+Patient and precise. Assume the user is intelligent. Give them the information they need without over-explaining. When something goes wrong, be specific about what happened and how to fix it.
+
+— SECTION 08 —
+Brand Misuse
+
+
+This section documents the most common ways the Numbatrak brand can be misrepresented. Every person who produces Numbatrak materials must review this section. Consistency is the brand — any deviation weakens it.
+
+Logo Misuse
+✗  DON'T
+Stretching or compressing the logo mark or wordmark disproportionately
+
+
+✗  DON'T
+Applying a drop shadow, outer glow, bevel, or emboss effect to the logo
+
+
+✗  DON'T
+Placing the logo on a background color that is not Midnight, Deep Navy, Pure White, or light gray
+
+
+✗  DON'T
+Recreating the logo from memory or approximating it in Canva or Figma without the official files
+
+
+✗  DON'T
+Changing 'trak' from white to any other color — it is always white on dark backgrounds
+
+
+✗  DON'T
+Using the wordmark at sizes below 14px — use the symbol mark alone
+
+
+Color Misuse
+✗  DON'T
+Using Emerald as a large background color across hero sections or full pages
+
+
+✗  DON'T
+Introducing any color not in the 6-color system — purple, orange, red, yellow are never Numbatrak colors
+
+
+✗  DON'T
+Using Cool Gray (#94A3B8) for headlines, CTAs, or any primary content
+
+
+✗  DON'T
+Applying the Emerald gradient to elements other than the wordmark and logo mark
+
+
+Typography Misuse
+✗  DON'T
+Using any typeface other than Inter, DM Sans, or DM Mono in Numbatrak materials
+
+
+✗  DON'T
+Using display or decorative typefaces — even temporarily for social posts
+
+
+✗  DON'T
+Using Inter or DM Sans for performance metrics — always DM Mono for numbers
+
+
+✗  DON'T
+Setting body copy tighter than 1.5 line height — readability is a brand value
+
+
+Voice Misuse
+✗  DON'T
+Using hype language: 'game-changing', 'revolutionary', 'world-class', 'powerful', 'seamless'
+
+
+✗  DON'T
+Motivational or inspirational copy that does not reference product function or real data
+
+
+✗  DON'T
+Passive voice constructions — Numbatrak always speaks actively and directly
+
+
+✗  DON'T
+Exclamation marks in product UI or marketing headlines — confidence does not need punctuation to shout
+
+
+— SECTION 09 —
+Brand Applications
+
+
+Product Interface
+Primary background: Midnight (#0F172A) for all main surfaces
+Secondary surfaces: Deep Navy (#1E293B) for cards, panels, modals, sidebars
+All metric and data displays: DM Mono, Emerald (#10B981) for positive values
+Navigation: Inter Medium, Cool Gray default state, Pure White active state
+Primary CTA buttons: Emerald background (#10B981), white text, Inter SemiBold, 8px radius
+Secondary buttons: Deep Navy background, Emerald border (1.5px), Emerald text
+
+Landing Page
+Hero section: Midnight background, Inter Black headline, Emerald gradient on key phrase
+Social proof: Real numbers only — user counts, brands tracked, campaigns processed
+Feature sections: Alternate Midnight and Deep Navy backgrounds to create depth
+CTA: 'Request Access' or 'Get Early Access' — never 'Sign Up Free' or 'Get Started'
+Footer: Midnight background, wordmark left, legal links right in Cool Gray
+
+Marketing Materials
+All presentations: Midnight background for impact slides, light gray for content slides
+Data slides: Large DM Mono number in Emerald, DM Sans explanation below in white
+One-pagers and PDFs: Light mode — white background, Midnight headlines, Emerald accents
+Social media posts: Always include the symbol mark or wordmark — never unbranded content
+
+Email
+Transactional email: White background, Midnight headlines, Emerald CTA buttons
+Marketing email: Same as above — Numbatrak never sends dark-mode email as the default format
+Email signature: Wordmark only (no full lockup), 'Know Your Numbers.' in Emerald below name
+No animated GIFs, no heavy imagery — performance data visuals only where relevant
+
+App Icon
+Mobile app icon: Symbol mark centered on Midnight (#0F172A) background, Emerald gradient bars
+Favicon: Symbol mark on Midnight at 32x32 and 16x16 — bars simplified to 3 at 16px
+No wordmark in icon treatments — the mark must work completely alone at small sizes
+
+— SECTION 10 —
+Asset Inventory & Checklist
+
+
+This checklist defines every brand asset that must exist before Numbatrak goes public. Assets are categorized by priority. Nothing marked Required should be missing at launch.
+
+ASSET   ·   FORMAT   ·   PRIORITY   ·   NOTES
+Logo — Primary Lockup (dark)
+SVG + PNG
+Required
+Symbol mark + wordmark on Midnight background
+
+
+Logo — Primary Lockup (light)
+SVG + PNG
+Required
+Symbol mark + wordmark on white background
+
+
+Symbol Mark — Filled
+SVG + PNG
+Required
+Emerald gradient background, white bars
+
+
+Symbol Mark — Outlined
+SVG + PNG
+Required
+Dark bg, Emerald border and bars
+
+
+Symbol Mark — Monochrome
+SVG + PNG
+Required
+All white version for special contexts
+
+
+Wordmark — Dark version
+SVG + PNG
+Required
+Gradient Numba + white trak on dark
+
+
+Wordmark — Light version
+SVG + PNG
+Required
+Gradient Numba + Midnight trak on light
+
+
+Favicon set
+ICO + PNG
+Required
+16x16, 32x32, 64x64, 180x180
+
+
+App icon
+PNG
+Required
+1024x1024 master, all platform sizes
+
+
+Brand color palette file
+ASE + CSS vars
+Required
+All 6 colors with hex, RGB, CMYK values
+
+
+Font license files
+OTF/TTF
+Required
+Inter, DM Sans, DM Mono — all weights
+
+
+Social media profile image
+PNG 400x400
+Required
+Symbol mark on Midnight — circle safe zone
+
+
+Social media cover/banner
+PNG 1500x500
+Priority
+Twitter/X and LinkedIn cover dimensions
+
+
+Presentation template
+PPTX + Keynote
+Priority
+Master slides with all brand elements
+
+
+Email signature template
+HTML
+Priority
+Wordmark + tagline + contact details
+
+
+Instagram post templates
+Figma/PSD
+Priority
+Dark and light versions, 1080x1080
+
+
+One-pager / pitch doc template
+Figma/DOCX
+Priority
+For early access outreach and investor use
+
+
+OG image (social share)
+PNG 1200x630
+Priority
+For link previews across all platforms
+
+
+Loading animation / spinner
+Lottie JSON
+Optional
+Symbol mark bars animating on load
+
+
+Brand guidelines PDF
+PDF
+Optional
+Exported version of this document
+
+
+— SECTION 11 —
+Quick Reference
+
+
+Brand at a Glance
+
+PRODUCT NAME
+Numbatrak
+PRODUCT TYPE
+Performance Intelligence Platform
+TAGLINE
+Know Your Numbers.
+TWO HERO COLORS
+Midnight #0F172A   +   Emerald #10B981
+FULL COLOR SYSTEM
+Midnight #0F172A — Foundation
+Deep Navy #1E293B — Depth
+Emerald #10B981 — Accent
+Soft Emerald #34D399 — Light Accent
+Pure White #FFFFFF — Base
+Cool Gray #94A3B8 — Muted
+
+TYPEFACES
+Headlines & Wordmark: Inter (ExtraBold 800 / Black 900)
+Body Copy: DM Sans (Regular 400 / SemiBold 600)
+Data & Metrics: DM Mono (Regular 400 / Medium 500)
+
+WORDMARK TREATMENT
+'Numba' — Emerald gradient (#10B981 → #34D399) · 'trak' — Pure White · Inter 900
+
+SYMBOL MARK
+Five ascending bar chart bars · Emerald gradient on Midnight · Rounded square container
+
+The 10 Non-Negotiable Brand Rules
+
+The tagline is always 'Know Your Numbers.' — with the period. Never altered.
+Emerald is an accent color — never a large background. Its power comes from restraint.
+'Numba' is always gradient green. 'trak' is always white on dark. Never reversed.
+All performance metrics use DM Mono — not Inter, not DM Sans.
+Three typefaces only: Inter, DM Sans, DM Mono. No exceptions.
+The symbol mark always appears alone at sizes below 14px — never the wordmark.
+No hype language — ever. Numbatrak speaks in precision, not promises.
+Photography is secondary to data visualization — charts and metrics are the brand's native visual language.
+Never introduce colors outside the 6-color system without brand approval.
+When in doubt: ask whether this makes the product feel like a precision instrument. If not, revise.
+
+
+
+
+For brand questions, asset requests, or new design approvals, all decisions route through the founder.
+Numbatrak  ·  Brand Guidelines v1.0  ·  2026

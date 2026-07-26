@@ -1,0 +1,435 @@
+/* Delivery Table — theme-aware (light/dark) */
+
+.delivery-table-container {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.delivery-table-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.delivery-table-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.delivery-table-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delivery-table-icon {
+  padding: 8px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delivery-table-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary-foreground);
+}
+
+.delivery-table-title {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 0;
+}
+
+.delivery-table-subtitle {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.delivery-table-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delivery-table-search {
+  position: relative;
+}
+
+.delivery-table-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--muted-foreground);
+}
+
+.delivery-table-search-input {
+  padding-left: 36px;
+  padding-right: 16px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  width: 256px;
+  outline: none;
+  transition: all 0.2s;
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+.delivery-table-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.delivery-table-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.delivery-table-sort-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delivery-table-sort-button:hover {
+  background-color: var(--accent);
+}
+
+.delivery-table-sort-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.delivery-table-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delivery-table-filter-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.delivery-table-filter-button:hover {
+  background-color: var(--accent);
+  border-color: var(--muted-foreground);
+}
+
+.delivery-table-filter-button.active {
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.delivery-table-filter-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.delivery-table-filter-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 4px;
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delivery-table-filter-remove:hover {
+  background-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.delivery-table-filter-remove-icon {
+  width: 10px;
+  height: 10px;
+  color: var(--primary);
+}
+
+.delivery-table-filter-dropdowns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+}
+
+.delivery-table-filter-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.delivery-table-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.delivery-table-filter-label-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.delivery-table-filter-input,
+.delivery-table-filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+.delivery-table-filter-input:focus,
+.delivery-table-filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.delivery-table-filter-select {
+  cursor: pointer;
+}
+
+.delivery-table-wrapper {
+  overflow-x: auto;
+}
+
+.delivery-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.delivery-table thead {
+  background-color: var(--muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.delivery-table th {
+  padding: 16px;
+  font-weight: 700;
+  color: var(--foreground);
+  text-align: left;
+  font-size: 14px;
+}
+
+.delivery-table th.text-right {
+  text-align: right;
+}
+
+.delivery-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s;
+}
+
+.delivery-table tbody tr:nth-child(even) {
+  background-color: color-mix(in srgb, var(--muted) 50%, var(--card));
+}
+
+.delivery-table tbody tr:hover {
+  background-color: var(--accent);
+}
+
+.delivery-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.delivery-table td.text-right {
+  text-align: right;
+}
+
+.delivery-table-cell {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.delivery-table-cell-medium {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.delivery-table-cell-semibold {
+  font-weight: 600;
+}
+
+.delivery-table-empty-value {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.delivery-table-header-cell {
+  padding: 16px;
+  font-weight: 700;
+  color: var(--foreground);
+  text-align: left;
+  font-size: 14px;
+}
+
+.delivery-table-header-cell.text-right {
+  text-align: right;
+}
+
+.delivery-table-agent {
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.delivery-table-agent.waybilled {
+  background-color: color-mix(in srgb, var(--muted-foreground) 18%, var(--card));
+  color: var(--foreground);
+}
+
+.delivery-table-agent.delivered {
+  background-color: color-mix(in srgb, var(--primary) 15%, var(--card));
+  color: var(--primary);
+}
+
+.delivery-table-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.delivery-table-status-badge.waybilled {
+  background-color: color-mix(in srgb, var(--muted-foreground) 18%, var(--card));
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.delivery-table-status-badge.delivered {
+  background-color: color-mix(in srgb, var(--primary) 15%, var(--card));
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+
+.delivery-table-status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.delivery-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.delivery-table-action-button {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delivery-table-action-button.edit {
+  color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+
+.delivery-table-action-button.edit:hover {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.delivery-table-action-button.delete {
+  color: var(--destructive);
+  background-color: color-mix(in srgb, var(--destructive) 12%, var(--card));
+}
+
+.delivery-table-action-button.delete:hover {
+  color: var(--destructive-foreground, #fff);
+  background: var(--destructive);
+}
+
+.delivery-table-action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.delivery-table-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
+.delivery-table-loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
+.delivery-table-error {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--destructive);
+}

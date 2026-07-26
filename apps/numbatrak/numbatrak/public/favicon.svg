@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Numbatrak">
+  <defs>
+    <linearGradient id="nt-sym-r0" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" rx="3.072" fill="url(#nt-sym-r0)"/>
+  <rect x="5.76" y="18.848" width="3.562" height="7.392" rx="2" fill="#FFFFFF"/>
+  <rect x="11.993" y="14.228" width="3.562" height="12.012" rx="2" fill="#FFFFFF"/>
+  <rect x="18.226" y="17" width="3.562" height="9.24" rx="2" fill="#FFFFFF"/>
+  <rect x="24.459" y="7.76" width="3.562" height="18.48" rx="2" fill="#FFFFFF"/>
+</svg>

@@ -70,7 +70,9 @@ export const passwordResetCompleteSchema = z.object({
 });
 export type PasswordResetComplete = z.infer<typeof passwordResetCompleteSchema>;
 
-export const orgRoleSchema = z.enum(["owner", "admin", "editor", "viewer"]);
+// `manager`/`csr` back Numbatrak's role model (Manager/Customer Relations) -
+// see packages/db/src/schema/numbatrak/ and apps/api/src/lib/access-control.ts.
+export const orgRoleSchema = z.enum(["owner", "admin", "editor", "viewer", "manager", "csr"]);
 export type OrgRole = z.infer<typeof orgRoleSchema>;
 
 export const userOrganizationMembershipSchema = z.object({

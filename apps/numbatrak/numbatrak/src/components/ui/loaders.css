@@ -1,0 +1,49 @@
+@keyframes arc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.arc-loader-spin {
+  animation: arc-spin 0.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes favicon-bar-rise {
+  0% {
+    transform: scaleY(0);
+    opacity: 0.25;
+  }
+  14% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  68% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  82%,
+  100% {
+    transform: scaleY(0);
+    opacity: 0.25;
+  }
+}
+
+.favicon-preloader-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: favicon-bar-rise 1.75s cubic-bezier(0.34, 1.15, 0.64, 1) infinite;
+}
+
+@keyframes favicon-preloader-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(16, 185, 129, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.35));
+  }
+}
+
+.favicon-preloader-mark {
+  animation: favicon-preloader-glow 1.75s ease-in-out infinite;
+}

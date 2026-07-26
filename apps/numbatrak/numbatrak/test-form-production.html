@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail9ja Form Test - Production</title>
+    
+    <!-- Load CSS from production (same as WordPress) -->
+    <link rel="stylesheet" href="https://mail9ja.vercel.app/embed.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .test-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-header h1 {
+            margin: 0 0 0.5rem 0;
+            color: #111;
+        }
+        .test-header p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .test-info {
+            background: #d1ecf1;
+            border: 1px solid #0dcaf0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .test-info code {
+            background: #fff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .form-container-wrapper {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🌐 Mail9ja Form Test (Production)</h1>
+        <p>Testing embed.js and embed.css from production URL (same as WordPress)</p>
+    </div>
+
+    <div class="test-info">
+        <strong>📝 Note:</strong> This page loads from <code>https://mail9ja.vercel.app/embed.js</code> - 
+        the same URL your WordPress site uses. Use this to verify production deployment.
+    </div>
+
+    <!-- Form Container (same structure as WordPress) -->
+    <div class="form-container-wrapper">
+        <div id="mail9ja-form-test" class="mail9ja-form-container" data-form-token="form_live_test123"></div>
+    </div>
+
+    <!-- Configure SDK (same as WordPress plugin) -->
+    <script>
+        // Set Supabase configuration (same as WordPress plugin)
+        window.CRM_SUPABASE_URL = 'https://tgyetavhkukcclnwrroz.supabase.co';
+        window.CRM_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRneWV0YXZoa3VrY2Nsbndycm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNTMsImV4cCI6MjA4OTM1NzA1M30.g0ccRe2f3Mv7u5KLNpslUPMaT89_Y_OBG_SGuf8D4Bo'; // Replace with your actual key
+        window.CRM_DEBUG = true; // Enable debug logging
+    </script>
+
+    <!-- Load embed.js from production (same as WordPress) -->
+    <script src="https://mail9ja.vercel.app/embed.js"></script>
+
+    <script>
+        // Additional test logging
+        console.log('%c[TEST PAGE]', 'color: #9333ea; font-weight: bold;', 'Form test page loaded (Production)');
+        console.log('[TEST PAGE] Supabase URL:', window.CRM_SUPABASE_URL);
+        console.log('[TEST PAGE] SDK Version:', window.CRMFormSDK?.version || 'Not loaded yet');
+        
+        // Monitor for SDK initialization
+        if (window.CRMFormSDK) {
+            console.log('[TEST PAGE] ✅ SDK loaded successfully from production');
+            console.log('[TEST PAGE] SDK Build Date:', window.CRMFormSDK.buildDate);
+        } else {
+            console.warn('[TEST PAGE] ⚠️ SDK not loaded - check console for errors');
+        }
+    </script>
+</body>
+</html>

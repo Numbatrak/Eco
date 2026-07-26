@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
+# Apex domain → canonical www (must be before SPA fallback)
+[[redirects]]
+  from = "/*"
+  to = "https://www.numbatrak.io/:splat"
+  status = 301
+  force = true
+  conditions = { Host = ["numbatrak.io"] }
+
+# React Router SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -19,9 +19,11 @@ import {
   platformAdminUser,
   platformAdminVerification,
 } from "./platform-admin-auth-schema.js";
+import { numbatrakSchema } from "./schema/numbatrak/index.js";
 
 export * from "./auth-schema.js";
 export * from "./platform-admin-auth-schema.js";
+export * from "./schema/numbatrak/index.js";
 
 // ---------- enums ----------
 
@@ -925,4 +927,5 @@ export const schema = {
   creditBundles,
   expenseSubCategories,
   expenses,
+  ...numbatrakSchema,
 };

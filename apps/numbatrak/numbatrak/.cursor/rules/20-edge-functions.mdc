@@ -1,0 +1,21 @@
+---
+description: Supabase Edge Function conventions (Deno runtime)
+globs:
+  - "supabase/functions/**/*.ts"
+alwaysApply: false
+---
+
+# Edge Functions (Deno)
+
+- Edge Functions run on **Deno, not Node**. Use Deno-compatible imports and
+  `Deno.env.get(...)` for secrets. Never hardcode keys or service-role tokens.
+- Validate all external input. The public order path (`create-order-from-form` or
+  equivalent) must validate the form token and confirm the form is active before
+  creating anything.
+- Enforce organization boundaries server-side: products and the resulting order must
+  belong to the form's org. Do not trust org IDs supplied by the caller.
+- Persist unit price, cost, and computed profit as snapshots on each line item at
+  creation time. Never reference live catalog prices for historical orders.
+- Public endpoints need rate limiting — this is a known open item. If it is absent,
+  flag it rather than silently shipping an unprotected endpoint.
+- Return structured JSON errors with appropriate HTTP status codes.

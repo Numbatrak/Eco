@@ -1,0 +1,229 @@
+/* Shared table + pagination — Numbatrak brand tokens, light/dark safe */
+
+.table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.table-pagination-summary {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-pagination-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.table-pagination-button:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--primary);
+  color: var(--foreground);
+}
+
+.table-pagination-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.table-pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.table-pagination-page {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.table-pagination-page:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.table-pagination-page.active {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Brand table icon gradient (replaces indigo/purple) */
+.delivery-table-icon,
+.inventory-table-icon,
+.waybill-statistics-table-icon,
+.monthly-waybill-summary-icon,
+.agent-table-icon,
+.order-table-icon,
+.form-response-table-icon,
+.monthly-summary-table-icon {
+  background: var(--primary) !important;
+  background-image: none !important;
+}
+
+.delivery-table-icon svg,
+.inventory-table-icon svg,
+.waybill-statistics-table-icon svg,
+.monthly-waybill-summary-icon svg,
+.agent-table-icon svg,
+.order-table-icon svg,
+.form-response-table-icon svg,
+.monthly-summary-table-icon svg {
+  color: var(--primary-foreground) !important;
+}
+
+/* Muted subtitle text in table headers */
+.delivery-table-subtitle,
+.agent-table-subtitle,
+.order-table-subtitle,
+.form-response-table-subtitle,
+.monthly-summary-table-subtitle,
+.monthly-waybill-summary-subtitle,
+.waybill-statistics-table-subtitle {
+  color: var(--muted-foreground) !important;
+}
+
+/* Search icons */
+.delivery-table-search-icon,
+.agent-table-search-icon,
+.order-table-search-icon,
+.form-response-table-search-icon {
+  color: var(--muted-foreground) !important;
+}
+
+/* Active pagination in legacy CSS files */
+.pagination-button.active,
+.form-response-pagination-page.active,
+.order-pagination-page.active,
+.expense-pagination-page.active,
+.abandoned-cart-pagination-page.active {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.pagination-button,
+.form-response-pagination-button,
+.order-pagination-button {
+  color: var(--foreground);
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.pagination-button:hover:not(:disabled),
+.form-response-pagination-button:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+
+/* Dialog cancel button — theme-aware */
+.dialog-cancel-button {
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: var(--card);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.dialog-cancel-button:hover {
+  background: var(--accent);
+  border-color: var(--muted-foreground);
+}
+
+/* Profit / loss semantic colors */
+.text-profit {
+  color: var(--primary);
+}
+
+.text-loss {
+  color: var(--destructive);
+}
+
+/* Legacy indigo table accents → Emerald brand */
+.delivery-table-container .delivery-table-filter-button.active,
+.delivery-table-container .delivery-table-sort-button.active,
+.follow-up-table-container .pagination-button.active,
+.order-table-container .order-table-filter-button.active,
+.expense-table-container .expense-table-filter-button.active,
+.form-response-table-container .form-response-filter-button.active,
+.waybill-statistics-table-container .waybill-statistics-table-filter-button.active {
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card)) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+.delivery-table-container .delivery-table-add-button,
+.follow-up-table-container .follow-up-add-button,
+.order-table-container .order-table-add-button {
+  background: var(--primary) !important;
+  background-image: none !important;
+  border-color: var(--primary) !important;
+}
+
+.delivery-table-search-input:focus,
+.agent-table-search-input:focus,
+.order-table-search-input:focus,
+.form-response-table-search-input:focus,
+.follow-up-table-search-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent) !important;
+}
+
+/* Secondary text on dark hero bands */
+.text-on-dark,
+.bg-midnight .text-muted-foreground {
+  color: #94a3b8 !important;
+}
+
+/* Secondary text on muted / gradient surfaces */
+.bg-muted .text-muted-foreground,
+.bg-muted\/20 .text-muted-foreground,
+.bg-muted\/40 .text-muted-foreground,
+.bg-muted\/60 .text-muted-foreground,
+.follow-up-table-header .text-muted-foreground,
+.abandoned-cart-table-header .text-muted-foreground,
+.follow-up-table-filter-label,
+.abandoned-cart-table-filter-label {
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+}
+
+.dark .bg-muted .text-muted-foreground,
+.dark .bg-muted\/40 .text-muted-foreground {
+  color: #cbd5e1;
+}

@@ -1,0 +1,1812 @@
+
+--- PAGE 1 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+ 
+NUMBATRAK 
+Developer  Brief 
+Navigation,  Features  &  Build  Plan  Based  on  product  meeting  —  June  2026   ·   Confidential   ·   For  Developer  Use  Only
+ 
+  
+Build  it  as  if  going  public.  Test  privately  
+first. 
+This  document  defines  the  Numbatrak  navigation  restructure,  tab  groupings,  feature  
+scope
+ 
+for
+ 
+each
+ 
+section,
+ 
+what
+ 
+is
+ 
+missing
+ 
+and
+ 
+needs
+ 
+to
+ 
+be
+ 
+added,
+ 
+and
+ 
+the
+ 
+full
+ 
+Phase
+ 
+1
+ 
+and
+ 
+Phase
+ 
+2
+ 
+build
+ 
+plan.
+ 
+It
+ 
+is
+ 
+the
+ 
+single
+ 
+reference
+ 
+document
+ 
+for
+ 
+the
+ 
+developer
+ 
+from
+ 
+this
+ 
+meeting
+ 
+forward.  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 2 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  01  —
+ 
+Context  and  Starting  Point   
+This  document  is  produced  from  the  June  2026  product  strategy  and  technical  planning  
+meeting
+ 
+between
+ 
+the
+ 
+founder
+ 
+(Toheeb)
+ 
+and
+ 
+the
+ 
+lead
+ 
+developer.
+ 
+It
+ 
+is
+ 
+the
+ 
+reference
+ 
+document
+ 
+for
+ 
+what
+ 
+needs
+ 
+to
+ 
+be
+ 
+built,
+ 
+in
+ 
+what
+ 
+order,
+ 
+and
+ 
+why.  "Build  Numbatrak  as  if  going  public  —  but  test  privately  first  using  the  
+founder's
+ 
+own
+ 
+brands
+ 
+as
+ 
+the
+ 
+first
+ 
+tenants."  Numbatrak  is  a  business  intelligence  platform  for  Nigerian  physical-product  and  COD  
+e-commerce
+ 
+businesses.
+ 
+Its
+ 
+core
+ 
+job
+ 
+is
+ 
+to
+ 
+show
+ 
+a
+ 
+business
+ 
+owner
+ 
+their
+ 
+key
+ 
+numbers
+ 
+at
+ 
+a
+ 
+glance
+ 
+—
+ 
+orders,
+ 
+delivery
+ 
+rate,
+ 
+AOV,
+ 
+CPA,
+ 
+profit
+ 
+per
+ 
+order,
+ 
+ad
+ 
+ROAS,
+ 
+funnel-level
+ 
+and
+ 
+business-level
+ 
+performance
+ 
+—
+ 
+so
+ 
+they
+ 
+can
+ 
+make
+ 
+decisions
+ 
+based
+ 
+on
+ 
+data,
+ 
+not
+ 
+gut
+ 
+feeling.  
+CURRENT  TECHNICAL  STATE
+ •  React  single-page  application  backed  by  Supabase  (PostgreSQL) •  Built  originally  for  single-organisation  internal  use  —  Numbatrak's  own  brands •  Row-Level  Security  (RLS)  already  in  place  and  solid  —  this  is  confirmed •  Multi-tenant  isolation  has  been  tested  —  data  does  not  bleed  between  accounts •  Emails  do  not  work  yet  —  this  is  a  live  blocker •  No  forgot-password  functionality  exists •  No  subscription  or  RBAC  system  exists •  No  super-admin  dashboard  exists •  No  Terms  of  Service  or  Privacy  Policy  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 3 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  02  —
+ 
+Build  Phases  and  Timeline   
+The  build  is  split  into  two  phases.  Phase  1  is  the  current  contract  scope  —  stabilise  
+everything
+ 
+that
+ 
+already
+ 
+exists.
+ 
+Phase
+ 
+2
+ 
+is
+ 
+the
+ 
+public
+ 
+feature
+ 
+build,
+ 
+contingent
+ 
+on
+ 
+a
+ 
+contract
+ 
+extension.  
+PHASE  1
+ 
+End  June  /  Early  July
+ 
+Stabilise  the  existing  software.  Fix  what  is  broken.  Make  everything  that  already  exists  work  correctly.  In-house  team  begins  using  by  mid-July.  
+PHASE  2
+ Mid-August  2026
+ 
+Public  feature  build  —  RBAC,  subscriptions,  multi-company,  super-admin,  working  email,  HR  integration.  Requires  contract  extension.  
+IN-HOUSE  TEST
+ 
+Through  August
+ 
+Founder's  ~8  own  brands  onboarded  as  tenants.  Dog-food  every  feature  before  external  users  touch  it.  
+PUBLIC  LAUNCH
+ 
+~August  28,  2026
+ 
+Public  launch.  Target:  1,000  users  within  one  month.  Aligned  to  founder's  birthday. 
+ 
+THE  EIGHT  INTERNAL  TEST  BRANDS  —  FIRST  TENANTS
+ These  brands  will  be  registered  as  separate  tenant  accounts  during  private  testing:  
+Monagia,
+ 
+Soevisou,
+ 
+Petabuy,
+ 
+QuickBuy,
+ 
+Confam,
+ 
+UrbanShop,
+ 
+Kinikon,
+ 
+and
+ 
+one
+ 
+additional
+ 
+brand.
+ 
+Each
+ 
+gets
+ 
+its
+ 
+own
+ 
+email
+ 
+login
+ 
+and
+ 
+appears
+ 
+as
+ 
+a
+ 
+separate
+ 
+organisation
+ 
+in
+ 
+the
+ 
+super-admin.  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 4 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  03  —
+ 
+Navigation  Restructure  —  Sidebar   
+The  current  sidebar  has  too  many  ungrouped  tabs.  Several  are  duplicates  of  the  same  
+concept.
+ 
+Several
+ 
+are
+ 
+missing
+ 
+entirely.
+ 
+The
+ 
+navigation
+ 
+must
+ 
+be
+ 
+restructured
+ 
+into
+ 
+logical
+ 
+groups
+ 
+before
+ 
+any
+ 
+further
+ 
+UI
+ 
+work
+ 
+happens.  The  flags  used  below  indicate  what  action  is  needed  for  each  tab:  •  NEW  —  does  not  exist,  must  be  built •  RENAMED  —  exists  but  name  needs  to  change •  MERGED  —  two  tabs  being  collapsed  into  one •  KEEP  —  exists  and  name  is  correct  
+OVERVIEW 
+TAB  NAME    ·    DESCRIPTION
+ Dashboard    KEEP
+ The  main  performance  view.  Business  numbers  at  a  glance  —  orders,  delivery  rate,  AOV,  CPA,  profit  per  order,  ad  ROAS.  Filter  by  product  and  date  range.  See  Section  05  for  full  metric  breakdown.
+  
+ORDERS 
+TAB  NAME    ·    DESCRIPTION
+ Orders    KEEP
+ All  incoming  orders  across  all  sources.  Status  management  —  new,  confirmed,  packed,  dispatched,  delivered,  failed,  returned.
+ Order  Forms    RENAMED
+ The  embeddable  COD  order  form  builder.  Create,  manage,  and  get  embed  code  for  order  forms  that  live  on  external  COD  landing  pages.
+ Abandoned  Carts    KEEP
+ Orders  that  were  started  but  not  completed.  Trigger  follow-up  messages  to  recover  them.
+ Follow-Ups    KEEP
+ Post-purchase  follow-up  messages  to  customers  after  delivery  is  confirmed.
+  
+DELIVERY 
+TAB  NAME    ·    DESCRIPTION
+ Waybills    KEEP
+ Individual  waybill  records.  Each  waybill  is  recorded  twice  —  once  to  update  inventory  (products  assigned  to  an  agent)  and  once  as  a  cost/delivery  entry  so  monthly  waybill  spend  can  be  tracked.
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 5 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+Agents    KEEP
+ Delivery  agents.  Assign  orders  to  agents.  Track  which  agent  handled  which  order.  Deactivate  agents  (not  just  delete  —  deactivation  keeps  history).
+ Delivery  Analytics    MERGED
+ Merge  of  the  current  Summary  tab  and  Waybill  Statistics  tab  into  one  page.  Shows:  total  waybills,  cost  price  of  products  in  those  waybills,  total  deliveries  done,  deliveries  outside  Lagos,  value  of  goods  currently  outside,  delivery  rate  by  location  (Lagos  vs  outside  Lagos).
+  
+PRODUCTS 
+TAB  NAME    ·    DESCRIPTION
+ Products    KEEP
+ Product  catalogue.  Add,  edit,  deactivate  (not  just  delete)  products.  Each  product  has  name,  SKU,  cost  price,  selling  price,  variants,  quantity.  Deactivation  stops  orders  from  being  placed  against  it  while  keeping  history.
+ Inventory    KEEP
+ Stock  levels,  low  stock  alerts,  out-of-stock  flags,  damaged/lost  stock  recording,  stock  reconciliation.  Inventory  auto-deducts  when  an  order  is  placed  and  is  tied  to  the  delivering  agent.
+  
+FINANCE 
+TAB  NAME    ·    DESCRIPTION
+ Wallet    RENAMED
+ Renamed  from  Remittance.  Money  in  based  on  revenue  generated  —  all  payments  received  from  delivered  orders.  Shows  total  collected,  pending  remittance,  and  released  amounts.
+ Expenses    KEEP
+ Four  expense  categories  tracked  separately:  Operational,  Building,  Marketing,  and  Advertising.  See  Section  06  for  full  breakdown.
+ Invoicing    NEW
+ Auto-generated  invoice  per  order.  Includes  product,  quantity,  price,  customer  details,  business  details.  Shareable  as  PDF  or  WhatsApp  link.  Status  tracked  —  paid,  unpaid,  partially  paid.
+ Accounting    NEW
+ Business-level  financial  summary.  Revenue,  expenses  per  category,  net  profit,  expense  as  percentage  of  revenue.  Connects  to  the  profitability  dashboard  calculations.
+  
+PERFORMANCE 
+TAB  NAME    ·    DESCRIPTION
+ Funnel  Analytics    NEW
+ Ad  performance  tracker  at  the  funnel  level.  Per  funnel:  ad  spend,  total  orders  generated,  total  orders  delivered,  platform  CPA,  real  CPA,  delivery  rate,  profit  per  order.  Multiple  funnels  per  product  supported.  Multiple  offers  per  funnel  supported.
+ Business  Analytics    NEW
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 6 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+Business-level  performance  summary.  Aggregates  all  funnels.  Shows  business  ROAS  vs  business  ROI  as  two  clearly  separate  numbers.  Total  profit  after  all  expense  categories  applied.
+  
+SETTINGS 
+TAB  NAME    ·    DESCRIPTION
+ Integrations    RENAMED
+ Renamed  from  Automation  Logs.  Shows  all  connected  third-party  services  —  email  platform,  SMS  platform,  payment  gateway,  Meta  Pixel,  Conversion  API.  Status  per  integration.  Connection  and  disconnection  controls.
+ Organization  Settings    KEEP
+ Business  name,  logo,  contact  details,  notification  preferences,  team  members  and  permissions,  billing  and  subscription  management.
+  
+TABS  BEING  REMOVED  ENTIRELY
+ •  Summary  —  content  merged  into  Delivery  Analytics •  Waybill  Statistics  —  content  merged  into  Delivery  Analytics •  Automation  Logs  —  replaced  by  Integrations •  Forms  —  renamed  to  Order  Forms  and  moved  under  Orders  group •  Remittance  —  renamed  to  Wallet  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 7 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  04  —
+ 
+Wallet  —  What  It  Should  Look  Like   
+Wallet  is  the  money-in  view.  It  shows  the  founder  exactly  what  revenue  has  been  
+generated,
+ 
+what
+ 
+has
+ 
+been
+ 
+collected,
+ 
+what
+ 
+is
+ 
+pending,
+ 
+and
+ 
+what
+ 
+has
+ 
+been
+ 
+released.
+ 
+It
+ 
+is
+ 
+not
+ 
+a
+ 
+payment
+ 
+processor
+ 
+—
+ 
+it
+ 
+is
+ 
+a
+ 
+tracking
+ 
+and
+ 
+visibility
+ 
+layer
+ 
+for
+ 
+all
+ 
+money
+ 
+flowing
+ 
+into
+ 
+the
+ 
+business
+ 
+from
+ 
+delivered
+ 
+orders.  
+What  Wallet  Shows  •  Total  revenue  generated  —  sum  of  all  delivered  order  values  in  the  selected  
+period •  Total  collected  —  payments  confirmed  received  from  COD  remittances  and  
+online
+ 
+payments •  Pending  remittance  —  orders  delivered  but  cash  not  yet  confirmed  received  from  
+agent •  Released  to  business  —  confirmed  received  and  reconciled •  Breakdown  by  payment  method  —  COD  vs  online  payment •  Breakdown  by  time  period  —  today,  this  week,  this  month,  custom  range •  Per-order  payment  status  —  which  specific  orders  are  paid,  pending,  or  
+outstanding  
+Remittance  Flow  for  COD  When  a  COD  order  is  delivered,  cash  is  collected  by  the  delivery  agent.  The  agent  
+remits
+ 
+to
+ 
+the
+ 
+business.
+ 
+The
+ 
+Wallet
+ 
+view
+ 
+tracks
+ 
+this
+ 
+as:  1.  Order  marked  as  delivered  in  the  Waybills  section 2.  Order  appears  in  Wallet  as  Pending  Remittance 3.  Business  owner  or  admin  confirms  cash  received  from  agent 4.  Order  moves  to  Collected 5.  Revenue  is  now  reflected  in  the  profitability  dashboard  This  flow  ensures  the  dashboard  never  shows  revenue  that  has  not  actually  been  
+received
+ 
+—
+ 
+which
+ 
+is
+ 
+a
+ 
+critical
+ 
+distinction
+ 
+for
+ 
+COD
+ 
+businesses
+ 
+where
+ 
+orders
+ 
+can
+ 
+be
+ 
+returned
+ 
+after
+ 
+being
+ 
+marked
+ 
+delivered. 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 8 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 9 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  05  —
+ 
+Dashboard  —  What  the  Metrics  Mean   
+The  dashboard  is  the  most  important  screen  in  Numbatrak.  Everything  here  is  
+auto-calculated
+ 
+from
+ 
+data
+ 
+already
+ 
+entered
+ 
+in
+ 
+other
+ 
+sections.
+ 
+The
+ 
+business
+ 
+owner
+ 
+should
+ 
+not
+ 
+need
+ 
+to
+ 
+calculate
+ 
+anything
+ 
+manually.  Filters:  by  product  (dropdown  —  All  Products  or  specific  product)  and  by  date  range  
+(Today,
+ 
+This
+ 
+Week,
+ 
+This
+ 
+Month,
+ 
+Custom).  
+The  10  Core  Metrics  —  Definitions  and  Formulas   
+Total  Orders  Generated
+ 
+Count  of  all  orders  received  in  the  selected  period  across  all  sources  —  order  form,  manual  entry,  CSV  upload.  
+Total  Orders  Delivered
+ 
+Count  of  orders  with  delivery  status  marked  as  Delivered.  Revenue  is  only  counted  on  delivered  orders.  
+Delivery  Rate
+ 
+(Total  Delivered  ÷  Total  Generated)  ×  100.  Displayed  as  a  percentage.  Colour-coded  —  green  above  target,  amber  approaching  threshold,  red  below  minimum.  
+Average  Order  Value  (AOV)
+ 
+Total  sales  value  of  delivered  orders  ÷  Total  delivered  orders.  Only  uses  delivered  orders  —  undelivered  orders  have  not  generated  real  revenue.  
+Platform  CPA
+ 
+Ad  spend  ÷  Total  orders  generated.  This  is  what  Facebook  or  any  ad  platform  shows  as  the  cost  per  order.  Always  displayed  alongside  Real  CPA  so  the  gap  is  visible.  
+Real  CPA
+ 
+Ad  spend  ÷  Total  orders  delivered.  This  is  the  true  acquisition  cost  after  accounting  for  failed  deliveries.  Always  higher  than  Platform  CPA.  The  gap  between  the  two  is  shown  explicitly.  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 10 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+Average  COGS
+ 
+Total  cost  price  of  all  delivered  orders  ÷  Total  delivered  orders.  Accounts  for  bundles  and  multi-unit  orders  —  not  just  the  single  unit  price.  Average  Delivery  Fee
+ 
+Total  delivery  fees  paid  ÷  Total  delivered  orders. 
+ 
+Profit  Per  Order
+ 
+AOV  minus  Real  CPA  minus  Average  COGS  minus  Average  Delivery  Fee.  The  single  most  important  number  on  the  dashboard.  
+Total  Profit
+ 
+Profit  Per  Order  ×  Total  Delivered  Orders.  Cross-checks  against  revenue  minus  all  expense  categories. 
+ 
+ROAS  vs  Business  ROI  —  Always  Separate  These  are  two  different  numbers  and  must  always  be  displayed  separately  with  clear  
+labels.
+ 
+They
+ 
+must
+ 
+never
+ 
+be
+ 
+merged
+ 
+or
+ 
+one
+ 
+used
+ 
+as
+ 
+a
+ 
+substitute
+ 
+for
+ 
+the
+ 
+other.  
+ROAS
+ 
+Return  on  Ad  Spend.  Total  revenue  from  delivered  orders  ÷  Total  ad  spend.  This  is  the  advertising  metric.  A  strong  ROAS  does  not  mean  the  business  is  profitable.  
+Business  ROI
+ 
+Total  profit  after  all  expenses  (operational,  building,  marketing,  advertising)  ÷  Total  investment.  This  is  the  real  business  metric.  Always  calculated  and  shown  after  all  expense  categories  are  applied. 
+ 
+Delivery  Rate  by  Location  The  dashboard  already  has  a  section  for  Delivery  Rate  by  Location  —  Lagos  vs  Outside  
+Lagos.
+ 
+This
+ 
+must
+ 
+show
+ 
+delivery
+ 
+performance
+ 
+separately
+ 
+for
+ 
+Lagos
+ 
+orders
+ 
+and
+ 
+outside-Lagos
+ 
+orders
+ 
+because
+ 
+the
+ 
+failure
+ 
+rate,
+ 
+cost,
+ 
+and
+ 
+logistics
+ 
+behaviour
+ 
+are
+ 
+significantly
+ 
+different
+ 
+between
+ 
+the
+ 
+two.  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 11 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  06  —
+ 
+Expenses  —  Four  Categories   
+Expenses  must  be  split  into  exactly  four  categories.  This  separation  is  not  cosmetic  —  it  
+is
+ 
+what
+ 
+allows
+ 
+the
+ 
+business
+ 
+to
+ 
+calculate
+ 
+advertising
+ 
+ROAS
+ 
+independently,
+ 
+see
+ 
+operational
+ 
+cost
+ 
+as
+ 
+a
+ 
+percentage
+ 
+of
+ 
+revenue,
+ 
+and
+ 
+identify
+ 
+what
+ 
+to
+ 
+cut.  
+Category  1  —  Operational  Expenses  The  daily  cost  of  keeping  the  business  running.  These  are  recurring  and  expected.  They  
+feed
+ 
+directly
+ 
+into
+ 
+the
+ 
+overall
+ 
+P&L
+ 
+calculation.  •  Logistics  and  delivery  fees •  Automation  and  software  subscriptions •  Office  supplies  and  utilities •  Internet  and  communication •  Salaries  and  staff  wages •  Customer  service  costs •  Packaging  materials •  Platform  fees  and  transaction  charges  
+Category  2  —  Building  Expenses  One-off  or  infrequent  spend  on  things  that  build  assets.  These  should  not  happen  often  
+—
+ 
+if
+ 
+they
+ 
+are
+ 
+recurring
+ 
+they
+ 
+are
+ 
+likely
+ 
+misclassified.  •  Software  development  and  tech  infrastructure •  Equipment  and  hardware •  Website,  domain,  and  hosting •  Brand  and  design  work •  Training  and  staff  development •  Legal  and  registration  fees •  Photography  and  content  production  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 12 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+Category  3  —  Marketing  Expenses  The  cost  of  marketing  activities  that  are  not  direct  ad  spend.  These  are  separated  from  
+advertising
+ 
+because
+ 
+they
+ 
+do
+ 
+not
+ 
+directly
+ 
+produce
+ 
+an
+ 
+order
+ 
+—
+ 
+they
+ 
+build
+ 
+awareness
+ 
+and
+ 
+brand.  •  Content  creation  costs •  Influencer  and  creator  fees •  Email  and  SMS  marketing  platform  costs •  Organic  social  media  production •  PR  and  press  costs •  Sponsorships  and  partnerships  
+Category  4  —  Advertising  Expenses  Pure  paid  ad  spend  only.  This  category  is  tracked  separately  from  all  others  so  
+advertising
+ 
+ROAS
+ 
+can
+ 
+be
+ 
+calculated
+ 
+in
+ 
+isolation
+ 
+—
+ 
+before
+ 
+operational
+ 
+costs
+ 
+are
+ 
+applied
+ 
+—
+ 
+and
+ 
+then
+ 
+business
+ 
+ROI
+ 
+is
+ 
+calculated
+ 
+after
+ 
+all
+ 
+categories
+ 
+are
+ 
+applied.  •  Meta  ads  spend  —  Facebook  and  Instagram •  Google  Ads  spend •  TikTok  Ads  spend •  Any  other  paid  placement  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 13 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  07  —
+ 
+Funnel  Analytics  —  Per  Funnel,  Per  
+Offer
+  
+This  is  one  of  the  most  important  features  in  Numbatrak  and  it  does  not  exist  in  any  
+comparable
+ 
+Nigerian
+ 
+tool.
+ 
+A
+ 
+business
+ 
+can
+ 
+run
+ 
+multiple
+ 
+funnels
+ 
+on
+ 
+the
+ 
+same
+ 
+product
+ 
+—
+ 
+different
+ 
+price
+ 
+points,
+ 
+different
+ 
+ad
+ 
+angles,
+ 
+different
+ 
+platforms
+ 
+—
+ 
+and
+ 
+needs
+ 
+to
+ 
+see
+ 
+each
+ 
+one's
+ 
+performance
+ 
+separately.  
+How  Funnels  Work  Ad  spend  is  recorded  per  source  (TikTok,  Facebook,  Instagram),  per  product,  and  per  
+specific
+ 
+funnel
+ 
+or
+ 
+offer
+ 
+within
+ 
+that
+ 
+product.
+ 
+One
+ 
+product
+ 
+can
+ 
+have
+ 
+multiple
+ 
+funnels.
+ 
+One
+ 
+funnel
+ 
+can
+ 
+have
+ 
+multiple
+ 
+offers.  Example  from  the  meeting  —  'Flusher'  product,  one  month:  •  Funnel  1:  Discount  offer  —  ₦1,500,000  ad  spend •  Funnel  2:  Normal  offer  —  ₦1,054,000  ad  spend •  Funnel  3:  TikTok  —  ₦114,000  ad  spend  Each  funnel  shows  its  own  orders,  delivery  rate,  CPA,  and  profit  per  order.  The  business  
+owner
+ 
+can
+ 
+see
+ 
+whether
+ 
+a
+ 
+funnel
+ 
+is
+ 
+profitable
+ 
+even
+ 
+when
+ 
+the
+ 
+overall
+ 
+business
+ 
+is
+ 
+not,
+ 
+and
+ 
+vice
+ 
+versa.  
+What  Each  Funnel  View  Shows  •  Funnel  name  and  source  (Facebook,  TikTok,  Instagram,  etc.) •  Ad  spend  for  this  funnel •  Total  orders  generated  from  this  funnel •  Total  orders  delivered  from  this  funnel •  Delivery  rate  for  this  funnel •  Platform  CPA  for  this  funnel  —  ad  spend  ÷  orders  generated •  Real  CPA  for  this  funnel  —  ad  spend  ÷  orders  delivered •  Platform  CPA  vs  Real  CPA  gap  —  shown  explicitly 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 14 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+•  AOV  for  this  funnel •  Average  COGS  for  this  funnel •  Average  delivery  fee  for  this  funnel •  Profit  per  order  for  this  funnel •  Total  profit  from  this  funnel  
+Business  vs  Funnel  Toggle  The  user  can  toggle  between  two  views  at  the  top  of  the  Performance  section:  •  Individual  Funnel  View  —  all  metrics  for  one  specific  funnel  or  offer  in  isolation •  Business  Total  View  —  all  funnels  aggregated  into  one  business-level  
+performance
+ 
+picture  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 15 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  08  —
+ 
+HR  Dashboard  Integration   
+The  founder  built  a  separate  HR  dashboard  (on  domain  '2IBR')  that  manages  staff  
+records,
+ 
+payroll,
+ 
+attendance,
+ 
+strikes
+ 
+and
+ 
+stars,
+ 
+leaderboard,
+ 
+complaints,
+ 
+and
+ 
+leave
+ 
+management.
+ 
+The
+ 
+decision
+ 
+made
+ 
+in
+ 
+this
+ 
+meeting
+ 
+is
+ 
+to
+ 
+rebuild
+ 
+it
+ 
+into
+ 
+Numbatrak
+ 
+—
+ 
+not
+ 
+via
+ 
+API
+ 
+—
+ 
+as
+ 
+per-tenant
+ 
+functionality.  "Because  Numbatrak  is  going  multi-tenant,  HR  features  must  exist  per  
+tenant.
+ 
+Each
+ 
+organisation
+ 
+gets
+ 
+its
+ 
+own
+ 
+HR
+ 
+layer.
+ 
+The
+ 
+existing
+ 
+HR
+ 
+code
+ 
+is
+ 
+a
+ 
+guide
+ 
+—
+ 
+not
+ 
+a
+ 
+copy-paste."  
+Why  Not  API  Integration  An  API  sync  would  keep  both  systems  alive  and  mirror  data  between  them.  This  creates  
+two
+ 
+codebases
+ 
+to
+ 
+maintain
+ 
+and
+ 
+data
+ 
+that
+ 
+is
+ 
+only
+ 
+reflected
+ 
+rather
+ 
+than
+ 
+native.
+ 
+Since
+ 
+Numbatrak
+ 
+is
+ 
+going
+ 
+multi-tenant,
+ 
+each
+ 
+organisation
+ 
+needs
+ 
+its
+ 
+own
+ 
+HR
+ 
+data
+ 
+isolated
+ 
+by
+ 
+RLS
+ 
+—
+ 
+just
+ 
+like
+ 
+every
+ 
+other
+ 
+data
+ 
+type
+ 
+in
+ 
+Numbatrak.
+ 
+Building
+ 
+it
+ 
+as
+ 
+a
+ 
+native
+ 
+module
+ 
+is
+ 
+the
+ 
+correct
+ 
+architectural
+ 
+decision.  
+HR  Features  to  Rebuild  into  Numbatrak  —  Incrementally  These  are  rolled  out  one  at  a  time,  not  all  at  once.  Order  of  priority  from  the  meeting:  6.  Staff  records  and  salary  —  base  salary  and  commission  per  staff  member 7.  Payroll  —  total  monthly  salary  cost,  paid  or  unpaid  status  per  staff 8.  Attendance  —  staff  attendance  logging 9.  Stars  and  strikes  —  performance  record  per  staff  member 10.  Leaderboard  —  staff  ranked  by  performance  metrics 11.  Complaints  dashboard  —  customer  complaints  logged,  assigned,  and  tracked 12.  Feedback  —  customer  and  internal  feedback  records 13.  Leave  management  —  staff  on  leave  auto-marked  absent,  no  orders  assigned,  
+no
+ 
+query
+ 
+raised,
+ 
+payslip
+ 
+still
+ 
+visible  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 16 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+HR  +  Numbatrak  Connection  Once  the  HR  module  is  rebuilt  into  Numbatrak,  delivered  customers  from  the  order  
+management
+ 
+system
+ 
+auto-populate
+ 
+the
+ 
+call
+ 
+and
+ 
+complaints
+ 
+queue.
+ 
+No
+ 
+more
+ 
+manual
+ 
+CSV
+ 
+export
+ 
+and
+ 
+bulk
+ 
+import
+ 
+—
+ 
+the
+ 
+customer
+ 
+data
+ 
+flows
+ 
+directly
+ 
+from
+ 
+orders
+ 
+into
+ 
+the
+ 
+CRS
+ 
+(customer
+ 
+relations)
+ 
+workflow.  Staff  CRS  performance  —  commissions  earned,  complaints  handled,  feedback  received  
+—
+ 
+connects
+ 
+to
+ 
+the
+ 
+business
+ 
+profitability
+ 
+view
+ 
+so
+ 
+the
+ 
+founder
+ 
+can
+ 
+see
+ 
+human
+ 
+performance
+ 
+and
+ 
+business
+ 
+performance
+ 
+in
+ 
+one
+ 
+place.  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 17 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  09  —
+ 
+Phase  1  —  Stabilisation  Tasks   
+Phase  1  is  the  current  contract  scope.  Target:  end  June  /  early  July  2026.  The  goal  is  to  
+make
+ 
+everything
+ 
+that
+ 
+already
+ 
+exists
+ 
+work
+ 
+correctly
+ 
+—
+ 
+not
+ 
+to
+ 
+add
+ 
+major
+ 
+new
+ 
+features.  
+TASK    ·    DETAIL    ·    PRIORITY
+  Email  integration Wire  email  platform  (SendGrid  or  Brevo).  Emails  currently  do  not  work  at  all.  This  is  a  blocker  for  order  confirmations,  member  invites,  and  forgot-password. 
+Critical
+ 
+ Forgot-password  flow Not  implemented  at  all.  Must  be  built  alongside  email  integration. 
+Critical
+ 
+ Navigation  restructure Implement  the  new  grouped  sidebar  as  defined  in  Section  03.  Rename,  merge,  and  remove  tabs  as  specified. 
+Critical
+ 
+ Delivery  Analytics  page Merge  Summary  tab  and  Waybill  Statistics  tab  into  one  Delivery  Analytics  page  as  defined  in  Section  03. 
+High
+ 
+ Wallet  page Rename  Remittance  to  Wallet.  Build  the  remittance  tracking  flow  as  defined  in  Section  04. 
+High
+ 
+ Dashboard  metric  accuracy Review  every  metric  on  the  dashboard  against  the  formulas  in  Section  05.  The  figure  currently  labelled  'profit'  is  actually  revenue.  Correct  all  labels  and  calculations. 
+Critical
+ 
+ Agent  deactivation Add  deactivate  option  to  agents  (not  just  delete).  Deactivated  agents  stop  receiving  orders  but  their  history  is  preserved. 
+High
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 18 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+ Product  deactivation Add  deactivate  option  to  products  (currently  only  edit  and  delete  exist). 
+High
+ 
+ Order  form  UI Remove  duplicate  preview  and  redundant  third  column.  Form  functionality  is  confirmed  working  —  UI  only  needs  cleanup. 
+Medium
+ 
+ Abandoned  cart  —  verify The  abandoned  cart  feature  exists  but  its  behaviour  is  unclear.  Verify  it  works  end-to-end  and  document  how  it  functions. 
+High
+ 
+ Dashboard  —  show  brand  name Home  screen  should  display  the  store/brand  name,  not  'Numbatrak'.  Clicking  the  brand  name  goes  to  the  homepage. 
+Medium
+ 
+ Terms  of  Service  and  Privacy  Policy Currently  missing  entirely.  Must  be  added  before  any  external  users  are  onboarded. 
+Critical
+ 
+ Sample/test  data  cleanup Delete  sample  and  test  data  from  the  database  once  the  developer  confirms  multi-tenant  isolation  is  working  correctly. 
+High
+ 
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 19 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  10  —
+ 
+Phase  2  —  Public  Feature  Build   
+Phase  2  requires  a  contract  extension.  Target:  mid-August  2026.  These  are  the  features  
+required
+ 
+before
+ 
+any
+ 
+external
+ 
+paying
+ 
+users
+ 
+are
+ 
+onboarded.  
+TASK    ·    DETAIL    ·    PRIORITY
+  RBAC  —  Role-Based  Access  Control 
+Feature  access  governed  by  subscription  tier.  Users  on  lower  plans  who  try  to  access  a  higher-tier  feature  see  an  upgrade  prompt,  not  an  error. 
+Critical
+ 
+ Subscription  plans  and  billing Subscription  tiers  (Starter,  Growth,  Pro).  Per-plan  feature  limits  —  number  of  agents,  CRS  staff,  admin  users.  Paystack  recurring  billing.  Monthly  and  annual  options. 
+Critical
+ 
+ Multi-company  management One  account  managing  multiple  brands  or  companies  based  on  plan.  Each  company  is  a  separate  tenant  with  its  own  isolated  data. 
+Critical
+ 
+ Super-admin  dashboard Internal  admin  view  for  the  Numbatrak  team.  Manage  all  organisations,  deactivate/revoke  accounts,  monitor  platform  activity,  view  churn  and  platform  revenue.  See  the  Super-Admin  Infrastructure  document  for  full  spec. 
+Critical
+ 
+ Funnel  Analytics  section New  Performance  section  with  funnel-level  tracking  as  defined  in  Section  07.  Per  funnel:  ad  spend,  orders,  delivery  rate,  platform  CPA,  real  CPA,  profit  per  order. 
+Critical
+ 
+ Business  Analytics  section Business-level  aggregated  view.  ROAS  vs  Business  ROI  as  two  separate  
+Critical
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 20 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+labelled  numbers.  Total  profit  after  all  expense  categories.  Invoicing  section Auto-generate  invoice  per  order.  PDF  and  WhatsApp  shareable.  Paid,  unpaid,  partially  paid  status  tracking. 
+High
+ 
+ Accounting  section Business  financial  summary  connecting  revenue,  all  four  expense  categories,  and  net  profit  in  one  view. 
+High
+ 
+ HR  module  —  incremental Rebuild  HR  dashboard  into  Numbatrak  as  per-tenant  functionality.  Roll  out  incrementally:  staff  and  salary  first,  then  payroll,  attendance,  stars/strikes,  leaderboard,  complaints,  feedback,  leave. 
+High
+ 
+ Public  landing  page Marketing  page  with  pricing,  feature  overview,  waitlist  or  signup  CTA,  and  'coming  soon'  feature  section.  Separate  from  the  app  itself. 
+High
+ 
+ Support  system In-app  chat  support  and  email  support  ticketing  before  external  users  are  onboarded.  WhatsApp  support  number. 
+High
+ 
+ SMS  integration Integrate  Termii  for  SMS  notifications  (order  confirmations,  delivery  updates,  alerts). 
+Medium
+ 
+ WhatsApp  notifications Order  confirmation,  delivery  update,  and  failed  delivery  alert  via  WhatsApp.  After  SMS  is  live. 
+Medium
+ 
+ Payment  gateway  for  paid  orders Integrate  Paystack  (or  similar)  for  online  paid  order  checkout  on  the  order  form  —  in  addition  to  COD. 
+Medium
+ 
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 21 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  11  —
+ 
+What  Is  Missing  —  Full  Gap  List   
+These  are  features  that  are  not  in  the  current  build  at  all  and  must  be  added.  They  
+emerged
+ 
+from
+ 
+comparing
+ 
+the
+ 
+current
+ 
+sidebar,
+ 
+the
+ 
+meeting
+ 
+discussion,
+ 
+and
+ 
+the
+ 
+full
+ 
+feature
+ 
+map.  
+Missing  —  Required  Before  Public  Launch  •  Funnel  Analytics  —  per  funnel  ad  tracking,  platform  CPA  vs  real  CPA,  
+delivery
+ 
+rate
+ 
+per
+ 
+funnel,
+ 
+profit
+ 
+per
+ 
+funnel •  Business  Analytics  —  business-level  ROAS  vs  business  ROI  as  two  
+separate
+ 
+numbers •  Wallet  —  money-in  tracking  with  remittance  confirmation  flow  for  COD •  Invoicing  —  auto-generated  invoices  per  order,  PDF,  WhatsApp  shareable •  Accounting  —  financial  summary  view  connecting  all  revenue  and  expense  
+categories •  RBAC  —  subscription-tier-based  feature  access  control •  Subscription  plans  and  billing  via  Paystack •  Super-admin  dashboard  —  platform  management  view  for  the  Numbatrak  
+team •  Forgot-password  flow •  Working  email  —  order  confirmations,  member  invites,  dunning •  Terms  of  Service  and  Privacy  Policy  
+Missing  —  Required  for  Full  Feature  Parity  •  HR  module  built  into  Numbatrak  per  tenant  —  staff,  payroll,  attendance,  
+stars/strikes,
+ 
+leaderboard,
+ 
+complaints,
+ 
+leave •  Agent  deactivation  (not  just  delete) •  Product  deactivation  (not  just  delete) •  Damaged  products  category  —  move  damaged  stock  separately  so  it  does  not  
+inflate
+ 
+live
+ 
+inventory
+ 
+value •  Transfer  products  between  agents •  Delivery  rate  by  location  —  Lagos  vs  outside  Lagos  already  started  on  
+dashboard,
+ 
+needs
+ 
+to
+ 
+be
+ 
+completed 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 22 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+•  Customer  source  attribution  —  where  each  customer  came  from  (Facebook,  
+TikTok,
+ 
+Instagram,
+ 
+organic)
+ 
+for
+ 
+ad
+ 
+optimisation •  SMS  notifications  via  Termii •  WhatsApp  notifications  for  orders  and  delivery  updates •  Abandoned  order  recovery  —  verify  it  works  and  complete  the  back-end  wiring  
+Missing  —  Post-Launch  /  Future  •  Meta  Ads  API  direct  connection  —  removes  need  for  manual  ad  spend  entry  
+(post
+ 
+1,000
+ 
+paying
+ 
+users) •  Google  Ads  integration  (post  1,000  paying  users) •  TikTok  Ads  integration  (post  1,000  paying  users) •  Predictive  analytics  —  predict  revenue  from  planned  ad  spend  (future  vision) •  Facebook  Pixel  and  Conversion  API  on  the  order  form  storefront  (developer  has  
+already
+ 
+prototyped
+ 
+this
+ 
+—
+ 
+it
+ 
+works) •  Advanced  accounting  —  P&L  statements,  balance  sheet,  cash  flow,  bank  
+reconciliation
+ 
+(future
+ 
+vision) •  Barcode  generator  for  inventory  labelling  (post  1,000  users) •  Customer  segments  and  re-engagement  campaigns  (post  1,000  users)  
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 23 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+—  SECTION  12  —
+ 
+Recommended  External  Integrations   
+These  are  the  third-party  services  the  developer  flagged  as  required.  None  are  live  
+today
+ 
+except
+ 
+the
+ 
+Supabase
+ 
+database.  
+Email
+ 
+SendGrid  or  Brevo.  Either  works.  Must  be  integrated  in  Phase  1  —  emails  are  a  Phase  1  blocker.  Needed  for:  order  confirmations  to  customers,  member  invite  emails,  forgot-password,  dunning  emails  for  failed  subscription  payments.  
+SMS
+ 
+Termii  (T-E-R-M-I-I).  Nigerian-focused  SMS  platform.  Phase  2.  Needed  for:  order  confirmation  SMS,  delivery  update  SMS,  OTP  authentication.  
+Payment  gateway
+ 
+Paystack.  Phase  2.  Needed  for:  paid  order  checkout  on  the  order  form  (as  an  alternative  to  COD),  and  Numbatrak's  own  subscription  billing.  
+Meta  Pixel  +  Conversion  API
+ 
+Facebook  Ads  Pixel  ID  and  Conversion  API.  The  developer  has  already  prototyped  this  and  it  works.  Phase  2.  Needed  for:  customer  source  attribution  on  the  order  form  so  brands  know  which  ad  drove  each  order. 
+ 
+Technology  Stack  Confirmed  •  Front-end:  React  single-page  application •  Database:  Supabase  (managed  PostgreSQL) •  Auth  and  security:  Supabase  Auth  with  Row-Level  Security  on  every  table •  Email:  SendGrid  or  Brevo  (to  be  selected) •  SMS:  Termii •  Payments:  Paystack  (subscriptions  and  order  payments) 
+  
+ This  document  is  produced  from  the  June  2026  product  strategy  and  technical  planning  meeting.  All  
+decisions
+ 
+and
+ 
+action
+ 
+items
+ 
+are
+ 
+recorded
+ 
+in
+ 
+the
+ 
+meeting
+ 
+summary
+ 
+document.
+ 
+This
+ 
+brief
+ 
+is
+ 
+the
+ 
+implementation
+ 
+reference
+ 
+for
+ 
+the
+ 
+developer.
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 
+--- PAGE 24 ---
+NUMBATRAK   ·   DEVELOPER  BRIEF   ·   CONFIDENTIAL   ·   JUNE  2026
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   Confidential
+ 
+Numbatrak  Developer  Brief   ·   June  2026   ·   For  Developer  Use  Only
+ 

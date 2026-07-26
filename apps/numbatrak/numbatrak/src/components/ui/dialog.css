@@ -1,0 +1,387 @@
+/* Dialog Overlay Styles */
+[data-slot="dialog-overlay"] {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+[data-slot="dialog-overlay"][data-state="open"] {
+  animation: fade-in 0.2s ease-out;
+}
+
+[data-slot="dialog-overlay"][data-state="closed"] {
+  animation: fade-out 0.2s ease-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Dialog Content Styles */
+[data-slot="dialog-content"] {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  width: 100%;
+  max-width: 32rem;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  [data-slot="dialog-content"] {
+    border-radius: 0.5rem;
+  }
+}
+
+[data-slot="dialog-content"][data-state="open"] {
+  animation: dialog-in 0.2s ease-out;
+}
+
+[data-slot="dialog-content"][data-state="closed"] {
+  animation: dialog-out 0.2s ease-in;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+/* Dialog Close Button */
+[data-slot="dialog-content"] > [data-slot="dialog-close"] {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  border-radius: 0.125rem;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--foreground);
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"]:hover {
+  opacity: 1;
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--ring-offset-background, var(--background));
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"]:disabled {
+  pointer-events: none;
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"][data-state="open"] {
+  background-color: var(--accent);
+  color: var(--muted-foreground);
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"] svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+[data-slot="dialog-content"] > [data-slot="dialog-close"] .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Dialog Header */
+[data-slot="dialog-header"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  [data-slot="dialog-header"] {
+    text-align: left;
+  }
+}
+
+/* Dialog Footer */
+[data-slot="dialog-footer"] {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  [data-slot="dialog-footer"] {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* Dialog Title */
+[data-slot="dialog-title"] {
+  font-size: 1.125rem;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0;
+  color: var(--foreground);
+}
+
+/* Dialog Description */
+[data-slot="dialog-description"] {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* Enhanced Modal Styles for Better UI */
+[data-slot="dialog-content"].modal-enhanced,
+[data-slot="dialog-content"][class*="max-w-2xl"],
+[data-slot="dialog-content"][class*="max-h-"] {
+  max-width: 42rem;
+  max-height: 95vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: none;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Handle specific Tailwind classes that might be used */
+[data-slot="dialog-content"].max-w-2xl,
+[data-slot="dialog-content"][class*="max-w-2xl"] {
+  max-width: 42rem;
+}
+
+[data-slot="dialog-content"].max-h-\[95vh\],
+[data-slot="dialog-content"][class*="max-h-"] {
+  max-height: 95vh;
+}
+
+[data-slot="dialog-content"].border-0,
+[data-slot="dialog-content"][class*="border-0"] {
+  border: none;
+}
+
+[data-slot="dialog-content"].shadow-2xl,
+[data-slot="dialog-content"][class*="shadow-2xl"] {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+[data-slot="dialog-content"].p-0,
+[data-slot="dialog-content"][class*="p-0"] {
+  padding: 0;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+[data-slot="dialog-content"].overflow-hidden,
+[data-slot="dialog-content"][class*="overflow-hidden"] {
+  overflow: hidden;
+}
+
+[data-slot="dialog-content"].bg-white,
+[data-slot="dialog-content"][class*="bg-white"] {
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+[data-slot="dialog-content"].modal-enhanced [data-slot="dialog-header"],
+[data-slot="dialog-content"][class*="p-0"] [data-slot="dialog-header"] {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+/* Only scroll modal body — never the fixed hero header */
+[data-slot="dialog-content"][class*="p-0"] > .dialog-body-scroll,
+[data-slot="dialog-content"][class*="p-0"] > div.dialog-body-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: none;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > .dialog-hero-band,
+[data-slot="dialog-content"][class*="p-0"] > div.dialog-hero-band {
+  flex-shrink: 0;
+  overflow: visible;
+  max-height: none;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > .dialog-footer-bar {
+  flex-shrink: 0;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.overflow-y-auto:not(.dialog-hero-band) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.overflow-y-auto,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="overflow-y-auto"] {
+  overflow-y: auto;
+}
+
+/* Ensure forms are not centered and use full width */
+[data-slot="dialog-content"][class*="p-0"] > div form,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="overflow-y-auto"] form {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  margin: 0 !important;
+}
+
+/* Ensure form grids use full width */
+[data-slot="dialog-content"][class*="p-0"] > div form .grid,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="overflow-y-auto"] form .grid {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.max-h-\[calc\(95vh-180px\)\],
+[data-slot="dialog-content"][class*="p-0"] > div[class*="max-h-"] {
+  max-height: calc(95vh - 180px);
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.px-8,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="px-8"] {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.py-6,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="py-6"] {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+[data-slot="dialog-content"][class*="p-0"] > div.bg-white,
+[data-slot="dialog-content"][class*="p-0"] > div[class*="bg-white"] {
+  background-color: var(--card);
+  color: var(--card-foreground);
+}
+
+/* Legacy gray utilities inside modals — remap to theme tokens on switch */
+[data-slot="dialog-content"] .text-gray-900,
+[data-slot="dialog-content"] .text-gray-800,
+[data-slot="dialog-content"] .text-gray-700 {
+  color: var(--foreground);
+}
+
+[data-slot="dialog-content"] .text-gray-600,
+[data-slot="dialog-content"] .text-gray-500,
+[data-slot="dialog-content"] .text-gray-400 {
+  color: var(--muted-foreground);
+}
+
+[data-slot="dialog-content"] .bg-gray-50,
+[data-slot="dialog-content"] .bg-gray-100 {
+  background-color: color-mix(in srgb, var(--muted) 55%, var(--card));
+}
+
+[data-slot="dialog-content"] .border-gray-200,
+[data-slot="dialog-content"] .border-gray-300 {
+  border-color: var(--border);
+}
+
+/* Form controls fill modal width */
+[data-slot="dialog-content"] [data-slot="select-trigger"],
+[data-slot="dialog-content"] [data-slot="input"],
+[data-slot="dialog-content"] [data-slot="textarea"] {
+  max-width: 100%;
+}
+
+[data-slot="dialog-content"] .max-w-none[data-slot="select-trigger"] {
+  max-width: none;
+  width: 100%;
+}
+
+[data-slot="dialog-content"].modal-enhanced [data-slot="dialog-footer"],
+[data-slot="dialog-content"][class*="p-0"] [data-slot="dialog-footer"] {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  margin-top: auto;
+}
+
+/* Scrollbar styling for modal content */
+[data-slot="dialog-content"].modal-enhanced > div:not([data-slot])::-webkit-scrollbar,
+[data-slot="dialog-content"][class*="p-0"] > div:not([data-slot])::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-slot="dialog-content"].modal-enhanced > div:not([data-slot])::-webkit-scrollbar-track,
+[data-slot="dialog-content"][class*="p-0"] > div:not([data-slot])::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+[data-slot="dialog-content"].modal-enhanced > div:not([data-slot])::-webkit-scrollbar-thumb,
+[data-slot="dialog-content"][class*="p-0"] > div:not([data-slot])::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+[data-slot="dialog-content"].modal-enhanced > div:not([data-slot])::-webkit-scrollbar-thumb:hover,
+[data-slot="dialog-content"][class*="p-0"] > div:not([data-slot])::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+

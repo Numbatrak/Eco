@@ -1,0 +1,323 @@
+Date	Month	CSR	Agent	Supplier	Status	Product	Quantity	Cost	Waybill_Fee
+1 Sep 2025	September	Nuella	Gologistics (Uyo)		Delivered	Vacuum Sealer	2	₦19,000.00	
+1 Sep 2025	September	Nuella	Gologistics (Uyo)		Delivered	Nylon	100	₦15,000.00	
+2 Sep 2025	September	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+2 Sep 2025	September	Nuella	Eclipse Logistics		Delivered	Nylon	50	₦7,500.00	
+2 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+2 Sep 2025	September	CRS1	Formax (Rivers)		Delivered	Smart Tablet	2	₦24,000.00	
+3 Sep 2025	September	CRS1	Quickwaka		Delivered	Smart Tablet	2	₦24,000.00	
+3 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	Gologistics (Calabar)		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	Gologistics (Calabar)		Delivered	Nylon	100	₦15,000.00	
+3 Sep 2025	September	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	HS_Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Sep 2025	September	Nuella	Peng_Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Sep 2025	September	Nuella	Gologistics (Calabar)		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Sep 2025	September	CRS1	Fomax		Delivered	Smart Tablet	4	₦48,000.00	
+4 Sep 2025	September	CRS1	Adebayo		Delivered	Smart Tablet	1	₦12,000.00	
+5 Sep 2025	September	Nuella	Samsucc Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+5 Sep 2025	September	Nuella	Samsucc Logistics		Delivered	Nylon	50	₦7,500.00	
+5 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+5 Sep 2025	September	Nuella	Aba logistics 		Delivered	Vacuum Sealer	1	₦9,500.00	
+5 Sep 2025	September	Nuella	Aba logistics 		Delivered	Nylon	50	₦7,500.00	
+6 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+6 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+6 Sep 2025	September	Nuella	Gologistics (Calabar)		Waybilled	Vacuum Sealer	3	₦28,500.00	₦5,000.00
+6 Sep 2025	September	Nuella	Gologistics (Calabar)		Waybilled	Nylon	100	₦15,000.00	
+6 Sep 2025	September	Nuella	Gologistics (Uyo)		Waybilled	Vacuum Sealer	3	₦28,500.00	₦4,000.00
+6 Sep 2025	September	CRS1	Samsucc Logistics		Delivered	Smart Tablet	1	₦12,000.00	
+8 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+8 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	3	₦28,500.00	
+9 Sep 2025	September	Nuella	Adebayo		Waybilled	Vacuum Sealer	2	₦19,000.00	₦5,000.00
+9 Sep 2025	September	Nuella	Adebayo		Waybilled	Nylon	50	₦7,500.00	
+9 Sep 2025	September	Nuella	Peng_Logistics		Waybilled	Nylon	150	₦22,500.00	₦4,000.00
+9 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+11 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+11 Sep 2025	September	Nuella	Azird		Delivered	Nylon	100	₦15,000.00	
+11 Sep 2025	September	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+11 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+11 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+11 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+11 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Nylon	50	₦7,500.00	
+11 Sep 2025	September	Nuella	HS_Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+12 Sep 2025	September	Nuella			Delivered			₦0.00	
+12 Sep 2025	September	Nuella			Delivered			₦0.00	
+12 Sep 2025	September	Nuella			Delivered			₦0.00	
+12 Sep 2025	September	Nuella			Delivered			₦0.00	
+15 Sep 2025	September	Nuella	KK Logistics 		Waybilled	Nylon	100	₦15,000.00	₦3,000.00
+16 Sep 2025	September	Nuella	Fomax		Waybilled	Nylon	400	₦60,000.00	₦6,000.00
+16 Sep 2025	September	Nuella	Fomax		Waybilled	Vacuum Sealer	20	₦190,000.00	
+16 Sep 2025	September	Nuella	Adebayo		Waybilled	Vacuum Sealer	5	₦47,500.00	₦3,500.00
+16 Sep 2025	September	Nuella	Samsucc Logistics		Waybilled	Nylon	200	₦30,000.00	₦3,000.00
+16 Sep 2025	September	Nuella	Drop goods _Logistics		Waybilled	Nylon	100	₦15,000.00	₦4,000.00
+16 Sep 2025	September	Nuella	Drop goods _Logistics		Waybilled	Vacuum Sealer	5	₦47,500.00	
+16 Sep 2025	September	Nuella	Azird		Waybilled	Vacuum Sealer	15	₦142,500.00	₦5,500.00
+16 Sep 2025	September	Nuella	Azird		Waybilled	Nylon	300	₦45,000.00	
+16 Sep 2025	September	Nuella	Delvit (Enugu)		Waybilled	Vacuum Sealer	5	₦47,500.00	₦4,000.00
+16 Sep 2025	September	Nuella	Delvit (Enugu)		Waybilled	Nylon	200	₦30,000.00	
+20 Sep 2025	September	Nuella	KK Logistics 		Waybilled	Vacuum Sealer	8	₦76,000.00	
+23 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+23 Sep 2025	September	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+23 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+23 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Sep 2025	September	Nuella	KK Logistics 		Delivered	Vacuum Sealer	2	₦19,000.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+15 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Sep 2025	September	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+15 Sep 2025	September	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+16 Sep 2025	September	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	2	₦19,000.00	
+16 Sep 2025	September	Nuella	Delvit (Enugu)		Delivered	Nylon	100	₦15,000.00	
+16 Sep 2025	September	Nuella	MBC LOGISTICS 		Delivered	Vacuum Sealer	1	₦9,500.00	
+16 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+18 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+18 Sep 2025	September	Nuella	MBC LOGISTICS 		Delivered	Vacuum Sealer	1	₦9,500.00	
+19 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	2	₦19,000.00	
+19 Sep 2029	September	Nuella	Gologistics (Calabar)		Delivered	Vacuum Sealer	1	₦9,500.00	
+19 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+19 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+19 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Nylon	50	₦7,500.00	
+19 Sep 2025	September	Nuella	Adebayo		Delivered	Vacuum Sealer	1	₦9,500.00	
+19 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+19 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Nylon	50	₦7,500.00	
+20 Sep 2025	September	Nuella	KK Logistics 		Waybilled	Vacuum Sealer	8	₦76,000.00	
+23 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+23 Sep 2025	September	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+23 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+23 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+24 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+24 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+24 Sep 2025	September	Nuella	Samsucc Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Sep 2025	September	Nuella	Samsucc Logistics		Delivered	Nylon	50	₦7,500.00	
+24 Sep 2025	September	Nuella	HS_Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+25 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+25 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Sep 2025	September	CRS1	HS_Logistics		Delivered	Smart Tablet	2	₦24,000.00	
+26 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+27 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+27 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+27 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Nylon	20	₦3,000.00	
+27 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Quickwaka		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	4	₦38,000.00	
+29 Sep 2025	September	Nuella	Azird		Delivered	Nylon	200	₦30,000.00	
+29 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Sep 2025	September	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+29 Sep 2025	September	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+29 Sep 2025	September	Nuella	Formax (Rivers)		Waybilled	Vacuum Sealer	10	₦95,000.00	
+29 Sep 2025	September	Nuella	Formax (Rivers)		Waybilled	Nylon	100	₦15,000.00	₦4,500.00
+30 Sep 2025	September	Nuella	Quickwaka		Delivered	Vacuum Sealer	1	₦9,500.00	
+30 Sep 2025	September	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	2	₦19,000.00	
+30 Sep 2025	September	Nuella	Kings Errand Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+2 Oct 2025	October	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+2 Oct 2025	October	Nuella	Mr Toheeb		Delivered	Vacuum Sealer	1	₦9,500.00	
+2 Oct 2025	October	Nuella	Mr Toheeb		Delivered	Nylon	50	₦7,500.00	
+2 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+2 Oct 2025	October	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+2 Oct 2025	October	Nuella	MBC LOGISTICS 		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	Adebayo		Delivered	Vacuum Sealer	1	₦9,500.00	
+3 Sep 2025	September	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	4	₦38,000.00	
+4 Oct 2025	October	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	3	₦28,500.00	
+4 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Oct 2025	October	Nuella	Fomax		Waybilled	Vacuum Sealer	15	₦142,500.00	
+4 Oct 2025	October	Nuella	Fomax		Waybilled	Nylon	450	₦67,500.00	₦5,500.00
+4 Oct 2025	October	Nuella	Quickwaka		Waybilled	Vacuum Sealer	3	₦28,500.00	
+4 Oct 2025	October	Nuella	Quickwaka		Waybilled	Nylon	200	₦30,000.00	₦5,000.00
+4 Oct 2025	October	Nuella	Kings Errand Logistics		Waybilled	Vacuum Sealer	4	₦38,000.00	
+4 Oct 2025	October	Nuella	Kings Errand Logistics		Waybilled	Nylon	100	₦15,000.00	₦4,000.00
+4 Oct 2025	October	Nuella	Soshine		Waybilled	Vacuum Sealer	5	₦47,500.00	
+4 Oct 2025	October	Nuella	Soshine		Waybilled	Nylon	250	₦37,500.00	₦3,000.00
+4 Oct 2025	October	Nuella	Drop goods _Logistics		Waybilled	Vacuum Sealer	5	₦47,500.00	
+4 Oct 2025	October	Nuella	Drop goods _Logistics		Waybilled	Nylon	200	₦30,000.00	₦4,500.00
+6 Oct 2025	October	CRS1	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+6 Oct 2025	October	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+7 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+7 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Nylon	50	₦7,500.00	
+7 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+7 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+7 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Oct 2025	October	CRS1	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Oct 2025	October	CRS1	Soshine		Delivered	Nylon	50	₦7,500.00	
+8 Oct 2025	October	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Oct 2025	October	Nuella	Adebayo		Delivered	Vacuum Sealer	1	₦9,500.00	
+9 Oct 2025	October	CRS1	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+9 Oct 2025	October	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+9 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	2	₦19,000.00	
+9 Oct 2025	October	Nuella	Aba logistics 		Waybilled	Vacuum Sealer	5	₦47,500.00	
+9 Oct 2025	October	Nuella	Aba logistics 		Waybilled	Nylon	200	₦30,000.00	₦4,000.00
+10 Oct 2025	October	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+10 Oct 2025	October	CRS1	Fomax		Delivered	Nylon	50	₦7,500.00	
+10 Oct 2025	October	CRS1	Gologistics (Calabar)		Delivered	Vacuum Sealer	1	₦9,500.00	
+10 Oct 2025	October	CRS1	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+10 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	4	₦38,000.00	
+10 Oct 2025	October	Nuella	Fomax		Delivered	Nylon	200	₦30,000.00	
+10 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	3	₦28,500.00	
+10 Oct 2025	October	Nuella	Kings Errand Logistics		Waybilled	Vacuum Sealer	5	₦47,500.00	₦4,000.00
+10 Oct 2025	October	Nuella	Kings Errand Logistics		Waybilled	Nylon	200	₦30,000.00	
+11 Oct 2025	October	Nuella	plateau online 		Waybilled	Nylon	300	₦45,000.00	₦4,500.00
+11 Oct 2025	October	Nuella	plateau online 		Waybilled	Vacuum Sealer	5	₦47,500.00	
+11 Oct 2025	October	Nuella	Kings Errand Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+13 Oct 2025	October	Nuella	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Oct 2025	October	Nuella	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+20 Oct 2025	October	Nuella	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+20 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+20 Oct 2025	October	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	CRS1	Gologistics (Uyo)		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	Nuella	Kings Errand Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+21 Oct 2025	October	Nuella	Gologistics (Uyo)		Delivered	Vacuum Sealer	1	₦9,500.00	
+23 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	2	₦19,000.00	
+24 Oct 2025	October	CRS1	plateau online 		Delivered	Vacuum Sealer	2	₦19,000.00	
+24 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+25 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+25 Oct 2025	October	Nuella	Azird		Delivered	Vacuum Sealer	2	₦19,000.00	
+25 Oct 2025	October	Nuella	Azird		Delivered	Nylon	50	₦7,500.00	
+25 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+25 Oct 2025	October	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+25 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	3	₦28,500.00	
+25 Oct 2025	October	Nuella	Formax (Rivers)		Delivered	Nylon	200	₦30,000.00	
+27 Oct 2025	October	CRS1	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+27 Oct 2025	October	CRS1	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+27 Oct 2025	October	CRS1	plateau online 		Delivered	Nylon	50	₦7,500.00	
+27 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	4	₦38,000.00	
+27 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+22 Oct 2025	October	Nuella	Adebayo		Waybilled	Vacuum Sealer	3	₦28,500.00	
+22 Oct 2025	October	Nuella	Adebayo		Waybilled	Nylon	100	₦15,000.00	₦3,000.00
+22 Oct 2025	October	Nuella	Fomax		Waybilled	Vacuum Sealer	5	₦47,500.00	
+22 Oct 2025	October	Nuella	Fomax		Waybilled	Nylon	200	₦30,000.00	₦4,000.00
+22 Oct 2025	October	Nuella	Eclipse Logistics		Waybilled	Vacuum Sealer	3	₦28,500.00	₦3,000.00
+22 Oct 2025	October	Nuella	Eclipse Logistics		Waybilled	Nylon	100	₦15,000.00	
+22 Oct 2025	October	Nuella	Formax (Rivers)		Waybilled	Vacuum Sealer	5	₦47,500.00	₦4,000.00
+29 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Oct 2025	October	Nuella	Aba logistics 		Delivered	Vacuum Sealer	1	₦9,500.00	
+29 Oct 2025	October	Nuella	Gologistics (Uyo)		Delivered	Vacuum Sealer	2	₦19,000.00	
+29 Oct 2025	October	Nuella	Fomax		Waybilled	Vacuum Sealer	10	₦95,000.00	
+29 Oct 2025	October	Nuella	Fomax		Waybilled	Nylon	500	₦75,000.00	
+30 Oct 2025	October	CRS1	Fomax		Delivered	Vacuum Sealer	3	₦28,500.00	
+30 Oct 2025	October	CRS1	Fomax		Delivered	Nylon	50	₦7,500.00	
+30 Oct 2025	October	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+30 Oct 2025	October	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+30 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+30 Oct 2025	October	Nuella	Eclipse Logistics		Delivered	Nylon	100	₦15,000.00	
+30 Oct 2025	October	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+30 Oct 2025	October	Nuella	Eclipse Logistics		Waybilled	Vacuum Sealer	3	₦28,500.00	
+30 Oct 2025	October	Nuella	Eclipse Logistics		Waybilled	Nylon	200	₦30,000.00	₦3,000.00
+30 Oct 2025	October	Nuella	plateau online 		Waybilled	Vacuum Sealer	6	₦57,000.00	
+30 Oct 2025	October	Nuella	plateau online 		Waybilled	Nylon	200	₦30,000.00	₦6,000.00
+30 Oct 2025	October	Nuella	Gologistics (Calabar)		Waybilled	Vacuum Sealer	5	₦47,500.00	
+30 Oct 2025	October	Nuella	Gologistics (Calabar)		Waybilled	Nylon	200	₦30,000.00	₦5,000.00
+30 Oct 2025	October	Nuella	Gologistics (Uyo)		Waybilled	Vacuum Sealer	5	₦47,500.00	
+30 Oct 2025	October	Nuella	Gologistics (Uyo)		Waybilled	Nylon	200	₦30,000.00	₦5,000.00
+31 Oct 2025	October	CRS1	Kings Errand Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+31 Oct 2025	October	CRS1	Kings Errand Logistics		Delivered	Nylon	50	₦7,500.00	
+31 Oct 2025	October	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+31 Oct 2025	October	Nuella	Delvit (Enugu)		Delivered	Nylon	200	₦30,000.00	
+31 Oct 2025	October	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+31 Oct 2025	October	Nuella	Fomax		Waybilled	Vacuum Sealer	10	₦95,000.00	
+31 Oct 2025	October	Nuella	Fomax		Waybilled	Nylon	400	₦60,000.00	₦5,000.00
+1 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	4	₦38,000.00	
+1 Nov 2025	November	Nuella	Fomax		Delivered	Nylon	200	₦30,000.00	
+1 Nov 2025	November	Nuella	Samsucc Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+4 Nov 2025	November	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+5 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+5 Nov 2025	November	Nuella	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+5 Nov 2025	November	Nuella	Soshine		Delivered	Nylon	50	₦7,500.00	
+5 Nov 2025	November	CRS1	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+6 Nov 2025	November	Nuella	Kings Errand Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+6 Nov 2025	November	Nuella	Oluwadunsin		Delivered	Vacuum Sealer	3	₦28,500.00	
+6 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+6 Nov 2025	November	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+6 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+7 Nov 2025	November	Nuella	Fomax		Waybilled	Vacuum Sealer	10	₦95,000.00	₦5,000.00
+7 Nov 2025	November	Nuella	Oluwadunsin		Waybilled	Vacuum Sealer	5	₦47,500.00	
+7 Nov 2025	November	Nuella	Oluwadunsin		Waybilled	Nylon	200	₦30,000.00	₦4,000.00
+7 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+7 Nov 2025	November	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+7 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Nov 2025	November	Nuella	Eclipse Logistics		Delivered	Vacuum Sealer	3	₦28,500.00	
+8 Nov 2025	November	Nuella	Soshine		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Nov 2025	November	Nuella	Fomax		Delivered	Nylon	100	₦15,000.00	
+8 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Nov 2025	November	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+8 Nov 2025	November	Nuella	Formax (Rivers)		Delivered	Nylon	50	₦7,500.00	
+10 Nov 2025	November	Nuella	Peng_Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+10 Nov 2025	November	Nuella	Peng_Logistics		Delivered	Nylon	50	₦7,500.00	
+10 Nov 2025	November	Nuella	Gologistics (Uyo)		Delivered	Vacuum Sealer	1	₦9,500.00	
+13 Nov 2025	November	Nuella	Azird		Delivered	Vacuum Sealer	2	₦19,000.00	
+13 Nov 2025	November	Nuella	Azird		Delivered	Nylon	50	₦7,500.00	
+13 Nov 2025	November	Nuella	Drop goods _Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+13 Nov 2025	November	CRS1	Azird		Delivered	Vacuum Sealer	2	₦19,000.00	
+13 Nov 2025	November	CRS1	Formax (Rivers)		Delivered	Vacuum Sealer	1	₦9,500.00	
+14 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	4	₦38,000.00	
+14 Nov 2025	November	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+15 Nov 2025	November	Nuella	Formax (Rivers)		Delivered	Vacuum Sealer	2	₦19,000.00	
+15 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+15 Nov 2025	November	CRS1	Adebayo		Delivered	Vacuum Sealer	1	₦9,500.00	
+15 Nov 2025	November	CRS1	Formax (Rivers)		Delivered	Vacuum Sealer	2	₦19,000.00	
+17 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+17 Nov 2025	November	CRS1	Fomax		Delivered	Nylon	50	₦7,500.00	
+17 Nov 2025	November	CRS1	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+17 Nov 2025	November	CRS1	plateau online 		Delivered	Nylon	50	₦7,500.00	
+17 Nov 2025	November	CRS1	Adebayo		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Nov 2025	November	CRS1	Samsucc Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+18 Nov 2025	November	CRS1	Quickwaka		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Nov 2025	November	CRS1	plateau online 		Delivered	Vacuum Sealer	2	₦19,000.00	
+18 Nov 2025	November	CRS1	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Nov 2025	November	CRS1	plateau online 		Delivered	Nylon	50	₦7,500.00	
+18 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Nov 2025	November	CRS1	Fomax		Delivered	Nylon	50	₦7,500.00	
+18 Nov 2025	November	Nuella	KK Logistics 		Delivered	Vacuum Sealer	2	₦19,000.00	
+18 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+18 Nov 2025	November	Nuella	Fomax		Delivered	Nylon	50	₦7,500.00	
+19 Nov 2025	November	Nuella	Fomax		Waybilled	Vacuum Sealer	15	₦142,500.00	₦5,500.00
+19 Nov 2025	November	Nuella	Samsucc Logistics		Waybilled	Vacuum Sealer	8	₦76,000.00	
+19 Nov 2025	November	Nuella	Samsucc Logistics		Waybilled	Nylon	200	₦30,000.00	₦5,000.00
+19 Nov 2025	November	Nuella	Formax (Rivers)		Waybilled	Vacuum Sealer	5	₦47,500.00	₦4,500.00
+19 Nov 2025	November	Nuella	plateau online 		Waybilled	Vacuum Sealer	5	₦47,500.00	₦5,000.00
+19 Nov 2025	November	Nuella	Azird		Waybilled	Vacuum Sealer	5	₦47,500.00	
+19 Nov 2025	November	Nuella	Azird		Waybilled	Nylon	300	₦45,000.00	₦5,000.00
+19 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+19 Nov 2025	November	CRS1	Eclipse Logistics		Delivered	Vacuum Sealer	1	₦9,500.00	
+19 Nov 2025	November	CRS1	Eclipse Logistics		Delivered	Nylon	40	₦6,000.00	
+19 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+20 Nov 2025	November	Nuella	Delvit (Enugu)		Waybilled	Nylon	300	₦45,000.00	₦3,500.00
+20 Nov 2025	November	Nuella	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+20 Nov 2025	November	Nuella	Azird		Delivered	Vacuum Sealer	1	₦9,500.00	
+20 Nov 2025	November	Nuella	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	1	₦9,500.00	
+24 Nov 2025	November	CRS1	Fomax		Delivered	Vacuum Sealer	2	₦19,000.00	
+24 Nov 2025	November	CRS1	Fomax		Delivered	Nylon	100	₦15,000.00	
+25 Nov 2025	November	Nuella	plateau online 		Delivered	Vacuum Sealer	1	₦9,500.00	
+25 Nov 2025	November	CRS1	Samsucc Logistics		Delivered	Vacuum Sealer	2	₦19,000.00	
+25 Nov 2025	November	CRS1	Samsucc Logistics		Delivered	Nylon	50	₦7,500.00	
+27 Nov 2025	November	CRS1	Delvit (Enugu)		Delivered	Vacuum Sealer	1	₦9,500.00	
+27 Nov 2025	November	CRS1	Delvit (Enugu)		Delivered	Nylon	100	₦15,000.00	
+
+
+
+
+
+
+
+
+

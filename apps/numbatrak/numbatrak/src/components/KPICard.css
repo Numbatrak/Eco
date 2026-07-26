@@ -1,0 +1,109 @@
+.kpi-card {
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 24px;
+  transition: all 0.2s;
+}
+
+.kpi-card:hover {
+  border-color: #3a3a3a;
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.kpi-card-content {
+  flex: 1;
+}
+
+.kpi-card-title {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+  margin-bottom: 12px;
+}
+
+.kpi-card-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.kpi-card-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.kpi-card-trend.positive {
+  color: #10b981;
+}
+
+.kpi-card-trend.negative {
+  color: #ef4444;
+}
+
+.kpi-card-icon {
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-card-icon.indigo {
+  background-color: #1e3a8a30;
+  color: #818cf8;
+}
+
+.kpi-card-icon.green {
+  background-color: #065f4630;
+  color: #34d399;
+}
+
+.kpi-card-icon.red {
+  background-color: #7f1d1d30;
+  color: #f87171;
+}
+
+.kpi-card-icon.amber {
+  background-color: #78350f30;
+  color: #fbbf24;
+}
+
+.kpi-card-icon.blue {
+  background-color: #1e3a8a30;
+  color: #60a5fa;
+}
+
+.kpi-card-icon.purple {
+  background-color: #581c8730;
+  color: #a78bfa;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .kpi-card {
+    padding: 20px;
+  }
+
+  .kpi-card-value {
+    font-size: 24px;
+  }
+}
+
+
+
+
+
+
+
+

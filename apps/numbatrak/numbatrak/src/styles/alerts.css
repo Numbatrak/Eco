@@ -1,0 +1,220 @@
+/* Theme-aware page alerts and top-right toasts */
+
+@keyframes page-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fixed top-right toast */
+.page-toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  max-width: min(24rem, calc(100vw - 2rem));
+  animation: page-toast-in 0.2s ease-out;
+}
+
+.page-toast-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  min-width: min(20rem, calc(100vw - 2rem));
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.15),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.page-toast-panel.success {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.page-toast-panel.error {
+  border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
+}
+
+.page-toast-panel.info {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+
+.page-toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.page-toast-icon.success {
+  background: color-mix(in srgb, var(--primary) 15%, var(--card));
+  color: var(--primary);
+}
+
+.page-toast-icon.error {
+  background: color-mix(in srgb, var(--destructive) 15%, var(--card));
+  color: var(--destructive);
+}
+
+.page-toast-icon.info {
+  background: color-mix(in srgb, var(--primary) 18%, var(--card));
+  color: var(--primary);
+}
+
+.page-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-toast-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 0.25rem 0;
+}
+
+.page-toast-message {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.page-toast-subtitle {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin: 0 0 0.75rem 0;
+}
+
+.page-toast-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-toast-action-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.page-toast-action-btn:hover {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.page-toast-action-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.page-toast-action-btn.primary:hover {
+  background: color-mix(in srgb, var(--primary) 88%, black);
+}
+
+.page-toast-dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.125rem;
+  border-radius: 0.375rem;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.page-toast-dismiss:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+/* Inline alerts (page flow) */
+.page-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  animation: page-toast-in 0.2s ease-out;
+}
+
+.page-alert.success {
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+}
+
+.page-alert.error {
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+}
+
+.page-alert-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+.page-alert-icon.success {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+}
+
+.page-alert-icon.error {
+  background: color-mix(in srgb, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+}
+
+.page-alert-message {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.page-alert-message.success {
+  color: var(--foreground);
+}
+
+.page-alert-message.error {
+  color: var(--destructive);
+}
+
+.page-alert-dismiss {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.page-alert-dismiss:hover {
+  color: var(--foreground);
+}

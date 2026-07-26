@@ -1,0 +1,168 @@
+/* Monthly Waybill Summary — theme-aware (light/dark) */
+.monthly-waybill-summary-container {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.monthly-waybill-summary-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.monthly-waybill-summary-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.monthly-waybill-summary-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.monthly-waybill-summary-icon {
+  padding: 0.5rem;
+  background: var(--primary);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthly-waybill-summary-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--primary-foreground);
+}
+
+.monthly-waybill-summary-title {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.monthly-waybill-summary-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.monthly-waybill-summary-year-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.monthly-waybill-summary-year-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.monthly-waybill-summary-wrapper {
+  overflow-x: auto;
+}
+
+.monthly-waybill-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monthly-waybill-summary-table thead {
+  background-color: var(--muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.monthly-waybill-summary-header-cell {
+  padding: 1rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  text-align: left;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.monthly-waybill-summary-header-cell.text-right {
+  text-align: right;
+}
+
+.monthly-waybill-summary-cell {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.monthly-waybill-summary-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s;
+}
+
+.monthly-waybill-summary-table tbody tr:hover {
+  background-color: var(--accent);
+}
+
+.monthly-waybill-summary-table tbody tr.monthly-waybill-summary-total-row {
+  background: var(--muted);
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+.monthly-waybill-summary-cell.text-right {
+  text-align: right;
+}
+
+.monthly-waybill-summary-cell-medium {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.monthly-waybill-summary-balance-positive {
+  color: var(--primary) !important;
+  font-weight: 600;
+}
+
+.monthly-waybill-summary-balance-negative {
+  color: var(--muted-foreground) !important;
+  font-weight: 600;
+}
+
+.monthly-waybill-summary-cell.monthly-waybill-summary-balance-positive,
+.monthly-waybill-summary-cell-medium.monthly-waybill-summary-balance-positive {
+  color: var(--primary) !important;
+}
+
+.monthly-waybill-summary-cell.monthly-waybill-summary-balance-negative,
+.monthly-waybill-summary-cell-medium.monthly-waybill-summary-balance-negative {
+  color: var(--muted-foreground) !important;
+}
+
+.monthly-waybill-summary-loading,
+.monthly-waybill-summary-error {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 3rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.monthly-waybill-summary-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthly-waybill-summary-error {
+  text-align: center;
+  color: var(--destructive);
+  font-weight: 500;
+}

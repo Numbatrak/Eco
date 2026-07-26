@@ -19,7 +19,7 @@
     "@platform/db": "workspace:*",
     "@platform/shared-types": "workspace:*",
     "better-auth": "^1.6.23",
-    "drizzle-orm": "^0.38.3",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.2.0",
     "fastify-better-auth": "^1.2.0",
     "fastify-plugin": "^5.0.1",

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail9ja Form Test - Local</title>
+    
+    <!-- Load CSS first (same as WordPress) -->
+    <link rel="stylesheet" href="./public/embed.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .test-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-header h1 {
+            margin: 0 0 0.5rem 0;
+            color: #111;
+        }
+        .test-header p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .test-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .test-info code {
+            background: #fff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .form-container-wrapper {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 Mail9ja Form Test (Local)</h1>
+        <p>Testing embed.js and embed.css from local files before pushing to production</p>
+    </div>
+
+    <div class="test-info">
+        <strong>📝 Instructions:</strong>
+        <ol style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+            <li><strong>To test a production form:</strong> Add <code>?token=YOUR_FORM_TOKEN</code> to the URL</li>
+            <li><strong>Or set token directly:</strong> Edit line 74 and set <code>data-form-token="YOUR_FORM_TOKEN"</code></li>
+            <li>Edit <code>scripts/embed.js</code> or <code>scripts/embed.css</code></li>
+            <li>Copy to <code>public/</code> folder: <code>cp scripts/embed.js public/embed.js</code></li>
+            <li>Refresh this page to see your changes</li>
+            <li>Test thoroughly before pushing to production</li>
+        </ol>
+        <p style="margin-top: 0.5rem; margin-bottom: 0;"><strong>💡 Tip:</strong> You can test any production form locally by using its form token!</p>
+    </div>
+
+    <!-- Form Container (same structure as WordPress) -->
+    <div class="form-container-wrapper">
+        <!-- 
+            Option 1: Set token via URL parameter: ?token=YOUR_FORM_TOKEN
+            Option 2: Set token directly here: data-form-token="YOUR_FORM_TOKEN"
+            Option 3: Leave empty and use URL parameter
+        -->
+        <div id="mail9ja-form-test" class="mail9ja-form-container" data-form-token=""></div>
+    </div>
+
+    <!-- Configure SDK (same as WordPress plugin) -->
+    <script>
+        // ⚠️ IMPORTANT: Update these values before testing!
+        // Get your Supabase anon key from: Supabase Dashboard → Settings → API → Project API keys → anon/public
+        // Get your form token from: Your CRM dashboard → Forms → Copy form token
+        
+        window.CRM_SUPABASE_URL = 'https://tgyetavhkukcclnwrroz.supabase.co';
+        window.CRM_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRneWV0YXZoa3VrY2Nsbndycm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNTMsImV4cCI6MjA4OTM1NzA1M30.g0ccRe2f3Mv7u5KLNpslUPMaT89_Y_OBG_SGuf8D4Bo'; // Anon key from .env
+        window.CRM_DEBUG = true; // Enable debug logging
+        
+        // Get form token from URL parameter or set directly
+        const urlParams = new URLSearchParams(window.location.search);
+        const formToken = urlParams.get('token') || ''; // Use ?token=YOUR_TOKEN in URL
+        
+        if (formToken) {
+            document.getElementById('mail9ja-form-test').setAttribute('data-form-token', formToken);
+            console.log('[TEST PAGE] ✅ Form token from URL:', formToken);
+            console.log('[TEST PAGE] 📋 Testing production form with local embed.js');
+        } else {
+            // Check if token is set in data attribute
+            const existingToken = document.getElementById('mail9ja-form-test').getAttribute('data-form-token');
+            if (existingToken) {
+                console.log('[TEST PAGE] ✅ Form token from data attribute:', existingToken);
+            } else {
+                console.warn('[TEST PAGE] ⚠️ No form token provided. Add ?token=YOUR_TOKEN to URL or set data-form-token attribute');
+                console.log('[TEST PAGE] 💡 Example: test-form-local.html?token=your_production_form_token');
+            }
+        }
+        
+        // Validate configuration
+        if (!window.CRM_SUPABASE_ANON_KEY || window.CRM_SUPABASE_ANON_KEY === '') {
+            console.error('[TEST PAGE] ❌ Supabase anon key not set! Update line 81 in this file.');
+            document.querySelector('.form-container-wrapper').innerHTML = 
+                '<div style="padding: 2rem; background: #fee; border: 2px solid #f00; border-radius: 0.5rem;">' +
+                '<h3 style="color: #c00; margin-top: 0;">⚠️ Configuration Required</h3>' +
+                '<p><strong>1. Add your Supabase anon key</strong> on line 81 of this file</p>' +
+                '<p><strong>2. Add your form token</strong> either:</p>' +
+                '<ul><li>Set <code>data-form-token</code> attribute on line 74, OR</li>' +
+                '<li>Add <code>?token=YOUR_TOKEN</code> to the URL</li></ul>' +
+                '<p><small>Get your anon key from: Supabase Dashboard → Settings → API</small></p>' +
+                '</div>';
+        }
+    </script>
+
+    <!-- Load embed.js (same as WordPress - loads from public/embed.js) -->
+    <script src="./public/embed.js"></script>
+
+    <script>
+        // Additional test logging
+        console.log('%c[TEST PAGE]', 'color: #9333ea; font-weight: bold;', 'Form test page loaded');
+        console.log('[TEST PAGE] Supabase URL:', window.CRM_SUPABASE_URL);
+        console.log('[TEST PAGE] SDK Version:', window.CRMFormSDK?.version || 'Not loaded yet');
+        
+        // Monitor for SDK initialization
+        if (window.CRMFormSDK) {
+            console.log('[TEST PAGE] ✅ SDK loaded successfully');
+            console.log('[TEST PAGE] SDK Build Date:', window.CRMFormSDK.buildDate);
+        } else {
+            console.warn('[TEST PAGE] ⚠️ SDK not loaded - check console for errors');
+        }
+    </script>
+</body>
+</html>

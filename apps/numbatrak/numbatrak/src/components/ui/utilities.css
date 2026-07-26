@@ -1,0 +1,179 @@
+/* Utility CSS Classes to replace common Tailwind patterns */
+
+/* Spacing utilities */
+.space-y-6 > :not(:last-child) {
+  margin-bottom: 1.5rem;
+}
+
+.space-y-4 > :not(:last-child) {
+  margin-bottom: 1rem;
+}
+
+.space-y-3 > :not(:last-child) {
+  margin-bottom: 0.75rem;
+}
+
+.space-y-2 > :not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+
+/* Display utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+/* Text utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+/* Color utilities */
+.bg-white {
+  background-color: #ffffff;
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+/* Overflow utilities */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+/* Max width/height utilities */
+.max-w-2xl {
+  max-width: 42rem;
+}
+
+.max-h-\[95vh\] {
+  max-height: 95vh;
+}
+
+.max-h-\[calc\(95vh-180px\)\] {
+  max-height: calc(95vh - 180px);
+}
+
+/* Padding utilities */
+.p-0 {
+  padding: 0;
+}
+
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+/* Border utilities */
+.border-0 {
+  border: none;
+}
+
+.border {
+  border: 1px solid var(--border);
+}
+
+/* Shadow utilities */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Background utilities */
+.bg-white {
+  background-color: #ffffff;
+}
+
+/* Responsive utilities */
+@media (min-width: 640px) {
+  .sm\:text-left {
+    text-align: left;
+  }
+  
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+  
+  .sm\:justify-end {
+    justify-content: flex-end;
+  }
+  
+  .sm\:rounded-lg {
+    border-radius: 0.5rem;
+  }
+}
+

@@ -1,0 +1,7546 @@
+=== PAGE 1 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+NUMBATRAK 
+Feature  Specification 
+The  build  reference  —  feature  by  feature  
+Working  draft.  This  document  is  written  as  each  feature  is  walked  and  confirmed.  It  grows  section  by  
+section.
+ 
+Every
+ 
+confirmed
+ 
+decision,
+ 
+judgment
+ 
+call,
+ 
+and
+ 
+small
+ 
+detail
+ 
+is
+ 
+captured
+ 
+here
+ 
+so
+ 
+nothing
+ 
+lives
+ 
+only
+ 
+in
+ 
+conversation.  
+LOCKED  IN  THIS  DRAFT •  1.  Orders  —  The  order  page  —  how  orders  are  tracked,  edited,  and  moved  through  delivery •  2.  Inventory  —  Per-agent  stock,  transfers,  and  damage/loss  tracking •  3.  Dashboard  —  The  10  metrics,  the  two  views,  filters,  alerts,  and  the  loss  panel •  4.  Payroll  —  The  flexible  pay  engine  —  components,  gates,  tiers,  the  live  earnings  view,  and  the  
+payment
+ 
+run •  5.  Wallet  —  COD  remittance  —  agent-per-day  cash  tracking,  net-off,  and  the  cash  gap •  6.  Accounting  —  The  consolidated  P&L  and  cash  view  across  all  sub-brands,  with  heavy  bookkeeping  
+parked •  7-11.  Staff  Management  —  Staff,  Attendance,  Strikes,  Stars  &  Leaderboard,  and  Leave  —  the  settable  
+people
+ 
+suite •  12-14.  Delivery  —  Waybills,  Agents  (external  delivery  partners),  and  Delivery  Analytics  with  the  balance  
+roll-up •  15-17.  Order  Intake  —  Order  Forms,  Abandoned  Carts,  and  Follow-Ups  with  CRS  follow-up  timing •  18-20.  Products  &  Finance  —  Products  (parent,  variants,  offers),  Expenses,  and  Invoicing •  21.  Media  Buyers  —  The  full  advertising  subsystem  —  production,  ad  catalog,  spend,  and  performance  
+analytics •  22.  Customer  Management  (CRM)  —  The  full  customer  subsystem  —  database,  feedback  calls,  
+complaints,
+ 
+more
+ 
+purchase,
+ 
+and
+ 
+automations •  23.  Storefront  —  The  multi-tenant  e-commerce  shop  —  store,  funnel  mode,  discounts,  checkout,  
+attribution •  24.  Settings  —  The  self-serve  account  layer  —  profile,  subscription  logic,  billing,  team,  data  
+STILL  TO  WALK The  shared  cross-cutting  layers  (Notifications,  Messaging  &  Integrations)  and  the  remaining  lighter  features.  
+Each
+ 
+will
+ 
+be
+ 
+added
+ 
+to
+ 
+this
+ 
+document
+ 
+as
+ 
+it
+ 
+is
+ 
+confirmed. 
+ 
+HOW  TO  READ  THIS  DOCUMENT 
+Numbatrak  feature  spec   ·   page  1 
+
+=== PAGE 2 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Each  feature  is  walked  in  four  layers:  Screens  (the  pages),  Actions  (every  button),  States  (empty,  loading,  full,  
+error,
+ 
+success),
+ 
+and
+ 
+Rules
+ 
+(what
+ 
+happens
+ 
+behind
+ 
+each
+ 
+action).
+ 
+The
+ 
+tiny
+ 
+parts
+ 
+hide
+ 
+in
+ 
+the
+ 
+last
+ 
+two
+ 
+layers.  Three  kinds  of  boxes  appear  throughout: 
+LOCKED  RULE   A  rule  that  is  settled  and  non-negotiable  for  the  build. 
+ 
+CONFIRMED  DECISION   A  decision  the  founder  confirmed  during  the  walk  —  the  reasoning  is  recorded  so  it  is  not  re-litigated. 
+ 
+TINY  PART   A  small  but  important  detail  that  is  easy  to  miss  and  would  break  the  feature  if  forgotten. 
+ 
+GOVERNING  PRINCIPLE  —  SETTABLE  BY  DEFAULT Numbatrak  is  a  public  SaaS  serving  many  businesses  that  operate  differently.  So  a  standing  rule  runs  through  
+the
+ 
+whole
+ 
+spec:
+ 
+anywhere
+ 
+there
+ 
+is
+ 
+a
+ 
+time
+ 
+window,
+ 
+a
+ 
+threshold,
+ 
+a
+ 
+rate,
+ 
+a
+ 
+limit,
+ 
+or
+ 
+a
+ 
+default
+ 
+value,
+ 
+it
+ 
+is
+ 
+settable
+ 
+per
+ 
+business
+ 
+unless
+ 
+there
+ 
+is
+ 
+a
+ 
+specific
+ 
+reason
+ 
+it
+ 
+cannot
+ 
+be.
+ 
+Examples
+ 
+like
+ 
+the
+ 
+feedback-call
+ 
+window
+ 
+(3
+ 
+days
+ 
+after
+ 
+delivery),
+ 
+strike
+ 
+thresholds,
+ 
+commission
+ 
+rates,
+ 
+gate
+ 
+ratios,
+ 
+and
+ 
+low-stock
+ 
+levels
+ 
+are
+ 
+all
+ 
+defaults
+ 
+a
+ 
+business
+ 
+can
+ 
+change.
+ 
+When
+ 
+the
+ 
+spec
+ 
+states
+ 
+a
+ 
+number,
+ 
+read
+ 
+it
+ 
+as
+ 
+a
+ 
+default,
+ 
+not
+ 
+a
+ 
+hard-coded
+ 
+constant.  
+Numbatrak  feature  spec   ·   page  2 
+
+=== PAGE 3 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+1.  Orders  
+ 
+Status:  Locked  —  partly  built,  extended  for  launch The  Orders  page  is  the  heart  of  the  system.  It  reflects  every  order  coming  through  the  business  —  COD  or  
+paid
+ 
+—
+ 
+and
+ 
+is
+ 
+where
+ 
+the
+ 
+business
+ 
+owner
+ 
+and
+ 
+CRS
+ 
+track
+ 
+orders
+ 
+from
+ 
+placement
+ 
+through
+ 
+delivery.
+ 
+Almost
+ 
+every
+ 
+other
+ 
+number
+ 
+in
+ 
+Numbatrak
+ 
+feeds
+ 
+off
+ 
+what
+ 
+happens
+ 
+here.
+ 
+This
+ 
+section
+ 
+covers
+ 
+the
+ 
+Orders
+ 
+sub-tab
+ 
+only;
+ 
+Order
+ 
+Forms,
+ 
+Abandoned
+ 
+Carts,
+ 
+and
+ 
+Follow-Ups
+ 
+are
+ 
+separate
+ 
+sub-tabs
+ 
+documented
+ 
+elsewhere. 
+LAYER  1   Screens •  Orders  list  —  Products  as  the  list  —  all  orders,  sectioned  by  month,  newest  month  on  top.  A  'JULY  2026'  
+header
+ 
+sits
+ 
+above
+ 
+that
+ 
+month's
+ 
+orders. •  Order  detail  and  edit  —  Opens  when  you  tap  any  order.  Shows  the  full  order  and  its  action  buttons. •  Manual  entry  —  A  form  for  orders  taken  by  Instagram  DM,  WhatsApp,  phone,  or  walk-in. 
+LAYER  2   Actions 1.  New  order  —  opens  the  manual  entry  form. 2.  Open  order  —  tap  any  row  to  see  detail  and  edit. 3.  Mark  delivered  —  auto-fills  the  delivery  date,  drops  inventory  from  the  delivering  agent,  and  (from  Q3)  
+fires
+ 
+a
+ 
+WhatsApp
+ 
+delivery
+ 
+update
+ 
+to
+ 
+the
+ 
+customer. 4.  Add  upsell  to  order  —  adds  an  extra  product  or  quantity  to  an  existing  order.  Records  the  extra  revenue  
+and
+ 
+feeds
+ 
+the
+ 
+CRS
+ 
+upsell
+ 
+bonus. 5.  Mark  failed  delivery  —  sets  the  status  to  Failed  and  logs  the  delivery  expense  in  one  action,  directly  
+from
+ 
+the
+ 
+order. 6.  Add  note  —  free-text  note  that  stamps  the  date  automatically  when  saved. 7.  Edit  order  —  change  customer,  product,  quantity,  price,  or  agent  —  even  on  a  delivered  order. 8.  Advance  status  —  moves  the  order  through  new,  confirmed,  packed,  dispatched,  delivered. 9.  Filter  —  by  status,  year,  month,  product,  agent,  funnel,  sub-brand,  and  date  range. 
+LAYER  3   States •  Empty  —  No  orders  yet  —  an  invitation  to  create  the  first  order  or  embed  an  order  form.  Not  an  error. •  Loading  —  Skeleton  rows  while  the  month's  orders  load. •  Full  —  Month-sectioned  rows,  newest  month  first,  each  showing  customer,  product,  funnel,  location,  
+agent,
+ 
+status,
+ 
+and
+ 
+price. •  Save  failed  —  Keeps  everything  the  user  entered,  shows  what  to  fix,  never  discards  input. •  Saved  —  The  new  order  appears  under  its  month  and  a  short  confirmation  toast  shows. •  Failed  delivery  —  Red  status,  expense  logged,  and  it  counts  against  the  delivery  rate  on  the  dashboard. 
+LAYER  4   Rules 
+LOCKED  RULE   Inventory  drops  when  an  order  is  marked  Delivered  —  never  when  it  is  placed.  This  is  the  founding  logic  of  the  whole  stock  model. 
+ 
+Numbatrak  feature  spec   ·   page  3 
+
+=== PAGE 4 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   The  delivery  date  auto-fills  the  moment  status  becomes  Delivered.  No  manual  date  entry,  which  removes  a  whole  class  of  human  error. 
+ 
+LOCKED  RULE   Sales  profit  before  ads  is  shown  per  order:  sales  price  minus  COGS  minus  delivery  fee.  This  is  the  profit  figure  before  advertising  is  considered. 
+ 
+LOCKED  RULE   Role  scope:  a  CRS  sees  only  their  own  orders;  a  manager  sees  their  team's;  an  admin  sees  everything  including  money. 
+ 
+LOCKED  RULE   Every  order  carries  its  funnel/offer  tag  so  the  Performance  section  can  isolate  advertising  ROI  per  offer. 
+ 
+LOCKED  RULE   A  delivered  order  flows  the  customer  automatically  into  the  CRM  customer  database.  No  manual  customer  upload,  ever. 
+ 
+LOCKED  RULE   Every  order  carries  a  'who  received  the  money'  flag  —  agent  (collected  COD  on  our  behalf),  company  account  (customer  paid  us  directly),  or  prepaid.  This  flag  is  set  at  entry  or  delivery  and  decides  whether  the  order  creates  an  agent  remittance  line  when  it  is  marked  delivered.  It  is  the  switch  that  routes  an  order  into  Wallet  or  not. 
+Confirmed  decisions 
+CONFIRMED  DECISION   Mark  delivered  fires  a  WhatsApp  update  to  the  customer  —  but  this  is  a  Q3  capability.  For  launch,  marking  delivered  sets  status,  auto-fills  the  date,  and  drops  inventory;  the  WhatsApp  fire  is  added  when  the  integration  lands. 
+ 
+CONFIRMED  DECISION   The  person  who  adds  an  upsell  in  the  order  tab  is  the  CRS  who  gets  the  upsell-bonus  credit.  The  in-order  upsell  feeds  both  the  order's  revenue  and  that  CRS's  monthly  upsell  bonus  in  payroll. 
+ 
+CONFIRMED  DECISION   Status  pipeline  is  new  →  confirmed  →  packed  →  dispatched  →  delivered,  with  failed,  returned,  and  lost  as  terminal  branches.  This  merges  the  storefront's  simpler  pipeline  with  the  COD  reality. 
+Tiny  parts 
+TINY  PART   Editing  an  already-delivered  order  changes  what  was  edited,  and  it  flows  through.  Fix  the  sales  price  on  a  delivered  order  and  the  profit  math,  the  dashboard,  and  the  analytics  all  update  to  match.  A  delivered  order  is  not  frozen  —  the  data  stays  truthful  to  the  correction. 
+ 
+TINY  PART   The  order  list  is  sectioned  by  month  with  a  month  header  (e.g.  'JULY').  When  a  new  month  begins,  a  new  section  appears  at  the  top. 
+ 
+Numbatrak  feature  spec   ·   page  4 
+
+=== PAGE 5 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+TINY  PART   The  CRS  can  mark  a  failed  delivery  and  its  expense  directly  in  the  order  tab  —  the  expense  is  captured  at  the  same  moment,  not  in  a  separate  step. 
+ 
+TINY  PART   Notes  stamp  the  date  automatically  when  updated,  so  there  is  always  a  record  of  when  something  was  noted. 
+ 
+TINY  PART   The  'who  received  the  money'  flag  is  what  connects  Orders  to  the  cash  side  of  the  business.  When  an  order  is  marked  delivered:  if  the  flag  is  'agent',  a  remittance  line  is  created  in  Wallet;  if  it  is  'company  account'  or  'prepaid',  no  remittance  is  created  because  the  money  is  already  in  hand.  This  single  flag  is  why  the  cash  numbers  reconcile  end  to  end.  
+Numbatrak  feature  spec   ·   page  5 
+
+=== PAGE 6 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+2.  Inventory  
+ 
+Status:  Locked  —  partly  built,  extended  for  launch Stock  is  held  per-agent,  not  in  one  central  pool.  Each  delivery  agent  holds  stock;  the  warehouse  is  itself  an  
+agent
+ 
+—
+ 
+a
+ 
+holder
+ 
+that
+ 
+keeps
+ 
+stock
+ 
+but
+ 
+does
+ 
+not
+ 
+deliver.
+ 
+When
+ 
+an
+ 
+agent
+ 
+delivers
+ 
+an
+ 
+order,
+ 
+stock
+ 
+deducts
+ 
+from
+ 
+that
+ 
+agent's
+ 
+holding.
+ 
+This
+ 
+single
+ 
+idea
+ 
+makes
+ 
+the
+ 
+whole
+ 
+flow
+ 
+coherent:
+ 
+stock
+ 
+always
+ 
+lives
+ 
+with
+ 
+a
+ 
+holder,
+ 
+and
+ 
+every
+ 
+movement
+ 
+is
+ 
+traceable
+ 
+to
+ 
+an
+ 
+agent. 
+LAYER  1   Screens •  Stock  grid  —  Products  as  rows,  agents  (including  the  warehouse)  as  columns,  holdings  in  the  cells.  A  
+total
+ 
+per
+ 
+product
+ 
+and
+ 
+a
+ 
+cost-of-inventory
+ 
+footer
+ 
+valuing
+ 
+every
+ 
+agent's
+ 
+holdings
+ 
+at
+ 
+cost
+ 
+price. •  Transfer  —  Move  stock  from  one  agent  to  another,  with  a  required  reason. •  Adjust  —  Mark  stock  damaged  or  missing  against  a  specific  agent,  with  a  required  reason. 
+LAYER  2   Actions 10.  Transfer  stock  —  pick  from-agent,  to-agent,  product,  and  quantity.  Reason  required. 11.  Mark  damaged  —  reduces  that  agent's  stock  and  records  it  as  a  loss.  Reason  required. 12.  Mark  missing  —  same  as  damaged  but  tracked  separately.  Reason  required. 13.  Filter  —  by  product,  sub-brand,  location,  and  agent. 14.  Low-stock  threshold  —  set  the  number  that  triggers  a  low-stock  alert. 15.  View  movement  history  —  every  waybill-in,  delivery-out,  transfer,  and  adjustment  for  an  agent,  
+dated
+ 
+and
+ 
+attributed. 
+LAYER  3   States •  Empty  —  No  products  yet  —  add  products  first,  then  waybill  stock  to  agents. •  Loading  —  Skeleton  grid  while  holdings  load. •  Full  —  Grid  of  agent  columns  with  live  holdings. •  Low  stock  —  A  cell  turns  red  below  its  threshold  and  an  alert  fires. •  Transfer  blocked  —  Cannot  move  more  than  the  from-agent  holds,  or  the  reason  is  missing. •  Adjusted  —  Stock  drops  and  the  movement  is  logged  with  reason  and  date. 
+LAYER  4   Rules 
+LOCKED  RULE   The  warehouse  is  an  agent.  It  holds  stock  like  any  other  agent;  it  just  does  not  deliver. 
+ 
+LOCKED  RULE   A  delivery  deducts  from  the  delivering  agent's  stock,  not  a  central  pool.  This  ties  directly  to  the  Orders  'inventory  drops  on  delivered'  rule. 
+ 
+LOCKED  RULE   A  waybill-in  adds  stock  to  the  receiving  agent,  and  the  waybill  cost  flows  to  expenses. 
+ 
+Numbatrak  feature  spec   ·   page  6 
+
+=== PAGE 7 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Damaged  and  missing  both  require  a  reason  and  are  tracked  separately  from  sold  stock. 
+ 
+LOCKED  RULE   Cost  of  inventory  equals  every  agent's  holdings  multiplied  by  cost  price,  summed  across  all  agents. 
+ 
+LOCKED  RULE   Stock  can  never  go  negative  —  you  cannot  transfer  or  adjust  more  than  an  agent  holds. 
+ 
+LOCKED  RULE   Every  movement  is  dated  and  attributed  to  whoever  did  it.  The  movement  history  is  the  control  that  keeps  self-service  adjustment  honest. 
+Confirmed  decisions 
+CONFIRMED  DECISION   Transfers  are  usually  regional  (same  location),  but  can  go  cross-region  —  for  example  Lagos  to  Abuja  —  in  special  circumstances.  Cross-location  is  allowed,  not  blocked;  the  reason  note  carries  the  justification. 
+ 
+CONFIRMED  DECISION   Movement  history  is  included:  a  full  per-agent  audit  trail  of  every  waybill-in,  delivery-out,  transfer,  and  adjustment,  dated  and  attributed. 
+ 
+CONFIRMED  DECISION   Both  CRS  and  manager  can  manage  stock  numbers,  transfers,  and  adjustments,  and  both  receive  low-stock  updates.  This  is  self-service,  not  admin-only;  the  movement  log  provides  the  oversight. 
+Tiny  parts 
+TINY  PART   Damaged  and  missing  stock  does  NOT  auto-flow  to  expenses.  Marking  something  damaged  is  a  judgment  call,  and  auto-posting  it  as  a  loss  would  let  stock  adjustments  silently  move  the  profit  number.  Damage/loss  reduces  the  agent's  stock  and  appears  in  shrinkage  reporting,  but  only  becomes  an  expense  if  the  owner  records  it  deliberately.  This  keeps  the  profit  number  honest. 
+ 
+TINY  PART   Transfers  and  adjustments  both  require  a  written  reason  before  they  can  be  saved  —  the  same  discipline  applies  to  moving  stock  and  to  writing  it  off.  
+Numbatrak  feature  spec   ·   page  7 
+
+=== PAGE 8 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+3.  Dashboard  
+ 
+Status:  Locked  —  partly  built,  extended  for  launch The  dashboard  is  the  brain  of  the  product.  It  is  not  a  static  screen  —  it  is  a  filterable  engine.  Every  metric  
+recalculates
+ 
+when
+ 
+a
+ 
+filter
+ 
+changes.
+ 
+It
+ 
+has
+ 
+two
+ 
+views:
+ 
+a
+ 
+funnel-level
+ 
+view
+ 
+that
+ 
+shows
+ 
+advertising
+ 
+in
+ 
+isolation,
+ 
+and
+ 
+a
+ 
+business-level
+ 
+view
+ 
+that
+ 
+layers
+ 
+in
+ 
+all
+ 
+operational
+ 
+expenses
+ 
+to
+ 
+show
+ 
+the
+ 
+true
+ 
+health
+ 
+of
+ 
+the
+ 
+business.
+ 
+It
+ 
+also
+ 
+carries
+ 
+a
+ 
+'what
+ 
+you're
+ 
+losing'
+ 
+panel
+ 
+so
+ 
+failed
+ 
+orders
+ 
+are
+ 
+seen,
+ 
+not
+ 
+hidden. 
+LAYER  1   Screens •  Funnel-level  view  —  The  10  core  metrics  for  one  funnel  or  offer  —  advertising  in  isolation  (ROAS,  CPA,  
+product
+ 
+cost,
+ 
+and
+ 
+the
+ 
+profit
+ 
+built
+ 
+from
+ 
+them). •  Business-level  view  —  Layers  in  all  operational  expenses  to  show  overall  business  health  and  true  ROI,  
+with
+ 
+ROAS
+ 
+and
+ 
+Business
+ 
+ROI
+ 
+shown
+ 
+as
+ 
+two
+ 
+separate
+ 
+numbers. •  Red-flag  alerts  —  Six  watchers  firing  against  owner-set  thresholds. •  Loss  panel  —  A  dedicated  'what  you're  losing'  panel  showing  the  money  and  diagnostics  behind  
+non-delivered
+ 
+orders. 
+The  10  core  metrics 16.  Total  orders  generated  —  count  of  all  orders  in  the  period. 17.  Total  orders  delivered  —  count  of  orders  with  status  Delivered. 18.  Delivery  rate  —  delivered  ÷  generated,  as  a  percentage,  with  colour  indicator. 19.  Average  order  value  —  total  sales  value  of  delivered  orders  ÷  delivered  count.  Delivered  orders  
+only. 20.  Platform  vs  Real  CPA  —  Platform  CPA  is  ad  spend  ÷  generated;  Real  CPA  is  ad  spend  ÷  delivered.  
+The
+ 
+gap
+ 
+is
+ 
+the
+ 
+hidden
+ 
+acquisition
+ 
+cost.
+ 
+Filterable
+ 
+by
+ 
+ad
+ 
+platform. 21.  Average  COGS  —  total  cost  price  of  delivered  orders  ÷  delivered  count.  Accounts  for  bundles. 22.  Average  delivery  fee  —  total  delivery  fees  ÷  delivered  count. 23.  Profit  per  order  —  AOV  minus  Real  CPA  minus  COGS  minus  delivery  fee.  The  single  most  
+important
+ 
+number. 24.  Total  profit  —  profit  per  order  ×  delivered  orders. 25.  ROAS  vs  Business  ROI  —  two  clearly  separate,  labelled  numbers  —  never  merged. 
+LAYER  2   Actions 26.  Filter  everything  —  status,  year,  month,  product,  funnel,  agent,  source,  sub-brand,  date  range,  
+and
+ 
+ad
+ 
+platform.
+ 
+Every
+ 
+metric
+ 
+recalculates.
+ 
+Time
+ 
+frames
+ 
+include
+ 
+today,
+ 
+weekly,
+ 
+monthly,
+ 
+and
+ 
+custom
+ 
+dates. 27.  Toggle  view  —  switch  between  funnel-level  and  business-level. 28.  Tap  a  metric  —  opens  the  plain-language  explainer  —  the  profit  waterfall,  the  ROAS-vs-ROI  
+split-screen,
+ 
+or
+ 
+the
+ 
+pricing
+ 
+assistant. 29.  Set  alert  thresholds  —  the  owner  defines  what  counts  as  a  red  flag;  sensible  defaults  ship  out  of  
+the
+ 
+box. 30.  Delivery  rate  by  location  —  see  which  areas  sell  better  and  which  fail. 
+Numbatrak  feature  spec   ·   page  8 
+
+=== PAGE 9 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  3   States •  Empty  —  No  data  yet  —  guides  the  owner  to  add  orders  and  (if  they  run  ads)  ad  spend. •  Loading  —  Metric  skeletons  while  it  recalculates. •  Healthy  —  Green  tonation  across  metrics. •  Warning  —  Amber  or  red  tonation,  with  alerts  surfaced  at  the  top. •  Filtered  to  nothing  —  No  orders  match  the  filter  —  shows  a  clean  zero  state,  not  a  broken  screen. •  No  ad  spend  —  A  business  with  no  ad  spend  is  a  valid  state,  not  an  error.  CPA  and  ROAS  simply  do  not  
+apply,
+ 
+and
+ 
+the
+ 
+dashboard
+ 
+shows
+ 
+the
+ 
+profit
+ 
+picture
+ 
+without
+ 
+them. 
+LAYER  4   Rules 
+LOCKED  RULE   Every  profit  metric  uses  delivered  orders,  not  generated  —  undelivered  orders  have  earned  nothing. 
+ 
+LOCKED  RULE   The  dashboard  is  a  filterable  engine:  every  metric  recalculates  on  any  filter  change.  It  is  never  a  static  view. 
+ 
+LOCKED  RULE   ROAS  and  Business  ROI  are  never  merged.  They  are  always  two  separate,  clearly  labelled  numbers. 
+ 
+LOCKED  RULE   Colour  tonation  follows  health  against  the  owner's  targets:  good  is  green,  mid  is  amber,  critical  is  red.  The  same  thresholds  drive  both  the  colour  and  the  red-flag  alerts. 
+ 
+LOCKED  RULE   Real  CPA  uses  delivered  orders;  Platform  CPA  uses  generated  orders.  The  gap  between  them  is  the  hidden  cost  the  ad  platform  does  not  show. 
+ 
+LOCKED  RULE   All  numbers  pull  automatically  from  orders,  inventory,  expenses,  and  ad  spend.  There  is  no  manual  dashboard  data  entry. 
+ 
+LOCKED  RULE   Role-scoped:  a  CRS  sees  their  own  numbers,  a  manager  sees  the  team's,  an  admin  sees  all  money. 
+ 
+LOCKED  RULE   Alerts  fire  to  the  notification  bell  now;  WhatsApp  and  email  delivery  come  in  Q3. 
+The  'what  you're  losing'  panel Non-delivered  orders  are  not  thrown  away.  They  are  a  loss  the  owner  needs  to  see.  This  dedicated  panel  puts  
+the
+ 
+leak
+ 
+on
+ 
+the
+ 
+table.
+ 
+It
+ 
+obeys
+ 
+all
+ 
+dashboard
+ 
+filters
+ 
+and
+ 
+recalculates
+ 
+like
+ 
+every
+ 
+other
+ 
+view. 
+HEADLINE  —  THE  MONEY •  Orders  not  delivered  —  count  of  orders  that  did  not  deliver,  out  of  orders  generated. •  Would-be  sales  value  —  the  total  value  those  orders  would  have  brought. •  Ad  spend  on  them  —  the  advertising  spend  attributable  to  them  (see  the  estimation  note  below). •  Failed-delivery  cost  —  the  cost  of  delivery  attempts  that  did  not  land. 
+Numbatrak  feature  spec   ·   page  9 
+
+=== PAGE 10 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+•  Real  cost  per  failed  order  —  ad  spend  plus  attempt  cost,  divided  by  failed  orders  —  the  number  that  
+makes
+ 
+the
+ 
+loss
+ 
+concrete. 
+DIAGNOSTIC  —  WHERE  THE  LOSS  CONCENTRATES •  By  location  —  which  areas  fail  most  (the  loss  side  of  delivery-rate-by-area). •  By  agent  —  which  agent  has  the  worst  delivery  rate. •  By  funnel  —  whether  a  funnel  pulls  in  orders  that  never  land  —  a  good  CPA  with  a  bad  delivery  rate  is  a  
+trap. •  By  reason  —  of  the  non-delivered,  how  many  are  failed,  returned,  lost,  or  still  pending  —  because  
+pending
+ 
+may
+ 
+still
+ 
+deliver,
+ 
+failed
+ 
+may
+ 
+be
+ 
+recoverable
+ 
+with
+ 
+a
+ 
+follow-up
+ 
+call,
+ 
+and
+ 
+lost
+ 
+is
+ 
+gone. 
+Confirmed  decisions 
+CONFIRMED  DECISION   Alert  thresholds  are  owner-set  with  sensible  defaults  shipped  out  of  the  box  (for  example,  delivery  rate  below  65%,  CPA  up  more  than  15%  week-on-week).  The  owner  can  change  them  in  settings. 
+ 
+CONFIRMED  DECISION   A  business  with  no  ad  spend  is  fully  supported.  Metrics  that  need  ad  spend  (CPA,  ROAS)  simply  do  not  appear  rather  than  nagging  for  a  number  that  is  not  relevant.  The  profit  picture  —  COGS,  delivery,  profit  per  order  —  still  shows. 
+ 
+CONFIRMED  DECISION   Colour  tonation  and  red-flag  alerts  run  off  the  same  owner-set  thresholds.  One  setting  drives  both  the  colour  of  a  metric  and  whether  it  raises  an  alert.  Good  is  green,  mid  is  amber,  critical  is  red. 
+Tiny  parts 
+TINY  PART   Ad  spend  on  failed  orders  is  an  ALLOCATION,  not  a  trace.  Ad  platforms  do  not  tell  you  which  specific  order  a  given  naira  of  spend  bought,  so  this  number  is  estimated:  total  funnel  spend  is  spread  evenly  across  the  orders  it  generated  (this  is  the  Platform  CPA),  and  the  failed  orders  each  carry  that  average  share.  It  answers  'on  average,  what  did  the  orders  that  failed  cost  me  to  generate  and  attempt'  —  the  useful  business  question  —  but  it  does  not  follow  individual  naira.  This  figure  should  be  shown  with  an  'estimated'  marker  so  it  is  never  mistaken  for  an  exact  trace. 
+ 
+TINY  PART   The  allocation  assumes  failed  orders  cost  the  same  on  average  to  acquire  as  delivered  ones.  When  a  funnel  genuinely  attracts  worse-quality  orders  that  fail  more  often,  this  slightly  understates  the  true  loss.  The  assumption  is  noted  so  the  number  is  never  treated  as  gospel. 
+ 
+TINY  PART   Platform  vs  Real  CPA  is  filterable  by  ad  platform,  so  Meta,  TikTok,  and  Google  spend  and  their  resulting  CPAs  can  each  be  seen  separately.  
+Numbatrak  feature  spec   ·   page  10 
+
+=== PAGE 11 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+4.  Payroll  
+ 
+Status:  Locked  —  partly  built,  extended  for  launch Payroll  is  the  deepest  money  logic  in  the  product,  so  it  is  built  as  a  flexible  engine  rather  than  one  hard-coded  
+formula.
+ 
+Every
+ 
+business
+ 
+pays
+ 
+staff
+ 
+differently
+ 
+—
+ 
+some
+ 
+pay
+ 
+a
+ 
+fixed
+ 
+salary
+ 
+only,
+ 
+some
+ 
+pay
+ 
+straight
+ 
+commission,
+ 
+some
+ 
+gate
+ 
+commission
+ 
+behind
+ 
+performance.
+ 
+Numbatrak
+ 
+handles
+ 
+all
+ 
+of
+ 
+them
+ 
+by
+ 
+composing
+ 
+each
+ 
+person's
+ 
+pay
+ 
+from
+ 
+toggleable
+ 
+components.
+ 
+QuickBuy's
+ 
+own
+ 
+structure
+ 
+—
+ 
+base,
+ 
+gated
+ 
+commission,
+ 
+upsell,
+ 
+and
+ 
+Star
+ 
+of
+ 
+the
+ 
+Month
+ 
+—
+ 
+is
+ 
+simply
+ 
+one
+ 
+configuration
+ 
+of
+ 
+that
+ 
+engine.
+ 
+Numbatrak
+ 
+calculates
+ 
+pay;
+ 
+it
+ 
+does
+ 
+not
+ 
+disburse
+ 
+it.
+ 
+Money
+ 
+is
+ 
+paid
+ 
+outside
+ 
+the
+ 
+system
+ 
+and
+ 
+marked
+ 
+paid
+ 
+here. 
+LAYER  1   Screens •  Pay  structure  —  Per  staff  member  (or  role  as  a  tier),  toggle  which  pay  components  apply  and  set  their  
+amounts. •  Calculation  trace  —  For  any  person  any  month,  the  full  line-by-line  breakdown  of  how  their  pay  was  
+built. •  Payment  run  —  The  month's  payroll  for  everyone:  calculate,  review,  override,  and  mark  each  as  paid. •  Live  earnings  view  —  What  each  staff  member  sees  of  their  own  pay  —  building  in  real  time  through  
+the
+ 
+month,
+ 
+with
+ 
+gate
+ 
+status. 
+The  pay  components A  staff  member's  pay  is  assembled  from  these  components.  Each  is  toggled  on  or  off  per  person  or  per  role  (a  
+'tier').
+ 
+A
+ 
+fixed-salary
+ 
+employee
+ 
+has
+ 
+only
+ 
+base
+ 
+on;
+ 
+a
+ 
+performance
+ 
+CRS
+ 
+has
+ 
+several
+ 
+on. •  Base  salary  —  fixed  monthly  amount.  Always  safe  —  no  gate  ever  touches  it. •  Commission  —  on/off.  If  on,  choose  the  basis  —  flat  per  delivered  order  (e.g.  ₦ 500/order)  OR  
+percentage
+ 
+of
+ 
+sale
+ 
+(e.g.
+ 
+5%
+ 
+of
+ 
+each
+ 
+delivered
+ 
+order's
+ 
+value)
+ 
+—
+ 
+then
+ 
+set
+ 
+the
+ 
+rate.
+ 
+An
+ 
+optional
+ 
+delivery-rate
+ 
+gate
+ 
+can
+ 
+sit
+ 
+on
+ 
+top
+ 
+(see
+ 
+below). •  Upsell  bonus  —  on/off.  A  set  amount  per  upsell  the  person  adds.  Never  gated  —  always  earned. •  Star  of  the  Month  —  on/off.  A  bonus  if  the  person  wins  Star  of  the  Month. •  Manual  adjustment  —  plus  or  minus,  entered  by  admin  —  a  reimbursement,  a  deduction,  a  one-off.  
+Always
+ 
+available
+ 
+and
+ 
+reversible. 
+The  gates  —  both  optional Gates  are  how  a  business  ties  pay  to  performance.  Both  are  optional  and  off  by  default;  a  business  with  no  
+performance
+ 
+gating
+ 
+never
+ 
+turns
+ 
+them
+ 
+on. •  Commission  gate  (delivery  rate)  —  an  optional  modifier  on  top  of  commission.  If  on,  the  manager  sets  
+a
+ 
+delivery-rate
+ 
+threshold
+ 
+(e.g.
+ 
+65%).
+ 
+If
+ 
+the
+ 
+staff
+ 
+member's
+ 
+own
+ 
+delivery
+ 
+rate
+ 
+for
+ 
+the
+ 
+month
+ 
+is
+ 
+below
+ 
+it,
+ 
+the
+ 
+whole
+ 
+month's
+ 
+commission
+ 
+zeroes
+ 
+—
+ 
+not
+ 
+reduced,
+ 
+zero.
+ 
+Upsell
+ 
+and
+ 
+base
+ 
+are
+ 
+untouched. •  Manager  gate  (team  ratio)  —  an  optional  gate  on  the  manager's  own  bonus.  If  on,  the  manager  earns  
+their
+ 
+bonus
+ 
+only
+ 
+if
+ 
+at
+ 
+least
+ 
+a
+ 
+set
+ 
+percentage
+ 
+of
+ 
+their
+ 
+team
+ 
+hit
+ 
+their
+ 
+KPI
+ 
+that
+ 
+month.
+ 
+Default
+ 
+is
+ 
+50%,
+ 
+and
+ 
+it
+ 
+is
+ 
+settable. 
+LAYER  2   Actions 31.  Toggle  a  pay  component  —  base,  commission,  upsell,  SOTM,  and  others,  on  or  off  per  person  or  
+role. 
+Numbatrak  feature  spec   ·   page  11 
+
+=== PAGE 12 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+32.  Set  commission  basis  —  flat  per  order  or  percentage  of  sale,  then  enter  the  rate. 33.  Set  the  commission  gate  —  optional;  if  on,  set  the  delivery-rate  threshold. 34.  Set  the  manager  gate  —  optional;  if  on,  set  the  %  of  team  that  must  hit  KPI  (default  50%). 35.  Run  payroll  —  calculate  everyone's  pay  for  the  month  from  live  data. 36.  Override  a  line  —  edit  any  payroll  line;  base  and  commission  overrides  allowed.  The  override  
+sticks
+ 
+by
+ 
+intent
+ 
+but
+ 
+is
+ 
+reversible. 37.  Mark  paid  —  flag  each  person  paid  once  paid  outside  the  system.  A  paid  line  stays  editable  and  
+can
+ 
+be
+ 
+re-sent. 38.  View  trace  —  open  any  person's  full  calculation  breakdown. 
+LAYER  3   States •  Empty  —  No  pay  structures  set  —  guide  the  owner  to  set  them  per  staff  first. •  Calculating  —  Pulling  delivered  orders,  upsells,  and  gate  checks  from  live  data. •  Calculated  —  Everyone's  pay  built,  ready  to  review. •  Gate  missed  —  Commission  zeroed,  shown  clearly  with  the  reason  (rate  below  gate). •  Overridden  —  An  edited  line  is  flagged  as  manually  adjusted,  and  can  be  reverted  to  the  calculated  
+figure. •  Paid  —  Marked  paid;  the  notification  and  payslip  fire;  the  line  remains  editable  and  re-sendable. 
+LAYER  4   Rules 
+LOCKED  RULE   Pay  is  composed  of  toggled  components  —  one  engine,  and  each  business  turns  on  the  parts  it  uses.  QuickBuy's  structure  is  one  configuration,  not  a  hard-coded  rule. 
+ 
+LOCKED  RULE   Base  salary  is  always  safe.  No  gate  ever  touches  it. 
+ 
+LOCKED  RULE   Commission  and  its  gate  are  two  separate  switches.  Commission  can  be  paid  straight  (per  order  or  percentage)  with  no  gate  at  all;  the  delivery-rate  gate  is  an  optional  modifier  on  top. 
+ 
+LOCKED  RULE   Commission  has  a  basis:  flat  per  delivered  order,  or  percentage  of  the  delivered  sale  value.  The  business  picks  which. 
+ 
+LOCKED  RULE   When  the  commission  gate  is  on  and  missed,  the  whole  month's  commission  zeroes  —  not  reduced.  Upsell  and  base  are  untouched. 
+ 
+LOCKED  RULE   Upsell  is  never  gated  —  earned  regardless  of  whether  commission  unlocks. 
+ 
+LOCKED  RULE   Both  gates  are  optional.  A  business  with  no  performance  gating  turns  them  off. 
+ 
+LOCKED  RULE   The  manager  gate  is  a  team  ratio  —  default  50%  of  the  team  hitting  KPI,  and  it  is  settable. 
+Numbatrak  feature  spec   ·   page  12 
+
+=== PAGE 13 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+LOCKED  RULE   Numbatrak  calculates,  it  does  not  disburse.  Pay  is  paid  outside  the  system,  then  marked  paid  here. 
+ 
+LOCKED  RULE   Every  line  is  editable  —  base  and  commission  overrides  allowed.  An  override  sticks  by  intent  but  is  always  reversible  to  the  calculated  figure. 
+ 
+LOCKED  RULE   Marking  paid  does  not  hard-lock  the  month.  A  paid  line  can  be  edited  and  re-sent  if  there  was  an  error. 
+ 
+LOCKED  RULE   Every  figure  pulls  from  live  data  —  delivered  orders,  upsells,  and  delivery  rate  come  straight  from  Orders. 
+The  live  earnings  view Performance-tied  staff  see  their  own  pay  building  in  real  time  through  the  month  —  not  just  at  payroll  run.  
+This
+ 
+is
+ 
+a
+ 
+motivator:
+ 
+a
+ 
+CRS
+ 
+watching
+ 
+their
+ 
+commission
+ 
+climb,
+ 
+and
+ 
+seeing
+ 
+exactly
+ 
+where
+ 
+their
+ 
+delivery
+ 
+rate
+ 
+sits
+ 
+against
+ 
+the
+ 
+gate,
+ 
+has
+ 
+a
+ 
+reason
+ 
+to
+ 
+push
+ 
+while
+ 
+there
+ 
+is
+ 
+still
+ 
+time
+ 
+to
+ 
+fix
+ 
+it. •  What  they  see  —  their  pay  so  far  this  month  —  base,  commission  earned,  upsells,  on-track  total. •  Gate  status  —  their  delivery  rate  against  the  gate  threshold,  with  a  clear  message:  how  far  below  the  
+gate
+ 
+they
+ 
+are
+ 
+and
+ 
+how
+ 
+much
+ 
+commission
+ 
+it
+ 
+would
+ 
+unlock
+ 
+to
+ 
+cross
+ 
+it. •  Scope  —  a  staff  member  sees  only  their  own  pay,  never  anyone  else's.  This  follows  the  role-scoping  rule  
+—
+ 
+CRS
+ 
+sees
+ 
+own,
+ 
+manager
+ 
+sees
+ 
+team,
+ 
+admin
+ 
+sees
+ 
+all. 
+Confirmed  decisions 
+CONFIRMED  DECISION   The  commission  gate  is  measured  on  the  individual  staff  member's  own  delivery  rate  for  the  month  —  their  own  performance  gates  their  own  commission,  not  the  team's  rate. 
+ 
+CONFIRMED  DECISION   Commission  and  the  delivery-rate  gate  are  separate  switches.  Many  businesses  pay  straight  commission  (flat  or  percentage)  with  no  gate;  only  businesses  that  want  performance  gating  turn  it  on.  Commission  is  never  forced  to  be  gated. 
+ 
+CONFIRMED  DECISION   The  live  earnings  view  exists  specifically  so  performance-tied  staff  see  how  they  are  doing  in  real  time,  mid-month,  rather  than  being  surprised  at  payroll  run.  It  shows  their  number  climbing  and  their  gate  status  live. 
+ 
+CONFIRMED  DECISION   Staff  are  notified  when  marked  paid  —  a  bell  notification  and  email  with  their  payslip.  The  notification  itself  is  routed  through  the  shared  notification  system  (documented  in  its  own  cross-cutting  section),  not  built  separately  inside  Payroll. 
+Tiny  parts 
+Numbatrak  feature  spec   ·   page  13 
+
+=== PAGE 14 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+TINY  PART   An  override  sticks  through  a  re-run  rather  than  being  silently  wiped,  because  an  override  is  deliberate.  But  it  is  always  reversible  —  the  line  can  be  reset  to  the  calculated  figure  at  any  time.  Re-running  payroll  warns  before  it  would  replace  an  override  rather  than  doing  so  silently. 
+ 
+TINY  PART   Marking  a  staff  member  paid  does  not  lock  their  month.  The  line  stays  editable,  and  the  payslip  can  be  re-sent  if  a  correction  is  made  after  payment. 
+ 
+TINY  PART   The  commission  gate  zeroes  commission  entirely  at  the  threshold  —  there  is  no  partial  or  sliding  scale.  A  staff  member  one  delivery  below  the  gate  loses  the  whole  month's  commission.  This  is  deliberate  and  must  be  shown  plainly  in  both  the  trace  and  the  live  earnings  view  so  it  is  never  a  hidden  surprise.  
+Numbatrak  feature  spec   ·   page  14 
+
+=== PAGE 15 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+5.  Wallet  (Remittance)  
+ 
+Status:  Locked  —  new  for  launch Wallet  is  where  COD  cash  is  tracked  from  the  moment  an  agent  collects  it  to  the  moment  it  reaches  the  
+business.
+ 
+For
+ 
+a
+ 
+cash-on-delivery
+ 
+business
+ 
+this
+ 
+is
+ 
+the
+ 
+difference
+ 
+between
+ 
+revenue
+ 
+earned
+ 
+and
+ 
+cash
+ 
+actually
+ 
+in
+ 
+hand
+ 
+—
+ 
+money
+ 
+a
+ 
+delivery
+ 
+agent
+ 
+has
+ 
+collected
+ 
+but
+ 
+not
+ 
+yet
+ 
+paid
+ 
+in
+ 
+is
+ 
+earned,
+ 
+but
+ 
+it
+ 
+is
+ 
+not
+ 
+yet
+ 
+yours.
+ 
+Wallet
+ 
+makes
+ 
+that
+ 
+gap
+ 
+visible
+ 
+per
+ 
+agent,
+ 
+and
+ 
+it
+ 
+is
+ 
+the
+ 
+source
+ 
+the
+ 
+Accounting
+ 
+feature
+ 
+reads
+ 
+for
+ 
+the
+ 
+cash
+ 
+position. 
+LAYER  1   Screens •  Remittance  day  —  Each  agent's  deliveries  for  the  day  compiled  into  one  line,  with  the  expected  
+remittance
+ 
+and
+ 
+a
+ 
+mark-remitted
+ 
+button. •  Net-off  —  The  same  line  when  the  business  owes  the  agent  back;  the  amount  they  remit  nets  both  
+directions. •  Accountant  oversight  —  Marked  remittances  notify  the  accountant,  who  reviews  and  confirms  
+externally. 
+LAYER  2   Actions 39.  Mark  remitted  —  the  manager  marks  an  agent's  day  paid  in,  recording  the  amount  that  actually  
+came
+ 
+in. 40.  Record  what  came  in  —  if  less  than  expected  arrives,  record  the  actual  amount;  the  shortfall  stays  
+standing
+ 
+against
+ 
+that
+ 
+agent. 41.  Record  what  you  owe  the  agent  —  when  the  business  owes  the  agent  (e.g.  a  failed-delivery  trip  
+the
+ 
+agent
+ 
+covered),
+ 
+record
+ 
+it
+ 
+as
+ 
+an
+ 
+expense
+ 
+—
+ 
+you
+ 
+pick
+ 
+the
+ 
+category,
+ 
+exactly
+ 
+as
+ 
+if
+ 
+entering
+ 
+any
+ 
+expense
+ 
+—
+ 
+and
+ 
+it
+ 
+nets
+ 
+off
+ 
+the
+ 
+remittance. 42.  Filter  —  by  agent,  day,  sub-brand,  and  standing  vs  remitted. 
+LAYER  3   States •  Nothing  due  —  No  deliveries  yet  today  where  the  agent  collected  —  no  remittance  owed. •  Standing  —  The  agent  holds  the  cash;  not  yet  remitted. •  Remitted  —  Marked  paid  in;  the  accountant  is  pinged  to  review. •  Short  —  Less  came  in  than  expected;  the  shortfall  stays  owed  against  the  agent. •  Net  owed  to  agent  —  The  business  owes  the  agent  more  than  they  collected;  the  balance  carries  
+forward. 
+LAYER  4   Rules 
+LOCKED  RULE   The  unit  is  agent-per-day.  All  of  an  agent's  deliveries  in  a  day  where  the  agent  collected  the  money  compile  into  one  remittance  line. 
+ 
+LOCKED  RULE   Expected  remittance  =  delivered  value  minus  delivery  fee  (which  the  agent  keeps)  minus  anything  the  business  owes  the  agent.  It  nets  both  directions. 
+ 
+Numbatrak  feature  spec   ·   page  15 
+
+=== PAGE 16 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   The  delivery  fee  comes  from  Orders.  Wallet  reads  it  to  compute  the  expected  amount;  it  does  not  re-book  it  as  an  expense. 
+ 
+LOCKED  RULE   Only  orders  flagged  'agent  collected'  create  a  remittance  line.  Orders  paid  to  the  company  account  directly,  or  prepaid,  never  enter  the  remittance  flow  —  the  money  is  already  in  hand. 
+ 
+LOCKED  RULE   Standing  until  remitted:  outstanding  cash  sits  with  the  agent  until  the  manager  marks  it  in. 
+ 
+LOCKED  RULE   Shortfall  stays  standing:  if  less  comes  in  than  expected,  the  difference  remains  owed.  Nothing  disappears. 
+ 
+LOCKED  RULE   Manager  marks  remitted;  the  accountant  oversees.  Every  mark  pings  the  accountant,  who  reviews  and  confirms  in  the  business's  own  chats  —  she  does  not  approve  inside  the  app.  It  is  not  a  blocking  gate. 
+ 
+LOCKED  RULE   Failed  deliveries  go  to  expenses,  not  here.  No  cash  was  collected;  the  failed-attempt  cost  is  a  day-to-day  operational  expense,  recorded  and  traceable. 
+ 
+LOCKED  RULE   Outstanding  remittance  is  the  cash  gap.  Earned  revenue  minus  remitted  equals  money  still  in  the  field.  Accounting  reads  this  for  the  cash  position. 
+Confirmed  decisions 
+CONFIRMED  DECISION   When  an  agent  remits  less  because  the  business  owes  them  back,  that  deduction  must  be  stated  on  the  remittance  line,  recorded  as  an  expense  (in  a  category  the  user  picks,  usually  Operational  —  it  feels  exactly  like  recording  an  expense),  and  fully  traceable.  It  is  never  a  silent  subtraction;  the  money  the  agent  covered  is  a  real  cost  that  appears  on  the  expense  sheet. 
+ 
+CONFIRMED  DECISION   The  accountant  does  not  approve  remittances  inside  Wallet.  The  manager  marks  remitted;  the  accountant  is  pinged,  then  reviews  and  confirms  in  the  business's  chats,  checking  against  the  bank  statement  externally.  The  ping  is  kept  —  it  is  important  that  she  knows  to  review. 
+ 
+CONFIRMED  DECISION   Whether  an  order  creates  a  remittance  is  driven  by  the  'who  received  the  money'  flag  on  the  order  (agent  /  company  account  /  prepaid),  not  by  whether  it  is  COD.  Money  reaching  the  company  account  directly  can  still  be  a  COD-timed  order;  what  matters  is  that  the  agent  did  not  collect  on  the  business's  behalf. 
+Tiny  parts 
+TINY  PART   Money  reaching  the  company  account  directly  does  not  mean  the  order  is  not  COD  —  it  means  the  agent  did  not  collect  on  the  business's  behalf.  The  distinguishing  axis  is  'did  the  agent  collect  for  us',  not  'COD  versus  paid'. 
+Numbatrak  feature  spec   ·   page  16 
+
+=== PAGE 17 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+TINY  PART   For  an  order  the  agent  did  not  collect  (paid  to  company,  or  prepaid),  there  is  nothing  to  remit.  The  delivery  fee  for  that  order  is  simply  recorded  on  the  order  and  balanced  there;  it  never  enters  the  remittance  flow.  This  keeps  prepaid  and  direct-payment  orders  clean  and  out  of  Wallet  entirely.  
+Numbatrak  feature  spec   ·   page  17 
+
+=== PAGE 18 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+6.  Accounting  
+ 
+Status:  Locked  —  lighter  version  for  launch Accounting  is  the  consolidated  money  view.  It  pulls  income  (from  delivered  orders  and  wallet)  and  expenses  
+(from
+ 
+the
+ 
+four
+ 
+categories),
+ 
+categorises
+ 
+them,
+ 
+and
+ 
+shows
+ 
+the
+ 
+business's
+ 
+overall
+ 
+numbers
+ 
+—
+ 
+rolled
+ 
+up
+ 
+across
+ 
+all
+ 
+sub-brands,
+ 
+and
+ 
+drillable
+ 
+into
+ 
+any
+ 
+single
+ 
+sub-brand.
+ 
+It
+ 
+is
+ 
+deliberately
+ 
+the
+ 
+lighter
+ 
+version:
+ 
+a
+ 
+profit-and-loss
+ 
+and
+ 
+cash
+ 
+view,
+ 
+not
+ 
+a
+ 
+double-entry
+ 
+engine.
+ 
+The
+ 
+heavy
+ 
+formal
+ 
+bookkeeping
+ 
+stays
+ 
+in
+ 
+Zoho
+ 
+Books
+ 
+for
+ 
+now
+ 
+and
+ 
+is
+ 
+explicitly
+ 
+parked
+ 
+as
+ 
+future
+ 
+work. 
+LAYER  1   Screens •  Consolidated  P&L  —  The  whole  business:  total  income,  expenses  by  category,  net  profit,  and  
+expense-as-%-of-revenue. •  By  sub-brand  —  The  same  P&L  for  each  sub-brand  on  its  own,  with  the  group  total  on  top. •  Cash  position  —  Earned  revenue  against  cash  actually  collected,  with  outstanding  COD  shown  as  the  
+gap. •  Parked  for  later  —  The  heavy  bookkeeping,  explicitly  marked  future  /  handled  in  Zoho  for  now. 
+LAYER  2   Actions 43.  Toggle  view  —  consolidated  (whole  business)  or  per  sub-brand. 44.  Filter  —  by  time  frame  (today,  weekly,  monthly,  custom),  sub-brand,  and  expense  category. 45.  Drill  into  a  brand  —  open  any  sub-brand's  own  full  P&L. 46.  Export  —  the  P&L  view  for  the  period,  for  the  accountant  or  Zoho. 
+LAYER  3   States •  Empty  —  No  income  or  expenses  yet  this  period  —  a  clean  zero  P&L. •  Loading  —  Pulling  income  and  expenses  to  roll  up. •  Full  —  Consolidated  P&L  with  the  brand  breakdown. •  Loss  —  Net  negative  shown  plainly  in  red,  not  hidden. •  Single  brand  —  One  sub-brand's  P&L  in  isolation. •  Filtered  to  nothing  —  No  data  for  that  filter  —  a  clean  zero,  not  a  broken  screen. 
+LAYER  4   Rules 
+LOCKED  RULE   It  pulls,  it  does  not  ask  for  entry.  Income  comes  from  delivered  orders  and  wallet;  expenses  come  from  the  four  categories.  All  of  it  is  already  in  the  system. 
+ 
+LOCKED  RULE   Income  and  expenses  are  categorised  —  income  by  source,  expenses  by  operational,  building,  marketing,  and  advertising. 
+ 
+LOCKED  RULE   Consolidated  and  drill-down.  Every  sub-brand  rolls  up  to  the  main  business,  and  any  one  brand  can  be  seen  on  its  own.  A  business  is  one  account  with  sub-brands  beneath  it. 
+Numbatrak  feature  spec   ·   page  18 
+
+=== PAGE 19 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+LOCKED  RULE   Earned  revenue  uses  delivered  orders,  consistent  with  the  whole  product.  Undelivered  orders  are  not  income.  This  is  the  same  revenue  truth  the  Dashboard  uses  —  there  is  only  one  revenue  number  across  the  product. 
+ 
+LOCKED  RULE   The  cash  position  reads  from  Wallet.  Cash  in  hand  equals  money  paid  to  the  company  directly,  plus  prepaid,  plus  remitted  COD.  Outstanding  equals  only  the  COD  still  standing  with  agents.  Earned  minus  outstanding  equals  cash  in  hand  —  the  numbers  reconcile  end  to  end. 
+ 
+LOCKED  RULE   Filterable  by  time  frame,  sub-brand,  and  category,  like  every  other  view. 
+Confirmed  decisions 
+CONFIRMED  DECISION   Accounting  is  the  lighter  version  for  launch  —  a  profit-and-loss  and  cash  view,  not  a  double-entry  engine.  Zoho  Books  already  handles  the  formal  bookkeeping,  so  rebuilding  it  now  would  be  wasted  effort.  The  full  engine  is  a  future  consideration,  not  a  launch  build. 
+ 
+CONFIRMED  DECISION   Accounting  shows  both  earned  profit  and  cash  position  together,  because  'am  I  profitable  and  do  I  actually  have  the  cash'  is  one  question  a  founder  asks  at  once.  The  cash  line  (collected  vs  outstanding)  is  drawn  from  Wallet,  so  the  two  views  never  contradict  each  other. 
+Parked  for  later  —  handled  in  Zoho  Books  for  now These  are  recorded  here  so  the  decision  is  not  lost.  When  the  business  is  ready  to  bring  formal  bookkeeping  
+in-house,
+ 
+this
+ 
+is
+ 
+the
+ 
+build
+ 
+list: •  Chart  of  accounts •  Journals  and  double-entry  (debits  and  credits) •  Vouchers  routed  to  expense  heads •  Suppliers  module •  Balance  sheet •  Cash  flow  statement •  Break-even  calculator  and  tax  provision •  Bank  reconciliation •  Accounts  payable  and  accounts  receivable 
+Tiny  parts 
+TINY  PART   Accounting's  income  must  match  the  Dashboard's  exactly  —  both  use  delivered-order  revenue.  If  one  counted  generated  orders  while  the  other  counted  delivered,  the  same  product  would  show  two  different  revenue  numbers,  which  destroys  trust  in  every  figure.  There  is  one  revenue  truth. 
+ 
+TINY  PART   For  a  COD  business,  earned  and  collected  are  different  moments.  Accounting  shows  earned  revenue  as  the  profit  picture  and  collected-vs-outstanding  as  the  cash  picture.  The  gap  between  them  is  uncollected  COD  sitting  with  agents  —  a  number  COD  founders  rarely  see  and  badly  need. 
+Numbatrak  feature  spec   ·   page  19 
+
+=== PAGE 20 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+Numbatrak  feature  spec   ·   page  20 
+
+=== PAGE 21 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Staff  Management  
+ 
+Payroll  (feature  4)  is  the  money  engine  of  this  group  and  is  fully  locked  above.  The  features  below  are  the  rest  
+of
+ 
+the
+ 
+Staff
+ 
+Management
+ 
+suite.
+ 
+Several
+ 
+already
+ 
+exist
+ 
+in
+ 
+the
+ 
+HR
+ 
+system
+ 
+that
+ 
+Numbatrak
+ 
+grew
+ 
+out
+ 
+of,
+ 
+so
+ 
+they
+ 
+are
+ 
+well
+ 
+understood;
+ 
+the
+ 
+important
+ 
+shift
+ 
+for
+ 
+the
+ 
+product
+ 
+is
+ 
+that
+ 
+rules
+ 
+which
+ 
+were
+ 
+hard-coded
+ 
+for
+ 
+one
+ 
+business
+ 
+become
+ 
+settable,
+ 
+so
+ 
+any
+ 
+business
+ 
+can
+ 
+configure
+ 
+them
+ 
+to
+ 
+their
+ 
+own
+ 
+way
+ 
+of
+ 
+working.
+ 
+The
+ 
+six-role
+ 
+model
+ 
+runs
+ 
+through
+ 
+all
+ 
+of
+ 
+them:
+ 
+CRS,
+ 
+Manager,
+ 
+Admin,
+ 
+Media,
+ 
+Accountant,
+ 
+Founder
+ 
+—
+ 
+with
+ 
+a
+ 
+multi-role
+ 
+union
+ 
+pattern
+ 
+where
+ 
+a
+ 
+person
+ 
+can
+ 
+hold
+ 
+extra
+ 
+roles
+ 
+and
+ 
+gets
+ 
+the
+ 
+combined
+ 
+access. 
+7.  Staff  Status:  Locked  —  exists  in  HR  system The  people  records  that  everything  else  references  —  pay  structures,  attendance,  strikes,  stars,  leave,  and  
+delivery
+ 
+all
+ 
+key
+ 
+off
+ 
+a
+ 
+staff
+ 
+record. 
+LAYER  1   Screens •  Staff  list  —  all  people,  filterable  by  brand  and  role. •  Staff  record  —  personal  details,  role(s),  bank  details,  and  the  link  to  their  pay  structure. •  Add  /  edit  staff  —  create  or  edit  a  person. 
+LAYER  2   Actions 47.  Create  staff  —  add  a  person,  set  their  primary  role,  add  extra  roles,  assign  sub-brand(s). 48.  Edit  staff  —  edit  details,  roles,  brands,  and  bank  details. 49.  Filter  —  by  brand  and  by  role. 
+LAYER  3   States •  Empty  —  no  staff  yet  —  guide  the  owner  to  add  the  first  person. •  Full  —  the  roster,  one  row  per  person  with  role  and  brand. •  Multi-brand  —  a  person  covering  more  than  one  sub-brand  shows  under  any  brand  they  cover. 
+LAYER  4   Rules 
+LOCKED  RULE   Every  staff  member  has  one  primary  role  plus  optional  extra  roles.  Access  is  the  union  of  all  roles  held  —  a  manager  with  an  HR  extra  sees  both  the  manager  team-views  and  the  HR  admin-views. 
+ 
+LOCKED  RULE   The  six-role  model  is  CRS,  Manager,  Admin,  Media,  Accountant,  Founder.  This  is  the  grouping  used  across  the  whole  product. 
+ 
+LOCKED  RULE   Staff  can  cover  multiple  sub-brands  —  a  primary  brand  plus  extras  —  and  appear  under  any  brand  they  cover  in  filters  and  payroll. 
+ 
+Numbatrak  feature  spec   ·   page  21 
+
+=== PAGE 22 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Bank  details  live  on  the  record  and  feed  the  Payroll  payment  run.  Role-scoped:  admins  see  all  staff,  managers  see  their  team,  everyone  sees  their  own  record. 
+8.  Attendance  Status:  Locked  —  exists  in  HR  system  ·  optional  module Self-marking  staff  attendance  for  meetings  and  check-ins.  This  is  an  optional  module  —  a  business  that  does  
+not
+ 
+run
+ 
+attendance
+ 
+can
+ 
+switch
+ 
+it
+ 
+off
+ 
+entirely. 
+LAYER  1   Screens •  Attendance  events  —  meetings  and  check-ins  that  staff  mark  against. •  Per-event  view  —  mark  and  manage  one  event's  attendance. •  History  —  the  record  over  time. 
+LAYER  2   Actions 50.  Self-mark  —  staff  mark  their  own  attendance  for  an  event. 51.  Exempt  —  mark  a  person  exempt  from  an  event  they  are  not  expected  at. 52.  Filter  —  by  staff,  event,  brand,  and  date. 
+LAYER  3   States •  Disabled  —  attendance  switched  off  for  this  business  —  the  module  is  hidden. •  Open  —  event  open,  staff  can  still  mark. •  Auto-closed  —  after  the  window  closes,  unmarked  staff  are  auto-assigned  late  or  absent. •  Exempt  —  an  exempt  person  is  skipped  at  close  and  skipped  by  the  strike  trigger. 
+LAYER  4   Rules 
+LOCKED  RULE   Attendance  is  an  optional  module  —  settable  on  or  off  per  business. 
+ 
+LOCKED  RULE   Self-marking  with  an  auto-close:  after  the  window,  unmarked  staff  are  auto-assigned  late  or  absent.  The  window  length  is  settable. 
+ 
+LOCKED  RULE   Per-event  exemptions:  some  staff  legitimately  are  not  expected  at  every  event.  An  exempt  person  is  skipped  at  auto-close  and  does  not  trigger  a  strike. 
+ 
+LOCKED  RULE   Role-scoped:  admins  view  and  edit  all,  managers  mark  and  view  their  team,  everyone  marks  their  own. 
+9.  Strikes  Status:  Locked  —  exists  in  HR  system  ·  settable  rules A  disciplinary  record,  not  a  deduction.  Strikes  are  non-monetary;  the  threshold  and  its  consequence  are  set  
+by
+ 
+each
+ 
+business. 
+Numbatrak  feature  spec   ·   page  22 
+
+=== PAGE 23 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  1   Screens •  Strikes  list  —  strikes  issued,  by  staff  member. •  Issue  strike  —  record  a  strike  against  one  or  several  staff. •  Clear  strike  —  remove  a  strike. 
+LAYER  2   Actions 53.  Issue  —  record  a  strike  with  a  reason;  can  be  issued  to  several  staff  at  once. 54.  Clear  —  remove  a  strike  (admin). 55.  Filter  —  by  staff,  brand,  and  date. 
+LAYER  3   States •  Clean  —  no  strikes. •  Issued  —  strike  recorded,  staff  notified. •  Threshold  hit  —  the  settable  threshold  is  reached  —  the  configured  consequence  triggers  (e.g.  HR  
+review). 
+LAYER  4   Rules 
+LOCKED  RULE   Strikes  are  non-monetary  —  a  disciplinary  record,  no  fine  matrix. 
+ 
+LOCKED  RULE   The  threshold  and  its  consequence  are  settable.  The  reference  configuration  is  two  strikes  in  a  calendar  month  triggering  an  HR  review;  another  business  sets  its  own  count  and  consequence. 
+ 
+LOCKED  RULE   Strikes  can  be  issued  individually  or  in  bulk.  Issuing  notifies  the  staff  member  through  the  shared  notification  layer. 
+ 
+LOCKED  RULE   Role-scoped:  admins  issue  and  clear  any,  managers  issue  to  their  team,  staff  view  their  own. 
+10.  Stars  &  Leaderboard  Status:  Locked  —  exists  in  HR  system  ·  settable  framework Recognition  and  ranking,  built  as  a  configurable  framework  rather  than  one  fixed  scheme.  The  star  system  is  
+the
+ 
+heart
+ 
+of
+ 
+it:
+ 
+a
+ 
+business
+ 
+sets
+ 
+how
+ 
+many
+ 
+star
+ 
+tiers
+ 
+exist,
+ 
+what
+ 
+earns
+ 
+each
+ 
+tier,
+ 
+and
+ 
+how
+ 
+stars
+ 
+feed
+ 
+the
+ 
+leaderboard
+ 
+and
+ 
+Star
+ 
+of
+ 
+the
+ 
+Month.
+ 
+One
+ 
+business
+ 
+runs
+ 
+a
+ 
+three-tier
+ 
+manual
+ 
+star
+ 
+system;
+ 
+another
+ 
+ranks
+ 
+purely
+ 
+by
+ 
+revenue
+ 
+with
+ 
+no
+ 
+stars
+ 
+at
+ 
+all. 
+LAYER  1   Screens •  Award  star  —  award  a  star  tier  to  a  staff  member. •  Stars  history  —  stars  awarded  over  time. •  Leaderboard  —  ranking,  in  the  style  the  business  chooses. •  Star  of  the  Month  —  choose  or  confirm  the  month's  winner. 
+Numbatrak  feature  spec   ·   page  23 
+
+=== PAGE 24 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  2   Actions 56.  Award  star  —  company  heads  award  a  star  tier  for  meeting  a  settable  criterion. 57.  Select  SOTM  —  run  or  confirm  SOTM  against  the  chosen  criteria. 58.  Configure  —  set  number  of  tiers,  what  earns  each,  leaderboard  style,  and  SOTM  criteria  and  
+eligibility. 
+LAYER  3   States •  Empty  —  no  stars  or  ranking  configured  yet. •  Ranked  —  staff  ranked  by  the  chosen  style. •  SOTM  awarded  —  winner  chosen,  prize  flows  to  the  Payroll  SOTM  component. 
+LAYER  4   Rules 
+LOCKED  RULE   Stars  are  TIERS  a  person  holds  (a  one-,  two-,  or  three-star  performer),  not  a  running  tally.  The  number  of  tiers  is  settable  —  three,  reducible  to  two,  or  the  business's  own  count. 
+ 
+LOCKED  RULE   What  earns  each  star  tier  is  settable  —  a  business  defines  the  criteria  worthy  of  a  star,  and  heads  award  them  manually. 
+ 
+LOCKED  RULE   The  leaderboard  ranks  in  the  style  the  business  chooses  —  by  star  tier,  by  revenue,  by  delivery  rate,  and  so  on. 
+ 
+LOCKED  RULE   Star  of  the  Month  is  an  optional  feature,  settable  on  or  off,  with  settable  criteria.  The  menu  a  business  picks  from:  highest  delivery,  highest  delivery  rate,  highest  revenue,  highest  revenue  per  order,  highest  star  tier,  most  upsells,  or  manual  head's-choice. 
+ 
+LOCKED  RULE   SOTM  eligibility  is  settable:  minimum  star  tier  to  qualify,  whether  an  active  strike  disqualifies,  how  many  winners,  and  the  prize  amount.  The  prize  flows  to  the  Payroll  SOTM  component. 
+11.  Leave  Status:  Locked  —  exists  in  HR  system  ·  settable  entitlements Staff  leave  requests  and  balances  across  four  leave  types,  with  entitlements  each  business  sets. 
+LAYER  1   Screens •  Leave  requests  —  requests,  pending  and  decided. •  Request  leave  —  submit  a  leave  request. •  Decide  —  approve  or  decline. •  Balances  —  days  remaining  per  type. 
+LAYER  2   Actions 59.  Request  —  choose  type  and  dates,  submit. 
+Numbatrak  feature  spec   ·   page  24 
+
+=== PAGE 25 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+60.  Decide  —  approve  or  decline  a  request. 61.  Filter  —  by  staff,  type,  brand,  status. 
+LAYER  3   States •  Pending  —  request  submitted,  awaiting  decision. •  Approved  —  approved,  balance  reduced,  attendance  not  marked  absent  for  those  days. •  Declined  —  declined  with  a  reason. 
+LAYER  4   Rules 
+LOCKED  RULE   Four  leave  types:  annual,  sick,  emergency,  unpaid.  The  default  entitlement  days  for  each  are  settable  per  business. 
+ 
+LOCKED  RULE   Annual  leave  balance  auto-grants  on  first  approval.  An  approved  leave  day  is  not  marked  absent  by  Attendance. 
+ 
+LOCKED  RULE   Role-scoped  approvals:  admins  decide  all,  managers  decide  their  team,  staff  request  their  own.  Requesting  and  deciding  fire  notifications. 
+11b.  Order  Assignment  Status:  Locked  —  new  for  launch  ·  settable How  incoming  orders  are  distributed  across  the  CRS  team.  A  business  chooses  the  method  that  fits  how  it  
+runs,
+ 
+and
+ 
+it
+ 
+is
+ 
+fully
+ 
+settable. 
+LAYER  1   Screens •  Assignment  settings  —  the  assignment  method  and  the  per-CRS  inclusion,  set  business-wide. 
+LAYER  2   Actions 62.  Round-robin  —  even  rotation  —  each  new  order  goes  to  the  next  CRS  in  turn. 63.  By  percentage  —  weight  the  split  —  for  example  50/30/20  across  three  CRS,  so  stronger  or  
+full-time
+ 
+staff
+ 
+take
+ 
+more. 64.  Exclude  a  CRS  —  take  a  CRS  out  of  the  rotation  temporarily  (on  leave,  newly  onboarding,  or  
+underperforming)
+ 
+without
+ 
+removing
+ 
+them. 
+LAYER  3   States •  Round-robin  active  —  orders  rotate  evenly  across  the  included  CRS. •  Percentage  active  —  orders  split  by  the  set  weights. •  CRS  excluded  —  an  excluded  CRS  receives  no  new  orders  until  re-included. 
+LAYER  4   Rules 
+LOCKED  RULE   Order  assignment  is  settable  per  business  —  round-robin  or  by-percentage  —  with  the  ability  to  exclude  any  CRS  from  the  rotation  temporarily  without  removing  them  from  the  team. 
+Numbatrak  feature  spec   ·   page  25 
+
+=== PAGE 26 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+Numbatrak  feature  spec   ·   page  26 
+
+=== PAGE 27 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Delivery  
+ 
+The  delivery  group  tracks  stock  leaving  for  the  field,  the  external  partners  who  carry  it,  and  how  well  it  
+converts
+ 
+to
+ 
+delivered
+ 
+orders.
+ 
+It
+ 
+ties
+ 
+directly
+ 
+to
+ 
+Inventory
+ 
+(stock
+ 
+held
+ 
+per
+ 
+agent)
+ 
+and
+ 
+Wallet
+ 
+(agents
+ 
+remitting
+ 
+the
+ 
+COD
+ 
+cash
+ 
+they
+ 
+collect).
+ 
+An
+ 
+important
+ 
+distinction
+ 
+runs
+ 
+through
+ 
+this
+ 
+group:
+ 
+an
+ 
+agent
+ 
+is
+ 
+not
+ 
+a
+ 
+staff
+ 
+member.
+ 
+Agents
+ 
+are
+ 
+external
+ 
+contractual
+ 
+delivery
+ 
+partners;
+ 
+staff
+ 
+are
+ 
+the
+ 
+internal
+ 
+team.
+ 
+They
+ 
+are
+ 
+separate
+ 
+entities,
+ 
+which
+ 
+is
+ 
+what
+ 
+keeps
+ 
+Payroll
+ 
+(internal
+ 
+team
+ 
+only)
+ 
+and
+ 
+Wallet
+ 
+(external
+ 
+agent
+ 
+remittance)
+ 
+cleanly
+ 
+divided. 
+12.  Waybills  Status:  Locked  —  new  for  launch The  stock-in  ledger.  A  waybill  records  stock  being  sent  from  supplier  or  warehouse  to  an  agent.  It  is  where  an  
+agent's
+ 
+stock
+ 
+holdings
+ 
+originate,
+ 
+and
+ 
+it
+ 
+is
+ 
+the
+ 
+source
+ 
+Inventory
+ 
+reads
+ 
+from. 
+LAYER  1   Screens •  Waybill  ledger  —  date,  agent,  product,  quantity,  cost,  waybill  fee,  and  status. •  New  waybill  —  send  stock  to  an  agent. 
+LAYER  2   Actions 65.  New  waybill  —  record  stock  sent  to  an  agent  —  the  agent's  inventory  rises  and  the  waybill  fee  
+flows
+ 
+to
+ 
+expenses. 66.  Filter  —  by  agent,  product,  status,  month,  and  sub-brand. 
+LAYER  3   States •  Empty  —  no  waybills  yet. •  Waybilled  —  stock  sent,  sitting  with  the  agent,  not  yet  delivered  —  counts  toward  the  balance. •  Delivered  —  the  order  against  that  stock  has  been  delivered  —  leaves  the  balance. 
+LAYER  4   Rules 
+LOCKED  RULE   A  waybill  adds  stock  to  the  receiving  agent.  This  is  the  stock-in  event  Inventory  reads  —  agent  holdings  originate  here  (or  from  an  agent-to-agent  transfer). 
+ 
+LOCKED  RULE   Only  the  waybill  FEE  flows  to  expenses.  The  product  cost  is  NOT  booked  as  an  expense  at  waybill  time  —  it  stays  as  inventory  value  and  becomes  cost-of-goods  only  when  the  order  is  delivered  and  sold.  Booking  product  cost  at  waybill  would  double-count  it. 
+ 
+LOCKED  RULE   Every  waybill  is  dated  and  attributed,  giving  a  full  stock-in  trail  per  agent. 
+13.  Agents  Status:  Locked  —  new  for  launch 
+Numbatrak  feature  spec   ·   page  27 
+
+=== PAGE 28 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Agents  are  the  external  partners  who  deliver.  An  agent  is  a  contractual  person  or  company  that  carries  stock  
+and
+ 
+delivers
+ 
+on
+ 
+the
+ 
+business's
+ 
+behalf
+ 
+—
+ 
+not
+ 
+a
+ 
+staff
+ 
+member
+ 
+and
+ 
+not
+ 
+on
+ 
+payroll.
+ 
+This
+ 
+is
+ 
+a
+ 
+deliberate
+ 
+separation
+ 
+from
+ 
+Staff. 
+LAYER  1   Screens •  Agents  list  —  all  agents,  with  location,  current  stock  held,  and  delivery  rate. •  Agent  record  —  name,  location,  contact,  stock  held,  delivery  rate,  and  remittance  history. •  Add  /  edit  agent  —  add  or  edit  an  agent. 
+LAYER  2   Actions 67.  Add  agent  —  add  a  delivery  partner  —  a  person  or  a  company. 68.  Edit  agent  —  edit  details  and  contact. 69.  Filter  —  by  location  and  active  status. 
+LAYER  3   States •  Empty  —  no  agents  yet. •  Active  —  agent  holding  stock  and  delivering,  with  a  live  delivery  rate. •  Holder  only  —  the  warehouse  —  an  agent  that  holds  stock  but  does  not  deliver. 
+LAYER  4   Rules 
+LOCKED  RULE   An  agent  is  external  —  a  contractual  person  or  company  that  delivers.  It  is  NOT  the  same  entity  as  a  staff  member,  and  agents  are  not  paid  through  Payroll.  They  are  paid  via  delivery  fees  kept  from  what  they  remit. 
+ 
+LOCKED  RULE   Agents  hold  stock  (via  waybills),  deliver,  collect  COD,  and  remit  through  Wallet.  Their  stock  holdings,  delivery  rate,  and  remittance  history  live  on  the  record. 
+ 
+LOCKED  RULE   The  warehouse  is  a  special  agent  that  holds  but  does  not  deliver. 
+ 
+LOCKED  RULE   Agents  do  not  log  into  Numbatrak  for  now.  They  are  purely  records  managed  by  the  internal  team,  who  enter  their  deliveries  and  mark  their  remittances.  Agent-facing  access  may  come  later. 
+14.  Delivery  Analytics  Status:  Locked  —  new  for  launch A  filterable  view  of  how  well  stock  converts  to  delivered  orders.  It  merges  two  things:  delivery  performance  
+(rate
+ 
+by
+ 
+agent,
+ 
+location,
+ 
+product)
+ 
+and
+ 
+the
+ 
+waybilled-versus-delivered-versus-balance
+ 
+roll-up
+ 
+that
+ 
+tracks
+ 
+stock
+ 
+value
+ 
+in
+ 
+motion. 
+LAYER  1   Screens •  Analytics  view  —  headline  metrics  (waybilled  value,  delivered  value,  balance,  delivery  rate)  plus  the  
+monthly
+ 
+roll-up
+ 
+table. 
+Numbatrak  feature  spec   ·   page  28 
+
+=== PAGE 29 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  2   Actions 70.  Filter  —  recalculates  every  metric.  Filters:  agent,  location,  product,  sub-brand,  status,  and  time  
+frame
+ 
+(today,
+ 
+weekly,
+ 
+monthly,
+ 
+custom). 71.  Break  down  —  see  delivery  rate  by  agent,  by  location,  by  product. 
+LAYER  3   States •  Empty  —  no  delivery  data  yet. •  Full  —  full  roll-up  with  the  balance  column  per  month. •  Negative  balance  —  more  delivered  than  waybilled  that  period  —  shown  plainly,  a  normal  state,  not  an  
+error. 
+LAYER  4   Rules 
+LOCKED  RULE   Balance  =  waybilled  value  minus  delivered  value  per  period.  It  is  stock  value  that  left  but  has  not  yet  converted  to  a  delivery  —  money  in  motion,  not  a  loss. 
+ 
+LOCKED  RULE   A  negative  balance  is  normal  and  valid.  If  operations  began  before  using  the  system,  agents  deliver  old  stock  that  was  never  waybilled  in,  so  deliveries  can  exceed  waybills  in  a  period.  It  is  never  flagged  as  a  problem. 
+ 
+LOCKED  RULE   Delivery  Analytics  merges  delivery  performance  (rate  by  agent,  location,  product)  with  the  waybill  roll-up  (waybilled,  delivered,  balance). 
+ 
+LOCKED  RULE   Everything  pulls  from  live  data  —  waybills,  orders,  inventory.  Fully  filterable;  every  view  recalculates  on  any  filter,  like  the  main  dashboard.  
+Numbatrak  feature  spec   ·   page  29 
+
+=== PAGE 30 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Order  Intake  
+ 
+These  three  features  are  the  front  end  of  how  orders  are  created  before  they  reach  the  Orders  page.  A  
+customer
+ 
+fills
+ 
+a
+ 
+form;
+ 
+if
+ 
+they
+ 
+do
+ 
+not
+ 
+finish,
+ 
+it
+ 
+becomes
+ 
+an
+ 
+abandoned
+ 
+cart;
+ 
+and
+ 
+a
+ 
+CRS
+ 
+follows
+ 
+up
+ 
+to
+ 
+recover
+ 
+it.
+ 
+They
+ 
+share
+ 
+the
+ 
+same
+ 
+underlying
+ 
+mechanism
+ 
+as
+ 
+the
+ 
+Storefront
+ 
+checkout
+ 
+—
+ 
+both
+ 
+collect
+ 
+customer
+ 
+and
+ 
+order
+ 
+details
+ 
+—
+ 
+which
+ 
+is
+ 
+why
+ 
+abandoned-cart
+ 
+capture
+ 
+works
+ 
+for
+ 
+both.
+ 
+Several
+ 
+of
+ 
+these
+ 
+lean
+ 
+on
+ 
+the
+ 
+messaging
+ 
+layer
+ 
+(auto-WhatsApp),
+ 
+which
+ 
+is
+ 
+documented
+ 
+separately;
+ 
+the
+ 
+capability
+ 
+is
+ 
+named
+ 
+here
+ 
+and
+ 
+lights
+ 
+up
+ 
+fully
+ 
+once
+ 
+messaging
+ 
+is
+ 
+connected,
+ 
+but
+ 
+the
+ 
+features
+ 
+are
+ 
+not
+ 
+blocked
+ 
+waiting
+ 
+on
+ 
+it. 
+15.  Order  Forms  Status:  Locked  —  new  for  launch A  builder  for  the  customer-facing  order  form  —  the  standalone,  direct-response  counterpart  to  the  full  
+Storefront
+ 
+checkout.
+ 
+It
+ 
+is
+ 
+a
+ 
+real
+ 
+form
+ 
+builder,
+ 
+not
+ 
+a
+ 
+fixed
+ 
+set
+ 
+of
+ 
+fields. 
+LAYER  1   Screens •  Form  builder  —  configure  fields,  logic,  and  post-submit  behaviour,  per  funnel. •  Share  /  embed  —  get  the  shareable  link  or  embed  code. 
+LAYER  2   Actions 72.  Build  /  edit  form  —  set  fields,  mark  each  required  or  optional,  choose  which  funnel  it  feeds. 73.  Conditional  logic  —  show  or  hide  fields  based  on  answers  —  pick  a  product  and  its  variant  
+appears,
+ 
+pick
+ 
+a
+ 
+location
+ 
+and
+ 
+local
+ 
+options
+ 
+show. 74.  Multi-product  —  offer  more  than  one  product  or  an  add-on  /  order  bump,  which  feeds  the  upsell. 75.  Validation  —  phone-number  format,  required  fields,  and  blocking  junk  or  bot  submissions. 76.  Redirect  /  confirmation  —  on  submit,  show  a  thank-you  message,  redirect  to  a  page,  or  redirect  
+to
+ 
+a
+ 
+custom
+ 
+URL
+ 
+—
+ 
+with
+ 
+field
+ 
+values
+ 
+(name,
+ 
+phone)
+ 
+passable
+ 
+into
+ 
+the
+ 
+redirect,
+ 
+for
+ 
+example
+ 
+a
+ 
+WhatsApp
+ 
+link
+ 
+or
+ 
+a
+ 
+personalised
+ 
+thank-you
+ 
+/
+ 
+upsell
+ 
+page. 
+LAYER  3   States •  Empty  —  no  form  built  yet. •  Submitted  —  a  completed  submission  becomes  a  new  order  (status  new)  on  the  Orders  page,  tagged  
+with
+ 
+its
+ 
+funnel. •  Invalid  —  required  field  missing  or  validation  failed  —  the  form  shows  what  to  fix,  keeps  what  was  
+entered. 
+LAYER  4   Rules 
+LOCKED  RULE   A  completed  form  becomes  a  new  order  (status  new)  on  the  Orders  page,  tagged  with  the  funnel  it  came  from. 
+ 
+LOCKED  RULE   The  form's  package  selector  reveals  offers  that  were  created  on  the  product  —  it  does  not  define  them.  Offers  are  built  once  on  the  product  (see  Products);  each  form  selects  which  of  that  product's  offers  to  reveal.  The  same  product's  offers  can  appear  on  different  forms,  each  revealing  its  own  chosen  subset. 
+Numbatrak  feature  spec   ·   page  30 
+
+=== PAGE 31 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+LOCKED  RULE   Pricing  is  server-authoritative  —  the  form  cannot  be  edited  by  the  customer  to  change  the  price.  This  carries  over  from  the  Storefront. 
+ 
+LOCKED  RULE   The  form  supports  conditional  logic,  multi-product  /  order  bump,  validation,  and  a  redirect  or  confirmation  on  submit  (message,  page,  or  custom  URL  with  field  values  passed  through). 
+ 
+LOCKED  RULE   Location  on  the  form  can  drive  the  delivery  fee,  tying  to  the  delivery  configuration. 
+16.  Abandoned  Carts  Status:  Locked  —  new  for  launch A  form  or  checkout  a  customer  started  but  did  not  finish.  These  are  recovery  opportunities  —  often  a  phone  
+number
+ 
+and
+ 
+a
+ 
+product
+ 
+is
+ 
+enough
+ 
+for
+ 
+a
+ 
+CRS
+ 
+to
+ 
+call
+ 
+and
+ 
+close
+ 
+the
+ 
+sale. 
+LAYER  1   Screens •  Abandoned  carts  list  —  carts  started  but  not  completed,  with  the  partial  details  captured. 
+LAYER  2   Actions 77.  View  cart  —  open  an  abandoned  cart  and  see  what  the  customer  entered  before  dropping  off. 78.  Recover  —  call  the  customer  and  complete  the  cart  into  an  order. 79.  Filter  —  by  funnel,  product,  date,  and  status. 
+LAYER  3   States •  Abandoned  —  partial  form  saved  with  at  least  a  contact  detail. •  Recovered  —  cart  completed  into  an  order;  leaves  the  abandoned  list. 
+LAYER  4   Rules 
+LOCKED  RULE   A  started-but-unfinished  form  is  an  abandoned  cart,  saved  with  whatever  details  were  entered. 
+ 
+LOCKED  RULE   A  cart  with  NO  contact  detail  does  not  enter.  With  no  phone  or  contact  there  is  nothing  to  follow  up  on,  so  it  is  not  captured  as  a  cart. 
+ 
+LOCKED  RULE   On  abandonment,  an  auto-WhatsApp  recovery  message  fires  via  the  messaging  layer  (once  connected).  Before  messaging  is  connected,  the  cart  still  appears  for  the  CRS  to  work  by  hand  —  the  feature  is  not  blocked. 
+ 
+LOCKED  RULE   Recovering  a  cart  turns  it  into  a  normal  order  that  flows  through  the  whole  pipeline. 
+17.  Follow-Ups  
+Numbatrak  feature  spec   ·   page  31 
+
+=== PAGE 32 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Status:  Locked  —  new  for  launch The  CRS  task  list  for  chasing  recoverable  orders,  and  a  measure  of  how  fast  the  CRS  acts.  After  the  
+auto-message
+ 
+goes
+ 
+out,
+ 
+a
+ 
+CRS
+ 
+personally
+ 
+follows
+ 
+up,
+ 
+converts
+ 
+the
+ 
+customer
+ 
+or
+ 
+not,
+ 
+and
+ 
+the
+ 
+tab
+ 
+tracks
+ 
+how
+ 
+quickly
+ 
+they
+ 
+moved. 
+LAYER  1   Screens •  Follow-ups  list  —  carts  and  orders  needing  a  human  chase,  with  follow-up  timing  per  CRS. 
+LAYER  2   Actions 80.  Follow  up  —  the  CRS  clicks  follow  up  to  personally  chase  an  abandoned  cart  after  the  
+auto-message. 81.  Convert  /  not  converted  —  turn  the  follow-up  into  an  order,  or  mark  it  not  converted. 82.  Filter  —  by  CRS,  funnel,  product,  date,  status. 
+LAYER  3   States •  Awaiting  follow-up  —  a  cart  is  waiting  for  the  CRS  to  act  (timing  is  running). •  Followed  up  —  the  CRS  has  acted;  the  time-to-act  is  recorded. •  Resolved  —  converted  into  an  order,  or  marked  not  converted. 
+LAYER  4   Rules 
+LOCKED  RULE   Follow-ups  are  worked  by  a  CRS.  After  the  auto-WhatsApp,  the  CRS  clicks  follow  up,  then  converts  the  customer  to  an  order  or  marks  the  opposite. 
+ 
+LOCKED  RULE   The  tab  measures  the  CRS's  follow-up  timing  —  how  fast  from  the  cart  landing  in  their  list  to  the  CRS  acting.  It  is  surfaced  as  a  CRS  performance  signal  so  a  manager  can  see  who  is  quick  and  who  is  slow  to  chase  recoverable  money. 
+ 
+LOCKED  RULE   Role-scoped  and  filterable:  a  CRS  works  their  own  follow-ups,  a  manager  sees  the  team's;  every  list  recalculates  on  filter. 
+Confirmed  decisions 
+CONFIRMED  DECISION   Automated  follow-up  messaging  (the  auto-WhatsApp  on  abandonment)  runs  through  the  shared  messaging  layer,  discussed  when  that  layer  is  walked.  The  capability  is  named  now  so  the  full  picture  is  visible,  but  the  intake  features  are  not  blocked  waiting  on  it  —  before  messaging  is  connected,  carts  go  straight  to  the  CRS  follow-up  list  without  the  auto-message. 
+ 
+CONFIRMED  DECISION   Order  Forms  and  the  Storefront  checkout  are  distinct  features  but  function  effectively  the  same  way,  because  even  a  prepaid  store  customer  fills  an  information  form  (name,  phone,  delivery  address).  They  share  the  collect-customer-and-order-details  mechanism,  so  abandoned-cart  capture  works  for  both.  
+Numbatrak  feature  spec   ·   page  32 
+
+=== PAGE 33 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Products  and  Finance  
+ 
+The  product  catalog  and  the  money  features  that  read  from  it.  The  governing  principle  of  this  group,  as  
+everywhere
+ 
+else
+ 
+in
+ 
+Numbatrak,
+ 
+is
+ 
+that
+ 
+each
+ 
+business
+ 
+toggles
+ 
+on
+ 
+what
+ 
+works
+ 
+for
+ 
+them
+ 
+—
+ 
+the
+ 
+capabilities
+ 
+and
+ 
+offer
+ 
+types
+ 
+below
+ 
+are
+ 
+a
+ 
+menu
+ 
+configured
+ 
+per
+ 
+product,
+ 
+not
+ 
+a
+ 
+fixed
+ 
+structure
+ 
+imposed
+ 
+on
+ 
+everyone. 
+18.  Products  Status:  Locked  —  new  for  launch The  catalog  everything  references.  A  product  is  the  definition  of  a  thing;  Inventory  tracks  where  its  units  are.  
+Products
+ 
+lives
+ 
+under
+ 
+the
+ 
+Storefront
+ 
+tab
+ 
+in
+ 
+the
+ 
+navigation,
+ 
+but
+ 
+the
+ 
+product
+ 
+data
+ 
+is
+ 
+universal
+ 
+—
+ 
+the
+ 
+order
+ 
+forms,
+ 
+the
+ 
+storefront,
+ 
+Inventory,
+ 
+Orders,
+ 
+Performance,
+ 
+and
+ 
+the
+ 
+media
+ 
+buyer's
+ 
+ad
+ 
+tracking
+ 
+all
+ 
+read
+ 
+from
+ 
+it.
+ 
+It
+ 
+is
+ 
+the
+ 
+shared
+ 
+spine
+ 
+of
+ 
+the
+ 
+whole
+ 
+app. 
+The  product  model •  Product  (parent)  —  name,  category,  and  a  base  cost  price.  Category  groups  the  catalog  and  drives  
+filtering. •  Variants  —  size,  colour,  or  similar.  Each  variant  carries  its  OWN  cost  price,  sales  price,  and  inventory  
+line,
+ 
+and
+ 
+rolls
+ 
+up
+ 
+to
+ 
+the
+ 
+parent
+ 
+for
+ 
+combined
+ 
+performance.
+ 
+This
+ 
+handles
+ 
+both
+ 
+same-cost
+ 
+variants
+ 
+(a
+ 
+belt
+ 
+in
+ 
+L/XL/XXL)
+ 
+and
+ 
+different-cost
+ 
+variants
+ 
+(Medium
+ 
+Mat
+ 
+at
+ 
+cost
+ 
+9,000
+ 
+vs
+ 
+Very
+ 
+Long
+ 
+Mat
+ 
+at
+ 
+18,000). •  Offers  —  named,  priced  packages  of  the  product  —  the  sellable  unit  on  a  form.  A  product  can  have  
+MANY
+ 
+offers
+ 
+running
+ 
+at
+ 
+once,
+ 
+because
+ 
+this
+ 
+is
+ 
+marketing:
+ 
+a
+ 
+business
+ 
+tests
+ 
+different
+ 
+offers
+ 
+and
+ 
+angles
+ 
+on
+ 
+the
+ 
+same
+ 
+product. 
+The  offer  types An  offer  is  a  defined  basket  at  a  set  price.  The  types  a  business  can  create: •  Quantity  tier  —  same  product,  different  quantities,  each  at  its  own  set  price  (buy  2  for  3,000  is  
+deliberately
+ 
+cheaper
+ 
+than
+ 
+two
+ 
+singles). •  Cross-product  bundle  —  the  basket  holds  different  products  (belt  +  guide  +  bands).  On  delivery  each  
+product
+ 
+deducts
+ 
+from
+ 
+its
+ 
+own
+ 
+inventory
+ 
+and
+ 
+adds
+ 
+its
+ 
+own
+ 
+cost. •  Single  price  —  one  unit,  one  price  —  the  simplest  offer.  On  a  storefront  a  discount  (sale  price)  can  apply  
+here
+ 
+instead. •  Buy  X  get  Y  free  —  the  customer  pays  for  some  units  and  receives  more.  The  board  must  record  the  
+TRUE
+ 
+unit
+ 
+count
+ 
+including
+ 
+the
+ 
+free
+ 
+ones. 
+LAYER  1   Screens •  Products  list  —  the  catalog,  filterable  by  category,  sub-brand,  with  per-product  performance  and  
+margin. •  Product  record  —  name,  category,  cost,  variants,  and  the  list  of  offers. •  Product  builder  —  create  or  edit  a  product,  toggle  capabilities,  and  add  offers. 
+LAYER  2   Actions 83.  Create  product  —  set  name,  category,  cost  price. 
+Numbatrak  feature  spec   ·   page  33 
+
+=== PAGE 34 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+84.  Toggle  capabilities  —  variants,  bundle  offers,  discounts  —  each  toggled  on  per  product,  in  any  
+combination,
+ 
+working
+ 
+on
+ 
+both
+ 
+the
+ 
+COD
+ 
+form
+ 
+and
+ 
+the
+ 
+storefront. 85.  Add  offers  —  build  any  of  the  four  offer  types  on  the  product;  add  as  many  as  the  marketing  
+needs. 86.  Add  variants  —  each  with  its  own  cost,  price,  and  stock  line. 87.  Filter  —  by  category,  sub-brand,  and  time  frame. 
+LAYER  3   States •  Empty  —  no  products  yet. •  Full  —  catalog  with  cost,  price,  margin,  and  stock  (read  from  Inventory). •  Performance  —  units  sold,  revenue,  and  margin  per  product,  viewable  per  variant  or  rolled  up  to  the  
+parent. 
+LAYER  4   Rules 
+LOCKED  RULE   Each  business  toggles  on  the  capabilities  and  offer  types  that  work  for  them.  Nothing  here  is  forced  —  a  simple  single-price  product  and  a  multi-offer  bundled  product  are  both  valid  configurations  of  the  same  builder. 
+ 
+LOCKED  RULE   A  product  is  the  definition  (name,  category,  cost,  variants,  offers).  Inventory  tracks  where  the  units  are.  Products  shows  total  holdings  but  does  not  hold  a  separate  stock  number  —  there  is  one  stock  truth,  in  Inventory. 
+ 
+LOCKED  RULE   Every  variant  carries  its  own  cost  price,  sales  price,  and  inventory  line,  and  rolls  up  to  a  parent  product  for  reporting.  Performance  can  be  viewed  per  variant  or  for  the  whole  parent  family. 
+ 
+LOCKED  RULE   A  product  can  have  many  offers  at  once.  Offers  are  created  on  the  product;  the  order  form  and  storefront  select  which  offers  to  reveal  —  they  do  not  redefine  them. 
+ 
+LOCKED  RULE   The  accord  rule:  the  true  unit  count  in  an  offer  must  reconcile  across  order,  inventory,  cost  of  goods,  and  performance.  A  buy-1-get-1  offer  moves  2  units  on  the  board  even  though  the  customer  pays  one  price  —  the  free  unit  is  a  real  cost. 
+ 
+LOCKED  RULE   Products  lives  under  the  Storefront  tab,  but  the  data  is  universal  —  read  across  the  whole  app,  including  the  media  buyer's  ad  tracking  (which  references  products  and  offers  so  ad  spend  ties  to  the  right  offer).  The  media  buyer  references  and  selects  products;  creating  them  is  an  admin  task. 
+Tiny  parts 
+TINY  PART   Variant  and  offer  are  independent  axes.  On  a  form  a  customer  can  pick  an  offer  AND  a  variant  separately  (the  postpartum  belt:  choose  the  pack,  then  choose  the  size).  They  must  not  be  modelled  as  the  same  thing. 
+ 
+Numbatrak  feature  spec   ·   page  34 
+
+=== PAGE 35 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+TINY  PART   The  buy-X-get-Y  offer  is  where  the  accord  rule  earns  its  keep.  The  free  units  are  real  units  —  they  deduct  from  inventory  and  count  in  cost  of  goods.  If  the  board  recorded  only  the  paid  units,  margin  would  be  overstated  on  every  bundle. 
+19.  Expenses  Status:  Locked  —  new  for  launch  ·  the  money-out  hub Expenses  is  where  all  money-out  converges.  It  is  a  hub,  not  a  standalone  list:  some  expenses  flow  in  
+automatically
+ 
+from
+ 
+other
+ 
+features
+ 
+carrying
+ 
+their
+ 
+attribution,
+ 
+and
+ 
+the
+ 
+rest
+ 
+are
+ 
+entered
+ 
+directly.
+ 
+The
+ 
+critical
+ 
+discipline
+ 
+is
+ 
+avoiding
+ 
+double-counting
+ 
+—
+ 
+costs
+ 
+already
+ 
+deducted
+ 
+inside
+ 
+a
+ 
+per-order
+ 
+profit
+ 
+calculation
+ 
+never
+ 
+reappear
+ 
+here. 
+The  feeders  —  what  flows  into  Expenses Four  sources  can  flow  in  automatically,  though  every  one  of  them  can  also  be  entered  by  hand  —  some  
+businesses
+ 
+prefer
+ 
+recording
+ 
+everything
+ 
+manually,
+ 
+and
+ 
+that
+ 
+is
+ 
+fully
+ 
+supported.
+ 
+Automatic
+ 
+is
+ 
+an
+ 
+option,
+ 
+not
+ 
+a
+ 
+requirement. •  Ad  spend  —  from  Media  Buyers,  into  Advertising,  carrying  brand,  product,  offer,  and  platform. •  Contractor  pay  —  from  Media  Buyers  payments  (editors,  VO  artists),  into  Marketing,  tagged  to  the  
+brand
+ 
+and
+ 
+product. •  Waybill  fees  —  from  Waybills,  into  Operational  —  the  cost  of  moving  stock. •  Failed-delivery  and  agent-covered  costs  —  from  Wallet,  into  Operational  —  costs  with  no  order  to  
+absorb
+ 
+them. •  Direct  entry  —  rent,  salaries,  fuel,  data,  welfare,  and  everything  else  —  recorded  by  hand,  picking  the  
+category. 
+LAYER  1   Screens •  Expenses  list  —  money  out  in  four  categories,  filterable,  with  the  ROAS-vs-ROI  split. •  Expense  report  —  the  visual  read  of  spending  by  category  and  over  time. •  Record  expense  —  direct  entry  by  category  and  sub-category. 
+LAYER  2   Actions 88.  Record  expense  —  amount,  category,  sub-category,  brand,  note  —  and  product/offer  per  the  
+attribution
+ 
+rule
+ 
+below. 89.  Edit  an  auto-fed  expense  —  the  attribution  from  Media  Buyers  or  Wallet  is  inherited  but  editable. 90.  Add  a  sub-category  —  under  any  of  the  four  parents,  custom  to  the  business. 91.  Filter  —  by  category,  sub-category,  brand,  product,  offer,  platform,  and  time  frame. 
+LAYER  3   States •  Empty  —  no  expenses  yet. •  Auto-fed  —  ad  spend,  contractor  pay,  waybill  fees,  and  failed-delivery  costs  appear  with  attribution. •  Direct-entered  —  a  manual  expense  with  its  picked  category  and  sub-category. •  Reported  —  the  visual  breakdown  by  category  over  time. 
+LAYER  4   Rules 
+Numbatrak  feature  spec   ·   page  35 
+
+=== PAGE 36 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Expenses  is  the  money-out  hub.  Some  expenses  flow  in  automatically  (ad  spend,  contractor  pay,  waybill  fees,  failed-delivery  and  agent-covered  costs);  the  rest  are  entered  directly.  Every  automatic  feed  can  also  be  entered  manually  —  automatic  is  an  option,  not  a  requirement. 
+ 
+LOCKED  RULE   Four  fixed  parent  categories  —  operational,  advertising,  marketing,  building  —  each  with  custom-editable  sub-categories  the  business  defines. 
+ 
+LOCKED  RULE   No  double-counting.  Anything  already  deducted  in  a  per-order  profit  calculation  never  appears  as  an  expense  line.  Cost  of  goods  and  the  delivery  fee  on  a  successful  order  are  per-order  deductions  (in  the  order's  profit),  not  expenses.  Only  costs  with  no  order  to  absorb  them  become  expenses. 
+ 
+LOCKED  RULE   Advertising  is  isolated  so  ROAS  (return  on  ad  spend  only)  never  merges  with  Business  ROI  (return  after  all  four  categories)  —  the  same  rule  as  the  Dashboard. 
+ 
+LOCKED  RULE   Product/offer  attribution  requirement  varies  by  category:  for  Advertising  it  is  mandatory  (ad  spend  without  knowing  its  product  and  offer  is  useless  for  CPA  and  ROAS);  for  Marketing  it  should  be  present  (creative  was  made  for  a  specific  product);  for  Operational  and  Building  it  is  optional  (rent  and  salaries  are  general  overhead  that  cannot  be  split  across  products  meaningfully). 
+ 
+LOCKED  RULE   Auto-fed  expenses  carry  their  attribution  —  brand,  product,  offer,  platform  inherited  from  the  source  —  and  it  is  always  editable. 
+ 
+LOCKED  RULE   The  expense  report  gives  a  visual  read  of  spending  by  category  and  over  time,  filterable  by  every  attribution  key  and  time  frame. 
+Tiny  parts 
+TINY  PART   The  hub  principle  is  what  keeps  one  clean  profit  truth.  Because  ad  spend,  contractor  pay,  and  failed-delivery  costs  all  converge  here  with  their  attribution,  the  Dashboard,  Accounting,  and  Performance  all  read  the  same  categorised  money-out  —  there  is  no  second,  conflicting  expense  number  anywhere. 
+ 
+TINY  PART   Attribution  varies  by  category  deliberately.  Forcing  rent  to  attribute  to  a  single  product  would  produce  meaningless  numbers;  not  forcing  ad  spend  to  attribute  would  break  CPA  and  ROAS.  The  requirement  is  strict  exactly  where  it  matters  (Advertising)  and  relaxed  where  it  does  not  (Operational). 
+20.  Invoicing  Status:  Locked  —  new  for  launch Generate,  send,  and  record  invoices.  Invoicing  is  deliberately  not  automatic  on  every  order  —  it  is  generated  
+on
+ 
+request,
+ 
+with
+ 
+a
+ 
+shortcut
+ 
+from
+ 
+an
+ 
+order,
+ 
+and
+ 
+the
+ 
+customer
+ 
+receives
+ 
+their
+ 
+invoice
+ 
+automatically
+ 
+once
+ 
+their
+ 
+order
+ 
+is
+ 
+delivered. 
+Numbatrak  feature  spec   ·   page  36 
+
+=== PAGE 37 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  1   Screens •  Invoice  view  —  generate  an  invoice,  download  or  send  it. •  Invoice  list  —  invoices  raised,  filterable. 
+LAYER  2   Actions 92.  Generate  manually  —  create  an  invoice  manually  when  requested. 93.  Generate  from  order  —  a  shortcut  to  generate  an  invoice  straight  from  an  order  on  the  Orders  
+page. 94.  Download  /  send  —  download  as  PDF,  or  send  to  the  customer  (via  the  messaging  layer). 
+LAYER  3   States •  Generated  —  invoice  created,  ready  to  download  or  send. •  Auto-sent  on  delivery  —  on  successful  delivery,  the  customer  automatically  receives  their  invoice. 
+LAYER  4   Rules 
+LOCKED  RULE   Invoices  are  generated  manually  —  on  request,  or  from  an  order  via  a  shortcut.  They  are  not  auto-created  on  every  order. 
+ 
+LOCKED  RULE   On  successful  completion  of  an  order  (once  delivered),  the  customer  automatically  receives  their  invoice,  via  the  messaging  layer. 
+ 
+LOCKED  RULE   Because  invoicing  is  manual  and  tied  to  an  existing  order,  it  does  not  re-record  the  order  as  a  separate  sale  —  the  order  already  counts  once  delivered.  This  avoids  double-counting  revenue.  
+Numbatrak  feature  spec   ·   page  37 
+
+=== PAGE 38 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+21.  Media  Buyers  
+ 
+Status:  Locked  —  new  for  launch  ·  central  to  ad-running  businesses Media  Buyers  is  the  entire  advertising  subsystem  —  where  creative  is  produced,  contractors  are  paid,  ad  
+spend
+ 
+is
+ 
+logged,
+ 
+and
+ 
+performance
+ 
+is
+ 
+measured.
+ 
+It
+ 
+is
+ 
+one
+ 
+of
+ 
+the
+ 
+most
+ 
+important
+ 
+parts
+ 
+of
+ 
+the
+ 
+product
+ 
+because
+ 
+it
+ 
+is
+ 
+the
+ 
+source
+ 
+of
+ 
+the
+ 
+ad-spend
+ 
+number
+ 
+that
+ 
+drives
+ 
+CPA
+ 
+and
+ 
+ROAS
+ 
+everywhere
+ 
+else.
+ 
+It
+ 
+has
+ 
+two
+ 
+connected
+ 
+sides:
+ 
+the
+ 
+creative
+ 
+production
+ 
+side
+ 
+(making
+ 
+and
+ 
+paying
+ 
+for
+ 
+ads)
+ 
+and
+ 
+the
+ 
+performance
+ 
+side
+ 
+(running
+ 
+and
+ 
+measuring
+ 
+them).
+ 
+This
+ 
+section
+ 
+is
+ 
+central
+ 
+to
+ 
+ad-running
+ 
+businesses;
+ 
+a
+ 
+business
+ 
+that
+ 
+does
+ 
+not
+ 
+run
+ 
+ads
+ 
+simply
+ 
+will
+ 
+not
+ 
+populate
+ 
+it. 
+The  attribution  spine Everything  in  Media  Buyers  keys  off  one  attribution  hierarchy,  from  coarse  to  fine:  Brand,  then  Product,  then  
+Offer,
+ 
+then
+ 
+Platform.
+ 
+This
+ 
+is
+ 
+the
+ 
+finest
+ 
+grain
+ 
+the
+ 
+business
+ 
+advertises
+ 
+to
+ 
+—
+ 
+it
+ 
+lets
+ 
+ad
+ 
+spend
+ 
+and
+ 
+revenue
+ 
+be
+ 
+tracked
+ 
+at
+ 
+any
+ 
+level:
+ 
+all
+ 
+of
+ 
+a
+ 
+brand,
+ 
+one
+ 
+product
+ 
+across
+ 
+all
+ 
+offers,
+ 
+one
+ 
+offer
+ 
+versus
+ 
+another
+ 
+(the
+ 
+32K
+ 
+offer
+ 
+versus
+ 
+the
+ 
+62K
+ 
+offer),
+ 
+or
+ 
+one
+ 
+platform
+ 
+versus
+ 
+another.
+ 
+Orders
+ 
+already
+ 
+carry
+ 
+their
+ 
+offer
+ 
+tag,
+ 
+so
+ 
+revenue
+ 
+and
+ 
+spend
+ 
+share
+ 
+the
+ 
+same
+ 
+key
+ 
+and
+ 
+ROAS
+ 
+works
+ 
+at
+ 
+every
+ 
+level.
+ 
+'Offer'
+ 
+is
+ 
+the
+ 
+single
+ 
+attribution
+ 
+unit
+ 
+—
+ 
+the
+ 
+same
+ 
+offer
+ 
+object
+ 
+defined
+ 
+on
+ 
+the
+ 
+product;
+ 
+funnel
+ 
+and
+ 
+offer
+ 
+are
+ 
+treated
+ 
+as
+ 
+one
+ 
+thing,
+ 
+and
+ 
+angle-level
+ 
+nuance
+ 
+is
+ 
+carried
+ 
+by
+ 
+the
+ 
+ad
+ 
+creative
+ 
+instead. 
+Side  one  —  creative  production 
+PRODUCTION  LOG •  What  it  holds  —  one  row  per  batch  of  creatives  being  made:  buyer,  brand,  product,  creative  type  
+(Voiceover,
+ 
+UGC,
+ 
+AI
+ 
+Story,
+ 
+Sound),
+ 
+assigned
+ 
+VO
+ 
+artist
+ 
+and
+ 
+editor,
+ 
+video
+ 
+count,
+ 
+and
+ 
+status. •  Mark  Done  —  marking  a  batch  Done  flows  its  videos  into  the  ad  catalog  and  updates  the  contractor's  
+piece
+ 
+count
+ 
+for
+ 
+payment. 
+TEAM  AND  PAYMENTS •  Team  —  the  contractors  —  VO  artists  and  video  editors  —  each  with  pieces  done,  paid,  unpaid,  their  
+rate,
+ 
+and
+ 
+amount
+ 
+owed. •  Contractor  payments  —  piece  counts  come  from  Done  batches.  Marking  a  contractor  paid  posts  the  
+payment
+ 
+to
+ 
+Expenses
+ 
+under
+ 
+Marketing,
+ 
+tagged
+ 
+to
+ 
+the
+ 
+brand. 
+AD  CATALOG  —  CREATIVES  AS  REAL  OBJECTS,  NOT  NAMES An  ad  in  the  catalog  is  a  real  object,  not  a  text  label.  This  is  the  key  design  point:  it  carries  (1)  the  creative  —  a  
+link
+ 
+to
+ 
+the
+ 
+video
+ 
+in
+ 
+the
+ 
+business's
+ 
+Google
+ 
+Drive
+ 
+(a
+ 
+per-video
+ 
+link
+ 
+when
+ 
+the
+ 
+business
+ 
+has
+ 
+one,
+ 
+or
+ 
+the
+ 
+shared
+ 
+batch/folder
+ 
+link
+ 
+when
+ 
+they
+ 
+only
+ 
+have
+ 
+that);
+ 
+(2)
+ 
+its
+ 
+identity
+ 
+—
+ 
+hook
+ 
+type,
+ 
+creative
+ 
+type,
+ 
+and
+ 
+the
+ 
+product
+ 
+and
+ 
+offer
+ 
+it
+ 
+promotes;
+ 
+(3)
+ 
+its
+ 
+lineage
+ 
+—
+ 
+which
+ 
+production
+ 
+batch
+ 
+made
+ 
+it
+ 
+and
+ 
+who
+ 
+edited
+ 
+it;
+ 
+(4)
+ 
+its
+ 
+performance
+ 
+—
+ 
+but
+ 
+this
+ 
+is
+ 
+buyer-entered,
+ 
+not
+ 
+automatic
+ 
+(see
+ 
+the
+ 
+honest
+ 
+note
+ 
+below).
+ 
+One
+ 
+ad
+ 
+object
+ 
+equals
+ 
+one
+ 
+video
+ 
+creative;
+ 
+a
+ 
+batch
+ 
+of
+ 
+seven
+ 
+videos
+ 
+produces
+ 
+seven
+ 
+ad
+ 
+objects. 
+Side  two  —  performance 
+SPEND  ENTRY •  Day  grid  —  the  lightweight  core:  log  spend  and  orders  per  day,  and  CPA  auto-calculates.  Every  entry  
+carries
+ 
+the
+ 
+Brand,
+ 
+Product,
+ 
+Offer,
+ 
+Platform
+ 
+key. 
+PERFORMANCE  ANALYTICS 
+Numbatrak  feature  spec   ·   page  38 
+
+=== PAGE 39 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+•  The  drill-down  —  the  per-brand,  per-product,  per-offer,  per-platform  drill-down  of  the  same  CPA  and  
+ROAS
+ 
+numbers
+ 
+shown
+ 
+on
+ 
+the
+ 
+main
+ 
+Dashboard.
+ 
+This
+ 
+is
+ 
+where
+ 
+the
+ 
+32K
+ 
+offer's
+ 
+CPA
+ 
+is
+ 
+seen
+ 
+against
+ 
+the
+ 
+62K
+ 
+offer's,
+ 
+or
+ 
+Meta
+ 
+against
+ 
+TikTok.
+ 
+Fully
+ 
+filterable. 
+CPA  TARGETS  AND  BUDGETS •  Targets  —  per-buyer  CPA  targets  and  weekly  budgets,  keyed  by  buyer,  brand,  product,  and  offer.  This  is  
+what
+ 
+the
+ 
+Dashboard's
+ 
+colour
+ 
+tonation
+ 
+and
+ 
+alerts
+ 
+measure
+ 
+against.
+ 
+Each
+ 
+buyer
+ 
+sets
+ 
+their
+ 
+own;
+ 
+admins
+ 
+can
+ 
+too. 
+WEEKLY  REVIEW  —  OPTIONAL •  The  review  —  the  media  buyer's  own  report  from  their  ads  manager  —  their  read  on  which  ads  won  
+and
+ 
+lost,
+ 
+CPA
+ 
+per
+ 
+creative,
+ 
+biggest
+ 
+win
+ 
+and
+ 
+issue,
+ 
+an
+ 
+on-track/needs-attention/critical
+ 
+verdict,
+ 
+and
+ 
+next-week
+ 
+decisions
+ 
+(ads
+ 
+to
+ 
+scale,
+ 
+pause,
+ 
+kill).
+ 
+This
+ 
+is
+ 
+the
+ 
+buyer's
+ 
+reported
+ 
+view
+ 
+(human
+ 
+judgment
+ 
+pulled
+ 
+from
+ 
+Meta
+ 
+or
+ 
+TikTok),
+ 
+distinct
+ 
+from
+ 
+the
+ 
+system's
+ 
+own
+ 
+measured
+ 
+attribution
+ 
+which
+ 
+lives
+ 
+in
+ 
+the
+ 
+CRM.
+ 
+Toggleable
+ 
+per
+ 
+business
+ 
+—
+ 
+an
+ 
+agency
+ 
+managing
+ 
+buyers
+ 
+turns
+ 
+it
+ 
+on;
+ 
+a
+ 
+solo
+ 
+seller
+ 
+leaves
+ 
+it
+ 
+off
+ 
+and
+ 
+just
+ 
+logs
+ 
+spend. 
+LAYER  1   Screens •  Production  log  —  batches  of  creatives  being  made,  with  status  and  assignment. •  Team  —  the  VO  artists  and  video  editors. •  Payments  —  piece-rate  contractor  pay,  flowing  to  Marketing  expenses. •  Ad  catalog  —  every  creative  as  a  real  object  with  a  Google  Drive  link,  lineage,  and  accumulated  
+performance. •  Spend  entry  —  the  lightweight  day-grid  for  spend  and  orders. •  Performance  analytics  —  the  per-brand/product/offer/platform  drill-down  of  CPA  and  ROAS. •  CPA  targets  &  budgets  —  per-buyer  targets  by  brand,  product,  offer. •  Weekly  review  —  the  optional  narrative  accountability  layer. 
+LAYER  2   Actions 95.  New  production  entry  —  creative  type,  buyer,  brand,  product,  description,  scripts,  and  
+assignment
+ 
+(VO,
+ 
+editor,
+ 
+dates). 96.  Mark  batch  Done  —  flows  videos  into  the  catalog  and  updates  piece  counts. 97.  Mark  contractor  paid  —  settles  owed  pieces  and  posts  to  Marketing  expenses. 98.  Open  an  ad  —  see  the  creative  (Drive  link),  its  lineage,  and  its  performance  history. 99.  Log  spend  —  per  day,  per  Brand,  Product,  Offer,  Platform.  CPA  auto-calculates. 100.  Set  a  target  —  CPA  target  and  weekly  budget  per  buyer,  brand,  product,  offer. 101.  Toggle  weekly  review  —  on  for  accountability,  off  to  keep  it  simple. 102.  Filter  —  by  brand,  product,  offer,  platform,  buyer,  and  time  frame. 
+LAYER  3   States •  Empty  —  no  production,  catalog,  or  spend  yet  —  a  business  simply  has  not  run  ads. •  In  progress  —  a  batch  briefed,  shooting,  or  editing. •  Done  —  creatives  in  the  catalog,  contractor  pieces  countable. •  Calculated  —  CPA  and  ROAS  computed  live  from  spend  and  delivered  orders. •  Over  target  —  a  CPA  above  its  per-buyer  target  flags  on  the  Dashboard. 
+Numbatrak  feature  spec   ·   page  39 
+
+=== PAGE 40 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+•  Review  off  —  the  narrative  layer  hidden  for  businesses  that  do  not  use  it. 
+LAYER  4   Rules 
+LOCKED  RULE   Everything  keys  off  the  attribution  spine:  Brand,  Product,  Offer,  Platform.  This  is  the  finest  grain  the  business  advertises  to,  and  it  lets  spend  and  revenue  slice  to  any  level. 
+ 
+LOCKED  RULE   Marking  a  production  batch  Done  flows  its  videos  into  the  ad  catalog  and  updates  contractor  piece  counts. 
+ 
+LOCKED  RULE   Contractor  pay  is  piece-rate  —  counts  come  from  Done  batches.  Marking  paid  posts  to  Expenses  under  Marketing,  tagged  to  the  brand. 
+ 
+LOCKED  RULE   An  ad  is  a  creative  object,  not  a  name.  One  ad  object  equals  one  video.  The  Google  Drive  link  is  added  per  batch:  at  Mark  Done,  one  folder  link  is  pasted  for  the  whole  batch,  and  every  ad  object  created  from  that  batch  shares  it  (told  apart  by  name  or  number).  The  link  can  also  be  added  later  rather  than  at  Done.  Each  ad  carries  its  identity  (hook,  type,  product,  offer)  and  its  production  lineage.  Performance  attribution  follows  the  two-path  model  below,  not  manual  ad-ID  mapping. 
+ 
+LOCKED  RULE   Ad  spend  is  entered  once,  with  the  Brand,  Product,  Offer,  Platform  key,  and  read  by  both  Expenses  (Advertising)  and  Performance  (CPA  and  ROAS)  —  never  recorded  twice.  It  is  always  editable. 
+ 
+LOCKED  RULE   ROAS  equals  delivered  revenue  divided  by  ad  spend;  Real  CPA  equals  ad  spend  divided  by  delivered  orders.  Both  key  off  the  same  attribution,  so  they  slice  to  any  level.  This  is  the  same  revenue  truth  used  everywhere  —  delivered  orders. 
+ 
+LOCKED  RULE   Performance  analytics  is  the  drill-down  of  the  Dashboard's  CPA  and  ROAS  —  the  same  numbers,  broken  out  per  brand,  product,  offer,  platform,  and  buyer. 
+ 
+LOCKED  RULE   CPA  targets  drive  the  Dashboard  flags  —  a  CPA  above  its  per-buyer  target  is  what  colour  tonation  and  alerts  measure  against. 
+ 
+LOCKED  RULE   The  weekly  narrative  review  is  optional  and  toggleable  per  business.  The  spend  entry  it  used  to  sit  inside  is  core  and  stays. 
+Confirmed  decisions 
+CONFIRMED  DECISION   The  weekly  report  was  split:  the  hard  performance  data  (spend  and  orders  per  day)  is  core  and  lightweight  because  the  system  computes  CPA  and  ROAS  from  it;  the  soft  narrative  (wins,  losses,  verdict,  next-week  plan)  is  an  optional  accountability  layer,  because  a  solo  seller  does  not  need  it  while  an  agency  managing  buyers  does. 
+ 
+Numbatrak  feature  spec   ·   page  40 
+
+=== PAGE 41 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+CONFIRMED  DECISION   Ad  creatives  are  referenced  by  Google  Drive  link,  not  uploaded  and  hosted  inside  Numbatrak.  Editors  already  deliver  to  Drive;  the  catalog  holds  the  link.  Hosting  video  would  add  storage  cost  and  upload  friction  for  no  launch  benefit. 
+ 
+CONFIRMED  DECISION   Legacy-week  import  (from  the  old  spreadsheet  tracker)  is  dropped.  A  public  SaaS  starts  fresh  per  business;  there  is  no  legacy  to  carry. 
+ 
+CONFIRMED  DECISION   Expense  Claims,  considered  earlier,  is  not  part  of  the  product  and  has  been  removed.  It  was  not  in  the  existing  system. 
+Tiny  parts 
+TINY  PART   Ad  spend  flows  to  Expenses  carrying  its  full  attribution  (brand,  product,  offer,  platform,  and  the  Advertising  category),  so  an  expense  line  is  never  just  an  untagged  lump.  The  attribution  is  inherited  from  the  media-buyer  entry  but  remains  editable. 
+ 
+TINY  PART   The  distinction  between  an  ad  as  a  name  and  an  ad  as  an  object  is  what  makes  the  catalog  valuable.  A  name  is  a  disposable  label;  an  object  accumulates  a  track  record.  Picking  the  object  in  the  weekly  review  is  what  lets  performance  build  up  per  creative  rather  than  being  lost  each  week. 
+ 
+TINY  PART   Two  independent  attribution  reads,  neither  requiring  the  buyer  to  map  ad-IDs.  Path  one  is  the  weekly  review  —  the  buyer's  reported  view  from  their  ads  manager  (human  judgment).  Path  two  is  server-side  attribution  —  the  system's  own  measured  capture:  when  a  customer  orders,  the  server  records  where  they  came  from  (the  click-ID,  UTM,  and  source  data  carried  into  the  order).  This  measured  view  lives  in  the  CRM,  where  customers  can  be  filtered  by  delivered-versus-not  and  by  source.  The  two  coexist:  one  is  what  the  buyer  reports,  the  other  is  what  the  system  measures  directly.  The  catalog  link  between  a  platform  ad  and  a  specific  creative  is  deliberately  NOT  built  by  manual  ad-ID  mapping  (too  much  work  for  the  buyer);  creative-level  certainty  beyond  the  buyer's  report  is  future  work. 
+ 
+TINY  PART   How  this  attribution  differs  from  dedicated  platforms  (Triple  Whale,  Northbeam,  Hyros):  Numbatrak  does  last-click,  first-party,  single-touch  attribution  anchored  to  delivered  orders  —  it  records  the  entry  point  of  every  real  order.  Those  platforms  do  multi-touch  journey  modeling,  cross-platform  deduplication,  and  view-through  attribution,  which  are  heavier  and  statistical.  For  a  COD  business  anchored  on  delivered  orders,  last-click  first-party  is  arguably  more  trustworthy  than  platform-reported  conversions  (which  are  inflated  and  deduplicated  by  guesswork).  Multi-touch  modeling  is  future  work  —  either  an  integration  with  one  of  those  platforms  or  a  Numbatrak  engine  built  later.  
+Numbatrak  feature  spec   ·   page  41 
+
+=== PAGE 42 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+22.  Customer  Management  (CRM)  
+ 
+Status:  Locked  —  new  for  launch  ·  a  full  subsystem The  CRM  is  where  every  customer  lives,  how  they  are  called  for  feedback,  how  complaints  are  handled,  and  
+how
+ 
+the
+ 
+business
+ 
+markets
+ 
+back
+ 
+to
+ 
+them.
+ 
+It
+ 
+is
+ 
+five
+ 
+connected
+ 
+parts
+ 
+inside
+ 
+one
+ 
+tab:
+ 
+the
+ 
+Customer
+ 
+Database,
+ 
+Feedback
+ 
+Calls,
+ 
+Complaints,
+ 
+and
+ 
+Automations
+ 
+(marketing
+ 
+campaigns),
+ 
+with
+ 
+the
+ 
+More
+ 
+Purchase
+ 
+mechanic
+ 
+woven
+ 
+through.
+ 
+It
+ 
+is
+ 
+financially
+ 
+entangled
+ 
+with
+ 
+Orders,
+ 
+Inventory,
+ 
+Wallet,
+ 
+and
+ 
+Expenses
+ 
+—
+ 
+those
+ 
+connections
+ 
+are
+ 
+the
+ 
+point,
+ 
+because
+ 
+they
+ 
+keep
+ 
+the
+ 
+one
+ 
+revenue
+ 
+truth
+ 
+honest. 
+Part  one  —  Customer  Database One  record  per  person,  deduped  on  phone  (COD  identity).  Every  customer  who  ever  placed  an  order  is  here  
+—
+ 
+delivered
+ 
+or
+ 
+not
+ 
+—
+ 
+so
+ 
+failed
+ 
+and
+ 
+refunded
+ 
+orders
+ 
+stay
+ 
+visible
+ 
+as
+ 
+re-marketing
+ 
+signal. •  Details  —  name,  email,  WhatsApp/phone,  location  —  the  contact  details  that  the  Automations  and  
+messaging
+ 
+run
+ 
+on. •  Lifetime  value  —  total  across  all  their  orders  and  more  purchases,  combined. •  Income  sources  —  order  revenue  and  more-purchase  revenue  shown  side  by  side,  then  combined  —  so  
+income
+ 
+sources
+ 
+are
+ 
+easy
+ 
+to
+ 
+read
+ 
+(mirroring
+ 
+the
+ 
+business's
+ 
+own
+ 
+combined
+ 
+report). •  Products  they  buy  —  the  products  this  customer  buys,  filterable  across  the  database. •  Source  —  first-click  (how  they  were  acquired)  and  last-click  (what  converted  this  order)  both  on  the  
+record,
+ 
+from
+ 
+the
+ 
+storefront
+ 
+attribution. •  History  —  every  order  and  more  purchase  with  its  status  (delivered,  failed,  refunded). 
+Part  two  —  Feedback  Calls Two  faces:  an  operational  queue  and  an  analytics  dashboard. 
+THE  OPERATIONAL  QUEUE •  Auto-scheduled  —  a  delivered  order  auto-schedules  a  feedback  call  a  settable  window  after  delivery  
+(default
+ 
+around
+ 
+3
+ 
+days).
+ 
+Today's
+ 
+calls
+ 
+shows
+ 
+what
+ 
+is
+ 
+due
+ 
+per
+ 
+officer. •  Disposition  —  each  call  is  classed  —  answered,  no-answer,  wrong-number,  switched-off,  unreachable,  
+or
+ 
+callback-requested.
+ 
+Callbacks
+ 
+and
+ 
+history
+ 
+are
+ 
+their
+ 
+own
+ 
+views. •  Captured  on  the  call  —  on  an  answered  call:  satisfaction  score,  reorder  likelihood,  an  optional  More  
+Purchase,
+ 
+or
+ 
+a
+ 
+transfer
+ 
+to
+ 
+Complaints. 
+THE  ANALYTICS  DASHBOARD •  Reach  —  total  calls,  attempted,  answer  rate,  average  attempts  to  reach. •  Satisfaction  —  average  score,  happy  rate  (4-5  stars),  unhappy  rate  (1-2  stars),  scoring  coverage,  a  
+distribution
+ 
+histogram,
+ 
+and
+ 
+an
+ 
+8-week
+ 
+trend. •  More  Purchase  revenue  —  revenue,  COGS,  delivery,  profit,  and  profit-per-call  from  More  Purchases  
+made
+ 
+on
+ 
+calls
+ 
+—
+ 
+the
+ 
+metric
+ 
+that
+ 
+tells
+ 
+you
+ 
+if
+ 
+the
+ 
+calling
+ 
+operation
+ 
+earns
+ 
+its
+ 
+labour. •  Customer  signals  —  reorder  likelihood  (definitely/maybe/no/unlikely),  red-flag  rate,  and  products  with  
+red
+ 
+flags
+ 
+—
+ 
+which
+ 
+products
+ 
+generate
+ 
+the
+ 
+most
+ 
+complaints. •  Per  officer  —  calls,  answer  %,  avg  satisfaction,  attempt  %,  convert  %,  transfers,  red  flags  —  side  by  side  
+per
+ 
+officer. 
+Part  three  —  Complaints 
+Numbatrak  feature  spec   ·   page  42 
+
+=== PAGE 43 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+A  list  of  individual  issues  AND  a  dashboard  of  the  patterns,  so  complaints  become  a  measured  cost  centre  
+rather
+ 
+than
+ 
+a
+ 
+support
+ 
+annoyance. •  The  list  —  logged  against  the  customer  and  their  order,  with  photo/receipt  attachments  and  an  
+escalation
+ 
+path
+ 
+(escalating
+ 
+notifies
+ 
+the
+ 
+founder). •  The  dashboard  —  total,  open/resolved/escalated,  resolution  rate,  complaints  by  product,  by  type  
+(wrong
+ 
+size,
+ 
+damaged,
+ 
+never
+ 
+received),
+ 
+by
+ 
+agent/location,
+ 
+refund-vs-replacement
+ 
+counts,
+ 
+and
+ 
+the
+ 
+total
+ 
+Chargebacks
+ 
+cost
+ 
+over
+ 
+the
+ 
+period. 
+Part  four  —  Automations  (marketing  campaigns) Where  the  business  markets  back  to  its  own  database.  Built  and  sent  from  inside  the  CRM,  using  the  
+customer
+ 
+contacts
+ 
+and
+ 
+segments;
+ 
+the
+ 
+Messaging
+ 
+and
+ 
+Integrations
+ 
+layer
+ 
+is
+ 
+only
+ 
+the
+ 
+underlying
+ 
+pipe. •  Campaign  builder  —  segment  the  database  —  lapsed  customers,  failed  deliveries,  repeat  buyers,  by  
+source,
+ 
+by
+ 
+product
+ 
+—
+ 
+and
+ 
+send
+ 
+an
+ 
+email
+ 
+or
+ 
+WhatsApp
+ 
+campaign. •  Credits  —  two  separate  pools,  email  and  WhatsApp,  shown  right  here  where  campaigns  spend  them.  
+Only
+ 
+marketing
+ 
+campaigns
+ 
+consume
+ 
+credits;
+ 
+transactional
+ 
+messages
+ 
+(order
+ 
+confirmation,
+ 
+abandoned-cart,
+ 
+feedback
+ 
+scheduling,
+ 
+invoice
+ 
+send)
+ 
+are
+ 
+included
+ 
+in
+ 
+the
+ 
+subscription
+ 
+and
+ 
+do
+ 
+not. •  Buying  credits  —  credits  are  bought  by  the  business  from  the  platform.  The  platform  operator  prices  
+them
+ 
+in
+ 
+Super
+ 
+Admin
+ 
+—
+ 
+credit
+ 
+sales
+ 
+are
+ 
+a
+ 
+platform
+ 
+revenue
+ 
+stream.
+ 
+Top-up
+ 
+surfaces
+ 
+right
+ 
+in
+ 
+Automations
+ 
+where
+ 
+they
+ 
+are
+ 
+spent. 
+The  More  Purchase  mechanic A  More  Purchase  is  an  existing  customer  buying  more,  captured  on  a  feedback  call.  It  is  NOT  an  order  and  
+does
+ 
+not
+ 
+merge
+ 
+into
+ 
+the
+ 
+customer's
+ 
+original
+ 
+order
+ 
+—
+ 
+but
+ 
+it
+ 
+is
+ 
+economically
+ 
+a
+ 
+full
+ 
+sale. 
+WHAT  IT  DOES •  Full  sale  economics  —  deducts  from  inventory,  books  COGS  and  delivery,  computes  its  own  profit  —  the  
+same
+ 
+economics
+ 
+as
+ 
+any
+ 
+sale. •  Fulfilment  —  fulfilled  like  any  delivery:  an  agent  delivers  it,  deducts  their  stock,  collects  the  COD,  and  
+remits
+ 
+via
+ 
+Wallet. •  Where  it  lands  —  attaches  to  the  customer  record,  lifts  LTV,  and  shows  as  a  separate  income  line  beside  
+order
+ 
+revenue
+ 
+in
+ 
+the
+ 
+combined
+ 
+report
+ 
+—
+ 
+it
+ 
+never
+ 
+becomes
+ 
+an
+ 
+Order. 
+LAYER  1   Screens •  Customer  Database  —  one  record  per  person  with  details,  LTV,  income  sources,  products,  source,  
+history. •  Feedback  queue  —  today's  calls,  callbacks  due,  history  —  the  operational  queue. •  Feedback  dashboard  —  reach,  satisfaction,  more-purchase  revenue,  signals,  red  flags,  per-officer. •  Complaints  —  the  issues  list  and  the  patterns  dashboard. •  Automations  —  the  campaign  builder  with  segments  and  the  two  credit  balances. 
+LAYER  2   Actions 103.  Open  a  customer  —  LTV,  income  breakdown,  products,  first/last  source,  full  history. 104.  Work  the  queue  —  disposition  a  call,  log  satisfaction,  record  a  More  Purchase,  set  a  callback,  or  
+transfer
+ 
+to
+ 
+Complaints. 105.  Handle  a  complaint  —  attach  photos,  escalate  to  founder,  resolve  by  refund  or  replacement. 
+Numbatrak  feature  spec   ·   page  43 
+
+=== PAGE 44 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+106.  Build  a  campaign  —  segment  the  database,  choose  email  or  WhatsApp,  send  —  consuming  the  
+matching
+ 
+credit
+ 
+pool. 107.  Buy  credits  —  top  up  email  or  WhatsApp  credits,  right  where  they  are  spent. 108.  Filter  /  segment  —  the  whole  database  and  both  dashboards  by  status,  source,  product,  location,  
+value,
+ 
+officer,
+ 
+brand,
+ 
+time
+ 
+frame. 
+LAYER  3   States •  Auto-populated  —  any  order  (delivered  or  not)  creates  or  updates  the  customer  record. •  Repeat  /  more-purchase  —  orders  and  more  purchases  aggregate;  LTV  grows. •  Call  due  /  dispositioned  —  call  due  a  settable  window  post-delivery,  then  classed  by  outcome. •  Complaint  states  —  complaint  open,  escalated,  or  resolved;  order  refunded  or  replacement  sent. •  Credit  balance  —  credits  sufficient,  low,  or  depleted  —  campaigns  blocked  when  a  pool  is  empty  until  
+topped
+ 
+up. 
+LAYER  4   Rules 
+LOCKED  RULE   Every  customer  who  placed  an  order  is  in  the  database  —  delivered  or  not  —  one  record  per  person,  deduped  on  phone,  holding  contact  details,  LTV,  products,  source,  and  history. 
+ 
+LOCKED  RULE   A  More  Purchase  is  economically  a  full  sale:  it  deducts  inventory,  books  COGS  and  delivery,  and  is  fulfilled  like  any  delivery  (agent  delivers,  deducts  stock,  collects  COD,  remits  via  Wallet).  But  it  attaches  to  the  customer,  not  the  Orders  pipeline,  and  shows  as  a  separate  income  line  lifting  LTV. 
+ 
+LOCKED  RULE   First-click  and  last-click  source  both  live  on  the  customer  record,  from  the  storefront  attribution  (this  is  the  server-side,  measured  view  —  distinct  from  a  media  buyer's  reported  weekly  review). 
+ 
+LOCKED  RULE   A  feedback  call  auto-schedules  a  settable  window  after  delivery.  The  queue  is  today's  calls,  callbacks,  and  history,  each  dispositioned  and  assigned  to  an  officer. 
+ 
+LOCKED  RULE   A  refund  reverses  the  sale  —  the  order  flips  to  Refunded  and  its  revenue  and  profit  come  off  the  books.  It  does  NOT  book  a  fresh  full-amount  expense  (that  would  double-count).  Refunded  opens  a  Chargebacks  expense  for  the  real  loss:  the  sunk  delivery  fee  always,  plus  the  product  cost  only  if  the  item  is  not  returned. 
+ 
+LOCKED  RULE   A  replacement  books  a  loss  —  one  unit  out  of  inventory  plus  its  cost  plus  the  redelivery  fee,  with  no  new  revenue.  Both  refund  and  replacement  losses  land  in  a  Chargebacks  sub-category  under  Operational,  so  all  such  losses  are  traceable  in  one  place. 
+ 
+LOCKED  RULE   Marketing  campaigns  consume  credits  from  two  separate  pools  (email,  WhatsApp).  Transactional  messages  are  included  in  the  subscription  and  do  not  consume  credits.  Credits  are  bought  from  the  platform  and  priced  in  Super  Admin  —  a  platform  revenue  stream.  A  campaign  is  blocked  if  its  pool  is  empty. 
+ 
+Numbatrak  feature  spec   ·   page  44 
+
+=== PAGE 45 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Complaints  has  both  a  list  (individual  issues)  and  a  dashboard  (patterns  and  total  Chargebacks  cost),  turning  after-sales  into  a  measured  cost  centre. 
+Tiny  parts 
+TINY  PART   The  customer  contact  details  (email  and  WhatsApp)  are  the  join  between  the  CRM  and  the  Messaging  layer.  The  CRM  holds  the  audience  and  triggers  the  sends;  the  Messaging  and  Integrations  layer  is  only  the  pipe  that  delivers.  A  business  experiences  campaigns  entirely  inside  the  CRM's  Automations,  never  in  a  separate  messaging  area. 
+ 
+TINY  PART   The  refund  arithmetic  is  the  trap.  Reversing  the  sale  AND  booking  the  full  refund  amount  as  an  expense  would  double  the  loss.  The  sale  reversal  handles  the  revenue;  the  Chargebacks  expense  captures  only  what  is  genuinely  unrecoverable  —  the  delivery  fee,  and  the  product  if  it  does  not  come  back. 
+ 
+TINY  PART   More  Purchase  versus  order-time  upsell:  an  upsell  added  to  an  order  at  order-time  is  part  of  that  order.  A  More  Purchase  from  a  feedback  call  is  a  customer-level  sale  that  lifts  LTV  and  shows  as  its  own  income  line.  They  are  different  things  and  must  not  be  conflated.  
+Numbatrak  feature  spec   ·   page  45 
+
+=== PAGE 46 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Messaging  and  Integrations  
+ 
+Status:  Locked  —  new  for  launch  ·  a  cross-cutting  layer This  is  not  a  feature  a  business  visits  to  do  work  —  it  is  plumbing  that  every  other  feature  borrows.  It  has  two  
+jobs:
+ 
+Integrations
+ 
+(the
+ 
+API
+ 
+keys
+ 
+a
+ 
+business
+ 
+plugs
+ 
+in
+ 
+once)
+ 
+and
+ 
+Messaging
+ 
+(the
+ 
+single
+ 
+sending
+ 
+engine
+ 
+that
+ 
+uses
+ 
+them).
+ 
+Order
+ 
+confirmations,
+ 
+cart
+ 
+recovery,
+ 
+invoices,
+ 
+notification
+ 
+emails,
+ 
+and
+ 
+CRM
+ 
+campaigns
+ 
+all
+ 
+send
+ 
+through
+ 
+this
+ 
+one
+ 
+layer,
+ 
+so
+ 
+the
+ 
+business
+ 
+configures
+ 
+it
+ 
+once
+ 
+and
+ 
+everything
+ 
+sends
+ 
+the
+ 
+same
+ 
+reliable
+ 
+way. 
+Integrations  —  the  key  store A  business  plugs  in  its  own  credentials  for  each  service,  once,  in  Settings.  Every  feature  that  needs  to  send  or  
+track
+ 
+then
+ 
+uses
+ 
+them
+ 
+without
+ 
+asking
+ 
+again.
+ 
+Keys
+ 
+are
+ 
+stored
+ 
+securely
+ 
+and
+ 
+never
+ 
+shown
+ 
+in
+ 
+full
+ 
+after
+ 
+saving. •  Email  provider  —  transactional  and  campaign  email. •  WhatsApp  Business  API  —  confirmations,  recovery,  and  campaigns  over  WhatsApp. •  SMS  gateway  —  an  optional  fallback  channel. •  Paystack  —  storefront  payments  and  —  importantly  —  the  credit  top-up  purchase,  where  the  business  
+buys
+ 
+email/WhatsApp
+ 
+credits
+ 
+from
+ 
+the
+ 
+platform. •  Ad  pixels  —  Meta  and  TikTok  pixels  plus  CAPI,  for  the  storefront  attribution. 
+The  sending  engine One  engine  sits  behind  every  message  in  the  whole  app.  Features  do  not  each  talk  to  WhatsApp  or  email  
+directly
+ 
+—
+ 
+they
+ 
+hand
+ 
+the
+ 
+message
+ 
+to
+ 
+this
+ 
+engine,
+ 
+which
+ 
+picks
+ 
+the
+ 
+channel,
+ 
+checks
+ 
+credits
+ 
+only
+ 
+if
+ 
+it
+ 
+is
+ 
+a
+ 
+campaign,
+ 
+sends
+ 
+via
+ 
+the
+ 
+connected
+ 
+provider,
+ 
+and
+ 
+logs
+ 
+the
+ 
+result. 109.  Trigger  —  a  feature  triggers  a  send  (order  delivered,  cart  abandoned,  campaign  launched,  invoice  
+raised). 110.  Channel  —  the  engine  picks  email,  WhatsApp,  or  SMS  fallback,  using  the  connected  integration's  
+keys. 111.  Credit  check  —  a  marketing  campaign  draws  down  the  matching  credit  pool;  transactional  
+messages
+ 
+skip
+ 
+this
+ 
+(subscription). 112.  Send  and  log  —  the  message  goes  out  through  the  provider;  delivery  status  is  logged  and  visible. 
+Every  automated  message  —  editable  and  toggleable Every  automated  message  is  its  own  editable  template,  per  channel  (the  email  and  the  WhatsApp  versions  
+are
+ 
+separate,
+ 
+both
+ 
+editable),
+ 
+built
+ 
+around
+ 
+merge
+ 
+fields
+ 
+the
+ 
+system
+ 
+fills
+ 
+per
+ 
+send
+ 
+(customer
+ 
+name,
+ 
+product,
+ 
+order
+ 
+number,
+ 
+amount,
+ 
+delivery
+ 
+date,
+ 
+tracking).
+ 
+And
+ 
+every
+ 
+trigger
+ 
+is
+ 
+independently
+ 
+toggleable
+ 
+per
+ 
+business
+ 
+—
+ 
+on
+ 
+or
+ 
+off,
+ 
+and
+ 
+on
+ 
+which
+ 
+channel.
+ 
+A
+ 
+business
+ 
+might
+ 
+want
+ 
+a
+ 
+WhatsApp
+ 
+on
+ 
+dispatch
+ 
+but
+ 
+no
+ 
+email,
+ 
+or
+ 
+skip
+ 
+the
+ 
+dispatch
+ 
+message
+ 
+entirely.
+ 
+The
+ 
+full
+ 
+transactional
+ 
+set,
+ 
+each
+ 
+its
+ 
+own
+ 
+template: •  New  order  placed  —  confirmation  the  order  was  received. •  Order  confirmed  —  when  the  status  moves  to  confirmed. •  Order  dispatched  /  out  for  delivery  —  a  heads-up  that  it  is  on  the  way. •  Successful  delivery  —  a  thank-you  on  delivery. •  Abandoned-cart  recovery  —  the  nudge  to  finish  an  unfinished  form. •  Invoice  send  —  the  invoice  delivered  to  the  customer. •  Refund  confirmation  —  when  a  refund  is  processed. 
+Numbatrak  feature  spec   ·   page  46 
+
+=== PAGE 47 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+•  Replacement  dispatched  —  when  a  replacement  is  sent. •  Internal  notification  emails  —  payroll  marked  paid,  strikes,  complaint  escalations  and  the  rest  —  these  
+originate
+ 
+in
+ 
+the
+ 
+Notifications
+ 
+layer
+ 
+but
+ 
+send
+ 
+through
+ 
+this
+ 
+engine. Marketing  campaigns  are  the  exception:  they  are  composed  per-campaign  in  the  CRM's  Automations  (each  
+blast
+ 
+is
+ 
+different),
+ 
+not
+ 
+fixed
+ 
+templates.
+ 
+Everything
+ 
+above
+ 
+is
+ 
+a
+ 
+template. 
+LAYER  1   Screens •  Integrations  —  the  key  store  in  Settings:  email,  WhatsApp,  SMS,  payments,  pixels. •  Message  templates  —  every  automated  message,  each  editable  per  channel,  each  toggleable. •  Message  log  —  what  was  sent,  to  whom,  on  which  channel,  and  its  delivery  status. 
+LAYER  2   Actions 113.  Connect  a  service  —  paste  the  API  key  or  token,  test,  save. 114.  Edit  a  template  —  edit  the  wording  per  channel,  around  the  merge  fields. 115.  Toggle  a  trigger  —  turn  any  message  on  or  off,  per  channel. 116.  View  the  message  log  —  delivery  status,  failures,  filterable. 
+LAYER  3   States •  Not  connected  —  a  channel  has  no  key;  features  that  need  it  fall  back  or  queue  for  a  human. •  Connected  —  the  channel  is  live;  automated  sends  flow. •  Sent  /  failed  —  each  message  logged  with  its  provider  result. 
+LAYER  4   Rules 
+LOCKED  RULE   Integration  keys  are  entered  once  in  Settings  and  reused  by  every  feature  that  sends  or  tracks  —  no  feature  stores  its  own  keys. 
+ 
+LOCKED  RULE   One  sending  engine  sits  behind  every  message.  Features  hand  it  the  message;  it  picks  the  channel,  checks  credits  if  a  campaign,  sends,  and  logs. 
+ 
+LOCKED  RULE   Every  automated  message  is  an  editable  template,  per  channel,  built  around  merge  fields;  and  every  trigger  is  independently  toggleable  per  business  —  on  or  off,  and  on  which  channel. 
+ 
+LOCKED  RULE   Transactional  messages  are  subscription-included;  only  CRM  marketing  campaigns  consume  the  email  and  WhatsApp  credit  pools. 
+ 
+LOCKED  RULE   Features  are  not  blocked  before  a  channel  is  connected  —  they  degrade  gracefully  (for  example,  abandoned-cart  recovery  goes  straight  to  the  CRS  follow-up  list  if  WhatsApp  is  not  connected)  and  light  up  automatically  once  the  key  is  in. 
+ 
+Numbatrak  feature  spec   ·   page  47 
+
+=== PAGE 48 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Paystack  powers  both  storefront  payments  and  the  credit  top-up,  so  the  business  buys  credits  from  the  platform  through  the  same  integration. 
+Tiny  parts 
+TINY  PART   The  reason  this  is  a  layer  and  not  a  feature:  its  whole  value  is  that  everything  sends  the  same  way  and  is  set  up  once.  If  each  feature  managed  its  own  keys  and  sending,  a  business  would  configure  WhatsApp  five  times  and  templates  would  drift.  Centralising  it  means  one  setup,  one  message  log,  one  credit  check.  
+Numbatrak  feature  spec   ·   page  48 
+
+=== PAGE 49 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Notifications  
+ 
+Status:  Locked  —  new  for  launch  ·  a  cross-cutting  layer The  twin  of  the  Messaging  layer:  Notifications  decides  WHAT  to  tell  people  and  WHO  to  tell;  the  Messaging  
+engine
+ 
+sends
+ 
+the
+ 
+email
+ 
+part.
+ 
+Every
+ 
+feature
+ 
+emits
+ 
+events,
+ 
+and
+ 
+this
+ 
+layer
+ 
+routes
+ 
+each
+ 
+to
+ 
+the
+ 
+right
+ 
+people
+ 
+over
+ 
+the
+ 
+right
+ 
+channel.
+ 
+The
+ 
+bell
+ 
+is
+ 
+native
+ 
+to
+ 
+this
+ 
+layer;
+ 
+the
+ 
+email
+ 
+rides
+ 
+the
+ 
+Messaging
+ 
+engine
+ 
+already
+ 
+documented. 
+The  bell Each  person's  own  in-app  feed  —  their  accumulated  notifications,  newest  first,  unread  marked.  Opening  one  
+marks
+ 
+it
+ 
+read
+ 
+for
+ 
+that
+ 
+person
+ 
+only
+ 
+and
+ 
+jumps
+ 
+to
+ 
+the
+ 
+thing
+ 
+it
+ 
+is
+ 
+about. 
+Audience  resolution  —  the  core  mechanic A  notification  must  reach  the  right  people,  and  'right  people'  is  role-and-scope-based.  This  is  the  hardest  and  
+most
+ 
+failure-prone
+ 
+part. 
+LOCKED  RULE   Audience  resolves  by  role  AND  scope:  a  person's  primary  role  plus  any  extra  roles,  and  their  primary  brand  plus  any  extra  brands.  A  manager  covering  two  brands  must  catch  events  for  both.  If  the  resolver  checks  only  the  primary  role  or  primary  brand,  the  notification  silently  reaches  nobody  —  the  exact  failure  mode  to  guard  against. 
+ 
+LOCKED  RULE   An  empty  audience  is  a  guarded  failure.  If  an  event  resolves  to  nobody,  it  is  logged  for  review,  never  silently  dropped. 
+Fan-out  and  read  state 
+LOCKED  RULE   One  event  fans  out  to  N  recipients,  and  each  recipient  has  independent  read/unread  state.  One  person  reading  a  notification  does  not  mark  it  read  for  anyone  else.  A  notification  is  therefore  an  event  plus  a  per-recipient  delivery,  each  tracked  separately. 
+The  channel  split  —  bell  versus  email The  test  for  whether  an  event  gets  email  (plus  bell)  or  bell  only:  does  it  need  to  be  provable  or  traceable  later,  
+or
+ 
+is
+ 
+it
+ 
+just
+ 
+awareness?
+ 
+Anything
+ 
+touching
+ 
+money,
+ 
+stock
+ 
+movement,
+ 
+discipline,
+ 
+or
+ 
+complaints
+ 
+needs
+ 
+an
+ 
+audit
+ 
+trail
+ 
+and
+ 
+gets
+ 
+email.
+ 
+Pure
+ 
+workflow
+ 
+awareness
+ 
+stays
+ 
+in
+ 
+the
+ 
+bell.
+ 
+Every
+ 
+email-tier
+ 
+event
+ 
+carries
+ 
+its
+ 
+audit
+ 
+trail
+ 
+(who,
+ 
+what,
+ 
+when). 
+EMAIL  +  BELL  —  NEEDS  A  TRAIL,  MUST  NOT  BE  MISSED •  Money  —  payroll  marked  paid,  payslip  ready,  manual  payroll  adjustment. •  Wallet  —  remittance  to  review,  shortfall  standing. •  Alerts  —  every  Dashboard  red-flag  alert. •  Discipline  —  strike  issued,  strike  threshold  or  consequence  reached. •  Stock  movement  —  low  stock,  waybill  received,  damaged  or  missing  stock,  failed  delivery. •  Complaints  —  complaint  logged,  complaint  escalated,  refund  processed. •  Media  money  —  contractor  payment  marked  paid,  CPA  or  budget  exceeded. •  Platform  —  credits  low  or  depleted,  subscription  or  payment  due,  integration  disconnected  or  key  
+failing. 
+Numbatrak  feature  spec   ·   page  49 
+
+=== PAGE 50 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+BELL  ONLY  —  AWARENESS •  Recognition  —  star  awarded,  SOTM  prize. •  People  workflow  —  leave  requested,  leave  decided,  attendance  auto-close  or  missed  mark. •  Order  workflow  —  new  order  placed,  abandoned  cart  captured,  follow-up  due. •  Media  workflow  —  production  batch  done,  weekly  report  submitted  or  missing. •  CRM  workflow  —  feedback  call  due  today,  callback  due. 
+Settings  control The  business  owner  or  admin  controls  notifications  for  the  whole  business,  in  Settings. 
+LOCKED  RULE   Each  event  has  two  independent  on/off  switches  —  bell  and  email  —  set  business-wide  by  the  owner  or  admin.  Nothing  is  locked  on.  The  owner  decides,  for  example,  low-stock  emails  on,  star-award  bells  on,  a  workflow  bell  off  —  and  it  applies  across  everyone  in  that  event's  audience.  These  are  defaults  per  the  settable  principle;  per-user  control  is  future  work. 
+LAYER  1   Screens •  The  bell  feed  —  each  person's  own  accumulated  notifications,  newest  first,  unread  marked. •  Notification  settings  —  the  per-event  bell  and  email  switches,  owner-controlled,  business-wide. 
+LAYER  2   Actions 117.  Open  a  notification  —  marks  it  read  for  you,  jumps  to  the  thing  it  is  about. 118.  Mark  all  read  —  clears  your  unread  count  —  yours  only. 119.  Toggle  an  event  —  the  owner  flips  an  event's  bell  or  email  switch  for  the  whole  business. 
+LAYER  3   States •  Unread  /  read  —  per  recipient,  independent  —  one  person  reading  does  not  affect  another. •  Email  queued  /  sent  —  for  email-tier  events,  the  email  is  handed  to  the  Messaging  engine. •  No  recipients  —  the  guard  case  —  an  event  resolving  to  nobody  is  logged,  not  silently  dropped. 
+LAYER  4   Rules 
+LOCKED  RULE   The  bell  is  native  to  this  layer;  the  email  rides  the  Messaging  engine.  Notifications  decides  what  and  to  whom;  Messaging  sends. 
+ 
+LOCKED  RULE   Channel  by  the  trail  test:  money,  stock,  discipline,  and  complaints  get  email  plus  bell  and  carry  an  audit  trail;  pure  awareness  stays  bell  only. 
+ 
+LOCKED  RULE   The  owner  or  admin  sets  both  switches  per  event,  business-wide  —  nothing  locked  on.  
+Numbatrak  feature  spec   ·   page  50 
+
+=== PAGE 51 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+23.  Storefront  
+ 
+Status:  Locked  —  ported  from  the  live  ÀY Ọ̀ NÍ  build  (ayoni.ng) The  storefront  is  the  retail  face  of  Numbatrak  —  a  multi-tenant  e-commerce  capability  ported  from  the  live  
+ÀY
+Ọ̀
+NÍ
+ 
+build.
+ 
+Each
+ 
+business
+ 
+gets
+ 
+its
+ 
+own
+ 
+shop
+ 
+with
+ 
+its
+ 
+own
+ 
+theme,
+ 
+products,
+ 
+and
+ 
+trackable
+ 
+pages.
+ 
+It
+ 
+is
+ 
+not
+ 
+a
+ 
+separate
+ 
+system:
+ 
+storefront
+ 
+orders
+ 
+flow
+ 
+into
+ 
+the
+ 
+same
+ 
+Orders
+ 
+pipeline,
+ 
+read
+ 
+the
+ 
+same
+ 
+universal
+ 
+products,
+ 
+deduct
+ 
+the
+ 
+same
+ 
+inventory,
+ 
+and
+ 
+trigger
+ 
+the
+ 
+same
+ 
+messaging,
+ 
+notifications,
+ 
+CRM,
+ 
+and
+ 
+finance
+ 
+wiring
+ 
+as
+ 
+every
+ 
+other
+ 
+order.
+ 
+Everything
+ 
+is
+ 
+owner-configured
+ 
+through
+ 
+editable
+ 
+sections,
+ 
+never
+ 
+programmed. 
+Two  surfaces  the  storefront  provides The  storefront  gives  a  business  two  distinct  selling  surfaces,  drawn  from  the  same  product  catalog.  They  are  
+separate
+ 
+builders,
+ 
+not
+ 
+a
+ 
+per-product
+ 
+toggle
+ 
+—
+ 
+a
+ 
+business
+ 
+builds
+ 
+a
+ 
+store,
+ 
+and
+ 
+can
+ 
+additionally
+ 
+turn
+ 
+on
+ 
+funnel
+ 
+pages
+ 
+for
+ 
+products
+ 
+it
+ 
+wants
+ 
+to
+ 
+run
+ 
+ads
+ 
+to. 
+THE  STORE  —  CLEAN  SHOPIFY-STYLE  SHOP •  What  it  is  —  homepage,  collections,  product  pages,  cart,  wishlist,  search,  plus  standard  e-commerce  
+pages
+ 
+(contact,
+ 
+about,
+ 
+footer
+ 
+links,
+ 
+policies). •  Store  product  page  —  a  clean,  standard  product  page  —  gallery,  price,  variants,  add-to-cart,  
+description,
+ 
+reviews
+ 
+—
+ 
+that
+ 
+flows
+ 
+to
+ 
+the
+ 
+proper
+ 
+storefront
+ 
+checkout.
+ 
+Discounts
+ 
+are
+ 
+optional
+ 
+here. 
+FUNNEL  MODE  —  SETTABLE  STANDALONE  LANDING  PAGE •  What  it  is  —  a  standalone  single-product  page  with  the  full  persuasive  layout  (hero/problem  headline,  
+story,
+ 
+solution,
+ 
+how
+ 
+it
+ 
+works,
+ 
+who
+ 
+it's
+ 
+for,
+ 
+testimonials,
+ 
+packages,
+ 
+guarantee
+ 
+and
+ 
+trust,
+ 
+FAQ,
+ 
+order).
+ 
+Turned
+ 
+on
+ 
+per
+ 
+product
+ 
+by
+ 
+the
+ 
+owner. •  Own  trackable  link  —  its  own  link  with  pixel  tracking,  so  a  business  sends  ad  traffic  straight  to  it  and  
+measures
+ 
+it. •  COD  form  on  page  —  COD-style,  form  on  the  page  —  the  order  form  sits  right  on  the  funnel  (no  cart  
+journey).
+ 
+This
+ 
+form
+ 
+IS
+ 
+the
+ 
+Order
+ 
+Form
+ 
+builder
+ 
+(feature
+ 
+15),
+ 
+wrapped
+ 
+in
+ 
+the
+ 
+funnel
+ 
+page:
+ 
+it
+ 
+reveals
+ 
+the
+ 
+product's
+ 
+offers/packages
+ 
+and
+ 
+carries
+ 
+the
+ 
+offer's
+ 
+attribution. 
+The  checkout  —  proper  for  the  store,  adaptive  to  the  COD  setting The  store  checkout  is  the  proper  Shopify-style  flow  (cart,  contact,  delivery,  discount,  payment).  It  adapts  to  a  
+store-level
+ 
+payment
+ 
+setting
+ 
+the
+ 
+owner
+ 
+controls. •  Payment  setting  —  the  owner  sets  COD  only,  Prepaid  only,  or  Both.  Both  lets  the  buyer  choose  Pay  on  
+Delivery
+ 
+or
+ 
+Pay
+ 
+Now
+ 
+at
+ 
+checkout;
+ 
+the
+ 
+others
+ 
+show
+ 
+just
+ 
+that
+ 
+one. •  Prepaid  flow  —  prepaid  orders  are  paid  at  checkout  via  Paystack.  Delivery  still  triggers  the  revenue  (the  
+one
+ 
+revenue
+ 
+truth
+ 
+holds),
+ 
+but
+ 
+the
+ 
+money
+ 
+is
+ 
+already
+ 
+in
+ 
+—
+ 
+so
+ 
+a
+ 
+prepaid
+ 
+order
+ 
+skips
+ 
+the
+ 
+Wallet
+ 
+remittance
+ 
+(no
+ 
+agent
+ 
+collected
+ 
+COD)
+ 
+and
+ 
+its
+ 
+delivery
+ 
+fee
+ 
+was
+ 
+charged
+ 
+at
+ 
+checkout. 
+Discounts  —  Shopify-style,  owner-settable The  store  checkout  supports  the  four  Shopify-style  discount  types,  each  created  by  the  owner  with  clicks  
+(automatic
+ 
+or
+ 
+code-based,
+ 
+with
+ 
+thresholds).
+ 
+These
+ 
+are
+ 
+distinct
+ 
+from
+ 
+product
+ 
+offers:
+ 
+an
+ 
+offer
+ 
+is
+ 
+the
+ 
+attributed
+ 
+commercial
+ 
+unit;
+ 
+a
+ 
+discount
+ 
+is
+ 
+a
+ 
+checkout-time
+ 
+reduction
+ 
+applied
+ 
+on
+ 
+top. •  Amount  off  products  —  percentage  or  amount  off  specific  products  or  collections. •  Buy  X  get  Y  —  buy  one  get  one  free,  or  at  a  discount. •  Amount  off  order  —  percentage  or  amount  off  the  whole  order  total. 
+Numbatrak  feature  spec   ·   page  51 
+
+=== PAGE 52 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+•  Free  shipping  —  free  delivery,  for  example  over  a  set  order  value  (the  business  absorbs  the  delivery  
+cost). Discounts  reduce  the  true  booked  revenue  (a  30%  discount  books  the  reduced  amount)  or  add  an  absorbed  
+cost
+ 
+(free
+ 
+shipping),
+ 
+so
+ 
+finances
+ 
+stay
+ 
+honest.
+ 
+Discounts
+ 
+do
+ 
+not
+ 
+change
+ 
+attribution. 
+Delivery  configuration Per-method  toggles  and  zone-based  rates  by  location  (the  ÀY Ọ̀ NÍ  delivery-config  logic),  set  once  by  the  
+owner.
+ 
+At
+ 
+checkout
+ 
+the
+ 
+correct
+ 
+fee
+ 
+is
+ 
+quoted
+ 
+from
+ 
+the
+ 
+customer's
+ 
+location,
+ 
+and
+ 
+that
+ 
+fee
+ 
+flows
+ 
+straight
+ 
+into
+ 
+the
+ 
+order's
+ 
+finances
+ 
+(a
+ 
+per-order
+ 
+deduction
+ 
+on
+ 
+a
+ 
+successful
+ 
+delivery,
+ 
+never
+ 
+double-counted
+ 
+as
+ 
+an
+ 
+expense).
+ 
+A
+ 
+VAT
+ 
+toggle
+ 
+applies
+ 
+VAT
+ 
+at
+ 
+checkout. 
+Attribution  and  tracking The  measured,  server-side  source  that  we  kept  referencing  across  the  CRM  and  Media  Buyers  lives  here. •  First  and  last  click  —  when  a  customer  lands  from  an  ad,  the  URL  carries  UTM  tags  and  a  click  ID  
+(fbclid/ttclid/gclid).
+ 
+The
+ 
+site
+ 
+captures
+ 
+these
+ 
+sticky-first
+ 
+on
+ 
+landing
+ 
+(first
+ 
+touch
+ 
+not
+ 
+overwritten)
+ 
+AND
+ 
+the
+ 
+last
+ 
+touch
+ 
+that
+ 
+carried
+ 
+into
+ 
+this
+ 
+order,
+ 
+persisting
+ 
+both
+ 
+with
+ 
+the
+ 
+order. •  Pixels  —  Meta,  TikTok,  GA4,  Snap,  and  Pinterest  browser  pixels  fire  per-page  events  (ViewContent,  
+AddToCart,
+ 
+Purchase). •  Server-side  CAPI  —  a  server-side  CAPI  Purchase  event  with  hashed  PII  backs  up  the  browser  pixel,  
+surviving
+ 
+ad-blockers. •  Catalog  feed  —  a  Google  Merchant  catalog  feed  at  a  public  endpoint,  unlocking  dynamic  product  ads. This  measured  source  flows  to  the  customer  record  in  the  CRM,  where  customers  are  filterable  by  
+delivered-versus-not
+ 
+and
+ 
+by
+ 
+source. 
+The  setup  —  section-based,  owner-edited Both  surfaces  are  built  from  editable  sections.  The  owner  edits  each  block's  content  —  text,  images,  videos,  
+the
+ 
+offer
+ 
+—
+ 
+per
+ 
+brand.
+ 
+It
+ 
+is
+ 
+a
+ 
+section
+ 
+editor,
+ 
+not
+ 
+a
+ 
+locked
+ 
+template.
+ 
+Creative
+ 
+assets
+ 
+(images
+ 
+and
+ 
+videos)
+ 
+can
+ 
+be
+ 
+drawn
+ 
+from
+ 
+the
+ 
+business's
+ 
+own
+ 
+media,
+ 
+including
+ 
+the
+ 
+winning
+ 
+creatives
+ 
+in
+ 
+the
+ 
+Media
+ 
+Buyers
+ 
+ad
+ 
+catalog.
+ 
+Nothing
+ 
+is
+ 
+programmed;
+ 
+the
+ 
+whole
+ 
+storefront
+ 
+is
+ 
+configured
+ 
+through
+ 
+clicks
+ 
+and
+ 
+edits. 
+Wiring  into  the  rest  of  Numbatrak The  storefront  is  another  intake  surface  that  plugs  into  everything  already  built. •  Orders  —  store  checkout  and  funnel  form  both  write  to  the  Orders  pipeline,  tagged  with  source  and  
+offer. •  Messaging  —  storefront  orders  trigger  the  transactional  messages  through  the  Messaging  engine  —  
+new
+ 
+order
+ 
+placed
+ 
+(the
+ 
+confirmation),
+ 
+confirmed,
+ 
+dispatched,
+ 
+successful
+ 
+delivery,
+ 
+invoice,
+ 
+refund,
+ 
+replacement
+ 
+—
+ 
+each
+ 
+an
+ 
+editable
+ 
+template,
+ 
+per
+ 
+channel,
+ 
+toggleable.
+ 
+Plus
+ 
+a
+ 
+floating
+ 
+WhatsApp
+ 
+chat
+ 
+icon
+ 
+(bottom
+ 
+right)
+ 
+on
+ 
+every
+ 
+page
+ 
+with
+ 
+customizable
+ 
+messages,
+ 
+and
+ 
+the
+ 
+WhatsApp-confirm
+ 
+deep-link
+ 
+flow
+ 
+on
+ 
+order
+ 
+placement. •  Abandoned  cart  —  a  store  cart  or  a  funnel  form  started  but  not  finished  fires  abandoned-cart  recovery  
+—
+ 
+but
+ 
+only
+ 
+if
+ 
+a
+ 
+contact
+ 
+detail
+ 
+was
+ 
+captured
+ 
+(per
+ 
+the
+ 
+Abandoned
+ 
+Carts
+ 
+rule). •  CRM  —  every  storefront  customer  lands  in  the  CRM  database  (delivered  or  not,  with  source),  becoming  
+a
+ 
+campaign
+ 
+audience. •  Notifications  &  finance  —  new-order  and  low-stock  events  route  through  the  Notifications  layer;  
+delivery,
+ 
+refund,
+ 
+and
+ 
+replacement
+ 
+flow
+ 
+through
+ 
+the
+ 
+same
+ 
+Wallet
+ 
+and
+ 
+Chargebacks
+ 
+finance
+ 
+wiring
+ 
+as
+ 
+any
+ 
+order. 
+Numbatrak  feature  spec   ·   page  52 
+
+=== PAGE 53 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LAYER  1   Screens •  Customer  store  —  homepage,  collections,  product  pages,  cart,  wishlist,  search,  contact/about/policies. •  Store  product  page  —  clean  Shopify-style  —  gallery,  price,  variants,  add-to-cart,  description,  reviews. •  Funnel  page  —  standalone  persuasive  single-product  page  with  COD  form  on  page  and  a  trackable  link. •  Checkout  —  the  proper  checkout  —  contact,  delivery,  discount,  adaptive  payment. •  Store  admin  —  store  dashboard,  collections/products,  orders  (with  source  and  attribution),  delivery  
+config,
+ 
+discounts,
+ 
+theme,
+ 
+domain,
+ 
+tracking
+ 
+settings. 
+LAYER  2   Actions 120.  Shop  the  store  —  browse,  add  to  cart,  apply  a  discount,  pick  delivery,  place  an  order. 121.  Run  a  funnel  —  send  ad  traffic  to  a  product's  standalone  funnel  link,  tracked  by  pixel. 122.  Build  with  sections  —  edit  each  section's  content  —  text,  images,  videos,  offers  —  per  brand. 123.  Configure  the  store  —  set  COD/Prepaid/Both,  create  discounts,  configure  delivery  zones,  set  
+theme
+ 
+and
+ 
+domain,
+ 
+paste
+ 
+tracking
+ 
+credentials. 
+LAYER  3   States •  Cart  persisted  —  survives  across  sessions  without  an  account. •  Order  server-priced  —  the  server  re-fetches  real  prices  and  revalidates  stock  before  insert  —  never  
+trusts
+ 
+the
+ 
+client. •  Attributed  —  first  and  last  touch  captured  and  persisted  with  the  order,  flowing  to  the  CRM. •  Funnel  live  —  a  product's  standalone  funnel  is  turned  on,  with  its  own  pixel-tracked  link. 
+LAYER  4   Rules 
+LOCKED  RULE   The  storefront  provides  two  separate  surfaces  from  one  catalog:  the  store  (clean  Shopify-style,  proper  checkout,  optional  discounts)  and  funnel  mode  (settable  standalone  single-product  page,  own  pixel-tracked  link,  COD  form  on  page  using  the  Order  Form  builder).  They  are  separate  builders,  not  a  per-product  toggle. 
+ 
+LOCKED  RULE   Pricing  is  server-authoritative  —  the  server  re-fetches  real  prices  and  revalidates  stock;  it  never  trusts  the  client's  numbers. 
+ 
+LOCKED  RULE   The  store  checkout  adapts  to  the  owner's  payment  setting  (COD  /  Prepaid  /  Both).  Prepaid  is  paid  at  checkout  via  Paystack;  delivery  still  triggers  revenue,  but  the  money  is  already  in,  so  it  skips  the  Wallet  remittance. 
+ 
+LOCKED  RULE   The  four  Shopify-style  discount  types  are  owner-settable  and  distinct  from  product  offers.  Discounts  reduce  true  booked  revenue  or  add  an  absorbed  cost,  so  finances  stay  honest,  and  do  not  change  attribution. 
+ 
+LOCKED  RULE   Source  is  captured  sticky-first  on  landing  (UTM  plus  click  IDs)  AND  last  touch,  both  persisted  with  the  order  and  flowing  to  the  CRM  customer  record.  Server-side  CAPI  backs  the  browser  pixels. 
+Numbatrak  feature  spec   ·   page  53 
+
+=== PAGE 54 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+ 
+LOCKED  RULE   Every  surface  writes  orders  to  the  same  Orders  pipeline,  tagged  with  source  and  offer,  and  reads  the  same  universal  products  and  inventory.  The  storefront  is  an  intake  surface,  not  a  silo. 
+ 
+LOCKED  RULE   Both  surfaces  are  built  from  editable  sections,  owner-edited  per  brand,  drawing  creative  from  the  business's  own  media  including  the  ad  catalog.  Configured  through  clicks,  never  programmed. 
+ 
+LOCKED  RULE   The  storefront  wires  into  everything:  transactional  messages  and  the  WhatsApp  chat  icon  and  confirm-flow  (Messaging),  abandoned-cart  recovery  on  both  surfaces  (if  contact  captured),  CRM  audience,  Notifications,  and  the  same  Wallet  and  Chargebacks  finance  wiring. 
+ 
+LOCKED  RULE   Multi-tenant  —  each  business  gets  its  own  shop,  its  own  theme,  a  custom  domain  or  subdomain,  and  row-level  tenant  isolation. 
+Tiny  parts 
+TINY  PART   The  store  product  page  and  the  funnel  page  are  deliberately  different.  The  store  page  is  clean  and  short  (Shopify-style)  because  a  catalog  shopper  is  browsing;  the  funnel  page  is  long  and  persuasive  (the  full  section  stack)  because  ad  traffic  needs  to  be  sold  in  one  scroll.  Same  product,  two  presentations,  chosen  by  traffic  type. 
+ 
+TINY  PART   The  funnel's  form  is  not  a  new  form  system  —  it  is  the  Order  Form  builder  (feature  15)  wrapped  in  the  funnel  page,  so  it  already  carries  offers,  order  bumps,  conditional  fields,  validation,  redirect/confirmation,  and  attribution. 
+ 
+TINY  PART   Prepaid  is  the  one  place  the  money  arrives  before  delivery.  It  does  not  break  the  one  revenue  truth  (revenue  still  books  on  delivery),  but  it  changes  the  cash  path  —  direct  via  Paystack,  skipping  the  agent-collection-and-Wallet-remittance  route  that  COD  takes.  
+Numbatrak  feature  spec   ·   page  54 
+
+=== PAGE 55 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+24.  Settings  
+ 
+Status:  Locked  —  new  for  launch  ·  fully  self-serve The  account  layer,  separate  from  the  product  —  where  a  business  manages  its  subscription,  team,  billing,  and  
+details.
+ 
+It
+ 
+must
+ 
+be
+ 
+fully
+ 
+self-serve:
+ 
+no
+ 
+routine
+ 
+account
+ 
+action
+ 
+should
+ 
+require
+ 
+contacting
+ 
+support.
+ 
+Note
+ 
+that
+ 
+several
+ 
+settings
+ 
+live
+ 
+in
+ 
+their
+ 
+own
+ 
+features
+ 
+and
+ 
+are
+ 
+reached
+ 
+from
+ 
+there:
+ 
+store
+ 
+settings
+ 
+in
+ 
+the
+ 
+Storefront,
+ 
+notification
+ 
+switches
+ 
+in
+ 
+the
+ 
+Notifications
+ 
+layer,
+ 
+integration
+ 
+keys
+ 
+and
+ 
+message
+ 
+templates
+ 
+in
+ 
+the
+ 
+Messaging
+ 
+&
+ 
+Integrations
+ 
+layer,
+ 
+and
+ 
+order
+ 
+assignment
+ 
+in
+ 
+Staff
+ 
+Management. 
+Profile •  Identity  —  name,  email,  password,  business  name  and  logo,  phone  and  WhatsApp  for  notifications. •  Timezone  —  settable  —  drives  the  correct  date  and  time  on  every  record. •  Currency  —  Naira  by  default,  settable. •  Delete  account  —  offers  a  data  export  first,  then  a  confirmation,  then  deletes  —  and  shows  the  exit  
+survey
+ 
+(see
+ 
+below). 
+Subscription  —  the  state  logic The  subscription  is  not  just  a  plan  label;  each  state  and  transition  has  deliberate  rules. •  Upgrade  —  pay  now,  access  unlocks  immediately,  prorated. •  Downgrade  —  takes  effect  at  the  renewal  date,  not  immediately  —  the  business  keeps  what  it  paid  for  
+until
+ 
+then,
+ 
+and
+ 
+while
+ 
+pending
+ 
+it
+ 
+may
+ 
+only
+ 
+perform
+ 
+actions
+ 
+its
+ 
+new
+ 
+lower
+ 
+tier
+ 
+allows. •  Cancel  —  an  exit  survey  captures  the  reason  (critical  product  data  that  flows  to  the  Super  Admin  churn  
+analytics),
+ 
+then
+ 
+access
+ 
+continues
+ 
+to
+ 
+the
+ 
+end
+ 
+of
+ 
+the
+ 
+cycle. •  Reactivate  —  one-click  resubscribe  within  the  90-day  retention  window,  because  the  data  is  still  intact. 
+SUBSCRIPTION  STATES •  Inactive  —  can  perform  only  actions  related  to  their  subscription  (renew,  update  payment,  reactivate)  
+—
+ 
+other
+ 
+subscription-gated
+ 
+actions
+ 
+are
+ 
+blocked,
+ 
+but
+ 
+the
+ 
+account
+ 
+and
+ 
+data
+ 
+remain. •  Downgraded  —  permitted  only  the  actions  the  new  lower  tier  allows. 
+Failed  payment  —  the  dunning  timeline A  precise  sequence,  not  a  single  cut-off: 124.  3  days  before  expiry  —  alert  the  business  that  payment  is  about  to  fail  or  expire. 125.  At  expiry  —  a  24-hour  grace  period  after  expiry  where  everything  still  works. 126.  After  grace  —  the  account  is  locked  from  actions,  but  all  data  remains  intact  (nothing  deleted). 127.  While  locked  —  at  least  one  email  warning  every  week  while  locked  out. 128.  90  days  —  only  after  90  days  inactive  is  data  deleted. 
+Team  members •  Manage  —  name,  email,  role,  permissions;  removal  revokes  access  immediately;  per-member  activity  
+log. •  Slots  gate  by  plan  —  the  number  of  team  slots  is  set  by  plan  tier. 
+Numbatrak  feature  spec   ·   page  55 
+
+=== PAGE 56 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   On  downgrade,  if  the  business  exceeds  what  the  new  tier  allows  —  too  many  team  members,  OR  features  it  is  actively  using  that  the  lower  tier  does  not  include  —  the  system  warns  ahead  (naming  exactly  what  will  be  lost)  and  holds  the  downgrade  as  pending  until  the  business  resolves  it  themselves.  Access  is  never  silently  stripped. 
+Billing •  History  —  every  past  payment  —  date,  amount,  plan,  method,  status. •  Download  —  any  single  invoice  as  PDF,  or  a  date  range  as  a  ZIP  for  accounting. •  Payment  method  —  replace  an  expired  or  declined  card. 
+Data  management •  Export  —  full  account  data  as  CSV,  on  every  plan  —  no  lock-in. •  Import  —  CSV  upload  for  bulk  orders,  products,  and  expenses. •  Retention  policy  —  shown  plainly  to  the  user:  data  is  kept  90  days  after  cancellation  before  deletion.  
+This
+ 
+is
+ 
+what
+ 
+makes
+ 
+one-click
+ 
+reactivation
+ 
+possible
+ 
+and
+ 
+is
+ 
+a
+ 
+visible
+ 
+trust
+ 
+commitment. •  API  keys  —  generate  and  manage  API  keys  for  external  connections  —  Pro  plan  only. 
+LAYER  1   Screens •  Profile  —  identity,  timezone,  currency,  delete  account. •  Subscription  —  plan,  transitions,  states,  next  billing. •  Billing  —  payment  history,  invoices,  payment  method. •  Team  —  members,  permissions,  activity  log,  plan-gated  slots. •  Data  —  export,  import,  retention  policy,  API  keys. 
+LAYER  2   Actions 129.  Upgrade  —  pay  and  unlock  immediately  (prorated). 130.  Downgrade  —  schedule  for  renewal;  keep  the  current  tier  until  then. 131.  Cancel  —  run  the  exit  survey,  keep  access  to  cycle-end. 132.  Reactivate  —  one  click  within  90  days,  data  intact. 133.  Manage  team  —  add,  remove,  edit  within  plan  slots. 134.  Export  /  delete  —  export  data  anytime;  delete  account  with  export  and  survey  first. 
+LAYER  3   States •  Subscription  state  —  active,  trial,  inactive,  cancelled  —  the  subscription  lifecycle. •  Downgrade  pending  —  scheduled  for  renewal;  current  tier  held  until  then. •  In  retention  window  —  cancelled  but  within  90  days;  reactivation  possible,  data  intact. •  In  grace  —  expired  but  within  the  24-hour  grace;  everything  still  works. •  Locked  (past  grace)  —  locked  from  actions,  data  intact,  weekly  email  warnings. 
+LAYER  4   Rules 
+LOCKED  RULE   Fully  self-serve  —  every  routine  account  action  is  doable  without  contacting  support. 
+ 
+Numbatrak  feature  spec   ·   page  56 
+
+=== PAGE 57 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+LOCKED  RULE   Upgrade  is  immediate  and  prorated;  downgrade  takes  effect  at  renewal  with  no  clawback  of  what  was  already  paid  for. 
+ 
+LOCKED  RULE   Inactive  means  only  subscription-related  actions  are  possible;  a  pending  downgrade  means  only  new-tier  actions  are  possible.  Data  always  remains. 
+ 
+LOCKED  RULE   Failed-payment  dunning:  warn  3  days  before  expiry,  24-hour  grace  after  expiry  (all  works),  then  locked  with  data  intact  and  a  weekly  email  warning,  and  deletion  only  after  90  days  inactive. 
+ 
+LOCKED  RULE   On  downgrade,  exceeding  the  new  tier  (team  size  OR  features  in  use)  triggers  a  warn-ahead  and  holds  the  downgrade  pending  until  the  business  resolves  it  —  access  is  never  silently  stripped. 
+ 
+LOCKED  RULE   Cancel  and  delete  both  run  the  exit  survey,  whose  reason  data  flows  to  the  Super  Admin  churn  analytics. 
+ 
+LOCKED  RULE   90-day  retention  after  cancellation,  shown  to  the  user,  backing  one-click  reactivation.  Data  export  on  every  plan;  API  keys  Pro-only.  
+Numbatrak  feature  spec   ·   page  57 
+
+=== PAGE 58 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Future  automation  
+ 
+Several  things  are  done  manually  at  launch  by  deliberate  choice  —  some  because  the  automated  path  
+depends
+ 
+on
+ 
+infrastructure
+ 
+not
+ 
+yet
+ 
+built,
+ 
+some
+ 
+because
+ 
+they
+ 
+need
+ 
+a
+ 
+paid
+ 
+integration,
+ 
+and
+ 
+a
+ 
+few
+ 
+because
+ 
+the
+ 
+manual
+ 
+judgment
+ 
+IS
+ 
+the
+ 
+control
+ 
+and
+ 
+should
+ 
+never
+ 
+be
+ 
+automated.
+ 
+This
+ 
+section
+ 
+lists
+ 
+what
+ 
+is
+ 
+manual
+ 
+now
+ 
+and
+ 
+honestly
+ 
+flags
+ 
+what
+ 
+is
+ 
+a
+ 
+real
+ 
+candidate
+ 
+for
+ 
+future
+ 
+automation,
+ 
+so
+ 
+nobody
+ 
+reads
+ 
+a
+ 
+launch
+ 
+limitation
+ 
+as
+ 
+a
+ 
+permanent
+ 
+one. 
+Real  candidates  for  future  automation •  Multi-touch  attribution  —  multi-touch  attribution  modeling  —  journey  modeling,  cross-platform  
+deduplication,
+ 
+and
+ 
+view-through
+ 
+attribution
+ 
+(the
+ 
+Triple
+ 
+Whale,
+ 
+Northbeam,
+ 
+Hyros
+ 
+territory).
+ 
+Launch
+ 
+does
+ 
+last-click,
+ 
+first-party
+ 
+attribution
+ 
+anchored
+ 
+to
+ 
+delivered
+ 
+orders.
+ 
+The
+ 
+heavier
+ 
+modeling
+ 
+is
+ 
+a
+ 
+future
+ 
+integration
+ 
+with
+ 
+one
+ 
+of
+ 
+those
+ 
+platforms,
+ 
+or
+ 
+a
+ 
+Numbatrak
+ 
+engine
+ 
+built
+ 
+later. •  Full  accounting  —  the  full  accounting  engine  —  chart  of  accounts,  double-entry  journals,  vouchers,  
+suppliers,
+ 
+balance
+ 
+sheet,
+ 
+cash
+ 
+flow,
+ 
+and
+ 
+bank
+ 
+reconciliation.
+ 
+Launch
+ 
+ships
+ 
+a
+ 
+lighter
+ 
+P&L
+ 
+and
+ 
+cash
+ 
+view;
+ 
+formal
+ 
+accounting
+ 
+is
+ 
+handled
+ 
+in
+ 
+Zoho
+ 
+Books
+ 
+for
+ 
+now,
+ 
+and
+ 
+building
+ 
+the
+ 
+full
+ 
+engine
+ 
+in-app
+ 
+is
+ 
+future
+ 
+work. •  Bank  reconciliation  —  bank-feed  reconciliation  —  the  accountant  currently  reviews  each  Wallet  
+remittance
+ 
+against
+ 
+the
+ 
+bank
+ 
+statement
+ 
+by
+ 
+hand
+ 
+(human
+ 
+oversight,
+ 
+not
+ 
+an
+ 
+in-app
+ 
+gate).
+ 
+A
+ 
+future
+ 
+bank-feed
+ 
+integration
+ 
+could
+ 
+auto-reconcile. •  Payroll  disbursement  —  payroll  auto-disbursement  —  Numbatrak  currently  calculates  pay  and  marks  it  
+paid,
+ 
+but
+ 
+the
+ 
+actual
+ 
+money
+ 
+is
+ 
+paid
+ 
+outside
+ 
+the
+ 
+system.
+ 
+A
+ 
+future
+ 
+Paystack
+ 
+or
+ 
+bank
+ 
+integration
+ 
+could
+ 
+disburse
+ 
+directly,
+ 
+not
+ 
+just
+ 
+mark
+ 
+paid. •  Ad  spend  import  —  ad  spend  auto-pull  —  buyers  currently  type  daily  spend  from  their  Meta  or  TikTok  
+dashboard.
+ 
+A
+ 
+future
+ 
+Ads
+ 
+API
+ 
+integration
+ 
+could
+ 
+pull
+ 
+spend
+ 
+automatically
+ 
+(the
+ 
+orders
+ 
+half
+ 
+is
+ 
+already
+ 
+automatic
+ 
+from
+ 
+the
+ 
+system's
+ 
+own
+ 
+data). •  Messaging  —  messaging  automation  —  order  confirmations,  abandoned-cart  recovery,  and  
+mark-delivered
+ 
+messages
+ 
+depend
+ 
+on
+ 
+the
+ 
+Messaging
+ 
+and
+ 
+Integrations
+ 
+layer.
+ 
+They
+ 
+are
+ 
+CRS-driven
+ 
+or
+ 
+manual
+ 
+now
+ 
+and
+ 
+light
+ 
+up
+ 
+automatically
+ 
+once
+ 
+WhatsApp,
+ 
+SMS,
+ 
+and
+ 
+email
+ 
+APIs
+ 
+are
+ 
+connected. 
+Manual  by  design  —  should  stay  manual These  are  not  limitations  waiting  to  be  automated.  The  human  judgment  is  the  feature,  and  automating  it  
+would
+ 
+remove
+ 
+a
+ 
+control: •  Damaged/missing  stock  —  damaged  or  missing  stock  requires  a  human  reason  and  does  not  auto-flow  
+to
+ 
+expenses
+ 
+—
+ 
+the
+ 
+reason
+ 
+and
+ 
+the
+ 
+movement
+ 
+history
+ 
+are
+ 
+the
+ 
+control
+ 
+against
+ 
+shrinkage
+ 
+being
+ 
+hidden. •  Who-received-money  —  the  who-received-the-money  flag  on  an  order  (agent,  company  account,  or  
+prepaid)
+ 
+is
+ 
+a
+ 
+human
+ 
+decision
+ 
+that
+ 
+drives
+ 
+whether
+ 
+a
+ 
+Wallet
+ 
+remittance
+ 
+line
+ 
+is
+ 
+created. •  Remittance  oversight  —  the  accountant's  oversight  of  remittances  is  deliberately  a  review  in  business  
+chats,
+ 
+not
+ 
+a
+ 
+blocking
+ 
+in-app
+ 
+gate
+ 
+—
+ 
+the
+ 
+human
+ 
+check
+ 
+against
+ 
+the
+ 
+bank
+ 
+statement
+ 
+stays
+ 
+human.  
+Numbatrak  feature  spec   ·   page  58 
+
+=== PAGE 59 ===
+NUMBATRAK  ·  FEATURE  SPECIFICATION  ·  WORKING  DRAFT 
+Document  status   
+This  is  a  living  draft.  Twenty-four  features  are  locked,  plus  both  cross-cutting  layers  (Messaging  &  Integrations,  
+and
+ 
+Notifications).
+ 
+The
+ 
+core
+ 
+product
+ 
+feature
+ 
+specification
+ 
+is
+ 
+complete.
+ 
+What
+ 
+remains
+ 
+is
+ 
+a
+ 
+separate
+ 
+body
+ 
+of
+ 
+work
+ 
+—
+ 
+the
+ 
+SaaS
+ 
+Infrastructure
+ 
+section
+ 
+(Super
+ 
+Admin
+ 
+dashboard,
+ 
+billing
+ 
+and
+ 
+dunning
+ 
+engine,
+ 
+onboarding,
+ 
+health
+ 
+metrics,
+ 
+support,
+ 
+security),
+ 
+plus
+ 
+pricing
+ 
+tiers
+ 
+and
+ 
+the
+ 
+legal/marketing
+ 
+layer
+ 
+—
+ 
+to
+ 
+be
+ 
+built
+ 
+out
+ 
+as
+ 
+its
+ 
+own
+ 
+clearly-outlined
+ 
+section.  Standing  rule:  no  analytics  or  list  view  is  written  without  its  filter  set  named.  Every  dashboard  and  analytics  page  in  this  
+product
+ 
+is
+ 
+a
+ 
+filterable
+ 
+engine.  All  decisions  route  through  the  founder. 
+Numbatrak  feature  spec   ·   page  59 
+

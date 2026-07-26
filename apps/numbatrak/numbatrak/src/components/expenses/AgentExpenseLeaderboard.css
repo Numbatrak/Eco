@@ -1,0 +1,201 @@
+/* Agent Expense Leaderboard Styles */
+.agent-expense-leaderboard-container {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.agent-expense-leaderboard-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.agent-expense-leaderboard-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.agent-expense-leaderboard-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agent-expense-leaderboard-icon {
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--color-amber-500) 15%, transparent);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-expense-leaderboard-icon-svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-amber-600);
+}
+
+.agent-expense-leaderboard-title {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.agent-expense-leaderboard-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.agent-expense-leaderboard-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.agent-expense-leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.agent-expense-leaderboard-item:hover {
+  background-color: var(--accent);
+  border-color: var(--border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.agent-expense-leaderboard-item.rank-1 {
+  background: linear-gradient(to right, color-mix(in srgb, var(--color-amber-500) 10%, transparent), color-mix(in srgb, var(--color-amber-500) 5%, transparent));
+  border-color: var(--color-amber-500);
+  border-width: 1px;
+}
+
+.agent-expense-leaderboard-item.rank-2 {
+  background: linear-gradient(to right, color-mix(in srgb, var(--color-gray-500) 10%, transparent), color-mix(in srgb, var(--color-gray-500) 5%, transparent));
+  border-color: var(--color-gray-400);
+  border-width: 1px;
+}
+
+.agent-expense-leaderboard-item.rank-3 {
+  background: linear-gradient(to right, color-mix(in srgb, var(--color-orange-500) 10%, transparent), color-mix(in srgb, var(--color-orange-500) 5%, transparent));
+  border-color: var(--color-orange-400);
+  border-width: 1px;
+}
+
+.agent-expense-leaderboard-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  height: 3rem;
+}
+
+.agent-expense-leaderboard-rank-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.agent-expense-leaderboard-trophy {
+  width: 2rem;
+  height: 2rem;
+}
+
+.rank-1-trophy {
+  color: var(--color-amber-500);
+}
+
+.rank-2-trophy {
+  color: var(--color-gray-400);
+}
+
+.rank-3-trophy {
+  color: var(--color-orange-400);
+}
+
+.agent-expense-leaderboard-agent-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.agent-expense-leaderboard-agent-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.agent-expense-leaderboard-top-category {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.agent-expense-leaderboard-category-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--primary);
+}
+
+.agent-expense-leaderboard-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+
+.agent-expense-leaderboard-total-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agent-expense-leaderboard-total-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.agent-expense-leaderboard-expense-count {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
+.agent-expense-leaderboard-loading,
+.agent-expense-leaderboard-empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  background-color: var(--card);
+  font-weight: 500;
+}
+
+.agent-expense-leaderboard-empty {
+  font-style: italic;
+}
+
+
+
+
