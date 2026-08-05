@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { orders, orderItems, type Database } from "@platform/db";
 import { sendEmail } from "../../auth/lib/email.js";
+import { orderConfirmationEmail } from "../../../lib/email-templates.js";
 import { generateOrderNumber } from "./order-number.js";
 import { isUniqueViolation } from "../../../lib/db-errors.js";
 import { incrementCustomerStats } from "../../customers/lib/customers.js";
@@ -185,7 +186,12 @@ export async function markOrderPaid(
   await sendEmail(logger, {
     to: order.customerEmail,
     subject: `Order ${order.orderNumber} confirmed`,
-    body: `Thanks, ${order.customerName}! Your order ${order.orderNumber} (${amount} ${order.currency}) is confirmed.`,
+    body: orderConfirmationEmail({
+      customerName: order.customerName,
+      orderNumber: order.orderNumber,
+      amount,
+      currency: order.currency,
+    }),
   });
   // TODO(whatsapp): send an order-confirmation WhatsApp notification here once
   // that integration is built - explicitly out of scope for this task, this

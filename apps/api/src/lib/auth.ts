@@ -8,6 +8,7 @@ import { getDb } from "@platform/db";
 import { ac, orgRoles } from "./access-control.js";
 import { isReservedSubdomain, isValidSubdomainFormat } from "../modules/sites/lib/subdomain.js";
 import { sendEmail } from "../modules/auth/lib/email.js";
+import { passwordResetEmail, otpEmail } from "./email-templates.js";
 import { logSecurityEvent, type SecurityEventType } from "../modules/auth/lib/security-events.js";
 
 /**
@@ -101,7 +102,7 @@ export const auth = betterAuth({
       await sendEmail(authLogger, {
         to: user.email,
         subject: "Reset your password",
-        body: `Use this link to reset your password: ${resetUrl}`,
+        body: passwordResetEmail(resetUrl),
       });
     },
   },
@@ -166,7 +167,7 @@ export const auth = betterAuth({
           await sendEmail(authLogger, {
             to: user.email,
             subject: "Your verification code",
-            body: `Your code is ${otp}`,
+            body: otpEmail(otp),
           });
         },
       },

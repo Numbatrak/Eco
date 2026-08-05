@@ -1,6 +1,5 @@
 import type { FastifyBaseLogger } from "fastify";
-import Mailgun from "mailgun.js";
-import FormData from "form-data";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 export interface SendEmailParams {
   to: string;
@@ -8,36 +7,31 @@ export interface SendEmailParams {
   body: string;
 }
 
-function getMailgunClient() {
-  const mailgun = new Mailgun(FormData);
-  return mailgun.client({
-    username: "api",
-    key: process.env.MAILGUN_API_KEY!,
-  });
-}
-
 export async function sendEmail(logger: FastifyBaseLogger, params: SendEmailParams): Promise<void> {
   const from = process.env.EMAIL_FROM ?? "noreply@yourdomain.com";
-  const domain = process.env.MAILGUN_DOMAIN;
+  const region = process.env.AWS_REGION;
 
-  if (!process.env.MAILGUN_API_KEY || !domain) {
-    logger.info({ to: params.to, subject: params.subject }, "sendEmail (stub): no MAILGUN_API_KEY/MAILGUN_DOMAIN set");
+  if (!region) {
+    logger.info({ to: params.to, subject: params.subject }, "sendEmail (stub): no AWS_REGION set");
     return;
   }
 
-  const mg = getMailgunClient();
+  const ses = new SESClient({ region });
 
-  const result = await mg.messages.create(domain, {
-    from,
-    to: [params.to],
-    subject: params.subject,
-    html: params.body,
-  });
-
-  if (result.status !== 200) {
-    logger.error({ result, to: params.to }, "Failed to send email");
-    throw new Error(`Email send failed: ${result.message}`);
+  try {
+    const result = await ses.send(
+      new SendEmailCommand({
+        Source: from,
+        Destination: { ToAddresses: [params.to] },
+        Message: {
+          Subject: { Data: params.subject, Charset: "UTF-8" },
+          Body: { Html: { Data: params.body, Charset: "UTF-8" } },
+        },
+      }),
+    );
+    logger.info({ to: params.to, subject: params.subject, id: result.MessageId }, "Email sent");
+  } catch (err) {
+    logger.error({ err, to: params.to }, "Failed to send email");
+    throw err;
   }
-
-  logger.info({ to: params.to, subject: params.subject, id: result.id }, "Email sent");
 }
