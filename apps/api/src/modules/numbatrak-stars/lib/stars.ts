@@ -129,8 +129,9 @@ export async function createTier(
 export async function deleteTier(db: Database, organizationId: string, tierId: string): Promise<boolean> {
   const result = await db
     .delete(numbatrakStarTiers)
-    .where(and(eq(numbatrakStarTiers.id, tierId), eq(numbatrakStarTiers.organizationId, organizationId)));
-  return (result.rowCount ?? 0) > 0;
+    .where(and(eq(numbatrakStarTiers.id, tierId), eq(numbatrakStarTiers.organizationId, organizationId)))
+    .returning({ id: numbatrakStarTiers.id });
+  return result.length > 0;
 }
 
 export async function listStars(db: Database, organizationId: string, month?: string): Promise<NumbatrakStar[]> {

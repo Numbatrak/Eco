@@ -90,7 +90,7 @@ export async function listPayStructures(db: Database, organizationId: string): P
     .select()
     .from(numbatrakPayStructures)
     .where(eq(numbatrakPayStructures.organizationId, organizationId));
-  return rows.map(serializePayStructure);
+  return rows.map((row) => serializePayStructure(row));
 }
 
 export async function upsertPayStructure(

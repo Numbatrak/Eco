@@ -173,7 +173,7 @@ export async function getOrCreateFeedbackSettings(
     .from(numbatrakFeedbackSettings)
     .where(eq(numbatrakFeedbackSettings.organizationId, organizationId))
     .limit(1);
-  if (existing.length > 0) return serializeFeedbackSettings(existing[0]);
+  if (existing.length > 0) return serializeFeedbackSettings(existing[0]!);
   const [created] = await db
     .insert(numbatrakFeedbackSettings)
     .values({ organizationId })
@@ -185,7 +185,7 @@ export async function getOrCreateFeedbackSettings(
     .from(numbatrakFeedbackSettings)
     .where(eq(numbatrakFeedbackSettings.organizationId, organizationId))
     .limit(1);
-  return serializeFeedbackSettings(fallback);
+  return serializeFeedbackSettings(fallback!);
 }
 
 export async function updateFeedbackSettings(
@@ -201,7 +201,7 @@ export async function updateFeedbackSettings(
     .set(values)
     .where(eq(numbatrakFeedbackSettings.organizationId, organizationId))
     .returning();
-  return serializeFeedbackSettings(updated);
+  return serializeFeedbackSettings(updated!);
 }
 
 // --- Customers ---
@@ -279,7 +279,7 @@ export async function createCustomer(
       notes: body.notes ?? null,
     })
     .returning();
-  return serializeCustomer(created, 0, 0, 0, 0);
+  return serializeCustomer(created!, 0, 0, 0, 0);
 }
 
 export async function updateCustomer(
@@ -299,7 +299,7 @@ export async function updateCustomer(
     .set(values)
     .where(and(eq(numbatrakCustomers.organizationId, organizationId), eq(numbatrakCustomers.id, customerId)))
     .returning();
-  return serializeCustomer(updated, existing.orderRevenue, existing.morePurchaseRevenue, existing.orderCount, existing.morePurchaseCount);
+  return serializeCustomer(updated!, existing.orderRevenue, existing.morePurchaseRevenue, existing.orderCount, existing.morePurchaseCount);
 }
 
 // --- Feedback Calls ---
@@ -341,7 +341,7 @@ export async function createFeedbackCall(
       scheduledAt: new Date(body.scheduledAt),
     })
     .returning();
-  return serializeFeedbackCall(created);
+  return serializeFeedbackCall(created!);
 }
 
 export async function dispositionFeedbackCall(
@@ -403,7 +403,7 @@ export async function createComplaint(
       attachments: body.attachments ?? null,
     })
     .returning();
-  return serializeComplaint(created);
+  return serializeComplaint(created!);
 }
 
 export async function escalateComplaint(
@@ -490,7 +490,7 @@ export async function createMorePurchase(
       deliveryCost: String(body.deliveryCost ?? 0),
     })
     .returning();
-  return serializeMorePurchase(created);
+  return serializeMorePurchase(created!);
 }
 
 export async function updateMorePurchaseStatus(
@@ -540,7 +540,7 @@ export async function createCampaign(
       createdBy: userId,
     })
     .returning();
-  return serializeCampaign(created);
+  return serializeCampaign(created!);
 }
 
 export async function sendCampaign(
@@ -573,7 +573,7 @@ export async function sendCampaign(
     .set({ balance: sql`${numbatrakCrmCredits.balance} - 1`, updatedAt: new Date() })
     .where(and(eq(numbatrakCrmCredits.organizationId, organizationId), eq(numbatrakCrmCredits.channel, campaign.channel)));
 
-  return serializeCampaign(updated);
+  return updated ? serializeCampaign(updated) : null;
 }
 
 // --- Credits ---
@@ -614,7 +614,7 @@ export async function addCredits(
       set: { balance: sql`${numbatrakCrmCredits.balance} + ${amount}`, updatedAt: new Date() },
     })
     .returning();
-  return serializeCredit(upserted);
+  return serializeCredit(upserted!);
 }
 
 // --- Dashboards ---
@@ -646,10 +646,10 @@ export async function getFeedbackDashboard(
     .from(numbatrakMorePurchases)
     .where(eq(numbatrakMorePurchases.organizationId, organizationId));
 
-  const totalCalls = callStats.totalCalls;
-  const attempted = callStats.attempted;
-  const answered = callStats.answered;
-  const scoredCount = callStats.scoredCount;
+  const totalCalls = callStats?.totalCalls ?? 0;
+  const attempted = callStats?.attempted ?? 0;
+  const answered = callStats?.answered ?? 0;
+  const scoredCount = callStats?.scoredCount ?? 0;
   const morePurchaseRevenue = Number(mpStats?.totalRevenue ?? 0);
   const morePurchaseProfit = Number(mpStats?.totalProfit ?? 0);
 
@@ -657,10 +657,10 @@ export async function getFeedbackDashboard(
     totalCalls,
     attempted,
     answerRate: attempted > 0 ? answered / attempted : 0,
-    avgAttemptsToReach: callStats.totalWithAttempts > 0 ? callStats.totalAttempts / callStats.totalWithAttempts : 0,
-    avgSatisfaction: Number(callStats.avgSatisfaction),
-    happyRate: scoredCount > 0 ? callStats.happyCount / scoredCount : 0,
-    unhappyRate: scoredCount > 0 ? callStats.unhappyCount / scoredCount : 0,
+    avgAttemptsToReach: (callStats?.totalWithAttempts ?? 0) > 0 ? (callStats?.totalAttempts ?? 0) / (callStats?.totalWithAttempts ?? 1) : 0,
+    avgSatisfaction: Number(callStats?.avgSatisfaction ?? 0),
+    happyRate: scoredCount > 0 ? (callStats?.happyCount ?? 0) / scoredCount : 0,
+    unhappyRate: scoredCount > 0 ? (callStats?.unhappyCount ?? 0) / scoredCount : 0,
     morePurchaseRevenue,
     morePurchaseProfit,
     profitPerCall: attempted > 0 ? morePurchaseProfit / attempted : 0,
@@ -692,14 +692,21 @@ export async function getComplaintDashboard(
     .where(and(eq(numbatrakComplaints.organizationId, organizationId), sql`${numbatrakComplaints.complaintType} IS NOT NULL`))
     .groupBy(numbatrakComplaints.complaintType);
 
+  const total = stats?.total ?? 0;
+  const open = stats?.open ?? 0;
+  const escalated = stats?.escalated ?? 0;
+  const resolved = stats?.resolved ?? 0;
+  const refundCount = stats?.refundCount ?? 0;
+  const replacementCount = stats?.replacementCount ?? 0;
+
   return {
-    total: stats.total,
-    open: stats.open,
-    escalated: stats.escalated,
-    resolved: stats.resolved,
-    resolutionRate: stats.total > 0 ? stats.resolved / stats.total : 0,
-    refundCount: stats.refundCount,
-    replacementCount: stats.replacementCount,
+    total,
+    open,
+    escalated,
+    resolved,
+    resolutionRate: total > 0 ? resolved / total : 0,
+    refundCount,
+    replacementCount,
     byType: byType.map((r) => ({ type: r.type ?? "unknown", count: r.count })),
   };
 }

@@ -483,8 +483,9 @@ export async function updateSpend(
 export async function deleteSpend(db: Database, organizationId: string, spendId: string): Promise<boolean> {
   const result = await db
     .delete(numbatrakAdSpend)
-    .where(and(eq(numbatrakAdSpend.id, spendId), eq(numbatrakAdSpend.organizationId, organizationId)));
-  return (result.rowCount ?? 0) > 0;
+    .where(and(eq(numbatrakAdSpend.id, spendId), eq(numbatrakAdSpend.organizationId, organizationId)))
+    .returning({ id: numbatrakAdSpend.id });
+  return result.length > 0;
 }
 
 // --- CPA Targets ---
@@ -538,8 +539,9 @@ export async function upsertTarget(
 export async function deleteTarget(db: Database, organizationId: string, targetId: string): Promise<boolean> {
   const result = await db
     .delete(numbatrakCpaTargets)
-    .where(and(eq(numbatrakCpaTargets.id, targetId), eq(numbatrakCpaTargets.organizationId, organizationId)));
-  return (result.rowCount ?? 0) > 0;
+    .where(and(eq(numbatrakCpaTargets.id, targetId), eq(numbatrakCpaTargets.organizationId, organizationId)))
+    .returning({ id: numbatrakCpaTargets.id });
+  return result.length > 0;
 }
 
 // --- Weekly Reviews ---

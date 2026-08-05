@@ -130,6 +130,7 @@ export async function deleteWeight(db: Database, organizationId: string, weightI
         eq(numbatrakOrderAssignmentWeights.id, weightId),
         eq(numbatrakOrderAssignmentWeights.organizationId, organizationId),
       ),
-    );
-  return (result.rowCount ?? 0) > 0;
+    )
+    .returning({ id: numbatrakOrderAssignmentWeights.id });
+  return result.length > 0;
 }
