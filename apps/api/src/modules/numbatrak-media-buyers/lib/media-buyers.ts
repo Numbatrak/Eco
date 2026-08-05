@@ -260,8 +260,9 @@ export async function createContractor(
 export async function deleteContractor(db: Database, organizationId: string, contractorId: string): Promise<boolean> {
   const result = await db
     .delete(numbatrakContractors)
-    .where(and(eq(numbatrakContractors.id, contractorId), eq(numbatrakContractors.organizationId, organizationId)));
-  return (result.rowCount ?? 0) > 0;
+    .where(and(eq(numbatrakContractors.id, contractorId), eq(numbatrakContractors.organizationId, organizationId)))
+    .returning({ id: numbatrakContractors.id });
+  return result.length > 0;
 }
 
 // --- Production Batches ---

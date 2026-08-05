@@ -6,9 +6,9 @@ import {
   numbatrakStaff,
   numbatrakCustomerOrders,
   numbatrakCustomerOrderItems,
-  numbatrakDeliveries,
   user,
   type Database,
+  type Queryable,
 } from "@platform/db";
 import type {
   NumbatrakPayStructure,
@@ -20,12 +20,13 @@ import type {
 type PayStructureRow = typeof numbatrakPayStructures.$inferSelect;
 type PayrollLineRow = typeof numbatrakPayrollLines.$inferSelect;
 
-function serializePayStructure(row: PayStructureRow): NumbatrakPayStructure {
+function serializePayStructure(row: PayStructureRow, staffName?: string | null): NumbatrakPayStructure {
   return {
     id: row.id,
     scopeType: row.scopeType as NumbatrakPayStructure["scopeType"],
     role: row.role as NumbatrakPayStructure["role"],
     staffId: row.staffId,
+    staffName: staffName ?? null,
     baseSalaryEnabled: row.baseSalaryEnabled,
     baseSalaryAmount: Number(row.baseSalaryAmount),
     commissionEnabled: row.commissionEnabled,
@@ -47,7 +48,7 @@ function serializePayStructure(row: PayStructureRow): NumbatrakPayStructure {
   };
 }
 
-function serializeLine(row: PayrollLineRow, staffName: string | null): NumbatrakPayrollLine {
+function serializeLine(row: PayrollLineRow, staffName: string | null, primaryRole: string | null, runId: string): NumbatrakPayrollLine {
   const baseSalary = row.overrideBaseSalary != null ? Number(row.overrideBaseSalary) : Number(row.calculatedBaseSalary);
   const commission = row.overrideCommission != null ? Number(row.overrideCommission) : Number(row.calculatedCommission);
   const upsell = Number(row.calculatedUpsellBonus);
@@ -58,8 +59,10 @@ function serializeLine(row: PayrollLineRow, staffName: string | null): Numbatrak
 
   return {
     id: row.id,
+    runId,
     staffId: row.staffId,
     staffName,
+    primaryRole: primaryRole as NumbatrakPayrollLine["primaryRole"],
     calculatedBaseSalary: Number(row.calculatedBaseSalary),
     calculatedCommission: Number(row.calculatedCommission),
     calculatedUpsellBonus: upsell,
@@ -145,7 +148,7 @@ export async function getPayrollRun(
   if (!run) return null;
 
   const lineRows = await db
-    .select({ line: numbatrakPayrollLines, userName: user.name })
+    .select({ line: numbatrakPayrollLines, userName: user.name, primaryRole: numbatrakStaff.primaryRole })
     .from(numbatrakPayrollLines)
     .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
     .innerJoin(user, eq(numbatrakStaff.userId, user.id))
@@ -154,7 +157,7 @@ export async function getPayrollRun(
   return {
     id: run.id,
     month: run.month,
-    lines: lineRows.map((r) => serializeLine(r.line, r.userName)),
+    lines: lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run.id)),
     createdAt: run.createdAt?.toISOString() ?? null,
     updatedAt: run.updatedAt?.toISOString() ?? null,
   };
@@ -219,7 +222,7 @@ export async function runPayroll(db: Database, organizationId: string, month: st
     }
 
     const lineRows = await tx
-      .select({ line: numbatrakPayrollLines, userName: user.name })
+      .select({ line: numbatrakPayrollLines, userName: user.name, primaryRole: numbatrakStaff.primaryRole })
       .from(numbatrakPayrollLines)
       .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
       .innerJoin(user, eq(numbatrakStaff.userId, user.id))
@@ -228,7 +231,7 @@ export async function runPayroll(db: Database, organizationId: string, month: st
     return {
       id: run!.id,
       month: run!.month,
-      lines: lineRows.map((r) => serializeLine(r.line, r.userName)),
+      lines: lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run!.id)),
       createdAt: run!.createdAt?.toISOString() ?? null,
       updatedAt: run!.updatedAt?.toISOString() ?? null,
     };
@@ -236,7 +239,7 @@ export async function runPayroll(db: Database, organizationId: string, month: st
 }
 
 async function getStaffOrderData(
-  db: Database,
+  db: Queryable,
   organizationId: string,
   userId: string,
   month: string,
@@ -248,7 +251,7 @@ async function getStaffOrderData(
   const [orderStats] = await db
     .select({
       totalOrders: sql<number>`count(*)::int`,
-      totalRevenue: sql<number>`coalesce(sum(${numbatrakCustomerOrders.totalAmount}::numeric), 0)::float`,
+      totalRevenue: sql<number>`coalesce(sum(${numbatrakCustomerOrders.orderRevenue}::numeric), 0)::float`,
     })
     .from(numbatrakCustomerOrders)
     .where(
@@ -264,15 +267,14 @@ async function getStaffOrderData(
     .select({
       deliveredCount: sql<number>`count(*)::int`,
     })
-    .from(numbatrakDeliveries)
-    .innerJoin(numbatrakCustomerOrders, eq(numbatrakDeliveries.orderId, numbatrakCustomerOrders.id))
+    .from(numbatrakCustomerOrders)
     .where(
       and(
         eq(numbatrakCustomerOrders.organizationId, organizationId),
         eq(numbatrakCustomerOrders.csrId, userId),
-        eq(numbatrakDeliveries.status, "delivered"),
-        sql`${numbatrakDeliveries.createdAt} >= ${startDate}`,
-        sql`${numbatrakDeliveries.createdAt} < ${endMonth}`,
+        eq(numbatrakCustomerOrders.status, "delivered"),
+        sql`${numbatrakCustomerOrders.createdAt} >= ${startDate}`,
+        sql`${numbatrakCustomerOrders.createdAt} < ${endMonth}`,
       ),
     );
 
@@ -286,7 +288,7 @@ async function getStaffOrderData(
       and(
         eq(numbatrakCustomerOrders.organizationId, organizationId),
         eq(numbatrakCustomerOrders.csrId, userId),
-        eq(numbatrakCustomerOrderItems.isUpsell, true),
+        sql`${numbatrakCustomerOrderItems.addedByUserId} IS NOT NULL`,
         sql`${numbatrakCustomerOrders.createdAt} >= ${startDate}`,
         sql`${numbatrakCustomerOrders.createdAt} < ${endMonth}`,
       ),
