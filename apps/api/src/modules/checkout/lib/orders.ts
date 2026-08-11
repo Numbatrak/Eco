@@ -8,6 +8,7 @@ import { isUniqueViolation } from "../../../lib/db-errors.js";
 import { incrementCustomerStats } from "../../customers/lib/customers.js";
 import { findAnalyticsSettings } from "../../analytics/lib/analytics-settings-store.js";
 import { sendPurchaseCapiEvent } from "../../../lib/analytics/meta-capi.js";
+import { sendOrderConfirmationWhatsApp } from "../../../lib/whatsapp.js";
 
 export type OrderRow = typeof orders.$inferSelect;
 
@@ -193,9 +194,19 @@ export async function markOrderPaid(
       currency: order.currency,
     }),
   });
-  // TODO(whatsapp): send an order-confirmation WhatsApp notification here once
-  // that integration is built - explicitly out of scope for this task, this
-  // comment marks the intended call site.
+  if (order.customerPhone) {
+    try {
+      await sendOrderConfirmationWhatsApp(db, order.tenantId, logger, {
+        customerPhone: order.customerPhone,
+        customerName: order.customerName,
+        orderNumber: order.orderNumber,
+        amount,
+        currency: order.currency,
+      });
+    } catch (err) {
+      logger.warn({ err, orderId: order.id }, "WhatsApp order confirmation failed");
+    }
+  }
 
   // Best-effort, same as the email above - a failed Conversions API call
   // must never block the payment from settling.

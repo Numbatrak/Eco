@@ -25,6 +25,7 @@ export {
   orderItems,
   tenantPaymentSettings,
   tenantDeliverySettings,
+  tenantWhatsappSettings,
   tenantAnalyticsSettings,
   paymentWebhookEvents,
   creditAdjustments,
@@ -122,5 +123,6 @@ export {
   announcementAudienceEnum,
   exitSurveyTypeEnum,
   expenseParentCategoryEnum,
+  whatsappAccountStatusEnum,
 } from "./schema.js";
 export { getDb, type Database, type Transaction, type Queryable } from "./client.js";

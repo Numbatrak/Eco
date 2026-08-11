@@ -264,6 +264,26 @@ export const paymentSettingsResponseSchema = z.object({
 });
 export type PaymentSettingsResponse = z.infer<typeof paymentSettingsResponseSchema>;
 
+// ---------- whatsapp settings ----------
+
+export const whatsappConnectRequestSchema = z.object({
+  code: z.string().trim().min(1),
+  wabaId: z.string().trim().min(1),
+  phoneNumberId: z.string().trim().min(1),
+});
+export type WhatsappConnectRequest = z.infer<typeof whatsappConnectRequestSchema>;
+
+export const whatsappSettingsResponseSchema = z.object({
+  connected: z.boolean(),
+  wabaId: z.string().nullable(),
+  phoneNumberId: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  displayName: z.string().nullable(),
+  accountStatus: z.enum(["pending", "approved", "rejected"]).nullable(),
+  enabled: z.boolean(),
+});
+export type WhatsappSettingsResponse = z.infer<typeof whatsappSettingsResponseSchema>;
+
 // ---------- analytics settings ----------
 
 export const analyticsSettingsRequestSchema = z.object({

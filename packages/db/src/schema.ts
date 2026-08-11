@@ -352,6 +352,30 @@ export const tenantDeliverySettings = pgTable("tenant_delivery_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ---------- tenant_whatsapp_settings ----------
+
+export const whatsappAccountStatusEnum = pgEnum("whatsapp_account_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
+
+export const tenantWhatsappSettings = pgTable("tenant_whatsapp_settings", {
+  tenantId: text("tenant_id")
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  wabaId: text("waba_id").notNull(),
+  phoneNumberId: text("phone_number_id").notNull(),
+  phoneNumber: text("phone_number"),
+  displayName: text("display_name"),
+  accessTokenEncrypted: text("access_token_encrypted").notNull(),
+  businessPortfolioId: text("business_portfolio_id"),
+  accountStatus: whatsappAccountStatusEnum("account_status").notNull().default("pending"),
+  enabled: boolean("enabled").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ---------- tenant_analytics_settings ----------
 
 export const tenantAnalyticsSettings = pgTable("tenant_analytics_settings", {
@@ -904,6 +928,7 @@ export const schema = {
   orderItems,
   tenantPaymentSettings,
   tenantDeliverySettings,
+  tenantWhatsappSettings,
   tenantAnalyticsSettings,
   paymentWebhookEvents,
   creditAdjustments,

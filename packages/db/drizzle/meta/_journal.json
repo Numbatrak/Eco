@@ -127,6 +127,13 @@
       "when": 1785903926809,
       "tag": "0017_gray_jetstream",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786463674800,
+      "tag": "0018_striped_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

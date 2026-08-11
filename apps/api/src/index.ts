@@ -43,6 +43,7 @@ import deliveryRoutes from "./modules/delivery/routes/index.js";
 import customersRoutes from "./modules/customers/routes/index.js";
 import catalogRoutes from "./modules/catalog/routes/index.js";
 import analyticsRoutes from "./modules/analytics/routes/index.js";
+import whatsappRoutes from "./modules/whatsapp/routes/index.js";
 import platformAdminRoutes from "./modules/platform-admin/routes/index.js";
 import platformBillingRoutes from "./modules/platform-billing/routes/index.js";
 import { recordError } from "./modules/platform-admin/lib/operations-store.js";
@@ -93,6 +94,7 @@ await app.register(deliveryRoutes);
 await app.register(customersRoutes);
 await app.register(catalogRoutes);
 await app.register(analyticsRoutes);
+await app.register(whatsappRoutes);
 await app.register(platformAdminRoutes);
 await app.register(platformBillingRoutes);
 
