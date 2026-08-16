@@ -366,14 +366,29 @@ Resources:
             Path: /{proxy+}
             Method: ANY
       Policies:
-        - AmazonSESFullAccess
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow
               Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: "*"
+            - Effect: Allow
+              Action:
                 - secretsmanager:GetSecretValue
               Resource: !Ref DBSecret
+            - Effect: Allow
+              Action:
+                - ec2:CreateNetworkInterface
+                - ec2:DescribeNetworkInterfaces
+                - ec2:DeleteNetworkInterface
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: "*"
 
 Outputs:
   ApiUrl:
