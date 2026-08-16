@@ -1,0 +1,401 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Platform API - Fastify on Lambda with Aurora Serverless v2 and ElastiCache Serverless
+
+Parameters:
+  StageName:
+    Type: String
+    Default: prod
+    AllowedValues: [prod, staging]
+
+  DBName:
+    Type: String
+    Default: platform
+
+  DBMasterUsername:
+    Type: String
+    Default: platform_admin
+
+  BetterAuthSecret:
+    Type: String
+    NoEcho: true
+
+  SecretEncryptionKey:
+    Type: String
+    NoEcho: true
+
+  EmailFrom:
+    Type: String
+    Default: noreply@yourdomain.com
+
+  PublicAppUrl:
+    Type: String
+    Description: Admin SPA origin (CORS)
+
+  StorefrontAppUrl:
+    Type: String
+    Description: Storefront origin (CORS)
+
+  NumbatrakAppUrl:
+    Type: String
+    Description: Numbatrak SPA origin (CORS)
+
+  StorefrontBaseUrlTemplate:
+    Type: String
+    Default: "https://{subdomain}.yourdomain.com"
+
+  BetterAuthUrl:
+    Type: String
+    Description: This API's public URL (Better Auth callback links)
+
+  MetaAppId:
+    Type: String
+    Default: ""
+
+  MetaAppSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # VPC
+  # ---------------------------------------------------------------------------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub platform-${StageName}-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public subnets (NAT Gateway lives here)
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub platform-${StageName}-public-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub platform-${StageName}-public-2
+
+  # Private subnets (Lambda, Aurora, ElastiCache)
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub platform-${StageName}-private-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub platform-${StageName}-private-2
+
+  # Routing - public
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # NAT Gateway (Lambda needs internet access for SES, external APIs)
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+
+  # Routing - private
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RTA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ---------------------------------------------------------------------------
+  # Security Groups
+  # ---------------------------------------------------------------------------
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Lambda function SG
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrBlock: 0.0.0.0/0
+
+  AuroraSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Aurora Serverless v2 SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  ElastiCacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache Serverless SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  # ---------------------------------------------------------------------------
+  # Aurora Serverless v2 (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnets for Aurora
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub platform-${StageName}-db-secret
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${DBMasterUsername}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: "16.4"
+      DatabaseName: !Ref DBName
+      MasterUsername: !Sub "{{resolve:secretsmanager:${DBSecret}:SecretString:username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${DBSecret}:SecretString:password}}"
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref AuroraSecurityGroup
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: 0.5
+        MaxCapacity: 4
+      StorageEncrypted: true
+      DeletionProtection: true
+
+  AuroraInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraCluster
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
+      PubliclyAccessible: false
+
+  # ---------------------------------------------------------------------------
+  # ElastiCache Serverless (Redis)
+  # ---------------------------------------------------------------------------
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Private subnets for Redis
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RedisServerless:
+    Type: AWS::ElastiCache::ServerlessCache
+    Properties:
+      ServerlessCacheName: !Sub platform-${StageName}-redis
+      Engine: redis
+      SecurityGroupIds:
+        - !Ref ElastiCacheSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  # ---------------------------------------------------------------------------
+  # Lambda + API Gateway
+  # ---------------------------------------------------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref StageName
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref PublicAppUrl
+          - !Ref StorefrontAppUrl
+          - !Ref NumbatrakAppUrl
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - Cookie
+        AllowCredentials: true
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub platform-api-${StageName}
+      Handler: lambda.handler
+      CodeUri: .build/
+      Runtime: nodejs20.x
+      Architectures: [arm64]
+      MemorySize: 1024
+      Timeout: 30
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          NODE_OPTIONS: "--enable-source-maps"
+          DATABASE_URL: !Sub
+            - "postgresql://${User}:${Pass}@${Host}:5432/${DBName}?sslmode=require"
+            - User: !Sub "{{resolve:secretsmanager:${DBSecret}:SecretString:username}}"
+              Pass: !Sub "{{resolve:secretsmanager:${DBSecret}:SecretString:password}}"
+              Host: !GetAtt AuroraCluster.Endpoint.Address
+          REDIS_URL: !Sub
+            - "rediss://${Host}:6379"
+            - Host: !GetAtt RedisServerless.Endpoint.Address
+          BETTER_AUTH_SECRET: !Ref BetterAuthSecret
+          BETTER_AUTH_URL: !Ref BetterAuthUrl
+          SECRET_ENCRYPTION_KEY: !Ref SecretEncryptionKey
+          EMAIL_FROM: !Ref EmailFrom
+          PUBLIC_APP_URL: !Ref PublicAppUrl
+          STOREFRONT_APP_URL: !Ref StorefrontAppUrl
+          NUMBATRAK_APP_URL: !Ref NumbatrakAppUrl
+          STOREFRONT_BASE_URL_TEMPLATE: !Ref StorefrontBaseUrlTemplate
+          META_APP_ID: !Ref MetaAppId
+          META_APP_SECRET: !Ref MetaAppSecret
+      Events:
+        CatchAll:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+      Policies:
+        - AmazonSESFullAccess
+        - VPCAccessExecutionRole
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Ref DBSecret
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+
+  AuroraEndpoint:
+    Description: Aurora cluster endpoint (for running migrations)
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+
+  RedisEndpoint:
+    Description: ElastiCache Serverless endpoint
+    Value: !GetAtt RedisServerless.Endpoint.Address
+
+  VpcId:
+    Description: VPC ID (needed for bastion/migration runner)
+    Value: !Ref VPC
+
+  PrivateSubnets:
+    Description: Private subnet IDs
+    Value: !Sub "${PrivateSubnet1},${PrivateSubnet2}"
+
+  LambdaSecurityGroupId:
+    Description: Lambda SG (reuse for migration runner)
+    Value: !Ref LambdaSecurityGroup

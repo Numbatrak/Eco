@@ -1,0 +1,10 @@
+[default.deploy.parameters]
+stack_name = "platform-api"
+resolve_s3 = true
+s3_prefix = "platform-api"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = false
+
+[default.build.parameters]
+cached = true

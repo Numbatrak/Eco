@@ -1,0 +1,76 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "packages/db/**"
+      - "packages/shared-types/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm turbo run build --filter=@platform/db --filter=@platform/shared-types
+
+      - name: Build Lambda bundle
+        run: node apps/api/build.mjs
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: SAM deploy
+        working-directory: apps/api
+        run: |
+          sam deploy \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              StageName=prod \
+              BetterAuthSecret=${{ secrets.BETTER_AUTH_SECRET }} \
+              SecretEncryptionKey=${{ secrets.SECRET_ENCRYPTION_KEY }} \
+              EmailFrom=${{ secrets.EMAIL_FROM }} \
+              PublicAppUrl=${{ secrets.PUBLIC_APP_URL }} \
+              StorefrontAppUrl=${{ secrets.STOREFRONT_APP_URL }} \
+              NumbatrakAppUrl=${{ secrets.NUMBATRAK_APP_URL }} \
+              BetterAuthUrl=${{ secrets.BETTER_AUTH_URL }} \
+              StorefrontBaseUrlTemplate=${{ secrets.STOREFRONT_BASE_URL_TEMPLATE }} \
+              MetaAppId=${{ secrets.META_APP_ID }} \
+              MetaAppSecret=${{ secrets.META_APP_SECRET }}
