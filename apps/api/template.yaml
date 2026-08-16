@@ -367,7 +367,7 @@ Resources:
             Method: ANY
       Policies:
         - AmazonSESFullAccess
-        - VPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow
