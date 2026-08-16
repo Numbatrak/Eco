@@ -204,7 +204,7 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupEgress:
         - IpProtocol: "-1"
-          CidrBlock: 0.0.0.0/0
+          CidrIp: 0.0.0.0/0
 
   AuroraSecurityGroup:
     Type: AWS::EC2::SecurityGroup
