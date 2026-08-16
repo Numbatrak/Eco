@@ -59,18 +59,29 @@ jobs:
 
       - name: SAM deploy
         working-directory: apps/api
+        env:
+          P_BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          P_SECRET_ENCRYPTION_KEY: ${{ secrets.SECRET_ENCRYPTION_KEY }}
+          P_EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          P_PUBLIC_APP_URL: ${{ secrets.PUBLIC_APP_URL }}
+          P_STOREFRONT_APP_URL: ${{ secrets.STOREFRONT_APP_URL }}
+          P_NUMBATRAK_APP_URL: ${{ secrets.NUMBATRAK_APP_URL }}
+          P_BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          P_STOREFRONT_BASE_URL_TEMPLATE: ${{ secrets.STOREFRONT_BASE_URL_TEMPLATE }}
+          P_META_APP_ID: ${{ secrets.META_APP_ID }}
+          P_META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
         run: |
           sam deploy \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
-              StageName=prod \
-              BetterAuthSecret=${{ secrets.BETTER_AUTH_SECRET }} \
-              SecretEncryptionKey=${{ secrets.SECRET_ENCRYPTION_KEY }} \
-              EmailFrom=${{ secrets.EMAIL_FROM }} \
-              PublicAppUrl=${{ secrets.PUBLIC_APP_URL }} \
-              StorefrontAppUrl=${{ secrets.STOREFRONT_APP_URL }} \
-              NumbatrakAppUrl=${{ secrets.NUMBATRAK_APP_URL }} \
-              BetterAuthUrl=${{ secrets.BETTER_AUTH_URL }} \
-              StorefrontBaseUrlTemplate=${{ secrets.STOREFRONT_BASE_URL_TEMPLATE }} \
-              MetaAppId=${{ secrets.META_APP_ID }} \
-              MetaAppSecret=${{ secrets.META_APP_SECRET }}
+              "StageName=prod" \
+              "BetterAuthSecret=${P_BETTER_AUTH_SECRET:-changeme}" \
+              "SecretEncryptionKey=${P_SECRET_ENCRYPTION_KEY:-changeme}" \
+              "EmailFrom=${P_EMAIL_FROM:-noreply@example.com}" \
+              "PublicAppUrl=${P_PUBLIC_APP_URL:-https://localhost:3002}" \
+              "StorefrontAppUrl=${P_STOREFRONT_APP_URL:-https://localhost:3000}" \
+              "NumbatrakAppUrl=${P_NUMBATRAK_APP_URL:-https://localhost:3003}" \
+              "BetterAuthUrl=${P_BETTER_AUTH_URL:-https://localhost:3001}" \
+              "StorefrontBaseUrlTemplate=${P_STOREFRONT_BASE_URL_TEMPLATE:-https://{subdomain}.localhost}" \
+              "MetaAppId=${P_META_APP_ID:-none}" \
+              "MetaAppSecret=${P_META_APP_SECRET:-none}"
