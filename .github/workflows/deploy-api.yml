@@ -73,6 +73,7 @@ jobs:
         run: |
           sam deploy \
             --no-fail-on-empty-changeset \
+            --on-failure DELETE \
             --parameter-overrides \
               "StageName=prod" \
               "BetterAuthSecret=${P_BETTER_AUTH_SECRET:-changeme}" \
