@@ -60,6 +60,8 @@ jobs:
       - name: SAM deploy
         working-directory: apps/api
         env:
+          P_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          P_REDIS_URL: ${{ secrets.REDIS_URL }}
           P_BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           P_SECRET_ENCRYPTION_KEY: ${{ secrets.SECRET_ENCRYPTION_KEY }}
           P_EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
@@ -76,6 +78,8 @@ jobs:
             --on-failure DELETE \
             --parameter-overrides \
               "StageName=prod" \
+              "DatabaseUrl=${P_DATABASE_URL:-postgresql://localhost:5432/platform}" \
+              "RedisUrl=${P_REDIS_URL:-redis://localhost:6379}" \
               "BetterAuthSecret=${P_BETTER_AUTH_SECRET:-changeme}" \
               "SecretEncryptionKey=${P_SECRET_ENCRYPTION_KEY:-changeme}" \
               "EmailFrom=${P_EMAIL_FROM:-noreply@example.com}" \
