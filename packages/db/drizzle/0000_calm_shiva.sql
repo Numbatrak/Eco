@@ -2,11 +2,17 @@ CREATE TYPE "public"."affiliate_status" AS ENUM('active', 'paused');--> statemen
 CREATE TYPE "public"."announcement_audience" AS ENUM('all', 'tier', 'tenant');--> statement-breakpoint
 CREATE TYPE "public"."exit_survey_type" AS ENUM('cancel', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."expense_parent_category" AS ENUM('advertising', 'marketing', 'building', 'operational');--> statement-breakpoint
+CREATE TYPE "public"."order_status" AS ENUM('pending', 'paid', 'shipped', 'delivered', 'failed', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."payment_mode" AS ENUM('test', 'live');--> statement-breakpoint
+CREATE TYPE "public"."payment_provider" AS ENUM('paystack', 'flutterwave');--> statement-breakpoint
 CREATE TYPE "public"."platform_credit_type" AS ENUM('email', 'whatsapp');--> statement-breakpoint
 CREATE TYPE "public"."platform_subscription_status" AS ENUM('trial', 'active', 'past_due', 'locked', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."platform_transaction_status" AS ENUM('success', 'failed', 'refunded');--> statement-breakpoint
 CREATE TYPE "public"."platform_transaction_type" AS ENUM('subscription', 'credit_purchase');--> statement-breakpoint
+CREATE TYPE "public"."product_status" AS ENUM('draft', 'published');--> statement-breakpoint
+CREATE TYPE "public"."security_event_type" AS ENUM('login_success', 'login_failed', '2fa_challenge_issued', '2fa_verified', '2fa_failed', '2fa_enabled', '2fa_disabled', 'backup_code_used', 'backup_codes_regenerated', 'password_reset_requested', 'password_reset_completed', 'sessions_revoked');--> statement-breakpoint
 CREATE TYPE "public"."whatsapp_account_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
+CREATE TYPE "public"."organization_status" AS ENUM('active', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."numbatrak_product_offer_type" AS ENUM('single', 'quantity_tier', 'bundle', 'buy_x_get_y');--> statement-breakpoint
 CREATE TYPE "public"."numbatrak_product_type" AS ENUM('NORMAL', 'INCENTIVE');--> statement-breakpoint
 CREATE TABLE "affiliate_payouts" (
@@ -43,6 +49,47 @@ CREATE TABLE "announcements" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "cart_items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"cart_id" uuid NOT NULL,
+	"product_id" uuid NOT NULL,
+	"variant_id" uuid,
+	"quantity" integer DEFAULT 1 NOT NULL,
+	"unit_price_snapshot_cents" integer NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "carts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"cart_token" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "collections" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"name" text NOT NULL,
+	"slug" text NOT NULL,
+	"description" text,
+	"image_url" text,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "credit_adjustments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"admin_id" text,
+	"delta" integer NOT NULL,
+	"reason" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "credit_bundles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"credit_type" "platform_credit_type" NOT NULL,
@@ -50,6 +97,21 @@ CREATE TABLE "credit_bundles" (
 	"units" integer NOT NULL,
 	"price_cents" integer NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "customers" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"phone" text,
+	"address" text,
+	"city" text,
+	"state" text,
+	"order_count" integer DEFAULT 0 NOT NULL,
+	"total_spent_cents" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -83,6 +145,77 @@ CREATE TABLE "expenses" (
 	"deleted_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "feature_flags" (
+	"key" text PRIMARY KEY NOT NULL,
+	"enabled" boolean DEFAULT false NOT NULL,
+	"description" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "order_items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"order_id" uuid NOT NULL,
+	"product_id" uuid,
+	"name_snapshot" text NOT NULL,
+	"unit_price_snapshot_cents" integer NOT NULL,
+	"quantity" integer NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "orders" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"customer_id" uuid,
+	"order_number" text NOT NULL,
+	"customer_name" text NOT NULL,
+	"customer_email" text NOT NULL,
+	"customer_phone" text,
+	"status" "order_status" DEFAULT 'pending' NOT NULL,
+	"currency" text NOT NULL,
+	"subtotal_cents" integer NOT NULL,
+	"delivery_address" text,
+	"delivery_city" text,
+	"delivery_state" text,
+	"delivery_fee_cents" integer DEFAULT 0 NOT NULL,
+	"vat_rate_bps" integer,
+	"vat_amount_cents" integer DEFAULT 0 NOT NULL,
+	"total_cents" integer NOT NULL,
+	"payment_provider" "payment_provider" NOT NULL,
+	"payment_reference" text,
+	"utm_source" text,
+	"utm_medium" text,
+	"utm_campaign" text,
+	"utm_term" text,
+	"utm_content" text,
+	"referrer" text,
+	"landing_path" text,
+	"fbclid" text,
+	"ttclid" text,
+	"gclid" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "payment_webhook_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text,
+	"provider" "payment_provider" NOT NULL,
+	"event_reference" text NOT NULL,
+	"payload" jsonb NOT NULL,
+	"processed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_audit_log" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"admin_id" text,
+	"action" text NOT NULL,
+	"target_type" text,
+	"target_id" text,
+	"details" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "platform_billing_webhook_events" (
@@ -152,6 +285,12 @@ CREATE TABLE "platform_plans" (
 	CONSTRAINT "platform_plans_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
+CREATE TABLE "platform_settings" (
+	"key" text PRIMARY KEY NOT NULL,
+	"value" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "platform_subscriptions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,
@@ -189,6 +328,87 @@ CREATE TABLE "platform_transactions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "product_variants" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"product_id" uuid NOT NULL,
+	"size" text NOT NULL,
+	"color" text NOT NULL,
+	"stock_count" integer DEFAULT 0 NOT NULL,
+	"is_available" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "products" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" text NOT NULL,
+	"collection_id" uuid,
+	"name" text NOT NULL,
+	"description" text,
+	"price_cents" integer NOT NULL,
+	"compare_at_price_cents" integer,
+	"currency" text NOT NULL,
+	"image_url" text,
+	"status" "product_status" DEFAULT 'draft' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "reserved_subdomains" (
+	"word" text PRIMARY KEY NOT NULL,
+	"added_by" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "security_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" text,
+	"event_type" "security_event_type" NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_analytics_settings" (
+	"tenant_id" text PRIMARY KEY NOT NULL,
+	"meta_pixel_id" text,
+	"meta_capi_token_encrypted" text,
+	"enabled" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_delivery_settings" (
+	"tenant_id" text PRIMARY KEY NOT NULL,
+	"vat_enabled" boolean DEFAULT false NOT NULL,
+	"vat_rate_bps" integer DEFAULT 0 NOT NULL,
+	"delivery_fee_cents" integer DEFAULT 0 NOT NULL,
+	"free_delivery_threshold_cents" integer,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_payment_settings" (
+	"tenant_id" text PRIMARY KEY NOT NULL,
+	"provider" "payment_provider" NOT NULL,
+	"public_key" text,
+	"secret_key_encrypted" text,
+	"mode" "payment_mode" DEFAULT 'test' NOT NULL,
+	"enabled" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_site_config" (
+	"tenant_id" text PRIMARY KEY NOT NULL,
+	"theme" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"sections" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"products_grid_enabled" boolean DEFAULT false NOT NULL,
+	"published_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "tenant_whatsapp_settings" (
 	"tenant_id" text PRIMARY KEY NOT NULL,
 	"waba_id" text NOT NULL,
@@ -210,6 +430,164 @@ CREATE TABLE "user_activity_days" (
 	"activity_date" date NOT NULL,
 	"last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp,
+	"refresh_token_expires_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "invitation" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"email" text NOT NULL,
+	"role" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"inviter_id" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "member" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"role" text DEFAULT 'viewer' NOT NULL,
+	"created_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "organization" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"slug" text NOT NULL,
+	"logo" text,
+	"created_at" timestamp NOT NULL,
+	"metadata" text,
+	"status" "organization_status" DEFAULT 'active' NOT NULL,
+	"plan" text DEFAULT 'free' NOT NULL,
+	"plan_id" uuid,
+	"signup_utm_source" text,
+	"signup_utm_medium" text,
+	"signup_utm_campaign" text,
+	"signup_utm_content" text,
+	"signup_utm_term" text,
+	"signup_referrer" text,
+	"signup_landing_path" text,
+	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	"active_organization_id" text,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "two_factor" (
+	"id" text PRIMARY KEY NOT NULL,
+	"secret" text NOT NULL,
+	"backup_codes" text NOT NULL,
+	"user_id" text NOT NULL,
+	"verified" boolean DEFAULT true,
+	"failed_verification_count" integer DEFAULT 0,
+	"locked_until" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"two_factor_enabled" boolean DEFAULT false,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp,
+	"refresh_token_expires_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	CONSTRAINT "platform_admin_session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_two_factor" (
+	"id" text PRIMARY KEY NOT NULL,
+	"secret" text NOT NULL,
+	"backup_codes" text NOT NULL,
+	"user_id" text NOT NULL,
+	"verified" boolean DEFAULT true,
+	"failed_verification_count" integer DEFAULT 0,
+	"locked_until" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"two_factor_enabled" boolean DEFAULT false,
+	CONSTRAINT "platform_admin_user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "platform_admin_verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "numbatrak_agents" (
@@ -1179,21 +1557,27 @@ CREATE TABLE "numbatrak_invoices" (
 	CONSTRAINT "numbatrak_invoices_status_chk" CHECK ("numbatrak_invoices"."status" IN ('draft', 'sent', 'paid', 'void'))
 );
 --> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "plan_id" uuid;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_utm_source" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_utm_medium" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_utm_campaign" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_utm_content" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_utm_term" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_referrer" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "signup_landing_path" text;--> statement-breakpoint
 ALTER TABLE "affiliate_payouts" ADD CONSTRAINT "affiliate_payouts_affiliate_id_affiliates_id_fk" FOREIGN KEY ("affiliate_id") REFERENCES "public"."affiliates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "affiliate_payouts" ADD CONSTRAINT "affiliate_payouts_recorded_by_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("recorded_by_admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "affiliates" ADD CONSTRAINT "affiliates_created_by_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("created_by_admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "announcements" ADD CONSTRAINT "announcements_created_by_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("created_by_admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cart_id_carts_id_fk" FOREIGN KEY ("cart_id") REFERENCES "public"."carts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_product_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."product_variants"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "carts" ADD CONSTRAINT "carts_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "collections" ADD CONSTRAINT "collections_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "credit_adjustments" ADD CONSTRAINT "credit_adjustments_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "credit_adjustments" ADD CONSTRAINT "credit_adjustments_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customers" ADD CONSTRAINT "customers_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exit_surveys" ADD CONSTRAINT "exit_surveys_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_sub_category_id_expense_sub_categories_id_fk" FOREIGN KEY ("sub_category_id") REFERENCES "public"."expense_sub_categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_recorded_by_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("recorded_by_admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_webhook_events" ADD CONSTRAINT "payment_webhook_events_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "platform_admin_audit_log" ADD CONSTRAINT "platform_admin_audit_log_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platform_credit_ledger" ADD CONSTRAINT "platform_credit_ledger_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platform_credit_ledger" ADD CONSTRAINT "platform_credit_ledger_admin_id_platform_admin_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platform_credit_ledger" ADD CONSTRAINT "platform_credit_ledger_transaction_id_platform_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."platform_transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -1201,9 +1585,28 @@ ALTER TABLE "platform_credit_pricing" ADD CONSTRAINT "platform_credit_pricing_up
 ALTER TABLE "platform_subscriptions" ADD CONSTRAINT "platform_subscriptions_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platform_subscriptions" ADD CONSTRAINT "platform_subscriptions_plan_id_platform_plans_id_fk" FOREIGN KEY ("plan_id") REFERENCES "public"."platform_plans"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platform_transactions" ADD CONSTRAINT "platform_transactions_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_collection_id_collections_id_fk" FOREIGN KEY ("collection_id") REFERENCES "public"."collections"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reserved_subdomains" ADD CONSTRAINT "reserved_subdomains_added_by_platform_admin_user_id_fk" FOREIGN KEY ("added_by") REFERENCES "public"."platform_admin_user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "security_events" ADD CONSTRAINT "security_events_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_analytics_settings" ADD CONSTRAINT "tenant_analytics_settings_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_delivery_settings" ADD CONSTRAINT "tenant_delivery_settings_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_payment_settings" ADD CONSTRAINT "tenant_payment_settings_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_site_config" ADD CONSTRAINT "tenant_site_config_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tenant_whatsapp_settings" ADD CONSTRAINT "tenant_whatsapp_settings_tenant_id_organization_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_activity_days" ADD CONSTRAINT "user_activity_days_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_activity_days" ADD CONSTRAINT "user_activity_days_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "two_factor" ADD CONSTRAINT "two_factor_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "platform_admin_account" ADD CONSTRAINT "platform_admin_account_user_id_platform_admin_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "platform_admin_session" ADD CONSTRAINT "platform_admin_session_user_id_platform_admin_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "platform_admin_two_factor" ADD CONSTRAINT "platform_admin_two_factor_user_id_platform_admin_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."platform_admin_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "numbatrak_agents" ADD CONSTRAINT "numbatrak_agents_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "numbatrak_csr_name_aliases" ADD CONSTRAINT "numbatrak_csr_name_aliases_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "numbatrak_csr_name_aliases" ADD CONSTRAINT "numbatrak_csr_name_aliases_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -1347,11 +1750,30 @@ ALTER TABLE "numbatrak_invoices" ADD CONSTRAINT "numbatrak_invoices_order_id_num
 ALTER TABLE "numbatrak_invoices" ADD CONSTRAINT "numbatrak_invoices_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "affiliate_payouts_affiliate_idx" ON "affiliate_payouts" USING btree ("affiliate_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "affiliates_code_unique_idx" ON "affiliates" USING btree ("code");--> statement-breakpoint
+CREATE UNIQUE INDEX "cart_items_cart_product_variant_unique_idx" ON "cart_items" USING btree ("cart_id","product_id","variant_id");--> statement-breakpoint
+CREATE INDEX "cart_items_cart_idx" ON "cart_items" USING btree ("cart_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "carts_cart_token_unique_idx" ON "carts" USING btree ("cart_token");--> statement-breakpoint
+CREATE INDEX "carts_tenant_idx" ON "carts" USING btree ("tenant_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "collections_tenant_slug_unique_idx" ON "collections" USING btree ("tenant_id","slug");--> statement-breakpoint
+CREATE INDEX "collections_tenant_idx" ON "collections" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "credit_adjustments_tenant_idx" ON "credit_adjustments" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "credit_bundles_type_idx" ON "credit_bundles" USING btree ("credit_type");--> statement-breakpoint
+CREATE UNIQUE INDEX "customers_tenant_email_unique_idx" ON "customers" USING btree ("tenant_id","email");--> statement-breakpoint
+CREATE INDEX "customers_tenant_idx" ON "customers" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "exit_surveys_created_at_idx" ON "exit_surveys" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "expense_sub_categories_parent_idx" ON "expense_sub_categories" USING btree ("parent_category");--> statement-breakpoint
 CREATE INDEX "expenses_occurred_at_idx" ON "expenses" USING btree ("occurred_at");--> statement-breakpoint
 CREATE INDEX "expenses_parent_category_idx" ON "expenses" USING btree ("parent_category");--> statement-breakpoint
+CREATE INDEX "order_items_order_idx" ON "order_items" USING btree ("order_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "orders_order_number_unique_idx" ON "orders" USING btree ("order_number");--> statement-breakpoint
+CREATE UNIQUE INDEX "orders_payment_reference_unique_idx" ON "orders" USING btree ("payment_reference");--> statement-breakpoint
+CREATE INDEX "orders_tenant_idx" ON "orders" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "orders_tenant_status_idx" ON "orders" USING btree ("tenant_id","status");--> statement-breakpoint
+CREATE INDEX "orders_customer_idx" ON "orders" USING btree ("customer_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "payment_webhook_events_provider_reference_unique_idx" ON "payment_webhook_events" USING btree ("provider","event_reference");--> statement-breakpoint
+CREATE INDEX "payment_webhook_events_tenant_idx" ON "payment_webhook_events" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "platform_admin_audit_log_admin_idx" ON "platform_admin_audit_log" USING btree ("admin_id");--> statement-breakpoint
+CREATE INDEX "platform_admin_audit_log_created_at_idx" ON "platform_admin_audit_log" USING btree ("created_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "platform_billing_webhook_events_reference_unique_idx" ON "platform_billing_webhook_events" USING btree ("event_reference");--> statement-breakpoint
 CREATE INDEX "platform_credit_ledger_org_idx" ON "platform_credit_ledger" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "platform_credit_ledger_org_type_idx" ON "platform_credit_ledger" USING btree ("organization_id","credit_type");--> statement-breakpoint
@@ -1367,9 +1789,31 @@ CREATE INDEX "platform_transactions_org_idx" ON "platform_transactions" USING bt
 CREATE INDEX "platform_transactions_status_idx" ON "platform_transactions" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "platform_transactions_created_at_idx" ON "platform_transactions" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "platform_transactions_refunded_at_idx" ON "platform_transactions" USING btree ("refunded_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "product_variants_product_size_color_unique_idx" ON "product_variants" USING btree ("product_id","size","color");--> statement-breakpoint
+CREATE INDEX "product_variants_product_idx" ON "product_variants" USING btree ("product_id");--> statement-breakpoint
+CREATE INDEX "products_tenant_idx" ON "products" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "products_tenant_status_idx" ON "products" USING btree ("tenant_id","status");--> statement-breakpoint
+CREATE INDEX "products_collection_idx" ON "products" USING btree ("collection_id");--> statement-breakpoint
+CREATE INDEX "security_events_user_idx" ON "security_events" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "security_events_event_type_idx" ON "security_events" USING btree ("event_type");--> statement-breakpoint
 CREATE UNIQUE INDEX "user_activity_days_user_date_unique_idx" ON "user_activity_days" USING btree ("user_id","activity_date");--> statement-breakpoint
 CREATE INDEX "user_activity_days_date_idx" ON "user_activity_days" USING btree ("activity_date");--> statement-breakpoint
 CREATE INDEX "user_activity_days_org_idx" ON "user_activity_days" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "invitation_organizationId_idx" ON "invitation" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "invitation_email_idx" ON "invitation" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "member_organizationId_idx" ON "member" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "member_userId_idx" ON "member" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "organization_slug_uidx" ON "organization" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "twoFactor_secret_idx" ON "two_factor" USING btree ("secret");--> statement-breakpoint
+CREATE INDEX "twoFactor_userId_idx" ON "two_factor" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
+CREATE INDEX "platform_admin_account_userId_idx" ON "platform_admin_account" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "platform_admin_session_userId_idx" ON "platform_admin_session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "platform_admin_two_factor_secret_idx" ON "platform_admin_two_factor" USING btree ("secret");--> statement-breakpoint
+CREATE INDEX "platform_admin_two_factor_userId_idx" ON "platform_admin_two_factor" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "platform_admin_verification_identifier_idx" ON "platform_admin_verification" USING btree ("identifier");--> statement-breakpoint
 CREATE INDEX "numbatrak_agents_name_idx" ON "numbatrak_agents" USING btree ("name");--> statement-breakpoint
 CREATE INDEX "numbatrak_agents_org_idx" ON "numbatrak_agents" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "numbatrak_agents_active_idx" ON "numbatrak_agents" USING btree ("active");--> statement-breakpoint
