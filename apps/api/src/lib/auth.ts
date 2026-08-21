@@ -76,15 +76,31 @@ async function findMemberRole(organizationId: string, userId: string): Promise<s
   return result[0]?.role ?? null;
 }
 
+const betterAuthUrl =
+  process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3001}`;
+
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3001}`,
+  baseURL: betterAuthUrl,
   trustedOrigins: [
     process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
     process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
     process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003",
   ],
+  // Numbatrak (apps/numbatrak) is a standalone SPA that calls this API
+  // genuinely cross-site (different registrable domain, e.g. localhost
+  // during local frontend dev against a deployed API, or numbatrak.io vs
+  // numbatrak.com in production) - the default SameSite=Lax session cookie
+  // is never attached to those fetch()/XHR calls, so /auth/me always 401s
+  // even right after a successful login. SameSite=None requires Secure,
+  // which requires HTTPS, so only opt in when the API itself is served over
+  // HTTPS - local http://localhost-to-http://localhost dev is same-site
+  // already (SameSite only compares scheme+host, not port) and keeps
+  // working under the Lax default.
+  advanced: betterAuthUrl.startsWith("https://")
+    ? { defaultCookieAttributes: { sameSite: "none", secure: true } }
+    : undefined,
   emailAndPassword: {
     enabled: true,
     // Matches today's actual behavior - the old login.ts never checked
