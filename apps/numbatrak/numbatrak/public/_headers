@@ -1,0 +1,9 @@
+/embed.js
+  Access-Control-Allow-Origin: *
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/embed.css
+  Access-Control-Allow-Origin: *
+  Content-Type: text/css
+  Cache-Control: no-cache, no-store, must-revalidate
