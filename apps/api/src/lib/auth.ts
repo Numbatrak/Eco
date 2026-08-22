@@ -97,9 +97,13 @@ export const auth = betterAuth({
   // which requires HTTPS, so only opt in when the API itself is served over
   // HTTPS - local http://localhost-to-http://localhost dev is same-site
   // already (SameSite only compares scheme+host, not port) and keeps
-  // working under the Lax default.
+  // working under the Lax default. `partitioned` (CHIPS) is required
+  // alongside SameSite=None because Chrome now blocks unpartitioned
+  // cross-site cookies by default - without it the browser silently drops
+  // the cookie (visible as `sec-fetch-storage-access: none` on requests)
+  // and /auth/me 401s even though CORS and the cookie itself are correct.
   advanced: betterAuthUrl.startsWith("https://")
-    ? { defaultCookieAttributes: { sameSite: "none", secure: true } }
+    ? { defaultCookieAttributes: { sameSite: "none", secure: true, partitioned: true } }
     : undefined,
   emailAndPassword: {
     enabled: true,
