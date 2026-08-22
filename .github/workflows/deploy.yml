@@ -1,0 +1,40 @@
+name: Deploy API to EC2
+
+on:
+  push:
+    branches:
+      - main # Change to 'master' or your default branch if different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH and Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "1. Navigating to project directory..."
+            cd /home/ubuntu/Eco
+
+            echo "2. Pulling latest changes from git..."
+            git pull origin main
+
+            echo "3. Installing dependencies..."
+            pnpm install
+
+            echo "4. Building the application (safely in background workspace)..."
+            pnpm --filter api build
+
+            echo "5. Reloading PM2 gracefully without downtime..."
+            pm2 reload numbatrak-api --update-env
+
+            echo "Deployment completed successfully!"
