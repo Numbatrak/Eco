@@ -25,6 +25,18 @@ function parseStoredSiteConfig(theme: unknown, sections: unknown): SiteConfig {
   return parsed.success ? parsed.data : defaultSiteConfig("market");
 }
 
+/**
+ * `/auth/register` provisions this row for every newly-created org (see its
+ * comment), but numbatrak orgs can also arrive without one - accounts
+ * created before that provisioning line shipped, or through any other
+ * org-creation path. Every route that reads or writes tenant_site_config
+ * calls this first so a missing row is never a hard failure (a 404 on the
+ * inner-joined GET, or a silent no-op on the UPDATE-only writes).
+ */
+export async function ensureTenantSiteConfig(db: Database, tenantId: string): Promise<void> {
+  await db.insert(tenantSiteConfig).values({ tenantId }).onConflictDoNothing();
+}
+
 export interface TenantSummary {
   id: string;
   name: string;
