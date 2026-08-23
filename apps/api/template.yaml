@@ -40,7 +40,7 @@ Parameters:
 
   NumbatrakAppUrl:
     Type: String
-    Description: Numbatrak SPA origin (CORS)
+    Description: Numbatrak SPA origin(s) (CORS). Comma-separated to allow more than one during domain cutovers.
 
   StorefrontBaseUrlTemplate:
     Type: String
@@ -71,10 +71,9 @@ Resources:
     Properties:
       StageName: !Ref StageName
       CorsConfiguration:
-        AllowOrigins:
-          - !Ref PublicAppUrl
-          - !Ref StorefrontAppUrl
-          - !Ref NumbatrakAppUrl
+        AllowOrigins: !Split
+          - ","
+          - !Sub "${PublicAppUrl},${StorefrontAppUrl},${NumbatrakAppUrl}"
         AllowMethods:
           - GET
           - POST

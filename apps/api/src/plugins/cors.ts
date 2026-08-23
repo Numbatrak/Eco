@@ -7,7 +7,9 @@ import cors from "@fastify/cors";
  * - STOREFRONT_APP_URL (Next.js storefront + store-owner /dashboard).
  * - NUMBATRAK_APP_URL (apps/numbatrak/numbatrak - a separate Vite SPA, so
  *   unlike the storefront it has no same-origin rewrite and calls this API
- *   genuinely cross-origin).
+ *   genuinely cross-origin). Comma-separated to allow more than one origin
+ *   during domain cutovers (e.g. the old numbatrak.io alongside the new
+ *   app.numbatrak.io).
  *
  * Tenant-subdomain traffic (e.g. shop.localhost:3000) goes through Next's
  * /api/:path* rewrite (apps/storefront/next.config.mjs), so from the API's
@@ -33,10 +35,13 @@ import cors from "@fastify/cors";
 export default fp(async (app) => {
   const adminOrigin = process.env.PUBLIC_APP_URL ?? "http://localhost:3002";
   const storefrontOrigin = process.env.STOREFRONT_APP_URL ?? "http://localhost:3000";
-  const numbatrakOrigin = process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003";
+  const numbatrakOrigins = (process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   await app.register(cors, {
-    origin: [adminOrigin, storefrontOrigin, numbatrakOrigin],
+    origin: [adminOrigin, storefrontOrigin, ...numbatrakOrigins],
     credentials: true,
   });
 });

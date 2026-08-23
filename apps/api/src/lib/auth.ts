@@ -86,7 +86,10 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
     process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
-    process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003",
+    ...(process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
   ],
   // Numbatrak (apps/numbatrak) is a standalone SPA that calls this API
   // genuinely cross-site (different registrable domain, e.g. localhost
