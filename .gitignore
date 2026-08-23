@@ -12,3 +12,6 @@ build
 .drizzle
 .build
 .aws-sam
+.open-next
+.wrangler
+.dev.vars

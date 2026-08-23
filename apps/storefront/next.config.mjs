@@ -1,3 +1,9 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Gives `next dev` access to Cloudflare bindings (env vars, etc.) so local
+// dev behaves like the deployed Worker. No-ops outside of `next dev`.
+initOpenNextCloudflareForDev();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
