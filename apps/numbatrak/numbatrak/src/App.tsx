@@ -69,6 +69,21 @@ const FollowUpsForm = lazy(() => import("./components/FollowUpsForm"));
 const OrganizationSelectionPage = lazy(() =>
   import("./components/organizations/OrganizationSelectionPage").then((m) => ({ default: m.OrganizationSelectionPage })),
 );
+const SiteSettingsPage = lazy(() =>
+  import("./pages/storefront/SiteSettingsPage").then((m) => ({ default: m.SiteSettingsPage })),
+);
+const PaymentSettingsPage = lazy(() =>
+  import("./pages/storefront/PaymentSettingsPage").then((m) => ({ default: m.PaymentSettingsPage })),
+);
+const DeliverySettingsPage = lazy(() =>
+  import("./pages/storefront/DeliverySettingsPage").then((m) => ({ default: m.DeliverySettingsPage })),
+);
+const AnalyticsSettingsPage = lazy(() =>
+  import("./pages/storefront/AnalyticsSettingsPage").then((m) => ({ default: m.AnalyticsSettingsPage })),
+);
+const StorefrontBuilderPage = lazy(() =>
+  import("./pages/storefront/StorefrontBuilderPage").then((m) => ({ default: m.StorefrontBuilderPage })),
+);
 const OrganizationSettingsPage = lazy(() =>
   import("./components/organizations/OrganizationSettingsPage").then((m) => ({ default: m.OrganizationSettingsPage })),
 );
@@ -553,6 +568,46 @@ function AppContent() {
                 <Route
                   path="/organization-settings"
                   element={<OrganizationSettingsPage />}
+                />
+                <Route
+                  path="/storefront/site-settings"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <SiteSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/storefront/payment-settings"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <PaymentSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/storefront/delivery-settings"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <DeliverySettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/storefront/analytics-settings"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <AnalyticsSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/storefront/builder"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <StorefrontBuilderPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </>
