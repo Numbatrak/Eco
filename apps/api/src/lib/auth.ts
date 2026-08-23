@@ -83,14 +83,10 @@ export const auth = betterAuth({
   database: drizzleAdapter(getDb(), { provider: "pg" }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: betterAuthUrl,
-  trustedOrigins: [
-    process.env.PUBLIC_APP_URL ?? "http://localhost:3002",
-    process.env.STOREFRONT_APP_URL ?? "http://localhost:3000",
-    ...(process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003")
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
-  ],
+  // TODO: temporary - deployed env vars aren't picking up domain changes yet,
+  // so trust any origin instead of checking against PUBLIC_APP_URL/
+  // STOREFRONT_APP_URL/NUMBATRAK_APP_URL. Revert once that's sorted out.
+  trustedOrigins: ["*"],
   // Numbatrak (apps/numbatrak) is a standalone SPA that calls this API
   // genuinely cross-site (different registrable domain, e.g. localhost
   // during local frontend dev against a deployed API, or numbatrak.io vs

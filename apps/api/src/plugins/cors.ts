@@ -33,15 +33,12 @@ import cors from "@fastify/cors";
  * registration, is the mechanism.
  */
 export default fp(async (app) => {
-  const adminOrigin = process.env.PUBLIC_APP_URL ?? "http://localhost:3002";
-  const storefrontOrigin = process.env.STOREFRONT_APP_URL ?? "http://localhost:3000";
-  const numbatrakOrigins = (process.env.NUMBATRAK_APP_URL ?? "http://localhost:3003")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
+  // TODO: temporary - deployed env vars aren't picking up domain changes yet,
+  // so reflect back whatever Origin the request sends instead of checking it
+  // against an allowlist. Revert to the PUBLIC_APP_URL/STOREFRONT_APP_URL/
+  // NUMBATRAK_APP_URL allowlist below once that's sorted out.
   await app.register(cors, {
-    origin: [adminOrigin, storefrontOrigin, ...numbatrakOrigins],
+    origin: true,
     credentials: true,
   });
 });
