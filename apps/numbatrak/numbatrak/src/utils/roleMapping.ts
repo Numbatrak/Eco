@@ -30,3 +30,19 @@ export function mapOrgRoleToUserRole(role: OrgRole): UserRole {
       return "Customer Relations";
   }
 }
+
+/** Inverse of mapOrgRoleToUserRole, for writes (invite/update-role calls
+ * against apps/api's Better Auth organization plugin). */
+export function mapUserRoleToOrgRole(role: UserRole): OrgRole {
+  switch (role) {
+    case "Owner":
+      return "owner";
+    case "Admin":
+      return "admin";
+    case "Manager":
+      return "manager";
+    case "Customer Relations":
+    default:
+      return "csr";
+  }
+}

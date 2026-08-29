@@ -98,11 +98,11 @@ export function OrganizationSettingsPage() {
     }
   };
 
-  const handleUpdateRole = async (userId: string, role: "Owner" | "Admin" | "Customer Relations" | "Manager") => {
+  const handleUpdateRole = async (memberId: string, role: "Owner" | "Admin" | "Customer Relations" | "Manager") => {
     if (!currentOrganization) return;
     try {
       setError(null);
-      await updateMemberRole(currentOrganization.id, userId, role);
+      await updateMemberRole(currentOrganization.id, memberId, role);
       setSuccess("Role updated successfully!");
       await loadMembers();
       setEditingMember(null);
@@ -113,7 +113,7 @@ export function OrganizationSettingsPage() {
     }
   };
 
-  const handleRemoveMember = async (userId: string, userName: string) => {
+  const handleRemoveMember = async (memberId: string, userName: string) => {
     if (!currentOrganization) return;
     if (
       !(await confirm({
@@ -127,7 +127,7 @@ export function OrganizationSettingsPage() {
     }
     try {
       setError(null);
-      await removeMember(currentOrganization.id, userId);
+      await removeMember(currentOrganization.id, memberId);
       setSuccess("Member removed successfully!");
       await loadMembers();
       setTimeout(() => setSuccess(null), 3000);
@@ -166,9 +166,9 @@ export function OrganizationSettingsPage() {
     }
   };
 
-  const handleResendInvitation = async (invitationId: string) => {
+  const handleResendInvitation = async (invitation: OrganizationInvitation) => {
     try {
-      await resendInvitation(invitationId, 7);
+      await resendInvitation(invitation);
       setSuccess("Invitation resent successfully!");
       await loadInvitations();
       setTimeout(() => setSuccess(null), 3000);
@@ -505,7 +505,7 @@ export function OrganizationSettingsPage() {
                     </div>
                   </div>
                   <div className="org-settings-member-actions">
-                    {editingMember === member.user_id ? (
+                    {editingMember === member.id ? (
                       <div className="org-settings-member-edit">
                         <select
                           value={newRole}
@@ -518,7 +518,7 @@ export function OrganizationSettingsPage() {
                           <option value="Owner">Owner</option>
                         </select>
                         <button
-                          onClick={() => handleUpdateRole(member.user_id, newRole)}
+                          onClick={() => handleUpdateRole(member.id, newRole)}
                           className="org-settings-save-btn"
                         >
                           Save
@@ -540,7 +540,7 @@ export function OrganizationSettingsPage() {
                           <div className="org-settings-member-buttons">
                             <button
                               onClick={() => {
-                                setEditingMember(member.user_id);
+                                setEditingMember(member.id);
                                 setNewRole(member.role);
                               }}
                               className="org-settings-edit-btn"
@@ -551,7 +551,7 @@ export function OrganizationSettingsPage() {
                               <button
                                 onClick={() =>
                                   handleRemoveMember(
-                                    member.user_id,
+                                    member.id,
                                     getDisplayName(
                                       {
                                         full_name: member.user?.full_name,
@@ -603,8 +603,8 @@ export function OrganizationSettingsPage() {
                   const isExpired = invitation.expires_at
                     ? new Date(invitation.expires_at) < new Date()
                     : false;
-                  const isAccepted = invitation.accepted_at !== null;
-                  const createdDate = invitation.created_at 
+                  const isAccepted = invitation.status === "accepted";
+                  const createdDate = invitation.created_at
                     ? new Date(invitation.created_at).toLocaleDateString() 
                     : 'Unknown';
 

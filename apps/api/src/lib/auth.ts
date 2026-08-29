@@ -8,7 +8,7 @@ import { getDb } from "@platform/db";
 import { ac, orgRoles } from "./access-control.js";
 import { isReservedSubdomain, isValidSubdomainFormat } from "../modules/sites/lib/subdomain.js";
 import { sendEmail } from "../modules/auth/lib/email.js";
-import { passwordResetEmail, otpEmail } from "./email-templates.js";
+import { passwordResetEmail, otpEmail, organizationInvitationEmail } from "./email-templates.js";
 import { logSecurityEvent, type SecurityEventType } from "../modules/auth/lib/security-events.js";
 
 /**
@@ -129,6 +129,20 @@ export const auth = betterAuth({
     organization({
       ac,
       roles: orgRoles,
+      async sendInvitationEmail(data) {
+        const appUrl = process.env.NUMBATRAK_APP_URL ?? "http://localhost:5173";
+        const acceptUrl = `${appUrl}/accept-invitation?code=${encodeURIComponent(data.id)}`;
+        await sendEmail(authLogger, {
+          to: data.email,
+          subject: `You've been invited to join ${data.organization.name}`,
+          body: organizationInvitationEmail({
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name || data.inviter.user.email,
+            role: Array.isArray(data.role) ? data.role.join(", ") : data.role,
+            acceptUrl,
+          }),
+        });
+      },
       organizationHooks: {
         async beforeCreateOrganization({ organization: org }) {
           const slug = org.slug;

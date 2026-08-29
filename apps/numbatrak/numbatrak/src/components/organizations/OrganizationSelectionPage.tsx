@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 import { useOrganization } from "../../contexts/OrganizationContext";
-import { OrganizationWithRole, OrganizationInvitation } from "../../types/organization";
-import { fetchUserOrganizations, createOrganization } from "../../services/organizations";
+import { OrganizationInvitation, OrganizationWithRole } from "../../types/organization";
+import { createOrganization } from "../../services/organizations";
 import { fetchMyPendingInvitations, acceptInvitation } from "../../services/organizationInvitations";
 import { Building2, Plus, ArrowRight, Mail, CheckCircle, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -14,12 +14,10 @@ import "./OrganizationSelectionPage.css";
 
 export function OrganizationSelectionPage() {
   const navigate = useNavigate();
-  const { user } = useSupabaseAuth();
-  const { setCurrentOrganization, refreshOrganizations } = useOrganization();
+  const { switchOrganization } = useAuth();
+  const { organizations, loading } = useOrganization();
   const { theme } = useTheme();
   const logoVariant = theme === "light" ? "onLight" : "onDark";
-  const [organizations, setOrganizations] = useState<OrganizationWithRole[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -29,38 +27,11 @@ export function OrganizationSelectionPage() {
   const [acceptingInvitation, setAcceptingInvitation] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOrganizations();
-  }, []);
-
-  useEffect(() => {
     // Load pending invitations when user has no organizations
     if (!loading && organizations.length === 0) {
       loadPendingInvitations();
     }
   }, [organizations.length, loading]);
-
-  const loadOrganizations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const orgs = await fetchUserOrganizations();
-      setOrganizations(orgs);
-      return orgs;
-    } catch (err: any) {
-      console.error("Error loading organizations:", err);
-      // Provide user-friendly error messages
-      if (err.message?.includes('Network error') || err.message?.includes('Failed to fetch')) {
-        setError(
-          "Unable to connect to the server. Please check your internet connection and try again."
-        );
-      } else {
-        setError(err.message || "Failed to load organizations");
-      }
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadPendingInvitations = async () => {
     try {
@@ -77,39 +48,23 @@ export function OrganizationSelectionPage() {
   };
 
   const handleAcceptInvitation = async (invitation: OrganizationInvitation) => {
-    if (!invitation.invitation_code) {
-      setError("Invalid invitation code");
-      return;
-    }
-
     try {
       setAcceptingInvitation(invitation.id);
       setError(null);
-      
-      const result = await acceptInvitation(invitation.invitation_code);
-      
-      if (result.success) {
-        // Refresh organizations list
-        await refreshOrganizations();
-        const updatedOrgs = await loadOrganizations();
-        
-        // If we successfully joined an organization, navigate to dashboard
-        // The organization will be automatically selected by the context
-        if (updatedOrgs && updatedOrgs.length > 0) {
-          // Find the organization we just joined
-          const joinedOrg = updatedOrgs.find(org => org.id === result.organization_id);
-          if (joinedOrg) {
-            setCurrentOrganization(joinedOrg);
-            navigate("/", { replace: true });
-            return;
-          }
-        }
-        
-        // Reload invitations to update the list
-        await loadPendingInvitations();
-      } else {
+
+      const result = await acceptInvitation(invitation.id);
+
+      if (result.success && result.organization_id) {
+        await switchOrganization(result.organization_id);
+        navigate("/", { replace: true });
+        return;
+      }
+      if (!result.success) {
         setError(result.error || "Failed to accept invitation");
       }
+
+      // Reload invitations to update the list
+      await loadPendingInvitations();
     } catch (err: any) {
       console.error("Error accepting invitation:", err);
       setError(err.message || "Failed to accept invitation");
@@ -120,7 +75,7 @@ export function OrganizationSelectionPage() {
 
   const handleSelectOrganization = async (org: OrganizationWithRole) => {
     try {
-      setCurrentOrganization(org);
+      await switchOrganization(org.id);
       navigate("/", { replace: true });
     } catch (err: any) {
       console.error("Error selecting organization:", err);
@@ -139,19 +94,10 @@ export function OrganizationSelectionPage() {
       setCreating(true);
       setError(null);
       const newOrg = await createOrganization(newOrgName.trim());
-      
-      // Refresh organizations list
-      await refreshOrganizations();
-      
-      // Select the new organization
-      const updatedOrgs = await fetchUserOrganizations();
-      const createdOrg = updatedOrgs.find(org => org.id === newOrg.id);
-      if (createdOrg) {
-        await handleSelectOrganization(createdOrg);
-      }
-      
+      await switchOrganization(newOrg.id);
       setShowCreateForm(false);
       setNewOrgName("");
+      navigate("/", { replace: true });
     } catch (err: any) {
       console.error("Error creating organization:", err);
       // Provide user-friendly error messages

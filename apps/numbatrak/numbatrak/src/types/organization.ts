@@ -31,14 +31,11 @@ export interface OrganizationInvitation {
   id: string;
   organization_id: string;
   email: string;
-  invitation_code: string;
   role: "Owner" | "Admin" | "Customer Relations" | "Manager";
   invited_by: string;
+  status: "pending" | "accepted" | "canceled" | "rejected";
   expires_at: string | null;
-  accepted_at: string | null;
-  accepted_by: string | null;
   created_at: string | null;
-  updated_at: string | null;
   organization?: {
     id: string;
     name: string;

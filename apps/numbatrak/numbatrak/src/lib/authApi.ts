@@ -49,6 +49,33 @@ export interface OrgMember {
   user: { id: string; name: string; email: string; image?: string | null };
 }
 
+export interface OrgRecord {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: OrgRole;
+  organizationId: string;
+  inviterId: string;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface UserInvitation extends Invitation {
+  organizationName: string;
+}
+
+/** Auth params (path/body/query shapes) are Better Auth's own organization
+ * plugin surface, auto-mounted at /api/auth/organization/* - not custom
+ * routes. See apps/api/src/lib/auth.ts's `organization()` plugin config. */
 export const authApi = {
   me: () => apiRequest<MeResponse>("/auth/me", { method: "GET" }),
 
@@ -66,6 +93,57 @@ export const authApi = {
       body: { organizationId },
     }),
 
-  // Better Auth's own auto-mounted organization endpoint - not a custom route.
-  listMembers: () => apiRequest<{ members: OrgMember[] }>("/api/auth/organization/get-members", { method: "GET" }),
+  listMembers: (organizationId?: string) =>
+    apiRequest<{ members: OrgMember[]; total: number }>(
+      `/api/auth/organization/list-members${organizationId ? `?organizationId=${encodeURIComponent(organizationId)}` : ""}`,
+      { method: "GET" },
+    ),
+
+  updateMemberRole: (memberId: string, organizationId: string, role: OrgRole) =>
+    apiRequest<{ member: OrgMember }>("/api/auth/organization/update-member-role", {
+      method: "POST",
+      body: { memberId, organizationId, role },
+    }),
+
+  removeMember: (memberIdOrEmail: string, organizationId: string) =>
+    apiRequest<{ member: OrgMember }>("/api/auth/organization/remove-member", {
+      method: "POST",
+      body: { memberIdOrEmail, organizationId },
+    }),
+
+  createOrganization: (body: { name: string; slug: string; metadata?: Record<string, unknown> }) =>
+    apiRequest<OrgRecord>("/api/auth/organization/create", { method: "POST", body }),
+
+  updateOrganization: (
+    organizationId: string,
+    data: { name?: string; slug?: string; logo?: string | null; metadata?: Record<string, unknown> },
+  ) =>
+    apiRequest<OrgRecord>("/api/auth/organization/update", {
+      method: "POST",
+      body: { organizationId, data },
+    }),
+
+  inviteMember: (body: { email: string; role: OrgRole; organizationId: string; resend?: boolean }) =>
+    apiRequest<Invitation>("/api/auth/organization/invite-member", { method: "POST", body }),
+
+  cancelInvitation: (invitationId: string) =>
+    apiRequest<Invitation>("/api/auth/organization/cancel-invitation", {
+      method: "POST",
+      body: { invitationId },
+    }),
+
+  acceptInvitation: (invitationId: string) =>
+    apiRequest<{ invitation: Invitation; member: OrgMember }>("/api/auth/organization/accept-invitation", {
+      method: "POST",
+      body: { invitationId },
+    }),
+
+  listInvitations: (organizationId: string) =>
+    apiRequest<Invitation[]>(
+      `/api/auth/organization/list-invitations?organizationId=${encodeURIComponent(organizationId)}`,
+      { method: "GET" },
+    ),
+
+  listUserInvitations: () =>
+    apiRequest<UserInvitation[]>("/api/auth/organization/list-user-invitations", { method: "GET" }),
 };

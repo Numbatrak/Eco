@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSupabaseAuth } from "../../auth/SupabaseAuthProvider";
-import { useOrganization } from "../../contexts/OrganizationContext";
+import { useAuth } from "../../auth/AuthProvider";
 import { acceptInvitation, fetchMyPendingInvitations } from "../../services/organizationInvitations";
 import { OrganizationInvitation } from "../../types/organization";
 import { Building2, CheckCircle, XCircle, Loader2, Mail } from "lucide-react";
 import { LoadingState } from "../ui/LoadingState";
-import { isInvalidRefreshTokenError } from "../../utils/authErrors";
 
 function invitationReturnPath(code: string | null): string {
   return code
@@ -18,8 +16,9 @@ export function AcceptInvitationPage() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading, signOut } = useSupabaseAuth();
-  const { refreshOrganizations } = useOrganization();
+  const { status, switchOrganization } = useAuth();
+  const isAuthenticated = status === "authenticated";
+  const authLoading = status === "loading";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -32,17 +31,6 @@ export function AcceptInvitationPage() {
     navigate(`/login?redirect=${encodeURIComponent(returnPath)}`, { replace: true });
   }, [code, navigate]);
 
-  const handleAuthFailure = useCallback(
-    async (err: unknown) => {
-      if (!isInvalidRefreshTokenError(err)) return false;
-      console.warn("Session expired on accept-invitation page:", err);
-      await signOut();
-      setError("Your session expired. Please log in again to accept this invitation.");
-      return true;
-    },
-    [signOut],
-  );
-
   const loadPendingInvitations = useCallback(async () => {
     try {
       const invitations = await fetchMyPendingInvitations();
@@ -51,16 +39,15 @@ export function AcceptInvitationPage() {
         setSelectedInvitation(invitations[0]);
       }
     } catch (err: unknown) {
-      if (await handleAuthFailure(err)) return;
       console.error("Error loading invitations:", err);
       const message =
         err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to load invitations: ${message}`);
     }
-  }, [handleAuthFailure]);
+  }, []);
 
   const handleAcceptCode = useCallback(
-    async (invitationCode: string) => {
+    async (invitationId: string) => {
       if (!isAuthenticated) {
         setError("Please log in to accept the invitation");
         return;
@@ -70,11 +57,13 @@ export function AcceptInvitationPage() {
       setError(null);
 
       try {
-        const result = await acceptInvitation(invitationCode);
+        const result = await acceptInvitation(invitationId);
 
         if (result.success) {
           setSuccess(true);
-          await refreshOrganizations();
+          if (result.organization_id) {
+            await switchOrganization(result.organization_id);
+          }
           await loadPendingInvitations();
           setTimeout(() => {
             navigate("/", { replace: true });
@@ -83,7 +72,6 @@ export function AcceptInvitationPage() {
           setError(result.error || "Failed to accept invitation");
         }
       } catch (err: unknown) {
-        if (await handleAuthFailure(err)) return;
         console.error("Error accepting invitation:", err);
         const message =
           err instanceof Error ? err.message : "Failed to accept invitation";
@@ -92,13 +80,7 @@ export function AcceptInvitationPage() {
         setLoading(false);
       }
     },
-    [
-      isAuthenticated,
-      refreshOrganizations,
-      loadPendingInvitations,
-      navigate,
-      handleAuthFailure,
-    ],
+    [isAuthenticated, switchOrganization, loadPendingInvitations, navigate],
   );
 
   useEffect(() => {
@@ -123,7 +105,7 @@ export function AcceptInvitationPage() {
   ]);
 
   const handleAcceptInvitation = async (invitation: OrganizationInvitation) => {
-    await handleAcceptCode(invitation.invitation_code);
+    await handleAcceptCode(invitation.id);
   };
 
   if (authLoading) {

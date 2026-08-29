@@ -102,6 +102,22 @@ export function orderConfirmationEmail(params: {
   );
 }
 
+export function organizationInvitationEmail(params: {
+  organizationName: string;
+  inviterName: string;
+  role: string;
+  acceptUrl: string;
+}): string {
+  return layout(
+    `<p>Hi there,</p>
+<p><strong>${params.inviterName}</strong> has invited you to join <strong>${params.organizationName}</strong> on ${BRAND_NAME} as a <strong>${params.role}</strong>.</p>
+<p style="text-align:center"><a href="${params.acceptUrl}" class="btn">Accept Invitation</a></p>
+<p class="muted">If you weren't expecting this invitation, you can safely ignore this email.</p>
+<p class="muted" style="word-break:break-all;">Or copy this link: ${params.acceptUrl}</p>`,
+    `${params.inviterName} invited you to join ${params.organizationName}`,
+  );
+}
+
 export function testEmail(): string {
   return layout(
     `<p>Hi there,</p>
