@@ -273,9 +273,15 @@ export async function saveSiteConfig(
     .where(eq(tenantSiteConfig.tenantId, tenantId));
 }
 
-export async function publishSite(db: Database, tenantId: string): Promise<void> {
+export async function publishSite(db: Database, tenantId: string): Promise<{ slug: string | null }> {
   await db
     .update(tenantSiteConfig)
     .set({ publishedAt: new Date(), updatedAt: new Date() })
     .where(eq(tenantSiteConfig.tenantId, tenantId));
+  const [org] = await db
+    .select({ slug: organization.slug })
+    .from(organization)
+    .where(eq(organization.id, tenantId))
+    .limit(1);
+  return { slug: org?.slug ?? null };
 }

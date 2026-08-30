@@ -5,6 +5,6 @@
  * STOREFRONT_BASE_URL_TEMPLATE in .env.example.
  */
 export function buildStorefrontBaseUrl(subdomain: string): string {
-  const template = process.env.STOREFRONT_BASE_URL_TEMPLATE ?? "http://{subdomain}.numbatrak.com";
+  const template = process.env.STOREFRONT_BASE_URL_TEMPLATE ?? "https://{subdomain}.numbatrak.com";
   return template.replace("{subdomain}", subdomain);
 }

@@ -252,6 +252,11 @@ export default function BuilderPage(): React.ReactElement {
 
   const handlePublish = async () => {
     if (!draft) return;
+    console.log("[handlePublish] activeOrganization:", {
+      id: activeOrganization?.id,
+      slug: activeOrganization?.slug,
+      name: activeOrganization?.name,
+    });
     try {
       await siteConfigApi.save(draft);
       await siteConfigApi.publish();

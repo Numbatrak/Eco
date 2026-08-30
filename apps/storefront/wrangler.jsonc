@@ -4,6 +4,10 @@
   "name": "storefront",
   "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": {
+    "BASE_DOMAIN": "numbatrak.com",
+    "NEXT_PUBLIC_BASE_DOMAIN": "numbatrak.com"
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

@@ -35,7 +35,8 @@ export default async function siteConfigRoutes(app: FastifyInstance): Promise<vo
       const db = app.getDb();
       const tenantId = request.activeOrganizationId!;
       await ensureTenantSiteConfig(db, tenantId);
-      await publishSite(db, tenantId);
+      const { slug } = await publishSite(db, tenantId);
+      request.log.info({ tenantId, slug }, "Published site");
       return reply.code(204).send();
     },
   );
