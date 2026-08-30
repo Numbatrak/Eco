@@ -17,7 +17,7 @@ import type {
 import { TEMPLATE_PRESETS, FONT_PAIRINGS, SECTION_CATALOG, defaultSiteConfig } from "../../types/siteConfig";
 import { StorefrontPreview } from "../../components/storefront/StorefrontPreview";
 
-const STOREFRONT_BASE_DOMAIN = import.meta.env.VITE_STOREFRONT_BASE_DOMAIN ?? "localhost:3000";
+const STOREFRONT_BASE_DOMAIN = import.meta.env.VITE_STOREFRONT_BASE_DOMAIN ?? "numbatrak.com";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function useDebounce<T extends (...args: any[]) => any>(
