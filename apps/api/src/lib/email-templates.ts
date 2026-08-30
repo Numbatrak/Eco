@@ -102,6 +102,35 @@ export function orderConfirmationEmail(params: {
   );
 }
 
+export function verifyEmailEmail(verifyUrl: string): string {
+  return layout(
+    `<p>Hi there,</p>
+<p>Welcome to ${BRAND_NAME}! Click the button below to verify your email address:</p>
+<p style="text-align:center"><a href="${verifyUrl}" class="btn">Verify Email</a></p>
+<p class="muted">If you didn't create this account, you can safely ignore this email.</p>
+<p class="muted" style="word-break:break-all;">Or copy this link: ${verifyUrl}</p>`,
+    `Welcome to ${BRAND_NAME} - verify your email`,
+  );
+}
+
+export function loginNotificationEmail(params: {
+  time: string;
+  ip?: string;
+  userAgent?: string;
+}): string {
+  return layout(
+    `<p>Hi there,</p>
+<p>We noticed a new sign-in to your ${BRAND_NAME} account.</p>
+<table class="order-table">
+  <tr><td>Time</td><td>${params.time}</td></tr>
+  <tr><td>IP address</td><td>${params.ip ?? "Unknown"}</td></tr>
+  <tr><td>Device</td><td>${params.userAgent ?? "Unknown"}</td></tr>
+</table>
+<p class="muted">If this was you, no action is needed. If you don't recognize this activity, please reset your password immediately.</p>`,
+    "New sign-in to your account",
+  );
+}
+
 export function organizationInvitationEmail(params: {
   organizationName: string;
   inviterName: string;

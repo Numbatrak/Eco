@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Clock, KeyRound, Mail, Shield } from "lucide-react";
-import { requestPasswordReset } from "../services/authRecovery";
+import { authApi } from "../lib/authApi";
 import { BrandTagline } from "./brand/BrandTagline";
 import { NumbatrakLogo } from "./brand/NumbatrakLogo";
 import "./LoginPage.css";
@@ -20,11 +20,11 @@ export function ForgotPasswordPage() {
     setMessage(null);
     setLoading(true);
 
-    const result = await requestPasswordReset(email);
-    if (result.success) {
+    try {
+      await authApi.requestPasswordReset(email);
       setMessage("If this email exists, a password reset link has been sent.");
-    } else {
-      setError(result.error || "Unable to send reset email right now.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to send reset email right now.");
     }
     setLoading(false);
   };

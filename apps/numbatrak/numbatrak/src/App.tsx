@@ -52,9 +52,6 @@ const EmailVerificationPage = lazy(() =>
 const ForgotPasswordPage = lazy(() =>
   import("./components/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })),
 );
-const ResetPasswordPage = lazy(() =>
-  import("./components/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })),
-);
 const TermsOfServicePage = lazy(() =>
   import("./components/TermsOfServicePage").then((m) => ({ default: m.TermsOfServicePage })),
 );
@@ -177,7 +174,6 @@ function AppContent() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<EmailVerificationPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
@@ -450,7 +446,6 @@ function AppContent() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<EmailVerificationPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/select-organization"
               element={<OrganizationSelectionPage />}

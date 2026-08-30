@@ -3,6 +3,8 @@ import { loginRequestSchema, type LoginResponse } from "@platform/shared-types";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../../lib/auth.js";
 import { logSecurityEvent } from "../lib/security-events.js";
+import { sendEmail } from "../lib/email.js";
+import { loginNotificationEmail } from "../../../lib/email-templates.js";
 
 function requestMeta(request: FastifyRequest): { ip: string; userAgent?: string } {
   return { ip: request.ip, userAgent: request.headers["user-agent"] };
@@ -62,6 +64,14 @@ export default async function loginRoutes(app: FastifyInstance): Promise<void> {
     }
 
     await logSecurityEvent(db, { userId: payload.user.id, eventType: "login_success", ...meta });
+
+    // Best-effort: never let a notification-email failure slow down or fail the login response.
+    sendEmail(request.log, {
+      to: payload.user.email,
+      subject: "New sign-in to your account",
+      body: loginNotificationEmail({ time: new Date().toISOString(), ip: meta.ip, userAgent: meta.userAgent }),
+    }).catch((err) => request.log.error({ err }, "Failed to send login notification email"));
+
     return reply.code(result.status).send(payload);
   });
 }

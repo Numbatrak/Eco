@@ -8,7 +8,12 @@ import { getDb } from "@platform/db";
 import { ac, orgRoles } from "./access-control.js";
 import { isReservedSubdomain, isValidSubdomainFormat } from "../modules/sites/lib/subdomain.js";
 import { sendEmail } from "../modules/auth/lib/email.js";
-import { passwordResetEmail, otpEmail, organizationInvitationEmail } from "./email-templates.js";
+import {
+  passwordResetEmail,
+  otpEmail,
+  organizationInvitationEmail,
+  verifyEmailEmail,
+} from "./email-templates.js";
 import { logSecurityEvent, type SecurityEventType } from "../modules/auth/lib/security-events.js";
 
 /**
@@ -122,6 +127,18 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Reset your password",
         body: passwordResetEmail(resetUrl),
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    async sendVerificationEmail({ user, token }: { user: { email: string }; token: string }) {
+      const appUrl = process.env.NUMBATRAK_APP_URL ?? "http://localhost:5173";
+      const verifyUrl = `${appUrl}/verify-email?token=${encodeURIComponent(token)}`;
+      await sendEmail(authLogger, {
+        to: user.email,
+        subject: "Verify your email",
+        body: verifyEmailEmail(verifyUrl),
       });
     },
   },

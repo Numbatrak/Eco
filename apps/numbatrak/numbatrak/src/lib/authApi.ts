@@ -87,6 +87,30 @@ export const authApi = {
 
   logout: () => apiRequest<void>("/auth/logout", { method: "POST" }),
 
+  /** Better Auth's own mounted endpoint - see apps/api/src/lib/auth.ts's `emailVerification` config. */
+  verifyEmail: (token: string) =>
+    apiRequest<{ status: boolean }>(`/api/auth/verify-email?token=${encodeURIComponent(token)}`, {
+      method: "GET",
+    }),
+
+  resendVerificationEmail: (email: string) =>
+    apiRequest<{ status: boolean }>("/api/auth/send-verification-email", {
+      method: "POST",
+      body: { email },
+    }),
+
+  requestPasswordReset: (email: string) =>
+    apiRequest<{ message: string }>("/auth/password-reset/request", {
+      method: "POST",
+      body: { email },
+    }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiRequest<void>("/auth/password-reset/complete", {
+      method: "POST",
+      body: { token, newPassword },
+    }),
+
   setActiveOrganization: (organizationId: string) =>
     apiRequest<{ id: string }>("/api/auth/organization/set-active", {
       method: "POST",
