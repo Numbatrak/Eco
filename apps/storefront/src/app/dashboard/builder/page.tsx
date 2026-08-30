@@ -19,6 +19,11 @@ import type {
 import { TEMPLATE_PRESETS, FONT_PAIRINGS, SECTION_CATALOG, defaultSiteConfig } from "@platform/shared-types";
 import { StorefrontPreview } from "../../../components/storefront/StorefrontPreview";
 
+// Client component - can't read the server-only BASE_DOMAIN that
+// middleware.ts uses, so this mirrors it via the NEXT_PUBLIC_ variant
+// (inlined at build time). Keep both in sync per environment.
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost:3000";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
@@ -251,15 +256,15 @@ export default function BuilderPage(): React.ReactElement {
       await siteConfigApi.save(draft);
       await siteConfigApi.publish();
       setIsPublished(true);
-      const domain = `${activeOrganization?.slug}.localhost:3000`;
-      showToast(`Published to ${domain}`);
+      showToast(`Published to ${tenantDomain}`);
     } catch (err) {
       console.error("Failed to publish", err);
       showToast("Failed to publish");
     }
   };
 
-  const siteUrl = `http://${activeOrganization?.slug}.localhost:3000`;
+  const tenantDomain = `${activeOrganization?.slug}.${BASE_DOMAIN}`;
+  const siteUrl = `${BASE_DOMAIN.startsWith("localhost") ? "http" : "https"}://${tenantDomain}`;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -294,7 +299,7 @@ export default function BuilderPage(): React.ReactElement {
             title="Change in Site Settings"
           />
           <span className="px-1 text-[11.5px] tracking-wide text-muted">
-            {activeOrganization?.slug}.localhost:3000
+            {tenantDomain}
           </span>
         </div>
         <div className="flex-1" />
@@ -466,7 +471,7 @@ export default function BuilderPage(): React.ReactElement {
                 <span className="h-2 w-2 rounded-full bg-line" />
               </div>
               <div className="flex-1 rounded-[7px] bg-paper px-2.5 py-1 text-center font-sans text-[11.5px] text-muted">
-                {activeOrganization?.slug}.localhost:3000
+                {tenantDomain}
               </div>
             </div>
             <StorefrontPreview
