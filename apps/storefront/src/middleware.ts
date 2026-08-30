@@ -46,7 +46,7 @@ export function middleware(request: NextRequest): NextResponse {
 
   // --- Subdomain routing ---
   const host = request.headers.get("host");
-  const baseDomain = process.env.BASE_DOMAIN ?? "localhost:3000";
+  const baseDomain = process.env.BASE_DOMAIN ?? "numbatrak.com";
   const subdomain = resolveSubdomain(host, baseDomain);
 
   if (!subdomain) {
