@@ -42,6 +42,8 @@ export const numbatrakProducts = pgTable(
     active: boolean("active").notNull().default(true),
     category: text("category"),
     subBrand: text("sub_brand"),
+    // Data URI or hosted URL, shown on the product's mirrored storefront listing.
+    imageUrl: text("image_url"),
     allowsVariants: boolean("allows_variants").notNull().default(false),
     allowsBundles: boolean("allows_bundles").notNull().default(false),
     allowsDiscounts: boolean("allows_discounts").notNull().default(false),

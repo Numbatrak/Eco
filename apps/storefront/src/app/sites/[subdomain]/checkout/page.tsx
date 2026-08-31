@@ -7,6 +7,7 @@ import {
   checkoutRequestSchema,
   type CheckoutRequest,
   type DeliveryQuoteResponse,
+  type DiscountCodePreviewResponse,
   NIGERIA_STATES,
 } from "@platform/shared-types";
 import { useSite } from "../../../../components/SiteProvider";
@@ -14,7 +15,7 @@ import { useCart } from "../../../../components/CartContext";
 import { cartApi } from "../../../../lib/cartApi";
 import { ApiError } from "../../../../lib/apiClient";
 import { formatCents } from "../../../../lib/money";
-import { getAttribution } from "../../../../lib/attribution";
+import { getAttribution, getLastAttribution } from "../../../../lib/attribution";
 import { initiateCheckout } from "../../../../lib/analytics/pixelEvents";
 
 export default function CheckoutPage(): React.ReactElement {
@@ -25,6 +26,12 @@ export default function CheckoutPage(): React.ReactElement {
   const [redirecting, setRedirecting] = useState(false);
   const [placedDirectly, setPlacedDirectly] = useState(false);
   const [quote, setQuote] = useState<DeliveryQuoteResponse | null>(null);
+  const [discountCodeInput, setDiscountCodeInput] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; preview: DiscountCodePreviewResponse } | null>(
+    null,
+  );
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [checkingDiscount, setCheckingDiscount] = useState(false);
   const firedInitiateCheckout = useRef(false);
 
   const {
@@ -60,10 +67,42 @@ export default function CheckoutPage(): React.ReactElement {
     );
   }, [cart]);
 
+  async function handleApplyDiscount(): Promise<void> {
+    const code = discountCodeInput.trim();
+    if (!code) return;
+    setDiscountError(null);
+    setCheckingDiscount(true);
+    try {
+      const preview = await cartApi.validateDiscountCode(subdomain, code);
+      if (!preview.valid) {
+        setDiscountError(preview.message ?? "This code isn't valid.");
+        setAppliedDiscount(null);
+        return;
+      }
+      setAppliedDiscount({ code, preview });
+    } catch {
+      setDiscountError("Could not check this code. Please try again.");
+      setAppliedDiscount(null);
+    } finally {
+      setCheckingDiscount(false);
+    }
+  }
+
+  function handleRemoveDiscount(): void {
+    setAppliedDiscount(null);
+    setDiscountCodeInput("");
+    setDiscountError(null);
+  }
+
   async function onSubmit(values: CheckoutRequest): Promise<void> {
     setSubmitError(null);
     try {
-      const result = await cartApi.checkout(subdomain, { ...values, attribution: getAttribution() });
+      const result = await cartApi.checkout(subdomain, {
+        ...values,
+        attribution: getAttribution(),
+        lastAttribution: getLastAttribution(),
+        discountCode: appliedDiscount?.code,
+      });
       setRedirecting(true);
       // Null checkoutUrl = a COD order, already placed - nothing to pay for
       // online, so go straight to the order status page instead.
@@ -105,12 +144,24 @@ export default function CheckoutPage(): React.ReactElement {
           <span className="text-muted">Subtotal</span>
           <span className="text-ink">{formatCents(cart.subtotalCents, currency)}</span>
         </div>
+        {appliedDiscount ? (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Discount ({appliedDiscount.code})</span>
+            <span className="text-ink">
+              {appliedDiscount.preview.freeShipping
+                ? "Free shipping"
+                : `-${formatCents(appliedDiscount.preview.amountCents, currency)}`}
+            </span>
+          </div>
+        ) : null}
         {quote ? (
           <>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Delivery</span>
               <span className="text-ink">
-                {quote.qualifiesForFreeDelivery ? "Free" : formatCents(quote.feeCents, currency)}
+                {quote.qualifiesForFreeDelivery || appliedDiscount?.preview.freeShipping
+                  ? "Free"
+                  : formatCents(quote.feeCents, currency)}
               </span>
             </div>
             {quote.vat.enabled ? (
@@ -122,7 +173,12 @@ export default function CheckoutPage(): React.ReactElement {
             <div className="mt-2 flex justify-between border-t border-line pt-2 font-medium text-ink">
               <span>Total</span>
               <span>
-                {formatCents(cart.subtotalCents + quote.feeCents + quote.vat.amountCents, currency)}
+                {formatCents(
+                  Math.max(0, cart.subtotalCents - (appliedDiscount?.preview.amountCents ?? 0)) +
+                    (appliedDiscount?.preview.freeShipping ? 0 : quote.feeCents) +
+                    quote.vat.amountCents,
+                  currency,
+                )}
               </span>
             </div>
           </>
@@ -132,6 +188,35 @@ export default function CheckoutPage(): React.ReactElement {
             <span>{formatCents(cart.subtotalCents, currency)}</span>
           </div>
         )}
+
+        <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
+          {appliedDiscount ? (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-ink">Code &ldquo;{appliedDiscount.code}&rdquo; applied</span>
+              <button type="button" className="text-xs text-muted underline" onClick={handleRemoveDiscount}>
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink"
+                placeholder="Discount code"
+                value={discountCodeInput}
+                onChange={(event) => setDiscountCodeInput(event.target.value)}
+              />
+              <button
+                type="button"
+                className="rounded-md border border-line px-3 py-2 text-sm text-ink disabled:opacity-60"
+                disabled={checkingDiscount || !discountCodeInput.trim()}
+                onClick={() => void handleApplyDiscount()}
+              >
+                {checkingDiscount ? "Checking…" : "Apply"}
+              </button>
+            </div>
+          )}
+          {discountError ? <p className="text-xs text-danger">{discountError}</p> : null}
+        </div>
       </div>
 
       <form

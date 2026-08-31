@@ -153,6 +153,11 @@ export const products = pgTable(
     currency: text("currency").notNull(),
     imageUrl: text("image_url"),
     status: productStatusEnum("status").notNull().default("draft"),
+    // Set when this row is a mirror of a Numbatrak product (see numbatrak_products) -
+    // Numbatrak is the source of truth for name/price/image, synced on create/update.
+    numbatrakProductId: uuid("numbatrak_product_id").references(() => numbatrakSchema.numbatrakProducts.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -160,6 +165,7 @@ export const products = pgTable(
     index("products_tenant_idx").on(table.tenantId),
     index("products_tenant_status_idx").on(table.tenantId, table.status),
     index("products_collection_idx").on(table.collectionId),
+    uniqueIndex("products_numbatrak_product_idx").on(table.numbatrakProductId),
   ],
 );
 
@@ -331,6 +337,24 @@ export const orders = pgTable(
     fbclid: text("fbclid"),
     ttclid: text("ttclid"),
     gclid: text("gclid"),
+    // Last-touch attribution - same 10 fields as first-touch above, captured
+    // non-sticky (always overwritten by the most recent ad click this session).
+    lastUtmSource: text("last_utm_source"),
+    lastUtmMedium: text("last_utm_medium"),
+    lastUtmCampaign: text("last_utm_campaign"),
+    lastUtmTerm: text("last_utm_term"),
+    lastUtmContent: text("last_utm_content"),
+    lastReferrer: text("last_referrer"),
+    lastLandingPath: text("last_landing_path"),
+    lastFbclid: text("last_fbclid"),
+    lastTtclid: text("last_ttclid"),
+    lastGclid: text("last_gclid"),
+    // Null discountId = no discount, or an automatic discount later deleted -
+    // discountCode/discountAmountCents are snapshotted regardless so the
+    // order's own totals stay explainable even if the discount record is gone.
+    discountId: uuid("discount_id").references(() => discounts.id, { onDelete: "set null" }),
+    discountCode: text("discount_code"),
+    discountAmountCents: integer("discount_amount_cents").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -395,6 +419,47 @@ export const tenantDeliverySettings = pgTable("tenant_delivery_settings", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---------- tenant_delivery_zone_rates ----------
+
+export const tenantDeliveryZoneRates = pgTable(
+  "tenant_delivery_zone_rates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    state: text("state").notNull(),
+    feeCents: integer("fee_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("tenant_delivery_zone_rates_tenant_state_idx").on(table.tenantId, table.state)],
+);
+
+// ---------- discounts ----------
+
+export const discounts = pgTable(
+  "discounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    // Uppercased on write for case-insensitive lookup without a functional index.
+    // Null = an "automatic" discount, applied without the buyer entering a code.
+    code: text("code"),
+    title: text("title").notNull(),
+    active: boolean("active").notNull().default(true),
+    config: jsonb("config").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("discounts_tenant_code_idx").on(table.tenantId, table.code),
+    index("discounts_tenant_active_idx").on(table.tenantId, table.active),
+  ],
+);
 
 // ---------- tenant_whatsapp_settings ----------
 

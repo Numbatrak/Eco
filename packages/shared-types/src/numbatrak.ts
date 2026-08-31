@@ -44,6 +44,7 @@ export const numbatrakProductSchema = z.object({
   active: z.boolean(),
   basePrice: z.string(),
   costPrice: z.string(),
+  imageUrl: z.string().nullable(),
 });
 export type NumbatrakProduct = z.infer<typeof numbatrakProductSchema>;
 
@@ -131,6 +132,9 @@ export const createNumbatrakProductRequestSchema = z.object({
   allowsVariants: z.boolean().optional(),
   allowsBundles: z.boolean().optional(),
   allowsDiscounts: z.boolean().optional(),
+  // Data URI (client reads the file locally) or a hosted URL - capped well above
+  // any reasonable compressed product photo to block pathological payloads.
+  imageUrl: z.string().max(2_000_000).nullable().optional(),
 });
 export type CreateNumbatrakProductRequest = z.infer<typeof createNumbatrakProductRequestSchema>;
 

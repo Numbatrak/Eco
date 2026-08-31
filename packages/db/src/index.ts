@@ -26,6 +26,8 @@ export {
   orderItems,
   tenantPaymentSettings,
   tenantDeliverySettings,
+  tenantDeliveryZoneRates,
+  discounts,
   tenantWhatsappSettings,
   tenantAnalyticsSettings,
   paymentWebhookEvents,

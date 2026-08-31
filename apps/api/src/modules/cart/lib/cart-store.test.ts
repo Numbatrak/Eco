@@ -13,6 +13,7 @@ function row(overrides: Partial<CartItemWithProductRow> = {}): CartItemWithProdu
     unitPriceSnapshotCents: 1000,
     currency: "NGN",
     status: "published",
+    collectionId: null,
     ...overrides,
   };
 }

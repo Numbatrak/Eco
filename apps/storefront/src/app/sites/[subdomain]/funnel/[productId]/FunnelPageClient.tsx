@@ -9,7 +9,7 @@ import { funnelApi } from "../../../../../lib/funnelApi";
 import { cartApi } from "../../../../../lib/cartApi";
 import { ApiError } from "../../../../../lib/apiClient";
 import { formatCents } from "../../../../../lib/money";
-import { captureAttribution, getAttribution } from "../../../../../lib/attribution";
+import { captureAttribution, captureLastTouch, getAttribution, getLastAttribution } from "../../../../../lib/attribution";
 import { viewContent, initiateCheckout } from "../../../../../lib/analytics/pixelEvents";
 
 function getSection<K extends FunnelSection["kind"]>(
@@ -39,6 +39,7 @@ export function FunnelPageClient({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [placedDirectly, setPlacedDirectly] = useState(false);
+  const [discountCode, setDiscountCode] = useState("");
 
   const {
     register,
@@ -55,6 +56,7 @@ export function FunnelPageClient({
 
   useEffect(() => {
     captureAttribution();
+    captureLastTouch();
     viewContent(product.id, product.priceCents, product.currency);
   }, [product.id, product.priceCents, product.currency]);
 
@@ -70,7 +72,9 @@ export function FunnelPageClient({
       const result = await cartApi.checkout(subdomain, {
         ...values,
         attribution: getAttribution(),
+        lastAttribution: getLastAttribution(),
         source: "funnel",
+        discountCode: discountCode.trim() || undefined,
       });
       setRedirecting(true);
       if (result.checkoutUrl === null) {
@@ -244,6 +248,15 @@ export function FunnelPageClient({
                 ))}
               </select>
               {errors.deliveryState ? <p className="text-xs text-danger">{errors.deliveryState.message}</p> : null}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-ink" htmlFor="discountCode">Discount code (optional)</label>
+              <input
+                id="discountCode"
+                className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink"
+                value={discountCode}
+                onChange={(event) => setDiscountCode(event.target.value)}
+              />
             </div>
 
             {collectionMethod === "both" ? (

@@ -7,6 +7,7 @@ import {
   numbatrakProductPriceHistory,
   numbatrakProductVariants,
   numbatrakProducts,
+  products,
   type Database,
 } from "@platform/db";
 import type {
@@ -30,6 +31,7 @@ export function serializeNumbatrakProduct(row: NumbatrakProductRow): NumbatrakPr
     active: row.active,
     basePrice: row.basePrice,
     costPrice: row.costPrice,
+    imageUrl: row.imageUrl,
   };
 }
 
@@ -191,6 +193,41 @@ export async function listNumbatrakProductsWithDetailsForOrg(
   }));
 }
 
+/**
+ * Numbatrak is the source of truth for product data; the storefront's own
+ * `products` row is just a read-side mirror kept in sync on every
+ * create/update so it can render on the public site (name/price/image/
+ * published-state), matched by the unique `numbatrakProductId` column.
+ */
+async function syncMirroredStorefrontProduct(
+  db: Database,
+  organizationId: string,
+  numbatrakProduct: NumbatrakProductRow,
+): Promise<void> {
+  const priceCents = Math.round(Number(numbatrakProduct.basePrice) * 100);
+  await db
+    .insert(products)
+    .values({
+      tenantId: organizationId,
+      numbatrakProductId: numbatrakProduct.id,
+      name: numbatrakProduct.name,
+      priceCents,
+      currency: "NGN",
+      imageUrl: numbatrakProduct.imageUrl,
+      status: numbatrakProduct.active ? "published" : "draft",
+    })
+    .onConflictDoUpdate({
+      target: products.numbatrakProductId,
+      set: {
+        name: numbatrakProduct.name,
+        priceCents,
+        imageUrl: numbatrakProduct.imageUrl,
+        status: numbatrakProduct.active ? "published" : "draft",
+        updatedAt: new Date(),
+      },
+    });
+}
+
 export async function createNumbatrakProduct(
   db: Database,
   organizationId: string,
@@ -211,9 +248,11 @@ export async function createNumbatrakProduct(
       allowsVariants: input.allowsVariants ?? false,
       allowsBundles: input.allowsBundles ?? false,
       allowsDiscounts: input.allowsDiscounts ?? false,
+      imageUrl: input.imageUrl ?? null,
     })
     .returning();
   if (!row) throw new Error("Failed to create product");
+  await syncMirroredStorefrontProduct(db, organizationId, row);
   return row;
 }
 
@@ -242,6 +281,7 @@ export async function updateNumbatrakProduct(
   if (input.allowsVariants !== undefined) values.allowsVariants = input.allowsVariants;
   if (input.allowsBundles !== undefined) values.allowsBundles = input.allowsBundles;
   if (input.allowsDiscounts !== undefined) values.allowsDiscounts = input.allowsDiscounts;
+  if (input.imageUrl !== undefined) values.imageUrl = input.imageUrl;
 
   const [row] = await db
     .update(numbatrakProducts)
@@ -249,6 +289,7 @@ export async function updateNumbatrakProduct(
     .where(and(eq(numbatrakProducts.organizationId, organizationId), eq(numbatrakProducts.id, productId)))
     .returning();
   if (!row) return null;
+  await syncMirroredStorefrontProduct(db, organizationId, row);
 
   if (input.basePrice !== undefined || input.costPrice !== undefined) {
     const price = input.basePrice !== undefined ? input.basePrice : Number(row.basePrice);
@@ -272,6 +313,14 @@ export async function updateNumbatrakProduct(
 
 export async function removeNumbatrakProduct(db: Database, organizationId: string, productId: string): Promise<boolean> {
   try {
+    // Hide the mirrored storefront listing first - deleting the numbatrak row
+    // nulls products.numbatrakProductId via FK (onDelete: set null), which would
+    // otherwise leave an orphaned row stuck published on the public site.
+    await db
+      .update(products)
+      .set({ status: "draft", updatedAt: new Date() })
+      .where(eq(products.numbatrakProductId, productId));
+
     const result = await db
       .delete(numbatrakProducts)
       .where(and(eq(numbatrakProducts.organizationId, organizationId), eq(numbatrakProducts.id, productId)))

@@ -1,7 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { checkoutRequestSchema, type CheckoutResponse } from "@platform/shared-types";
+import { checkoutRequestSchema, type CheckoutResponse, type DiscountConfig } from "@platform/shared-types";
 import { resolveCartContext, isCartContextError } from "../../cart/lib/cart-request.js";
-import { serializeCart, findUnpublishedCartItems, deleteCart } from "../../cart/lib/cart-store.js";
+import {
+  buildCartSummary,
+  getCartItemsWithProduct,
+  findUnpublishedCartItems,
+  deleteCart,
+} from "../../cart/lib/cart-store.js";
 import { clearCartTokenCookie } from "../../cart/lib/cart-cookie.js";
 import { findPaymentSettings } from "../../payments/lib/payment-settings-store.js";
 import { buildProvider } from "../../payments/lib/provider-factory.js";
@@ -12,8 +17,11 @@ import {
   findDeliverySettings,
   serializeDeliverySettings,
 } from "../../delivery/lib/delivery-settings-store.js";
+import { findZoneRate } from "../../delivery/lib/delivery-zone-store.js";
 import { quoteDelivery } from "../../delivery/lib/quote.js";
 import { upsertCustomer } from "../../customers/lib/customers.js";
+import { findActiveByCode, listActiveAutomatic, type DiscountRow } from "../../discounts/lib/discounts-store.js";
+import { computeDiscount } from "../../discounts/lib/apply-discount.js";
 
 const CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -44,7 +52,8 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
       }
 
       const db = app.getDb();
-      const cart = await serializeCart(db, ctx.cart);
+      const cartRows = await getCartItemsWithProduct(db, ctx.cart.id);
+      const cart = buildCartSummary(ctx.cart.id, cartRows);
       if (cart.items.length === 0) {
         return reply.code(400).send({ error: "cart_empty" });
       }
@@ -86,12 +95,46 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         return reply.code(400).send({ error: "cart_empty" });
       }
 
+      // Resolve the discount: an explicitly entered code must be valid (fails
+      // checkout otherwise, rather than silently checking out at full price);
+      // with no code, the first eligible automatic discount applies. One
+      // discount per order - no stacking.
+      let discount: DiscountRow | null = null;
+      if (body.discountCode) {
+        discount = await findActiveByCode(db, ctx.tenant.id, body.discountCode);
+        if (!discount) {
+          return reply
+            .code(400)
+            .send({ error: "invalid_discount_code", message: "This discount code isn't valid." });
+        }
+      } else {
+        const automatic = await listActiveAutomatic(db, ctx.tenant.id);
+        for (const candidate of automatic) {
+          const config = candidate.config as DiscountConfig;
+          const minimum = "minimumSubtotalCents" in config ? config.minimumSubtotalCents : undefined;
+          if (minimum == null || cart.subtotalCents >= minimum) {
+            discount = candidate;
+            break;
+          }
+        }
+      }
+
+      const { amountOffCents, freeShipping } = discount
+        ? computeDiscount(discount.config as DiscountConfig, cartRows, cart.subtotalCents)
+        : { amountOffCents: 0, freeShipping: false };
+      const discountedSubtotalCents = Math.max(0, cart.subtotalCents - amountOffCents);
+
       const deliverySettingsRow = await findDeliverySettings(db, ctx.tenant.id);
       const deliverySettings = serializeDeliverySettings(deliverySettingsRow);
+      const zoneRate = freeShipping ? null : await findZoneRate(db, ctx.tenant.id, body.deliveryState);
       // Server-authoritative recompute (Pattern 1 / Pattern 8) - the browser's
       // /delivery-quote preview is never trusted for the actual charge.
-      const quote = quoteDelivery(deliverySettings, cart.subtotalCents);
-      const totalCents = cart.subtotalCents + quote.feeCents + quote.vat.amountCents;
+      const quote = quoteDelivery(deliverySettings, {
+        preDiscountSubtotalCents: cart.subtotalCents,
+        postDiscountSubtotalCents: discountedSubtotalCents,
+        zoneFeeCents: freeShipping ? 0 : zoneRate?.feeCents,
+      });
+      const totalCents = discountedSubtotalCents + quote.feeCents + quote.vat.amountCents;
 
       const customer = await upsertCustomer(db, ctx.tenant.id, {
         name: body.customerName,
@@ -130,6 +173,19 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         fbclid: body.attribution?.fbclid,
         ttclid: body.attribution?.ttclid,
         gclid: body.attribution?.gclid,
+        lastUtmSource: body.lastAttribution?.utmSource,
+        lastUtmMedium: body.lastAttribution?.utmMedium,
+        lastUtmCampaign: body.lastAttribution?.utmCampaign,
+        lastUtmTerm: body.lastAttribution?.utmTerm,
+        lastUtmContent: body.lastAttribution?.utmContent,
+        lastReferrer: body.lastAttribution?.referrer,
+        lastLandingPath: body.lastAttribution?.landingPath,
+        lastFbclid: body.lastAttribution?.fbclid,
+        lastTtclid: body.lastAttribution?.ttclid,
+        lastGclid: body.lastAttribution?.gclid,
+        discountId: discount?.id ?? null,
+        discountCode: discount?.code ?? null,
+        discountAmountCents: amountOffCents,
         items: cart.items.map((item) => ({
           productId: item.productId,
           nameSnapshot: item.name,

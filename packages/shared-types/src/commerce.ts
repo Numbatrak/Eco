@@ -169,7 +169,39 @@ export const deliveryQuoteResponseSchema = z.object({
 });
 export type DeliveryQuoteResponse = z.infer<typeof deliveryQuoteResponseSchema>;
 
+// ---------- delivery zones ----------
+
+export const deliveryZoneRateSchema = z.object({
+  state: nigeriaStateSchema,
+  feeCents: z.number().int().nonnegative(),
+});
+export type DeliveryZoneRate = z.infer<typeof deliveryZoneRateSchema>;
+
+export const deliveryZoneRatesRequestSchema = z.object({
+  rates: z.array(deliveryZoneRateSchema),
+});
+export type DeliveryZoneRatesRequest = z.infer<typeof deliveryZoneRatesRequestSchema>;
+
+export const deliveryZoneRatesResponseSchema = z.object({
+  rates: z.array(deliveryZoneRateSchema),
+});
+export type DeliveryZoneRatesResponse = z.infer<typeof deliveryZoneRatesResponseSchema>;
+
 // ---------- checkout ----------
+
+const attributionFieldsSchema = z.object({
+  utmSource: z.string().trim().max(200).optional(),
+  utmMedium: z.string().trim().max(200).optional(),
+  utmCampaign: z.string().trim().max(200).optional(),
+  utmTerm: z.string().trim().max(200).optional(),
+  utmContent: z.string().trim().max(200).optional(),
+  referrer: z.string().trim().max(2000).optional(),
+  landingPath: z.string().trim().max(2000).optional(),
+  fbclid: z.string().trim().max(500).optional(),
+  ttclid: z.string().trim().max(500).optional(),
+  gclid: z.string().trim().max(500).optional(),
+});
+export type AttributionFields = z.infer<typeof attributionFieldsSchema>;
 
 export const checkoutRequestSchema = z.object({
   customerName: z.string().trim().min(1).max(200),
@@ -178,20 +210,10 @@ export const checkoutRequestSchema = z.object({
   deliveryAddress: z.string().trim().min(1).max(500),
   deliveryCity: z.string().trim().min(1).max(200),
   deliveryState: nigeriaStateSchema,
-  attribution: z
-    .object({
-      utmSource: z.string().trim().max(200).optional(),
-      utmMedium: z.string().trim().max(200).optional(),
-      utmCampaign: z.string().trim().max(200).optional(),
-      utmTerm: z.string().trim().max(200).optional(),
-      utmContent: z.string().trim().max(200).optional(),
-      referrer: z.string().trim().max(2000).optional(),
-      landingPath: z.string().trim().max(2000).optional(),
-      fbclid: z.string().trim().max(500).optional(),
-      ttclid: z.string().trim().max(500).optional(),
-      gclid: z.string().trim().max(500).optional(),
-    })
-    .optional(),
+  attribution: attributionFieldsSchema.optional(),
+  // Non-sticky last-touch capture - same shape as `attribution` (first-touch,
+  // sticky per session). Both are stored on the order side by side.
+  lastAttribution: attributionFieldsSchema.optional(),
   // The buyer's choice at checkout - only meaningful (and required, checked
   // server-side against the tenant's collection method) when that tenant
   // allows "both". Ignored otherwise.
@@ -199,6 +221,9 @@ export const checkoutRequestSchema = z.object({
   // Which selling surface this order came from - defaults to "store" when
   // omitted (the regular cart/checkout flow).
   source: z.enum(["store", "funnel"]).optional(),
+  // A buyer-entered code. Invalid/inactive codes fail checkout with a clear
+  // error rather than silently falling back to no discount or an automatic one.
+  discountCode: z.string().trim().max(64).optional(),
 });
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 

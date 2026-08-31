@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard/customers", label: "Customers" },
   { to: "/dashboard/payment-settings", label: "Payments" },
   { to: "/dashboard/delivery-settings", label: "Delivery" },
+  { to: "/dashboard/discounts", label: "Discounts" },
   { to: "/dashboard/analytics-settings", label: "Analytics" },
   { to: "/dashboard/builder", label: "Builder" },
   { to: "/dashboard/site-settings", label: "Site" },

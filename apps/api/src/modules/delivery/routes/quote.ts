@@ -1,11 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { nigeriaStateSchema } from "@platform/shared-types";
 import { findPublishedTenantBySubdomain } from "../../sites/lib/site-store.js";
 import { findDeliverySettings, serializeDeliverySettings } from "../lib/delivery-settings-store.js";
+import { findZoneRate } from "../lib/delivery-zone-store.js";
 import { quoteDelivery } from "../lib/quote.js";
 
 const quoteQuerySchema = z.object({
   subtotalCents: z.coerce.number().int().nonnegative(),
+  state: nigeriaStateSchema.optional(),
 });
 
 export default async function deliveryQuoteRoutes(app: FastifyInstance): Promise<void> {
@@ -20,7 +23,14 @@ export default async function deliveryQuoteRoutes(app: FastifyInstance): Promise
       }
       const settingsRow = await findDeliverySettings(db, tenant.id);
       const settings = serializeDeliverySettings(settingsRow);
-      return reply.send(quoteDelivery(settings, query.subtotalCents));
+      const zoneRate = query.state ? await findZoneRate(db, tenant.id, query.state) : null;
+      return reply.send(
+        quoteDelivery(settings, {
+          preDiscountSubtotalCents: query.subtotalCents,
+          postDiscountSubtotalCents: query.subtotalCents,
+          zoneFeeCents: zoneRate?.feeCents,
+        }),
+      );
     },
   );
 }
