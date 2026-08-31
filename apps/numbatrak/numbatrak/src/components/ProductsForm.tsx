@@ -50,6 +50,7 @@ const emptyFormValues = (): ProductFormValues => ({
   allowsVariants: false,
   allowsBundles: false,
   allowsDiscounts: false,
+  imageUrl: null,
 });
 
 export default function ProductsForm() {
@@ -132,6 +133,7 @@ export default function ProductsForm() {
       allows_variants: formValues.allowsVariants,
       allows_bundles: formValues.allowsBundles,
       allows_discounts: formValues.allowsDiscounts,
+      image_url: formValues.imageUrl,
     };
   };
 
@@ -203,6 +205,7 @@ export default function ProductsForm() {
       allowsVariants: product.allows_variants ?? false,
       allowsBundles: product.allows_bundles ?? false,
       allowsDiscounts: product.allows_discounts ?? false,
+      imageUrl: product.image_url ?? null,
     });
     setOpen(true);
   };
