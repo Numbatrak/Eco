@@ -36,6 +36,7 @@ export interface CreateOrderParams {
   totalCents: number;
   paymentProvider: "paystack" | "flutterwave" | null;
   paymentMethod: "cod" | "online";
+  source: "store" | "funnel";
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -84,6 +85,7 @@ export async function createPendingOrder(
             totalCents: params.totalCents,
             paymentProvider: params.paymentProvider,
             paymentMethod: params.paymentMethod,
+            source: params.source,
             utmSource: params.utmSource,
             utmMedium: params.utmMedium,
             utmCampaign: params.utmCampaign,

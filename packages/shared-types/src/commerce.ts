@@ -195,6 +195,9 @@ export const checkoutRequestSchema = z.object({
   // server-side against the tenant's collection method) when that tenant
   // allows "both". Ignored otherwise.
   paymentMethod: z.enum(["cod", "online"]).optional(),
+  // Which selling surface this order came from - defaults to "store" when
+  // omitted (the regular cart/checkout flow).
+  source: z.enum(["store", "funnel"]).optional(),
 });
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 

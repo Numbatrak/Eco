@@ -68,6 +68,10 @@ export const paymentCollectionMethodEnum = pgEnum("payment_collection_method", [
 
 export const orderPaymentMethodEnum = pgEnum("order_payment_method", ["cod", "online"]);
 
+// Which selling surface produced the order - the store's own cart/checkout,
+// or a product's standalone Funnel Mode landing page.
+export const orderSourceEnum = pgEnum("order_source", ["store", "funnel"]);
+
 // ---------- security_events ----------
 
 export const securityEvents = pgTable(
@@ -185,6 +189,24 @@ export const productVariants = pgTable(
   ],
 );
 
+// ---------- product_funnel_config ----------
+
+/**
+ * One row per product - a standalone landing-page config, distinct from
+ * tenant_site_config's whole-site sections. publishedAt null = the funnel
+ * is off ("turned on per product by the owner" per the spec), matching
+ * tenant_site_config's own publish convention rather than a separate flag.
+ */
+export const productFunnelConfig = pgTable("product_funnel_config", {
+  productId: uuid("product_id")
+    .primaryKey()
+    .references(() => products.id, { onDelete: "cascade" }),
+  sections: jsonb("sections").notNull().default([]),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ---------- carts ----------
 
 export const carts = pgTable(
@@ -295,6 +317,7 @@ export const orders = pgTable(
     // What this specific order actually used - independent of the tenant's
     // collection-method setting, which may allow both and let the buyer choose.
     paymentMethod: orderPaymentMethodEnum("payment_method").notNull().default("online"),
+    source: orderSourceEnum("source").notNull().default("store"),
     paymentReference: text("payment_reference"),
     // Attribution - captured client-side (sticky-first per session), passed
     // through checkout, never authoritative for pricing.

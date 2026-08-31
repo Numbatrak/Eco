@@ -22,6 +22,8 @@ import type {
   AnalyticsSettingsResponse,
   UpdateTenantRequest,
   TenantSettingsResponse,
+  FunnelConfig,
+  FunnelConfigResponse,
 } from "@platform/shared-types";
 import { apiRequest } from "./apiClient";
 
@@ -115,4 +117,16 @@ export const commerceApi = {
 
   updateTenantSettings: (body: UpdateTenantRequest) =>
     apiRequest<void>("/org/site-settings", { method: "PATCH", body }),
+
+  getFunnelConfig: (productId: string) =>
+    apiRequest<FunnelConfigResponse>(`/org/products/${productId}/funnel`, { method: "GET" }),
+
+  saveFunnelConfig: (productId: string, body: FunnelConfig) =>
+    apiRequest<void>(`/org/products/${productId}/funnel`, { method: "PUT", body }),
+
+  publishFunnel: (productId: string) =>
+    apiRequest<void>(`/org/products/${productId}/funnel/publish`, { method: "POST" }),
+
+  unpublishFunnel: (productId: string) =>
+    apiRequest<void>(`/org/products/${productId}/funnel/unpublish`, { method: "POST" }),
 };

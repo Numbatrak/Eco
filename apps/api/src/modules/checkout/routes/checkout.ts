@@ -119,6 +119,7 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         totalCents,
         paymentProvider: paymentMethod === "online" ? settings!.provider : null,
         paymentMethod,
+        source: body.source ?? "store",
         utmSource: body.attribution?.utmSource,
         utmMedium: body.attribution?.utmMedium,
         utmCampaign: body.attribution?.utmCampaign,

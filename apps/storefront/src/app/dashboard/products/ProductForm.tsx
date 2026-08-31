@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { z } from "zod";
 import type { Collection, CreateProductRequest } from "@platform/shared-types";
 import { commerceApi } from "../../../lib/commerceApi";
@@ -132,7 +133,14 @@ export function ProductForm({ productId }: { productId?: string } = {}): React.R
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <h1>{isEditing ? "Edit product" : "Add product"}</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h1>{isEditing ? "Edit product" : "Add product"}</h1>
+        {isEditing && productId ? (
+          <Link href={`/dashboard/products/${productId}/funnel`} className="btn btn-secondary">
+            Funnel
+          </Link>
+        ) : null}
+      </div>
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate

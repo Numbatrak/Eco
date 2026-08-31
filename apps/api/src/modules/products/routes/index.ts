@@ -8,6 +8,7 @@ import listVariantsRoutes from "./variants/list.js";
 import createVariantRoutes from "./variants/create.js";
 import updateVariantRoutes from "./variants/update.js";
 import deleteVariantRoutes from "./variants/delete.js";
+import productFunnelRoutes from "./funnel.js";
 
 export default async function productsRoutes(app: FastifyInstance): Promise<void> {
   await app.register(listProductsRoutes);
@@ -15,6 +16,7 @@ export default async function productsRoutes(app: FastifyInstance): Promise<void
   await app.register(createProductRoutes);
   await app.register(updateProductRoutes);
   await app.register(deleteProductRoutes);
+  await app.register(productFunnelRoutes);
   await app.register(listVariantsRoutes);
   await app.register(createVariantRoutes);
   await app.register(updateVariantRoutes);

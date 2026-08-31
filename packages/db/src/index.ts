@@ -18,6 +18,7 @@ export {
   collections,
   products,
   productVariants,
+  productFunnelConfig,
   carts,
   cartItems,
   customers,

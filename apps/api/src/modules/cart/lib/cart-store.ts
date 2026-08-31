@@ -115,6 +115,10 @@ export async function addItemToCart(
   productId: string,
   quantity: number,
   variantId?: string,
+  // Server-resolved override (e.g. a Funnel Mode package's stored price) -
+  // never a client-supplied value. Omitted for the regular store cart, which
+  // always uses the product's live price.
+  unitPriceOverrideCents?: number,
 ): Promise<{ ok: true } | { ok: false; reason: AddItemFailureReason }> {
   const [product] = await db
     .select()
@@ -161,7 +165,13 @@ export async function addItemToCart(
   if (existing) {
     await db
       .update(cartItems)
-      .set({ quantity: existing.quantity + quantity, updatedAt: new Date() })
+      .set({
+        quantity: existing.quantity + quantity,
+        ...(unitPriceOverrideCents !== undefined
+          ? { unitPriceSnapshotCents: unitPriceOverrideCents }
+          : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(cartItems.id, existing.id));
   } else {
     await db.insert(cartItems).values({
@@ -169,7 +179,7 @@ export async function addItemToCart(
       productId,
       variantId,
       quantity,
-      unitPriceSnapshotCents: product.priceCents,
+      unitPriceSnapshotCents: unitPriceOverrideCents ?? product.priceCents,
     });
   }
   return { ok: true };
