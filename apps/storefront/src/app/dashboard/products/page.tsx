@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { Product, ProductStatus } from "@platform/shared-types";
 import { RequireAuth } from "../../../components/dashboard/RouteGuards";
 import { DashboardLayout } from "../../../components/dashboard/DashboardLayout";
@@ -80,6 +81,7 @@ function ProductsInner(): React.ReactElement {
                 <th>Name</th>
                 <th>Price</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -98,6 +100,11 @@ function ProductsInner(): React.ReactElement {
                   <td>{formatCents(product.priceCents, product.currency)}</td>
                   <td>
                     <span className={`badge badge-${product.status}`}>{product.status}</span>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <Link href={`/dashboard/products/${product.id}/funnel`} className="btn-link">
+                      Funnel
+                    </Link>
                   </td>
                 </tr>
               ))}
