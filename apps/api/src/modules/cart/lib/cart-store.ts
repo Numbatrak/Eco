@@ -44,9 +44,10 @@ export interface CartItemWithProductRow {
   unitPriceSnapshotCents: number;
   currency: string;
   status: "draft" | "published";
+  collectionId: string | null;
 }
 
-async function getCartItemsWithProduct(
+export async function getCartItemsWithProduct(
   db: Database,
   cartId: string,
 ): Promise<CartItemWithProductRow[]> {
@@ -62,6 +63,7 @@ async function getCartItemsWithProduct(
       unitPriceSnapshotCents: cartItems.unitPriceSnapshotCents,
       currency: products.currency,
       status: products.status,
+      collectionId: products.collectionId,
     })
     .from(cartItems)
     .innerJoin(products, eq(products.id, cartItems.productId))

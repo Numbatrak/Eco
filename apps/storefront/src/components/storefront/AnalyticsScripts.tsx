@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { captureAttribution } from "../../lib/attribution";
+import { captureAttribution, captureLastTouch } from "../../lib/attribution";
 import { pageView } from "../../lib/analytics/pixelEvents";
 
 /** Meta's standard base Pixel snippet, ported to TS - see Meta Events Manager. */
@@ -28,6 +28,7 @@ export function AnalyticsScripts({ metaPixelId }: { metaPixelId: string | null }
 
   useEffect(() => {
     captureAttribution();
+    captureLastTouch();
   }, []);
 
   useEffect(() => {

@@ -40,6 +40,7 @@ import checkoutRoutes from "./modules/checkout/routes/index.js";
 import paymentsRoutes from "./modules/payments/routes/index.js";
 import ordersRoutes from "./modules/orders/routes/index.js";
 import deliveryRoutes from "./modules/delivery/routes/index.js";
+import discountsRoutes from "./modules/discounts/routes/index.js";
 import customersRoutes from "./modules/customers/routes/index.js";
 import catalogRoutes from "./modules/catalog/routes/index.js";
 import analyticsRoutes from "./modules/analytics/routes/index.js";
@@ -92,6 +93,7 @@ export async function buildApp() {
   await app.register(paymentsRoutes);
   await app.register(ordersRoutes);
   await app.register(deliveryRoutes);
+  await app.register(discountsRoutes);
   await app.register(customersRoutes);
   await app.register(catalogRoutes);
   await app.register(analyticsRoutes);

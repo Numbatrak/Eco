@@ -47,6 +47,19 @@ export interface CreateOrderParams {
   fbclid?: string;
   ttclid?: string;
   gclid?: string;
+  lastUtmSource?: string;
+  lastUtmMedium?: string;
+  lastUtmCampaign?: string;
+  lastUtmTerm?: string;
+  lastUtmContent?: string;
+  lastReferrer?: string;
+  lastLandingPath?: string;
+  lastFbclid?: string;
+  lastTtclid?: string;
+  lastGclid?: string;
+  discountId?: string | null;
+  discountCode?: string | null;
+  discountAmountCents?: number;
   items: OrderItemInput[];
 }
 
@@ -96,6 +109,19 @@ export async function createPendingOrder(
             fbclid: params.fbclid,
             ttclid: params.ttclid,
             gclid: params.gclid,
+            lastUtmSource: params.lastUtmSource,
+            lastUtmMedium: params.lastUtmMedium,
+            lastUtmCampaign: params.lastUtmCampaign,
+            lastUtmTerm: params.lastUtmTerm,
+            lastUtmContent: params.lastUtmContent,
+            lastReferrer: params.lastReferrer,
+            lastLandingPath: params.lastLandingPath,
+            lastFbclid: params.lastFbclid,
+            lastTtclid: params.lastTtclid,
+            lastGclid: params.lastGclid,
+            discountId: params.discountId ?? null,
+            discountCode: params.discountCode ?? null,
+            discountAmountCents: params.discountAmountCents ?? 0,
           })
           .returning();
         if (!order) {

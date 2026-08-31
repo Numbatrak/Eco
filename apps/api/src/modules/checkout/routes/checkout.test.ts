@@ -9,10 +9,23 @@ vi.mock("../../cart/lib/cart-request.js", () => ({
   isCartContextError: (value: unknown) =>
     value !== null && typeof value === "object" && "error" in (value as object),
 }));
-vi.mock("../../cart/lib/cart-store.js", () => ({
-  serializeCart: vi.fn(),
-  findUnpublishedCartItems: vi.fn(),
-  deleteCart: vi.fn(async () => {}),
+vi.mock("../../cart/lib/cart-store.js", async () => {
+  const actual = await vi.importActual<typeof import("../../cart/lib/cart-store.js")>(
+    "../../cart/lib/cart-store.js",
+  );
+  return {
+    ...actual,
+    getCartItemsWithProduct: vi.fn(),
+    findUnpublishedCartItems: vi.fn(),
+    deleteCart: vi.fn(async () => {}),
+  };
+});
+vi.mock("../../delivery/lib/delivery-zone-store.js", () => ({
+  findZoneRate: vi.fn(async () => null),
+}));
+vi.mock("../../discounts/lib/discounts-store.js", () => ({
+  findActiveByCode: vi.fn(async () => null),
+  listActiveAutomatic: vi.fn(async () => []),
 }));
 vi.mock("../../cart/lib/cart-cookie.js", () => ({
   clearCartTokenCookie: vi.fn(),
@@ -39,7 +52,7 @@ vi.mock("../../customers/lib/customers.js", () => ({
 }));
 
 const { resolveCartContext } = await import("../../cart/lib/cart-request.js");
-const { serializeCart, findUnpublishedCartItems } = await import("../../cart/lib/cart-store.js");
+const { getCartItemsWithProduct, findUnpublishedCartItems } = await import("../../cart/lib/cart-store.js");
 const { findPaymentSettings } = await import("../../payments/lib/payment-settings-store.js");
 const { buildProvider } = await import("../../payments/lib/provider-factory.js");
 const { createPendingOrder, markOrderPaid } = await import("../lib/orders.js");
@@ -92,12 +105,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   });
 
   it("rejects checkout when the cart is empty", async () => {
-    vi.mocked(serializeCart).mockResolvedValue({
-      id: cart.id,
-      items: [],
-      subtotalCents: 0,
-      currency: null,
-    });
+    vi.mocked(getCartItemsWithProduct).mockResolvedValue([]);
 
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [checkoutRoutes] });
@@ -110,23 +118,21 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   });
 
   it("rejects checkout when a cart item is no longer published", async () => {
-    vi.mocked(serializeCart).mockResolvedValue({
-      id: cart.id,
-      items: [
-        {
-          id: "item-1",
-          productId: "product-1",
-          variantId: null,
-          variantLabel: null,
-          name: "Widget",
-          quantity: 1,
-          unitPriceSnapshotCents: 1000,
-          lineTotalCents: 1000,
-        },
-      ],
-      subtotalCents: 1000,
-      currency: "NGN",
-    });
+    vi.mocked(getCartItemsWithProduct).mockResolvedValue([
+      {
+        id: "item-1",
+        productId: "product-1",
+        variantId: null,
+        variantSize: null,
+        variantColor: null,
+        name: "Widget",
+        quantity: 1,
+        unitPriceSnapshotCents: 1000,
+        currency: "NGN",
+        status: "published",
+        collectionId: null,
+      },
+    ]);
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([
       {
         id: "item-1",
@@ -139,6 +145,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
         unitPriceSnapshotCents: 1000,
         currency: "NGN",
         status: "draft",
+        collectionId: null,
       },
     ]);
 
@@ -153,23 +160,21 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   });
 
   it("defaults to COD (no checkout URL, order placed immediately) when the tenant has no payment settings configured", async () => {
-    vi.mocked(serializeCart).mockResolvedValue({
-      id: cart.id,
-      items: [
-        {
-          id: "item-1",
-          productId: "product-1",
-          variantId: null,
-          variantLabel: null,
-          name: "Widget",
-          quantity: 1,
-          unitPriceSnapshotCents: 1000,
-          lineTotalCents: 1000,
-        },
-      ],
-      subtotalCents: 1000,
-      currency: "NGN",
-    });
+    vi.mocked(getCartItemsWithProduct).mockResolvedValue([
+      {
+        id: "item-1",
+        productId: "product-1",
+        variantId: null,
+        variantSize: null,
+        variantColor: null,
+        name: "Widget",
+        quantity: 1,
+        unitPriceSnapshotCents: 1000,
+        currency: "NGN",
+        status: "published",
+        collectionId: null,
+      },
+    ]);
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
     vi.mocked(findPaymentSettings).mockResolvedValue(null);
     vi.mocked(createPendingOrder).mockResolvedValue({
@@ -204,6 +209,19 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       fbclid: null,
       ttclid: null,
       gclid: null,
+      lastUtmSource: null,
+      lastUtmMedium: null,
+      lastUtmCampaign: null,
+      lastUtmTerm: null,
+      lastUtmContent: null,
+      lastReferrer: null,
+      lastLandingPath: null,
+      lastFbclid: null,
+      lastTtclid: null,
+      lastGclid: null,
+      discountId: null,
+      discountCode: null,
+      discountAmountCents: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -227,23 +245,21 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   });
 
   it("rejects checkout when the tenant allows both COD and prepaid but the buyer didn't pick one", async () => {
-    vi.mocked(serializeCart).mockResolvedValue({
-      id: cart.id,
-      items: [
-        {
-          id: "item-1",
-          productId: "product-1",
-          variantId: null,
-          variantLabel: null,
-          name: "Widget",
-          quantity: 1,
-          unitPriceSnapshotCents: 1000,
-          lineTotalCents: 1000,
-        },
-      ],
-      subtotalCents: 1000,
-      currency: "NGN",
-    });
+    vi.mocked(getCartItemsWithProduct).mockResolvedValue([
+      {
+        id: "item-1",
+        productId: "product-1",
+        variantId: null,
+        variantSize: null,
+        variantColor: null,
+        name: "Widget",
+        quantity: 1,
+        unitPriceSnapshotCents: 1000,
+        currency: "NGN",
+        status: "published",
+        collectionId: null,
+      },
+    ]);
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
     vi.mocked(findPaymentSettings).mockResolvedValue({
       tenantId: tenant.id,
@@ -268,23 +284,21 @@ describe("POST /public/sites/:subdomain/checkout", () => {
   });
 
   it("creates a pending order and returns the provider's hosted checkout URL on success", async () => {
-    vi.mocked(serializeCart).mockResolvedValue({
-      id: cart.id,
-      items: [
-        {
-          id: "item-1",
-          productId: "product-1",
-          variantId: null,
-          variantLabel: null,
-          name: "Widget",
-          quantity: 2,
-          unitPriceSnapshotCents: 1000,
-          lineTotalCents: 2000,
-        },
-      ],
-      subtotalCents: 2000,
-      currency: "NGN",
-    });
+    vi.mocked(getCartItemsWithProduct).mockResolvedValue([
+      {
+        id: "item-1",
+        productId: "product-1",
+        variantId: null,
+        variantSize: null,
+        variantColor: null,
+        name: "Widget",
+        quantity: 2,
+        unitPriceSnapshotCents: 1000,
+        currency: "NGN",
+        status: "published",
+        collectionId: null,
+      },
+    ]);
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
     vi.mocked(findPaymentSettings).mockResolvedValue({
       tenantId: tenant.id,
@@ -338,6 +352,19 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       fbclid: null,
       ttclid: null,
       gclid: null,
+      lastUtmSource: null,
+      lastUtmMedium: null,
+      lastUtmCampaign: null,
+      lastUtmTerm: null,
+      lastUtmContent: null,
+      lastReferrer: null,
+      lastLandingPath: null,
+      lastFbclid: null,
+      lastTtclid: null,
+      lastGclid: null,
+      discountId: null,
+      discountCode: null,
+      discountAmountCents: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

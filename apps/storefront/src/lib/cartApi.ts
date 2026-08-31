@@ -6,6 +6,7 @@ import type {
   CheckoutResponse,
   OrderStatusResponse,
   DeliveryQuoteResponse,
+  DiscountCodePreviewResponse,
 } from "@platform/shared-types";
 import { apiRequest } from "./apiClient";
 
@@ -30,10 +31,18 @@ export const cartApi = {
   checkout: (subdomain: string, body: CheckoutRequest) =>
     apiRequest<CheckoutResponse>(`/public/sites/${subdomain}/checkout`, { method: "POST", body }),
 
-  getDeliveryQuote: (subdomain: string, subtotalCents: number) =>
+  getDeliveryQuote: (subdomain: string, subtotalCents: number, state?: string) =>
     apiRequest<DeliveryQuoteResponse>(
-      `/public/sites/${subdomain}/delivery-quote?subtotalCents=${subtotalCents}`,
+      `/public/sites/${subdomain}/delivery-quote?subtotalCents=${subtotalCents}${
+        state ? `&state=${encodeURIComponent(state)}` : ""
+      }`,
     ),
+
+  validateDiscountCode: (subdomain: string, code: string) =>
+    apiRequest<DiscountCodePreviewResponse>(`/public/sites/${subdomain}/discount-code/validate`, {
+      method: "POST",
+      body: { code },
+    }),
 
   getOrderStatus: (subdomain: string, orderId: string) =>
     apiRequest<OrderStatusResponse>(`/public/sites/${subdomain}/checkout/${orderId}/status`),

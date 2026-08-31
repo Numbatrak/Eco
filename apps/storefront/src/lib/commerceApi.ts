@@ -18,6 +18,10 @@ import type {
   PaymentSettingsResponse,
   DeliverySettingsRequest,
   DeliverySettingsResponse,
+  DeliveryZoneRatesRequest,
+  DeliveryZoneRatesResponse,
+  DiscountRequest,
+  DiscountResponse,
   AnalyticsSettingsRequest,
   AnalyticsSettingsResponse,
   UpdateTenantRequest,
@@ -105,6 +109,26 @@ export const commerceApi = {
 
   saveDeliverySettings: (body: DeliverySettingsRequest) =>
     apiRequest<DeliverySettingsResponse>("/org/delivery-settings", { method: "PUT", body }),
+
+  getDeliveryZones: () =>
+    apiRequest<DeliveryZoneRatesResponse>("/org/delivery-zones", { method: "GET" }),
+
+  saveDeliveryZones: (body: DeliveryZoneRatesRequest) =>
+    apiRequest<DeliveryZoneRatesResponse>("/org/delivery-zones", { method: "PUT", body }),
+
+  listDiscounts: () => apiRequest<{ discounts: DiscountResponse[] }>("/org/discounts", { method: "GET" }),
+
+  getDiscount: (discountId: string) =>
+    apiRequest<DiscountResponse>(`/org/discounts/${discountId}`, { method: "GET" }),
+
+  createDiscount: (body: DiscountRequest) =>
+    apiRequest<DiscountResponse>("/org/discounts", { method: "POST", body }),
+
+  updateDiscount: (discountId: string, body: Partial<DiscountRequest>) =>
+    apiRequest<DiscountResponse>(`/org/discounts/${discountId}`, { method: "PATCH", body }),
+
+  deleteDiscount: (discountId: string) =>
+    apiRequest<void>(`/org/discounts/${discountId}`, { method: "DELETE" }),
 
   getAnalyticsSettings: () =>
     apiRequest<AnalyticsSettingsResponse>("/org/analytics-settings", { method: "GET" }),
