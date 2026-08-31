@@ -3,12 +3,13 @@
  * Plugin Name: CRM Form Embed
  * Plugin URI: https://mail9ja.vercel.app
  * Description: Embed dynamic CRM forms in WordPress using form tokens. Minimal plugin that loads external SDK.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Your Company
  * Author URI: https://mail9ja.vercel.app
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: crm-form-embed
+ * Update URI: https://app.numbatrak.io/wordpress-plugin/update-manifest.json
  */
 
 // Exit if accessed directly
@@ -17,9 +18,10 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('CRM_FORM_EMBED_VERSION', '1.0.0');
+define('CRM_FORM_EMBED_VERSION', '1.1.0');
 define('CRM_FORM_EMBED_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CRM_FORM_EMBED_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('CRM_FORM_EMBED_UPDATE_URL', 'https://app.numbatrak.io/wordpress-plugin/update-manifest.json');
 
 /**
  * Main Plugin Class
@@ -92,6 +94,94 @@ class CRM_Form_Embed {
         
         // Add settings link to plugin page
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_settings_link'));
+
+        // Self-hosted update checker (no wordpress.org listing, no third-party library)
+        add_filter('pre_set_site_transient_update_plugins', array($this, 'check_for_update'));
+        add_filter('plugins_api', array($this, 'plugin_info'), 20, 3);
+    }
+
+    /**
+     * Fetch and cache the remote update manifest (12h transient) so every
+     * site running this plugin isn't hitting our server on every admin
+     * page load - WP calls this filter far more often than once a day.
+     */
+    private function get_remote_manifest() {
+        $cached = get_transient('crm_form_embed_remote_manifest');
+        if (false !== $cached) {
+            return $cached;
+        }
+
+        $response = wp_remote_get(CRM_FORM_EMBED_UPDATE_URL, array('timeout' => 5));
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return null;
+        }
+
+        $manifest = json_decode(wp_remote_retrieve_body($response));
+        if (!$manifest || empty($manifest->version)) {
+            return null;
+        }
+
+        set_transient('crm_form_embed_remote_manifest', $manifest, 12 * HOUR_IN_SECONDS);
+        return $manifest;
+    }
+
+    /**
+     * pre_set_site_transient_update_plugins - reports a newer version to
+     * WordPress's own Plugins page / update UI, using our own JSON manifest
+     * instead of the wordpress.org API.
+     */
+    public function check_for_update($transient) {
+        if (empty($transient->checked)) {
+            return $transient;
+        }
+
+        $manifest = $this->get_remote_manifest();
+        if (!$manifest) {
+            return $transient;
+        }
+
+        $plugin_file = plugin_basename(__FILE__);
+
+        if (version_compare(CRM_FORM_EMBED_VERSION, $manifest->version, '<')) {
+            $transient->response[$plugin_file] = (object) array(
+                'slug' => dirname($plugin_file),
+                'plugin' => $plugin_file,
+                'new_version' => $manifest->version,
+                'url' => isset($manifest->homepage) ? $manifest->homepage : '',
+                'package' => $manifest->download_url,
+                'tested' => isset($manifest->tested) ? $manifest->tested : '',
+                'requires' => isset($manifest->requires) ? $manifest->requires : '',
+            );
+        }
+
+        return $transient;
+    }
+
+    /**
+     * plugins_api - supplies the "View version details" popup WordPress
+     * shows when an update is available. Not required for the update
+     * itself to work, but completes the normal admin UX.
+     */
+    public function plugin_info($result, $action, $args) {
+        if ($action !== 'plugin_information' || empty($args->slug) || $args->slug !== dirname(plugin_basename(__FILE__))) {
+            return $result;
+        }
+
+        $manifest = $this->get_remote_manifest();
+        if (!$manifest) {
+            return $result;
+        }
+
+        return (object) array(
+            'name' => 'CRM Form Embed',
+            'slug' => dirname(plugin_basename(__FILE__)),
+            'version' => $manifest->version,
+            'download_link' => $manifest->download_url,
+            'requires' => isset($manifest->requires) ? $manifest->requires : '',
+            'tested' => isset($manifest->tested) ? $manifest->tested : '',
+            'last_updated' => isset($manifest->last_updated) ? $manifest->last_updated : '',
+            'sections' => (array) (isset($manifest->sections) ? $manifest->sections : array('description' => '')),
+        );
     }
     
     /**

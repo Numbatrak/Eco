@@ -22,9 +22,13 @@ import {
   Zap,
   ChevronUp,
   CheckSquare,
+  Download,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 import "./FormBuilderPage.css";
 import { useOrganization } from "../../contexts/OrganizationContext";
+import { API_BASE_URL } from "../../lib/apiClient";
 import {
   createForm,
   updateForm,
@@ -701,6 +705,27 @@ export default function FormBuilderPage() {
         document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showFieldTypeMenu]);
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard!`, { description: text, duration: 3000 });
+    } catch (err) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        toast.success(`${label} copied to clipboard!`, { description: text, duration: 3000 });
+      } catch {
+        toast.error(`Failed to copy ${label.toLowerCase()}`);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
 
   const renderPreview = () => (
     <div className="preview-container">
@@ -2353,6 +2378,82 @@ export default function FormBuilderPage() {
             </div>
           </div>
         </form>
+      )}
+
+      {!loading && formToken && (
+        <div className="mx-4 mb-6 sm:mx-6 bg-card border-2 border-border rounded-lg p-6">
+          <div className="section-header">
+            <Download className="section-icon" />
+            <h2 className="section-title">Add this form to WordPress</h2>
+          </div>
+          <ol className="mt-4 space-y-5 text-sm text-foreground">
+            <li>
+              <p className="font-semibold">1. Download the plugin</p>
+              <a
+                href="/wordpress-plugin/crm-form-embed.zip"
+                download="crm-form-embed.zip"
+                className="btn-secondary inline-flex mt-2"
+              >
+                <Download className="w-4 h-4" />
+                Download Plugin
+              </a>
+            </li>
+            <li>
+              <p className="font-semibold">2. Install &amp; activate it</p>
+              <p className="text-muted-foreground mt-1">
+                In WordPress: Plugins → Add New → Upload Plugin → choose the downloaded zip → Install Now → Activate.
+              </p>
+            </li>
+            <li>
+              <p className="font-semibold">3. Configure the API URL</p>
+              <p className="text-muted-foreground mt-1">
+                Go to Settings → CRM Form Embed and paste your API base URL:
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <code className="px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">
+                  {API_BASE_URL}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => void copyToClipboard(API_BASE_URL, "API base URL")}
+                  className="btn-secondary shrink-0"
+                  title="Copy API base URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                The embed script/style URLs are already pre-filled — most stores won't need to change them.
+              </p>
+            </li>
+            <li>
+              <p className="font-semibold">4. Add the form</p>
+              <p className="text-muted-foreground mt-1">
+                Paste this shortcode into any WordPress page or post:
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <code className="px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">
+                  {`[crm_form form="${formToken}"]`}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => void copyToClipboard(`[crm_form form="${formToken}"]`, "Shortcode")}
+                  className="btn-secondary shrink-0"
+                  title="Copy shortcode"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </li>
+            <li>
+              <p className="font-semibold">5. Stay up to date</p>
+              <p className="text-muted-foreground mt-1">
+                The plugin checks for updates automatically — WordPress will show "Update available" on the
+                Plugins page whenever a new version ships, so there's no need to manually re-download it.
+              </p>
+            </li>
+          </ol>
+        </div>
       )}
       </div>
     </PageLayout>

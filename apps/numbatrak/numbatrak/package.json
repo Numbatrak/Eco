@@ -75,7 +75,8 @@
     "dev": "vite",
     "build": "vite build",
     "import:waybills": "node scripts/importWaybills.js",
-    "db:migrate:delivery-fee": "node scripts/run-delivery-fee-migration.js"
+    "db:migrate:delivery-fee": "node scripts/run-delivery-fee-migration.js",
+    "package:wordpress-plugin": "node scripts/package-wordpress-plugin.mjs"
   },
   "type": "module"
 }

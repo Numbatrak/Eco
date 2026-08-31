@@ -4,7 +4,7 @@
  * cross-origin - `credentials: "include"` plus apps/api's CORS allow-list
  * (NUMBATRAK_APP_URL) are both required for the session cookie to work.
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export class ApiError extends Error {
   readonly status: number;
