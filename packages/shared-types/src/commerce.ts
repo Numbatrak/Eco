@@ -191,13 +191,18 @@ export const checkoutRequestSchema = z.object({
       gclid: z.string().trim().max(500).optional(),
     })
     .optional(),
+  // The buyer's choice at checkout - only meaningful (and required, checked
+  // server-side against the tenant's collection method) when that tenant
+  // allows "both". Ignored otherwise.
+  paymentMethod: z.enum(["cod", "online"]).optional(),
 });
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 
 export const checkoutResponseSchema = z.object({
   orderId: z.string().uuid(),
   orderNumber: z.string(),
-  checkoutUrl: z.string().url(),
+  // Null for a COD order - it's already placed, nothing to redirect to.
+  checkoutUrl: z.string().url().nullable(),
 });
 export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
 
@@ -242,20 +247,45 @@ export type PaymentProviderKey = z.infer<typeof paymentProviderKeySchema>;
 export const paymentModeSchema = z.enum(["test", "live"]);
 export type PaymentMode = z.infer<typeof paymentModeSchema>;
 
-export const paymentSettingsRequestSchema = z.object({
-  provider: paymentProviderKeySchema,
-  publicKey: z.string().trim().min(1),
-  secretKey: z.string().trim().min(1),
-  mode: paymentModeSchema,
-  // Required (password always, code only if the user has 2FA enabled) when
-  // mode is "live" - this is the re-auth bar for real money movement,
-  // verified server-side. Not needed for test mode.
-  password: z.string().optional(),
-  code: z.string().optional(),
-});
+// How the owner collects payment - "both" lets the buyer choose COD vs Pay
+// Now at checkout (see checkoutRequestSchema.paymentMethod).
+export const paymentCollectionMethodSchema = z.enum(["cod", "prepaid", "both"]);
+export type PaymentCollectionMethod = z.infer<typeof paymentCollectionMethodSchema>;
+
+export const paymentSettingsRequestSchema = z
+  .object({
+    collectionMethod: paymentCollectionMethodSchema,
+    // Only required when collectionMethod isn't "cod" - a pure COD store
+    // needs no gateway at all.
+    provider: paymentProviderKeySchema.optional(),
+    publicKey: z.string().trim().min(1).optional(),
+    secretKey: z.string().trim().min(1).optional(),
+    mode: paymentModeSchema.optional(),
+    // Required (password always, code only if the user has 2FA enabled) when
+    // mode is "live" - this is the re-auth bar for real money movement,
+    // verified server-side. Not needed for test mode.
+    password: z.string().optional(),
+    code: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.collectionMethod === "cod") return;
+    if (!data.provider) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["provider"], message: "Required" });
+    }
+    if (!data.publicKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["publicKey"], message: "Required" });
+    }
+    if (!data.secretKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["secretKey"], message: "Required" });
+    }
+    if (!data.mode) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["mode"], message: "Required" });
+    }
+  });
 export type PaymentSettingsRequest = z.infer<typeof paymentSettingsRequestSchema>;
 
 export const paymentSettingsResponseSchema = z.object({
+  collectionMethod: paymentCollectionMethodSchema.nullable(),
   provider: paymentProviderKeySchema.nullable(),
   mode: paymentModeSchema.nullable(),
   enabled: z.boolean(),
@@ -350,7 +380,7 @@ export const orderDetailSchema = orderSummarySchema.extend({
   deliveryState: z.string().nullable(),
   deliveryFeeCents: z.number().int().nonnegative(),
   vatAmountCents: z.number().int().nonnegative(),
-  paymentProvider: paymentProviderKeySchema,
+  paymentProvider: paymentProviderKeySchema.nullable(),
   paymentReference: z.string().nullable(),
   items: z.array(orderItemSchema),
 });
@@ -405,6 +435,9 @@ export const publicSiteSchema = z.object({
   // Public-safe subset only - never the CAPI token, which stays server-side.
   analytics: z.object({
     metaPixelId: z.string().nullable(),
+  }),
+  payment: z.object({
+    collectionMethod: paymentCollectionMethodSchema,
   }),
 });
 export type PublicSite = z.infer<typeof publicSiteSchema>;

@@ -57,6 +57,17 @@ export const paymentProviderEnum = pgEnum("payment_provider", ["paystack", "flut
 
 export const paymentModeEnum = pgEnum("payment_mode", ["test", "live"]);
 
+// How the owner wants to collect payment for the store checkout - "both"
+// lets the buyer choose COD vs Pay Now at checkout (see orderPaymentMethodEnum
+// for what the buyer actually picked on a given order).
+export const paymentCollectionMethodEnum = pgEnum("payment_collection_method", [
+  "cod",
+  "prepaid",
+  "both",
+]);
+
+export const orderPaymentMethodEnum = pgEnum("order_payment_method", ["cod", "online"]);
+
 // ---------- security_events ----------
 
 export const securityEvents = pgTable(
@@ -279,7 +290,11 @@ export const orders = pgTable(
     vatRateBps: integer("vat_rate_bps"),
     vatAmountCents: integer("vat_amount_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull(),
-    paymentProvider: paymentProviderEnum("payment_provider").notNull(),
+    // Null for a COD order - there's no gateway involved at all.
+    paymentProvider: paymentProviderEnum("payment_provider"),
+    // What this specific order actually used - independent of the tenant's
+    // collection-method setting, which may allow both and let the buyer choose.
+    paymentMethod: orderPaymentMethodEnum("payment_method").notNull().default("online"),
     paymentReference: text("payment_reference"),
     // Attribution - captured client-side (sticky-first per session), passed
     // through checkout, never authoritative for pricing.
@@ -329,7 +344,13 @@ export const tenantPaymentSettings = pgTable("tenant_payment_settings", {
   tenantId: text("tenant_id")
     .primaryKey()
     .references(() => organization.id, { onDelete: "cascade" }),
-  provider: paymentProviderEnum("provider").notNull(),
+  // Default "prepaid" preserves today's exact behavior for every tenant that
+  // already has a row here (a configured gateway = prepaid-only checkout).
+  // A missing row entirely (never touched payments) is treated as "cod" at
+  // the application layer - see checkout.ts - so checkout never hard-fails.
+  collectionMethod: paymentCollectionMethodEnum("collection_method").notNull().default("prepaid"),
+  // Null when collectionMethod is "cod" - no gateway needed at all.
+  provider: paymentProviderEnum("provider"),
   publicKey: text("public_key"),
   secretKeyEncrypted: text("secret_key_encrypted"),
   mode: paymentModeEnum("mode").notNull().default("test"),

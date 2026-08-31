@@ -26,6 +26,7 @@ import {
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import "./FormBuilderPage.css";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { API_BASE_URL } from "../../lib/apiClient";
@@ -2381,12 +2382,19 @@ export default function FormBuilderPage() {
       )}
 
       {!loading && formToken && (
-        <div className="mx-4 mb-6 sm:mx-6 bg-card border-2 border-border rounded-lg p-6">
-          <div className="section-header">
-            <Download className="section-icon" />
-            <h2 className="section-title">Add this form to WordPress</h2>
-          </div>
-          <ol className="mt-4 space-y-5 text-sm text-foreground">
+        <div className="mx-4 mb-6 sm:mx-6">
+          <Dialog>
+            <DialogTrigger asChild>
+              <button type="button" className="btn-secondary">
+                <Download className="w-4 h-4" />
+                Add this form to WordPress
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add this form to WordPress</DialogTitle>
+              </DialogHeader>
+              <ol className="mt-2 space-y-5 text-sm text-foreground">
             <li>
               <p className="font-semibold">1. Download the plugin</p>
               <a
@@ -2452,7 +2460,9 @@ export default function FormBuilderPage() {
                 Plugins page whenever a new version ships, so there's no need to manually re-download it.
               </p>
             </li>
-          </ol>
+              </ol>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
       </div>

@@ -17,10 +17,12 @@ import { getAttribution } from "../../../../lib/attribution";
 import { initiateCheckout } from "../../../../lib/analytics/pixelEvents";
 
 export default function CheckoutPage(): React.ReactElement {
-  const { subdomain } = useSite();
+  const { subdomain, site } = useSite();
+  const collectionMethod = site.payment.collectionMethod;
   const { cart, loading: cartLoading } = useCart();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [placedDirectly, setPlacedDirectly] = useState(false);
   const [quote, setQuote] = useState<DeliveryQuoteResponse | null>(null);
   const firedInitiateCheckout = useRef(false);
 
@@ -30,6 +32,7 @@ export default function CheckoutPage(): React.ReactElement {
     formState: { errors, isSubmitting },
   } = useForm<CheckoutRequest>({
     resolver: zodResolver(checkoutRequestSchema),
+    defaultValues: { paymentMethod: collectionMethod === "prepaid" ? "online" : "cod" },
   });
 
   useEffect(() => {
@@ -55,7 +58,14 @@ export default function CheckoutPage(): React.ReactElement {
     try {
       const result = await cartApi.checkout(subdomain, { ...values, attribution: getAttribution() });
       setRedirecting(true);
-      window.location.href = result.checkoutUrl;
+      // Null checkoutUrl = a COD order, already placed - nothing to pay for
+      // online, so go straight to the order status page instead.
+      if (result.checkoutUrl === null) {
+        setPlacedDirectly(true);
+        window.location.href = `/sites/${subdomain}/order/${result.orderId}/status`;
+      } else {
+        window.location.href = result.checkoutUrl;
+      }
     } catch (error) {
       setSubmitError(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     }
@@ -207,6 +217,22 @@ export default function CheckoutPage(): React.ReactElement {
           ) : null}
         </div>
 
+        {collectionMethod === "both" ? (
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-ink">Payment method</span>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="radio" value="cod" {...register("paymentMethod")} />
+              Pay on delivery
+            </label>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="radio" value="online" {...register("paymentMethod")} />
+              Pay now
+            </label>
+          </div>
+        ) : collectionMethod === "cod" ? (
+          <p className="text-sm text-muted">Pay with cash when your order is delivered.</p>
+        ) : null}
+
         {submitError ? <p className="text-sm text-danger">{submitError}</p> : null}
 
         <button
@@ -214,7 +240,15 @@ export default function CheckoutPage(): React.ReactElement {
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
           disabled={isSubmitting || redirecting}
         >
-          {redirecting ? "Redirecting to payment…" : isSubmitting ? "Placing order…" : "Continue to payment"}
+          {redirecting
+            ? placedDirectly
+              ? "Placing order…"
+              : "Redirecting to payment…"
+            : isSubmitting
+              ? "Placing order…"
+              : collectionMethod === "cod"
+                ? "Place order"
+                : "Continue to payment"}
         </button>
       </form>
     </div>

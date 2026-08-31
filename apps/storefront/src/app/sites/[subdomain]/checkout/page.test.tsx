@@ -4,9 +4,17 @@ import userEvent from "@testing-library/user-event";
 import type { Cart } from "@platform/shared-types";
 import CheckoutPage from "./page";
 import { cartApi } from "../../../../lib/cartApi";
+import { useSite } from "../../../../components/SiteProvider";
+
+function mockSite(collectionMethod: "cod" | "prepaid" | "both"): void {
+  vi.mocked(useSite).mockReturnValue({
+    subdomain: "acme",
+    site: { payment: { collectionMethod } } as never,
+  });
+}
 
 vi.mock("../../../../components/SiteProvider", () => ({
-  useSite: vi.fn(() => ({ subdomain: "acme", site: {} })),
+  useSite: vi.fn(),
 }));
 
 const cartFixture: Cart = {
@@ -54,6 +62,7 @@ vi.mock("../../../../lib/cartApi", () => ({
 describe("CheckoutPage validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSite("prepaid");
   });
 
   it("shows validation errors for an empty form and never calls checkout", async () => {
@@ -117,5 +126,48 @@ describe("CheckoutPage validation", () => {
     expect(window.location.href).toBe("https://pay.example.com/session");
 
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("places a COD order directly with no payment-method choice and redirects to order status", async () => {
+    mockSite("cod");
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, href: "" },
+    });
+
+    vi.mocked(cartApi.checkout).mockResolvedValue({
+      orderId: "order-cod-1",
+      orderNumber: "COD12345",
+      checkoutUrl: null,
+    });
+
+    const user = userEvent.setup();
+    render(<CheckoutPage />);
+
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/full name/i), "Ada Lovelace");
+    await user.type(screen.getByLabelText(/^email$/i), "ada@example.com");
+    await user.type(screen.getByLabelText(/delivery address/i), "1 Broad Street");
+    await user.type(screen.getByLabelText(/^city$/i), "Lagos");
+    await user.type(screen.getByLabelText(/^state$/i), "Lagos");
+    await user.click(screen.getByRole("button", { name: /place order/i }));
+
+    await screen.findByText(/placing order/i);
+    expect(window.location.href).toBe("/sites/acme/order/order-cod-1/status");
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("shows a Pay on Delivery / Pay Now choice when the tenant allows both", async () => {
+    mockSite("both");
+    const user = userEvent.setup();
+    render(<CheckoutPage />);
+
+    expect(screen.getByLabelText(/pay on delivery/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/pay now/i)).toBeInTheDocument();
+    await user.click(screen.getByLabelText(/pay on delivery/i));
+    expect(screen.getByLabelText(/pay on delivery/i)).toBeChecked();
   });
 });

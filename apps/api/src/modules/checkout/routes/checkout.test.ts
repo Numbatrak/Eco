@@ -26,6 +26,7 @@ vi.mock("../../payments/lib/provider-factory.js", () => ({
 vi.mock("../lib/orders.js", () => ({
   createPendingOrder: vi.fn(),
   setOrderPaymentReference: vi.fn(async () => {}),
+  markOrderPaid: vi.fn(async () => true),
 }));
 vi.mock("../../delivery/lib/delivery-settings-store.js", async () => {
   const actual = await vi.importActual<typeof import("../../delivery/lib/delivery-settings-store.js")>(
@@ -41,7 +42,7 @@ const { resolveCartContext } = await import("../../cart/lib/cart-request.js");
 const { serializeCart, findUnpublishedCartItems } = await import("../../cart/lib/cart-store.js");
 const { findPaymentSettings } = await import("../../payments/lib/payment-settings-store.js");
 const { buildProvider } = await import("../../payments/lib/provider-factory.js");
-const { createPendingOrder } = await import("../lib/orders.js");
+const { createPendingOrder, markOrderPaid } = await import("../lib/orders.js");
 const { findDeliverySettings } = await import("../../delivery/lib/delivery-settings-store.js");
 const { upsertCustomer } = await import("../../customers/lib/customers.js");
 
@@ -151,7 +152,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
     expect(createPendingOrder).not.toHaveBeenCalled();
   });
 
-  it("rejects checkout when the tenant has no payment settings configured", async () => {
+  it("defaults to COD (no checkout URL, order placed immediately) when the tenant has no payment settings configured", async () => {
     vi.mocked(serializeCart).mockResolvedValue({
       id: cart.id,
       items: [
@@ -171,6 +172,89 @@ describe("POST /public/sites/:subdomain/checkout", () => {
     });
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
     vi.mocked(findPaymentSettings).mockResolvedValue(null);
+    vi.mocked(createPendingOrder).mockResolvedValue({
+      id: "order-2",
+      tenantId: tenant.id,
+      customerId: null,
+      orderNumber: "COD12345",
+      customerName: checkoutPayload.customerName,
+      customerEmail: checkoutPayload.customerEmail,
+      customerPhone: null,
+      status: "pending",
+      currency: "NGN",
+      subtotalCents: 1000,
+      deliveryAddress: null,
+      deliveryCity: null,
+      deliveryState: null,
+      deliveryFeeCents: 0,
+      vatRateBps: null,
+      vatAmountCents: 0,
+      totalCents: 1000,
+      paymentProvider: null,
+      paymentMethod: "cod",
+      paymentReference: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
+      referrer: null,
+      landingPath: null,
+      fbclid: null,
+      ttclid: null,
+      gclid: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const redis = new RedisMock() as unknown as RedisClient;
+    const app = await buildTestApp({ redis, routes: [checkoutRoutes] });
+
+    const response = await postCheckout(app);
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      orderId: "order-2",
+      orderNumber: "COD12345",
+      checkoutUrl: null,
+    });
+    expect(createPendingOrder).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ paymentMethod: "cod", paymentProvider: null }),
+    );
+    expect(markOrderPaid).toHaveBeenCalled();
+  });
+
+  it("rejects checkout when the tenant allows both COD and prepaid but the buyer didn't pick one", async () => {
+    vi.mocked(serializeCart).mockResolvedValue({
+      id: cart.id,
+      items: [
+        {
+          id: "item-1",
+          productId: "product-1",
+          variantId: null,
+          variantLabel: null,
+          name: "Widget",
+          quantity: 1,
+          unitPriceSnapshotCents: 1000,
+          lineTotalCents: 1000,
+        },
+      ],
+      subtotalCents: 1000,
+      currency: "NGN",
+    });
+    vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
+    vi.mocked(findPaymentSettings).mockResolvedValue({
+      tenantId: tenant.id,
+      collectionMethod: "both",
+      provider: "paystack",
+      publicKey: "pk_test_x",
+      secretKeyEncrypted: "encrypted",
+      mode: "test",
+      enabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const redis = new RedisMock() as unknown as RedisClient;
     const app = await buildTestApp({ redis, routes: [checkoutRoutes] });
@@ -178,7 +262,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
     const response = await postCheckout(app);
 
     expect(response.statusCode).toBe(400);
-    expect(response.json().error).toBe("payments_not_configured");
+    expect(response.json().error).toBe("payment_method_required");
     expect(createPendingOrder).not.toHaveBeenCalled();
   });
 
@@ -203,6 +287,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
     vi.mocked(findUnpublishedCartItems).mockResolvedValue([]);
     vi.mocked(findPaymentSettings).mockResolvedValue({
       tenantId: tenant.id,
+      collectionMethod: "prepaid",
       provider: "paystack",
       publicKey: "pk_test_x",
       secretKeyEncrypted: "encrypted",
@@ -239,6 +324,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       vatAmountCents: 0,
       totalCents: 2000,
       paymentProvider: "paystack",
+      paymentMethod: "online",
       paymentReference: null,
       utmSource: null,
       utmMedium: null,

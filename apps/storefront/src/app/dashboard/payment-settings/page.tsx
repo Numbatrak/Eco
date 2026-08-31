@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
   paymentProviderKeySchema,
   paymentModeSchema,
+  paymentCollectionMethodSchema,
   type PaymentSettingsResponse,
 } from "@platform/shared-types";
 import type { ReauthFormValues } from "../../../components/dashboard/ReauthModal";
@@ -19,12 +20,29 @@ import { useAuth } from "../../../components/dashboard/AuthContext";
 import { commerceApi } from "../../../lib/commerceApi";
 import { ApiError } from "../../../lib/apiClient";
 
-const formSchema = z.object({
-  provider: paymentProviderKeySchema,
-  publicKey: z.string().trim().min(1, "Public key is required"),
-  secretKey: z.string().trim().min(1, "Secret key is required"),
-  mode: paymentModeSchema,
-});
+const formSchema = z
+  .object({
+    collectionMethod: paymentCollectionMethodSchema,
+    provider: paymentProviderKeySchema.optional(),
+    publicKey: z.string().trim().optional(),
+    secretKey: z.string().trim().optional(),
+    mode: paymentModeSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.collectionMethod === "cod") return;
+    if (!data.provider) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["provider"], message: "Required" });
+    }
+    if (!data.publicKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["publicKey"], message: "Public key is required" });
+    }
+    if (!data.secretKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["secretKey"], message: "Secret key is required" });
+    }
+    if (!data.mode) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["mode"], message: "Required" });
+    }
+  });
 type FormValues = z.infer<typeof formSchema>;
 
 function PaymentSettingsInner(): React.ReactElement {
@@ -39,18 +57,36 @@ function PaymentSettingsInner(): React.ReactElement {
     register,
     handleSubmit,
     control,
+    watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { provider: "paystack", publicKey: "", secretKey: "", mode: "test" },
+    defaultValues: {
+      collectionMethod: "prepaid",
+      provider: "paystack",
+      publicKey: "",
+      secretKey: "",
+      mode: "test",
+    },
   });
+  const collectionMethod = watch("collectionMethod");
 
   useEffect(() => {
     commerceApi
       .getPaymentSettings()
-      .then(setSettings)
+      .then((response) => {
+        setSettings(response);
+        reset({
+          collectionMethod: response.collectionMethod ?? "prepaid",
+          provider: response.provider ?? "paystack",
+          publicKey: "",
+          secretKey: "",
+          mode: response.mode ?? "test",
+        });
+      })
       .catch(() => setLoadError("Could not load payment settings."));
-  }, []);
+  }, [reset]);
 
   async function saveSettings(values: FormValues, reauth?: ReauthFormValues): Promise<void> {
     setFormError(null);
@@ -103,6 +139,16 @@ function PaymentSettingsInner(): React.ReactElement {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+            <span className="field-hint">Collection method</span>
+            <span>
+              {settings.collectionMethod === "cod"
+                ? "Cash on delivery only"
+                : settings.collectionMethod === "both"
+                  ? "COD + Prepaid"
+                  : "Prepaid only"}
+            </span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
             <span className="field-hint">Current provider</span>
             <span>{settings.provider ?? "Not configured"}</span>
           </div>
@@ -122,38 +168,76 @@ function PaymentSettingsInner(): React.ReactElement {
         noValidate
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}
       >
-        <div className="field">
-          <label className="field-label" htmlFor="provider">
-            Provider
-          </label>
-          <select id="provider" className="text-input" {...register("provider")}>
-            <option value="paystack">Paystack</option>
-            <option value="flutterwave">Flutterwave</option>
-          </select>
-        </div>
-
-        <TextField
-          label="Public key"
-          error={errors.publicKey?.message}
-          {...register("publicKey")}
-        />
-        <PasswordField
-          label="Secret key"
-          hint={
-            !errors.secretKey
-              ? "Only ever stored encrypted; never shown again after saving."
-              : undefined
-          }
-          error={errors.secretKey?.message}
-          {...register("secretKey")}
-        />
-
         <Controller
           control={control}
-          name="mode"
+          name="collectionMethod"
           render={({ field }) => (
             <div className="field">
-              <span className="field-label">Mode</span>
+              <span className="field-label">How do you get paid?</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}>
+                  <input
+                    type="radio"
+                    checked={field.value === "cod"}
+                    onChange={() => field.onChange("cod")}
+                  />
+                  Cash on delivery only — no payment gateway needed
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}>
+                  <input
+                    type="radio"
+                    checked={field.value === "prepaid"}
+                    onChange={() => field.onChange("prepaid")}
+                  />
+                  Prepaid only — buyers pay online at checkout
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}>
+                  <input
+                    type="radio"
+                    checked={field.value === "both"}
+                    onChange={() => field.onChange("both")}
+                  />
+                  Both — buyers choose Pay on Delivery or Pay Now
+                </label>
+              </div>
+            </div>
+          )}
+        />
+
+        {collectionMethod !== "cod" && (
+          <>
+            <div className="field">
+              <label className="field-label" htmlFor="provider">
+                Provider
+              </label>
+              <select id="provider" className="text-input" {...register("provider")}>
+                <option value="paystack">Paystack</option>
+                <option value="flutterwave">Flutterwave</option>
+              </select>
+            </div>
+
+            <TextField
+              label="Public key"
+              error={errors.publicKey?.message}
+              {...register("publicKey")}
+            />
+            <PasswordField
+              label="Secret key"
+              hint={
+                !errors.secretKey
+                  ? "Only ever stored encrypted; never shown again after saving."
+                  : undefined
+              }
+              error={errors.secretKey?.message}
+              {...register("secretKey")}
+            />
+
+            <Controller
+              control={control}
+              name="mode"
+              render={({ field }) => (
+                <div className="field">
+                  <span className="field-label">Mode</span>
               <div style={{ display: "flex", gap: 16 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}>
                   <input
@@ -174,7 +258,9 @@ function PaymentSettingsInner(): React.ReactElement {
               </div>
             </div>
           )}
-        />
+            />
+          </>
+        )}
 
         {savedNotice ? (
           <div className="banner banner-success" role="status">

@@ -71,6 +71,8 @@ export {
   type PaymentProviderKey,
   paymentModeSchema,
   type PaymentMode,
+  paymentCollectionMethodSchema,
+  type PaymentCollectionMethod,
   paymentSettingsRequestSchema,
   type PaymentSettingsRequest,
   paymentSettingsResponseSchema,

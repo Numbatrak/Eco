@@ -6,6 +6,7 @@ import {
   productVariants,
   collections,
   tenantAnalyticsSettings,
+  tenantPaymentSettings,
   type Database,
 } from "@platform/db";
 import {
@@ -192,6 +193,12 @@ export async function findPublishedSiteBySubdomain(
     .where(eq(tenantAnalyticsSettings.tenantId, row.tenantId))
     .limit(1);
 
+  const [paymentSettings] = await db
+    .select({ collectionMethod: tenantPaymentSettings.collectionMethod })
+    .from(tenantPaymentSettings)
+    .where(eq(tenantPaymentSettings.tenantId, row.tenantId))
+    .limit(1);
+
   const config = parseStoredSiteConfig(row.theme, row.sections);
 
   return {
@@ -228,6 +235,11 @@ export async function findPublishedSiteBySubdomain(
       })),
       analytics: {
         metaPixelId: analyticsSettings?.enabled ? analyticsSettings.metaPixelId : null,
+      },
+      // No row at all = never touched payments - same "cod" default checkout.ts
+      // applies when settings are missing, so this stays consistent.
+      payment: {
+        collectionMethod: paymentSettings?.collectionMethod ?? "cod",
       },
     },
   };

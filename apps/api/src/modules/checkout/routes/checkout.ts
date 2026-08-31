@@ -6,7 +6,7 @@ import { clearCartTokenCookie } from "../../cart/lib/cart-cookie.js";
 import { findPaymentSettings } from "../../payments/lib/payment-settings-store.js";
 import { buildProvider } from "../../payments/lib/provider-factory.js";
 import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
-import { createPendingOrder, setOrderPaymentReference } from "../lib/orders.js";
+import { createPendingOrder, setOrderPaymentReference, markOrderPaid } from "../lib/orders.js";
 import { buildCheckoutCallbackUrl } from "../lib/callback-url.js";
 import {
   findDeliverySettings,
@@ -58,8 +58,25 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
       }
 
       const settings = await findPaymentSettings(db, ctx.tenant.id);
-      const provider = settings ? buildProvider(settings) : null;
-      if (!settings || !provider) {
+      // Missing settings row = brand-new tenant that's never touched
+      // payments - default to COD so checkout works with zero gateway
+      // setup, instead of hard-failing every store until Paystack is wired up.
+      const collectionMethod = settings?.collectionMethod ?? "cod";
+
+      let paymentMethod: "cod" | "online";
+      if (collectionMethod === "cod") {
+        paymentMethod = "cod";
+      } else if (collectionMethod === "prepaid") {
+        paymentMethod = "online";
+      } else {
+        if (body.paymentMethod !== "cod" && body.paymentMethod !== "online") {
+          return reply.code(400).send({ error: "payment_method_required" });
+        }
+        paymentMethod = body.paymentMethod;
+      }
+
+      const provider = paymentMethod === "online" && settings ? buildProvider(settings) : null;
+      if (paymentMethod === "online" && (!settings || !provider)) {
         return reply.code(400).send({ error: "payments_not_configured" });
       }
 
@@ -100,7 +117,8 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         vatRateBps: quote.vat.enabled ? quote.vat.rateBps : null,
         vatAmountCents: quote.vat.amountCents,
         totalCents,
-        paymentProvider: settings.provider,
+        paymentProvider: paymentMethod === "online" ? settings!.provider : null,
+        paymentMethod,
         utmSource: body.attribution?.utmSource,
         utmMedium: body.attribution?.utmMedium,
         utmCampaign: body.attribution?.utmCampaign,
@@ -119,8 +137,25 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
         })),
       });
 
+      if (paymentMethod === "cod") {
+        // No gateway step at all - the order is confirmed the moment it's
+        // placed. Reuses markOrderPaid's existing pending->paid transition
+        // and side effects (customer stats, confirmation email/WhatsApp,
+        // Meta CAPI) rather than duplicating any of it.
+        await markOrderPaid(db, request.log, order);
+        await deleteCart(db, ctx.cart.id);
+        clearCartTokenCookie(reply, request.params.subdomain);
+
+        const response: CheckoutResponse = {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          checkoutUrl: null,
+        };
+        return reply.code(201).send(response);
+      }
+
       const callbackUrl = buildCheckoutCallbackUrl(request.params.subdomain, order.id);
-      const { checkoutUrl, reference } = await provider.initializeTransaction({
+      const { checkoutUrl, reference } = await provider!.initializeTransaction({
         id: order.id,
         orderNumber: order.orderNumber,
         totalCents: order.totalCents,

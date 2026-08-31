@@ -34,7 +34,8 @@ export interface CreateOrderParams {
   vatRateBps: number | null;
   vatAmountCents: number;
   totalCents: number;
-  paymentProvider: "paystack" | "flutterwave";
+  paymentProvider: "paystack" | "flutterwave" | null;
+  paymentMethod: "cod" | "online";
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -82,6 +83,7 @@ export async function createPendingOrder(
             vatAmountCents: params.vatAmountCents,
             totalCents: params.totalCents,
             paymentProvider: params.paymentProvider,
+            paymentMethod: params.paymentMethod,
             utmSource: params.utmSource,
             utmMedium: params.utmMedium,
             utmCampaign: params.utmCampaign,

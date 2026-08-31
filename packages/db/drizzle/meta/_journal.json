@@ -8,6 +8,13 @@
       "when": 1787256018330,
       "tag": "0000_calm_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788138901138,
+      "tag": "0001_faulty_dazzler",
+      "breakpoints": true
     }
   ]
 }
