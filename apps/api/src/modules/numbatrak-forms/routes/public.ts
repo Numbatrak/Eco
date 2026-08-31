@@ -2,6 +2,17 @@ import type { FastifyInstance } from "fastify";
 import { submitPublicNumbatrakFormRequestSchema } from "@platform/shared-types";
 import { extractProductIdsFromSchema, fetchProductNames } from "../lib/public-form.js";
 import { findActiveFormByToken, submitFormOrder } from "../lib/intake.js";
+import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
+
+const NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS = 60;
+
+// Shared IP budget across the schema-fetch (GET) and submit (POST) routes -
+// both are the same threat surface (probing/brute-forcing form tokens), so
+// they draw from the same counter rather than each getting their own.
+function numbatrakFormRateLimitPerMinute(): number {
+  const raw = process.env.NUMBATRAK_FORM_RATE_LIMIT_PER_MINUTE;
+  return raw ? Number(raw) : 20;
+}
 
 /**
  * The one genuinely public/unauthenticated surface in the whole Numbatrak
@@ -42,6 +53,15 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
     "/public/numbatrak/forms/:formToken",
     { config: { cors: false } },
     async (request, reply) => {
+      const redis = app.getRedis();
+      const rate = await checkAndIncrementRateLimit(redis, `numbatrak-form:ip:${request.ip}`, {
+        limit: numbatrakFormRateLimitPerMinute(),
+        windowSeconds: NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS,
+      });
+      if (!rate.allowed) {
+        return reply.code(429).send({ error: "Too many requests. Please try again shortly." });
+      }
+
       const db = app.getDb();
       const form = await findActiveFormByToken(db, request.params.formToken);
       if (!form || !form.active) {
@@ -68,6 +88,15 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
     "/public/numbatrak/forms/:formToken/submit",
     { config: { cors: false } },
     async (request, reply) => {
+      const redis = app.getRedis();
+      const rate = await checkAndIncrementRateLimit(redis, `numbatrak-form:ip:${request.ip}`, {
+        limit: numbatrakFormRateLimitPerMinute(),
+        windowSeconds: NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS,
+      });
+      if (!rate.allowed) {
+        return reply.code(429).send({ error: "Too many requests. Please try again shortly." });
+      }
+
       const db = app.getDb();
       const form = await findActiveFormByToken(db, request.params.formToken);
       if (!form || !form.active) {

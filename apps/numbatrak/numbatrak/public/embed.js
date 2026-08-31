@@ -8,7 +8,7 @@
  * - Dynamically renders form fields including radio groups
  * - Product quantity selectors
  * - Abandoned cart detection (30s inactivity)
- * - Secure order submission to Supabase
+ * - Secure order submission to your CRM API
  *
  * Usage:
  * <div id="crm-form" data-form-token="form_live_test123"></div>

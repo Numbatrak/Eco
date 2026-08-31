@@ -122,10 +122,17 @@ export async function removeForm(formId: string): Promise<void> {
 }
 
 /**
- * Generate a unique form token
+ * Generate a unique form token. This token is the sole bearer credential
+ * gating the public, unauthenticated /public/numbatrak/forms/:token
+ * endpoints (see apps/api/src/modules/numbatrak-forms/routes/public.ts) -
+ * Math.random() isn't cryptographically secure and was too easy to
+ * brute-force for something with that much riding on it, so this uses the
+ * Web Crypto API instead (16 random bytes = 128 bits of entropy).
  */
 export function generateFormToken(): string {
   const prefix = "form_live_";
-  const randomPart = Math.random().toString(36).substring(2, 11);
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  const randomPart = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   return `${prefix}${randomPart}`;
 }
