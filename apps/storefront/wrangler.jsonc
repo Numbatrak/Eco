@@ -6,7 +6,8 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "vars": {
     "BASE_DOMAIN": "numbatrak.com",
-    "NEXT_PUBLIC_BASE_DOMAIN": "numbatrak.com"
+    "NEXT_PUBLIC_BASE_DOMAIN": "numbatrak.com",
+    "NEXT_PUBLIC_API_URL": "https://api-dev.numbatrak.com"
   },
   "assets": {
     "directory": ".open-next/assets",
