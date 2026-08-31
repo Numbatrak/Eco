@@ -31,10 +31,14 @@ jobs:
             echo "3. Installing dependencies..."
             pnpm install
 
-            echo "4. Building the application (safely in background workspace)..."
+            echo "4. Building shared workspace packages..."
+            pnpm --filter @platform/db build
+            pnpm --filter @platform/shared-types build
+
+            echo "5. Building the application (safely in background workspace)..."
             pnpm --filter api build
 
-            echo "5. Reloading PM2 gracefully without downtime..."
+            echo "6. Reloading PM2 gracefully without downtime..."
             pm2 reload numbatrak-api --update-env
 
             echo "Deployment completed successfully!"
