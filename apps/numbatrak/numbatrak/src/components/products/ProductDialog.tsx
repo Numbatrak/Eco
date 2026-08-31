@@ -20,6 +20,7 @@ export interface ProductFormValues {
   allowsVariants: boolean;
   allowsBundles: boolean;
   allowsDiscounts: boolean;
+  imageUrl: string | null;
 }
 
 interface ProductDialogProps {
@@ -80,6 +81,50 @@ export function ProductDialog({
                 placeholder="e.g. Vacuum Sealer, Smart Tablet"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="product-image" className="dialog-field-label">
+                Product image
+              </Label>
+              <div className="rounded-lg border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                {values.imageUrl && (
+                  <img
+                    src={values.imageUrl}
+                    alt=""
+                    className="mx-auto mb-2 h-24 w-24 rounded-md object-cover"
+                  />
+                )}
+                <input
+                  id="product-image"
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      e.target.value = "";
+                      window.alert("Image is too large - please use one under 2MB.");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => onChange({ imageUrl: ev.target?.result as string });
+                    reader.readAsDataURL(file);
+                  }}
+                  className="mb-1 block w-full text-xs"
+                />
+                {values.imageUrl ? (
+                  <button
+                    type="button"
+                    className="text-[11px] text-destructive hover:underline"
+                    onClick={() => onChange({ imageUrl: null })}
+                  >
+                    Remove image
+                  </button>
+                ) : (
+                  <span>Shown on the storefront listing - PNG, JPG or WebP, up to 2MB</span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

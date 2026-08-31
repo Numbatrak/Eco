@@ -18,6 +18,7 @@ interface ProductDetailsDto {
   allowsVariants: boolean;
   allowsBundles: boolean;
   allowsDiscounts: boolean;
+  imageUrl: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   variants: Array<{
@@ -72,6 +73,7 @@ function detailsToProductWithDetails(dto: ProductDetailsDto): ProductWithDetails
     allows_variants: dto.allowsVariants,
     allows_bundles: dto.allowsBundles,
     allows_discounts: dto.allowsDiscounts,
+    image_url: dto.imageUrl,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
     prices: [],
@@ -190,6 +192,7 @@ export async function createProduct(input: {
   allows_variants?: boolean;
   allows_bundles?: boolean;
   allows_discounts?: boolean;
+  image_url?: string | null;
 }): Promise<Product> {
   if (input.base_price == null || isNaN(input.base_price) || input.base_price < 0) {
     throw new Error("base_price is required and must be a valid number ≥ 0");
@@ -205,6 +208,7 @@ export async function createProduct(input: {
     active: boolean;
     basePrice: string;
     costPrice: string;
+    imageUrl: string | null;
   }>("/org/numbatrak/products", {
     method: "POST",
     body: {
@@ -219,6 +223,7 @@ export async function createProduct(input: {
       allowsVariants: input.allows_variants ?? false,
       allowsBundles: input.allows_bundles ?? false,
       allowsDiscounts: input.allows_discounts ?? false,
+      imageUrl: input.image_url ?? null,
     },
   });
 
@@ -237,6 +242,7 @@ export async function createProduct(input: {
     allows_variants: input.allows_variants ?? false,
     allows_bundles: input.allows_bundles ?? false,
     allows_discounts: input.allows_discounts ?? false,
+    image_url: dto.imageUrl,
     created_at: null,
     updated_at: null,
   };
@@ -257,6 +263,7 @@ export async function updateProduct(
     allows_variants?: boolean;
     allows_bundles?: boolean;
     allows_discounts?: boolean;
+    image_url?: string | null;
   }
 ): Promise<Product> {
   const dto = await apiRequest<{
@@ -266,6 +273,7 @@ export async function updateProduct(
     active: boolean;
     basePrice: string;
     costPrice: string;
+    imageUrl: string | null;
   }>(`/org/numbatrak/products/${productId}`, {
     method: "PATCH",
     body: {
@@ -281,6 +289,7 @@ export async function updateProduct(
       allowsVariants: input.allows_variants,
       allowsBundles: input.allows_bundles,
       allowsDiscounts: input.allows_discounts,
+      imageUrl: input.image_url,
     },
   });
 
@@ -299,6 +308,7 @@ export async function updateProduct(
     allows_variants: input.allows_variants,
     allows_bundles: input.allows_bundles,
     allows_discounts: input.allows_discounts,
+    image_url: dto.imageUrl,
     created_at: null,
     updated_at: null,
   };

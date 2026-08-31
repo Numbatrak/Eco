@@ -21,6 +21,7 @@ export interface Product {
   allows_variants?: boolean;
   allows_bundles?: boolean;
   allows_discounts?: boolean;
+  image_url?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }

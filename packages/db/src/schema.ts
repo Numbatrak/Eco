@@ -153,6 +153,11 @@ export const products = pgTable(
     currency: text("currency").notNull(),
     imageUrl: text("image_url"),
     status: productStatusEnum("status").notNull().default("draft"),
+    // Set when this row is a mirror of a Numbatrak product (see numbatrak_products) -
+    // Numbatrak is the source of truth for name/price/image, synced on create/update.
+    numbatrakProductId: uuid("numbatrak_product_id").references(() => numbatrakSchema.numbatrakProducts.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -160,6 +165,7 @@ export const products = pgTable(
     index("products_tenant_idx").on(table.tenantId),
     index("products_tenant_status_idx").on(table.tenantId, table.status),
     index("products_collection_idx").on(table.collectionId),
+    uniqueIndex("products_numbatrak_product_idx").on(table.numbatrakProductId),
   ],
 );
 
