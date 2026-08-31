@@ -29,11 +29,17 @@ export default function CheckoutPage(): React.ReactElement {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutRequest>({
     resolver: zodResolver(checkoutRequestSchema),
     defaultValues: { paymentMethod: collectionMethod === "prepaid" ? "online" : "cod" },
   });
+  const selectedPaymentMethod = watch("paymentMethod");
+  // For "both", the button label should follow the buyer's actual radio
+  // choice, not just the tenant-level setting.
+  const isCodSubmission =
+    collectionMethod === "cod" || (collectionMethod === "both" && selectedPaymentMethod === "cod");
 
   useEffect(() => {
     if (!cart || cart.items.length === 0) return;
@@ -246,7 +252,7 @@ export default function CheckoutPage(): React.ReactElement {
               : "Redirecting to payment…"
             : isSubmitting
               ? "Placing order…"
-              : collectionMethod === "cod"
+              : isCodSubmission
                 ? "Place order"
                 : "Continue to payment"}
         </button>
