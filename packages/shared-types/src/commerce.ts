@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nigeriaStateSchema } from "./nigeria-states.js";
 
 // ---------- collections ----------
 
@@ -176,7 +177,7 @@ export const checkoutRequestSchema = z.object({
   customerPhone: z.string().trim().max(32).optional(),
   deliveryAddress: z.string().trim().min(1).max(500),
   deliveryCity: z.string().trim().min(1).max(200),
-  deliveryState: z.string().trim().min(1).max(200),
+  deliveryState: nigeriaStateSchema,
   attribution: z
     .object({
       utmSource: z.string().trim().max(200).optional(),

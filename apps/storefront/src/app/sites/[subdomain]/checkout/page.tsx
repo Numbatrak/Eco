@@ -7,6 +7,7 @@ import {
   checkoutRequestSchema,
   type CheckoutRequest,
   type DeliveryQuoteResponse,
+  NIGERIA_STATES,
 } from "@platform/shared-types";
 import { useSite } from "../../../../components/SiteProvider";
 import { useCart } from "../../../../components/CartContext";
@@ -213,11 +214,21 @@ export default function CheckoutPage(): React.ReactElement {
           <label className="text-sm font-medium text-ink" htmlFor="deliveryState">
             State
           </label>
-          <input
+          <select
             id="deliveryState"
             className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink"
+            defaultValue=""
             {...register("deliveryState")}
-          />
+          >
+            <option value="" disabled>
+              Select a state
+            </option>
+            {NIGERIA_STATES.map((state) => (
+              <option key={state} value={state}>
+                {state}
+              </option>
+            ))}
+          </select>
           {errors.deliveryState ? (
             <p className="text-xs text-danger">{errors.deliveryState.message}</p>
           ) : null}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { checkoutRequestSchema, type CheckoutRequest, type PublicFunnel, type FunnelSection } from "@platform/shared-types";
+import { checkoutRequestSchema, type CheckoutRequest, type PublicFunnel, type FunnelSection, NIGERIA_STATES } from "@platform/shared-types";
 import { useSite } from "../../../../../components/SiteProvider";
 import { funnelApi } from "../../../../../lib/funnelApi";
 import { cartApi } from "../../../../../lib/cartApi";
@@ -237,7 +237,12 @@ export function FunnelPageClient({
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-ink" htmlFor="deliveryState">State</label>
-              <input id="deliveryState" className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink" {...register("deliveryState")} />
+              <select id="deliveryState" className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink" defaultValue="" {...register("deliveryState")}>
+                <option value="" disabled>Select a state</option>
+                {NIGERIA_STATES.map((state) => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
               {errors.deliveryState ? <p className="text-xs text-danger">{errors.deliveryState.message}</p> : null}
             </div>
 

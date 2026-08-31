@@ -656,3 +656,4 @@ export {
   publicFunnelSchema,
   type PublicFunnel,
 } from "./funnel-config.js";
+export { NIGERIA_STATES, nigeriaStateSchema, type NigeriaState } from "./nigeria-states.js";

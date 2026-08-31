@@ -109,7 +109,7 @@ describe("CheckoutPage validation", () => {
     await user.type(screen.getByLabelText(/^email$/i), "ada@example.com");
     await user.type(screen.getByLabelText(/delivery address/i), "1 Broad Street");
     await user.type(screen.getByLabelText(/^city$/i), "Lagos");
-    await user.type(screen.getByLabelText(/^state$/i), "Lagos");
+    await user.selectOptions(screen.getByLabelText(/^state$/i), "Lagos");
     await user.click(screen.getByRole("button", { name: /continue to payment/i }));
 
     await screen.findByText(/redirecting to payment/i);
@@ -151,7 +151,7 @@ describe("CheckoutPage validation", () => {
     await user.type(screen.getByLabelText(/^email$/i), "ada@example.com");
     await user.type(screen.getByLabelText(/delivery address/i), "1 Broad Street");
     await user.type(screen.getByLabelText(/^city$/i), "Lagos");
-    await user.type(screen.getByLabelText(/^state$/i), "Lagos");
+    await user.selectOptions(screen.getByLabelText(/^state$/i), "Lagos");
     await user.click(screen.getByRole("button", { name: /place order/i }));
 
     await screen.findByText(/placing order/i);
