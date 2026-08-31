@@ -57,8 +57,8 @@ class CRM_Form_Embed {
         // Set default options
         $defaults = array(
             'api_base_url' => '',
-            'embed_js_url' => 'https://mail9ja.vercel.app/embed.js',
-            'embed_css_url' => 'https://mail9ja.vercel.app/embed.css',
+            'embed_js_url' => 'https://app.numbatrak.io/embed.js',
+            'embed_css_url' => 'https://app.numbatrak.io/embed.css',
         );
         
         if (!get_option('crm_form_embed_settings')) {
@@ -398,13 +398,13 @@ class CRM_Form_Embed {
      */
     public function render_embed_js_url_field() {
         $settings = get_option('crm_form_embed_settings', array());
-        $value = isset($settings['embed_js_url']) ? $settings['embed_js_url'] : 'https://mail9ja.vercel.app/embed.js';
+        $value = isset($settings['embed_js_url']) ? $settings['embed_js_url'] : 'https://app.numbatrak.io/embed.js';
         ?>
         <input type="url" 
                name="crm_form_embed_settings[embed_js_url]" 
                value="<?php echo esc_attr($value); ?>" 
                class="regular-text"
-               placeholder="https://mail9ja.vercel.app/embed.js">
+               placeholder="https://app.numbatrak.io/embed.js">
         <p class="description"><?php _e('URL to your hosted embed.js file.', 'crm-form-embed'); ?></p>
         <?php
     }
@@ -414,13 +414,13 @@ class CRM_Form_Embed {
      */
     public function render_embed_css_url_field() {
         $settings = get_option('crm_form_embed_settings', array());
-        $value = isset($settings['embed_css_url']) ? $settings['embed_css_url'] : 'https://mail9ja.vercel.app/embed.css';
+        $value = isset($settings['embed_css_url']) ? $settings['embed_css_url'] : 'https://app.numbatrak.io/embed.css';
         ?>
         <input type="url" 
                name="crm_form_embed_settings[embed_css_url]" 
                value="<?php echo esc_attr($value); ?>" 
                class="regular-text"
-               placeholder="https://mail9ja.vercel.app/embed.css">
+               placeholder="https://app.numbatrak.io/embed.css">
         <p class="description"><?php _e('URL to your hosted embed.css file.', 'crm-form-embed'); ?></p>
         <?php
     }

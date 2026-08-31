@@ -22,12 +22,12 @@ Lightweight JavaScript SDK for embedding dynamic forms in WordPress and other we
 <!-- In your WordPress page/post or theme -->
 <div id="crm-form" data-form-token="form_live_98Fh3ksd"></div>
 
-<link rel="stylesheet" href="https://mail9ja.vercel.app/embed.css">
+<link rel="stylesheet" href="https://app.numbatrak.io/embed.css">
 <script>
   window.CRM_SUPABASE_URL = 'https://tgyetavhkukcclnwrroz.supabase.co';
   window.CRM_SUPABASE_ANON_KEY = 'your-anon-key';
 </script>
-<script src="https://mail9ja.vercel.app/embed.js"></script>
+<script src="https://app.numbatrak.io/embed.js"></script>
 ```
 
 ### Option 2: WordPress Plugin
@@ -35,8 +35,8 @@ Lightweight JavaScript SDK for embedding dynamic forms in WordPress and other we
 The WordPress plugin should enqueue these files:
 
 ```php
-wp_enqueue_style('crm-form-embed', 'https://mail9ja.vercel.app/embed.css');
-wp_enqueue_script('crm-form-embed', 'https://mail9ja.vercel.app/embed.js', [], '1.0.0', true);
+wp_enqueue_style('crm-form-embed', 'https://app.numbatrak.io/embed.css');
+wp_enqueue_script('crm-form-embed', 'https://app.numbatrak.io/embed.js', [], '1.0.0', true);
 wp_localize_script('crm-form-embed', 'crmFormConfig', [
     'supabaseUrl' => 'https://tgyetavhkukcclnwrroz.supabase.co',
     'supabaseAnonKey' => 'your-anon-key'

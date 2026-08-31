@@ -33,8 +33,8 @@
      - Paste it in the WordPress settings
 
    **Embed SDK Settings:**
-   - **Embed JS URL:** `https://mail9ja.vercel.app/embed.js`
-   - **Embed CSS URL:** `https://mail9ja.vercel.app/embed.css`
+   - **Embed JS URL:** `https://app.numbatrak.io/embed.js`
+   - **Embed CSS URL:** `https://app.numbatrak.io/embed.css`
 
 3. Click **"Save Settings"**
 
@@ -102,8 +102,8 @@ In your WordPress page or post editor, add this HTML:
   window.CRM_SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
   window.CRM_DEBUG = true; // Set to false in production
 </script>
-<link rel="stylesheet" href="https://mail9ja.vercel.app/embed.css">
-<script src="https://mail9ja.vercel.app/embed.js"></script>
+<link rel="stylesheet" href="https://app.numbatrak.io/embed.css">
+<script src="https://app.numbatrak.io/embed.js"></script>
 ```
 
 **Important:** Replace:
@@ -174,7 +174,7 @@ After adding the form:
 
 3. **Check CSS:**
    - Verify embed.css URL is correct
-   - Try opening `https://mail9ja.vercel.app/embed.css` in browser
+   - Try opening `https://app.numbatrak.io/embed.css` in browser
 
 ### Form Loading But Fields Missing?
 
@@ -205,8 +205,8 @@ Here's a complete example for a WordPress page:
 **Plugin Settings:**
 - Supabase URL: `https://tgyetavhkukcclnwrroz.supabase.co`
 - Supabase Anon Key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (your actual key)
-- Embed JS URL: `https://mail9ja.vercel.app/embed.js`
-- Embed CSS URL: `https://mail9ja.vercel.app/embed.css`
+- Embed JS URL: `https://app.numbatrak.io/embed.js`
+- Embed CSS URL: `https://app.numbatrak.io/embed.css`
 
 ---
 

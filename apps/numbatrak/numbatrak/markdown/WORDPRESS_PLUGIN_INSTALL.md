@@ -33,8 +33,8 @@ scripts/wordpress-plugin/crm-form-embed.php
    - **Supabase Anon Key:** (Get from your Supabase dashboard → Settings → API)
 
    **Embed SDK Configuration:**
-   - **Embed JS URL:** `https://mail9ja.vercel.app/embed.js`
-   - **Embed CSS URL:** `https://mail9ja.vercel.app/embed.css`
+   - **Embed JS URL:** `https://app.numbatrak.io/embed.js`
+   - **Embed CSS URL:** `https://app.numbatrak.io/embed.css`
 
 3. Click **"Save Settings"**
 

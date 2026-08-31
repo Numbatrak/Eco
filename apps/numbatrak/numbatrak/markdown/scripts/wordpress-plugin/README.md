@@ -42,10 +42,10 @@ Go to **Settings → CRM Form Embed** and enter:
    - Safe to use in client-side code
 
 3. **Embed JS URL**: URL to your hosted `embed.js`
-   - Example: `https://mail9ja.vercel.app/embed.js`
+   - Example: `https://app.numbatrak.io/embed.js`
 
 4. **Embed CSS URL**: URL to your hosted `embed.css`
-   - Example: `https://mail9ja.vercel.app/embed.css`
+   - Example: `https://app.numbatrak.io/embed.css`
 
 ### Step 2: Get Your Form Token
 

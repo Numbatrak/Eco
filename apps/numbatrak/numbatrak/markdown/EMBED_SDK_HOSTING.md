@@ -35,8 +35,8 @@ This guide explains how to host the embed SDK files (`embed.js` and `embed.css`)
 
 3. **Get Your URLs**:
    After deployment, your files will be available at:
-   - `https://mail9ja.vercel.app/embed.js`
-   - `https://mail9ja.vercel.app/embed.css`
+   - `https://app.numbatrak.io/embed.js`
+   - `https://app.numbatrak.io/embed.css`
    
    Or if you have a custom domain:
    - `https://yourdomain.com/embed.js`
@@ -44,13 +44,13 @@ This guide explains how to host the embed SDK files (`embed.js` and `embed.css`)
 
 4. **Test Access**:
    ```bash
-   curl https://mail9ja.vercel.app/embed.js
-   curl https://mail9ja.vercel.app/embed.css
+   curl https://app.numbatrak.io/embed.js
+   curl https://app.numbatrak.io/embed.css
    ```
    
    You should see the file contents. Check for CORS headers:
    ```bash
-   curl -I https://mail9ja.vercel.app/embed.js
+   curl -I https://app.numbatrak.io/embed.js
    ```
    
    Should include: `Access-Control-Allow-Origin: *`
@@ -125,13 +125,13 @@ When you update `scripts/embed.js` or `scripts/embed.css`:
 ### 1. Test File Access
 ```bash
 # Test JavaScript file
-curl https://mail9ja.vercel.app/embed.js
+curl https://app.numbatrak.io/embed.js
 
 # Test CSS file
-curl https://mail9ja.vercel.app/embed.css
+curl https://app.numbatrak.io/embed.css
 
 # Test CORS headers
-curl -I https://mail9ja.vercel.app/embed.js
+curl -I https://app.numbatrak.io/embed.js
 ```
 
 ### 2. Test in Browser
@@ -140,7 +140,7 @@ Create a test HTML file:
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://mail9ja.vercel.app/embed.css">
+  <link rel="stylesheet" href="https://app.numbatrak.io/embed.css">
 </head>
 <body>
   <div id="crm-form" data-form-token="your-form-token"></div>
@@ -149,7 +149,7 @@ Create a test HTML file:
     window.CRM_SUPABASE_URL = 'https://tgyetavhkukcclnwrroz.supabase.co';
     window.CRM_SUPABASE_ANON_KEY = 'your-anon-key';
   </script>
-  <script src="https://mail9ja.vercel.app/embed.js"></script>
+  <script src="https://app.numbatrak.io/embed.js"></script>
 </body>
 </html>
 ```
@@ -162,8 +162,8 @@ Open in browser and check:
 ### 3. Test from WordPress
 1. Install WordPress plugin
 2. Configure embed URLs:
-   - JS URL: `https://mail9ja.vercel.app/embed.js`
-   - CSS URL: `https://mail9ja.vercel.app/embed.css`
+   - JS URL: `https://app.numbatrak.io/embed.js`
+   - CSS URL: `https://app.numbatrak.io/embed.css`
 3. Create test page with form shortcode
 4. Verify form loads without errors
 

@@ -541,7 +541,7 @@ export interface FormIncentive {
 
 ```html
 <div id="crm-form" data-form-token="form_live_98Fh3ksd"></div>
-<script src="https://mail9ja.vercel.app/embed.js"></script>
+<script src="https://app.numbatrak.io/embed.js"></script>
 ```
 
 #### embed.js Responsibilities

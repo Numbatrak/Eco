@@ -16,12 +16,12 @@ If you're loading embed.js directly in your WordPress page, add a version parame
 
 **Before:**
 ```html
-<script src="https://mail9ja.vercel.app/embed.js"></script>
+<script src="https://app.numbatrak.io/embed.js"></script>
 ```
 
 **After (add `?v=2` or current timestamp):**
 ```html
-<script src="https://mail9ja.vercel.app/embed.js?v=2"></script>
+<script src="https://app.numbatrak.io/embed.js?v=2"></script>
 ```
 
 ### 4. Verify embed.js is Updated
@@ -61,7 +61,7 @@ git push origin custom_forms
 ### ✅ Step 4: Verify Deployment
 Test if the new embed.js is live:
 ```bash
-curl https://mail9ja.vercel.app/embed.js | grep "cacheBuster"
+curl https://app.numbatrak.io/embed.js | grep "cacheBuster"
 ```
 
 Should return a line with `cacheBuster`.
@@ -77,7 +77,7 @@ If you're using the WordPress plugin:
 2. **Or manually add version parameter**:
    In your WordPress page/post where you have the form, update the script tag:
    ```html
-   <script src="https://mail9ja.vercel.app/embed.js?v=<?php echo time(); ?>"></script>
+   <script src="https://app.numbatrak.io/embed.js?v=<?php echo time(); ?>"></script>
    ```
 
 ## Still Not Working?
@@ -94,7 +94,7 @@ Add this before loading embed.js:
 <script>
   window.CRM_DEBUG = true;
 </script>
-<script src="https://mail9ja.vercel.app/embed.js?v=2"></script>
+<script src="https://app.numbatrak.io/embed.js?v=2"></script>
 ```
 
 Then check browser console for debug messages.
@@ -113,7 +113,7 @@ To test if it's a caching issue, try this in browser console:
 ```javascript
 // Force reload embed.js
 const script = document.createElement('script');
-script.src = 'https://mail9ja.vercel.app/embed.js?v=' + Date.now();
+script.src = 'https://app.numbatrak.io/embed.js?v=' + Date.now();
 document.head.appendChild(script);
 ```
 

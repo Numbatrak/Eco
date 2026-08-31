@@ -305,8 +305,8 @@ Options:
 
 Upload these files to your hosting:
 
-1. `scripts/embed.js` → `https://mail9ja.vercel.app/embed.js`
-2. `scripts/embed.css` → `https://mail9ja.vercel.app/embed.css`
+1. `scripts/embed.js` → `https://app.numbatrak.io/embed.js`
+2. `scripts/embed.css` → `https://app.numbatrak.io/embed.css`
 
 ### Step 3.3: Configure CORS
 
@@ -323,8 +323,8 @@ Access-Control-Allow-Headers: Content-Type
 
 ```bash
 # Test that files are accessible
-curl https://mail9ja.vercel.app/embed.js
-curl https://mail9ja.vercel.app/embed.css
+curl https://app.numbatrak.io/embed.js
+curl https://app.numbatrak.io/embed.css
 ```
 
 ## Phase 4: Install WordPress Plugin
@@ -355,8 +355,8 @@ curl https://mail9ja.vercel.app/embed.css
 2. Enter:
    - **Supabase URL**: `https://tgyetavhkukcclnwrroz.supabase.co`
    - **Supabase Anon Key**: From Supabase Dashboard → Settings → API
-   - **Embed JS URL**: `https://mail9ja.vercel.app/embed.js`
-   - **Embed CSS URL**: `https://mail9ja.vercel.app/embed.css`
+   - **Embed JS URL**: `https://app.numbatrak.io/embed.js`
+   - **Embed CSS URL**: `https://app.numbatrak.io/embed.css`
 3. Click "Save Settings"
 
 ## Phase 5: Create Test Data
@@ -480,7 +480,7 @@ Expected response:
    <!DOCTYPE html>
    <html>
    <head>
-     <link rel="stylesheet" href="https://mail9ja.vercel.app/embed.css">
+     <link rel="stylesheet" href="https://app.numbatrak.io/embed.css">
    </head>
    <body>
      <div id="crm-form" data-form-token="form_live_test123"></div>
@@ -489,7 +489,7 @@ Expected response:
        window.CRM_SUPABASE_ANON_KEY = 'your-anon-key';
        window.CRM_DEBUG = true;
      </script>
-     <script src="https://mail9ja.vercel.app/embed.js"></script>
+     <script src="https://app.numbatrak.io/embed.js"></script>
    </body>
    </html>
    ```

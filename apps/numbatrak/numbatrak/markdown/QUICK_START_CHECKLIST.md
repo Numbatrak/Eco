@@ -137,15 +137,15 @@ Simple checklist to get everything up and running.
 
   4. **Enter Embed JS URL**
      - **Field**: "Embed JS URL"
-     - **Value**: `https://mail9ja.vercel.app/embed.js`
+     - **Value**: `https://app.numbatrak.io/embed.js`
      - **Where to find**: Already pre-filled from Phase 3
-     - **Verify**: Test with `curl https://mail9ja.vercel.app/embed.js`
+     - **Verify**: Test with `curl https://app.numbatrak.io/embed.js`
 
   5. **Enter Embed CSS URL**
      - **Field**: "Embed CSS URL"
-     - **Value**: `https://mail9ja.vercel.app/embed.css`
+     - **Value**: `https://app.numbatrak.io/embed.css`
      - **Where to find**: Already pre-filled from Phase 3
-     - **Verify**: Test with `curl https://mail9ja.vercel.app/embed.css`
+     - **Verify**: Test with `curl https://app.numbatrak.io/embed.css`
 
   6. **Save Settings**
      - Click "Save Changes" button at the bottom
@@ -195,7 +195,7 @@ Simple checklist to get everything up and running.
 
   **SDK Files Not Loading**
   - Verify URLs are correct (no typos)
-  - Test URLs directly in browser: `https://mail9ja.vercel.app/embed.js`
+  - Test URLs directly in browser: `https://app.numbatrak.io/embed.js`
   - Check CORS headers (should see `Access-Control-Allow-Origin: *`)
   - Check browser console for CORS errors
   - Verify WordPress site can make external requests (some hosts block this)
@@ -241,8 +241,8 @@ If the plugin doesn't work, follow these steps systematically:
 2. Verify all fields are filled:
    - ✅ Supabase URL: `https://tgyetavhkukcclnwrroz.supabase.co`
    - ✅ Supabase Anon Key: Should start with `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
-   - ✅ Embed JS URL: `https://mail9ja.vercel.app/embed.js`
-   - ✅ Embed CSS URL: `https://mail9ja.vercel.app/embed.css`
+   - ✅ Embed JS URL: `https://app.numbatrak.io/embed.js`
+   - ✅ Embed CSS URL: `https://app.numbatrak.io/embed.css`
 3. Click "Save Changes" even if values look correct
 4. Refresh page and verify values are still there
 
@@ -301,7 +301,7 @@ You should see all 4 settings with values.
   1. Check Network tab → Look for `embed.js` and `embed.css`
   2. If 404: Verify URLs in settings are correct
   3. If CORS error: Verify CORS headers on embed files
-  4. Test URLs directly: `https://mail9ja.vercel.app/embed.js`
+  4. Test URLs directly: `https://app.numbatrak.io/embed.js`
 
 **Error: "Form not found"**
 - **Cause**: Invalid form token or form doesn't exist
@@ -350,13 +350,13 @@ You should see all 4 settings with values.
 **Test Embed Files:**
 ```bash
 # Test JavaScript file
-curl https://mail9ja.vercel.app/embed.js
+curl https://app.numbatrak.io/embed.js
 
 # Test CSS file
-curl https://mail9ja.vercel.app/embed.css
+curl https://app.numbatrak.io/embed.css
 
 # Check CORS headers
-curl -I https://mail9ja.vercel.app/embed.js
+curl -I https://app.numbatrak.io/embed.js
 ```
 
 **Expected Results:**
@@ -382,8 +382,8 @@ window.CRM_DEBUG = false;
 </script>
 
 <!-- SDK files -->
-<link rel='stylesheet' href='https://mail9ja.vercel.app/embed.css' />
-<script src='https://mail9ja.vercel.app/embed.js'></script>
+<link rel='stylesheet' href='https://app.numbatrak.io/embed.css' />
+<script src='https://app.numbatrak.io/embed.js'></script>
 ```
 
 **If Missing:**
@@ -440,7 +440,7 @@ Replace `YOUR_ANON_KEY` with your actual anon key.
 - **Fix**:
   1. Verify `vercel.json` has CORS headers configured
   2. Redeploy to Vercel
-  3. Test CORS headers: `curl -I https://mail9ja.vercel.app/embed.js`
+  3. Test CORS headers: `curl -I https://app.numbatrak.io/embed.js`
 
 ### Step 10: Enable Debug Mode
 

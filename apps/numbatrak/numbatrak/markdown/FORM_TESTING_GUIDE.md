@@ -85,7 +85,7 @@ cp scripts/embed.css public/embed.css
    - Usually takes 1-2 minutes
 
 3. **Open `test-form-production.html`**
-   - This loads from `https://mail9ja.vercel.app/embed.js`
+   - This loads from `https://app.numbatrak.io/embed.js`
    - Verify production version works
    - Compare with local version
 
@@ -99,7 +99,7 @@ cp scripts/embed.css public/embed.css
 
 ### `test-form-production.html`
 
-- Loads from `https://mail9ja.vercel.app/embed.js`
+- Loads from `https://app.numbatrak.io/embed.js`
 - Use this to **verify production deployment**
 - Same setup as WordPress sites
 

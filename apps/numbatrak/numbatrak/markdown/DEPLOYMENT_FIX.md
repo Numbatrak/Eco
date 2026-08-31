@@ -54,7 +54,7 @@ After deployment:
 ### Step 5: Verify Changes
 ```bash
 # Check if new file is deployed
-curl -I https://mail9ja.vercel.app/embed.js
+curl -I https://app.numbatrak.io/embed.js
 
 # Should see:
 # Cache-Control: public, max-age=3600, must-revalidate
@@ -67,7 +67,7 @@ For better cache control, you can add versioning to the filename:
 ### Option A: Query Parameter (Easiest)
 In your WordPress plugin or HTML:
 ```html
-<script src="https://mail9ja.vercel.app/embed.js?v=2"></script>
+<script src="https://app.numbatrak.io/embed.js?v=2"></script>
 ```
 
 Update the version number when you deploy changes.
@@ -104,7 +104,7 @@ Then update your WordPress plugin to use the hashed filename.
 
 3. **Test production**:
    ```bash
-   curl https://mail9ja.vercel.app/embed.js | head -20
+   curl https://app.numbatrak.io/embed.js | head -20
    ```
 
 ## Troubleshooting
