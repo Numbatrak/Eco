@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import {
   fetchOrderAssignmentSettings,
   fetchOrderAssignmentWeights,
-  upsertOrderAssignmentSettings,
+  updateOrderAssignmentSettings,
   upsertOrderAssignmentWeight,
   deleteOrderAssignmentWeight,
-  AssignmentMethod,
-  OrderAssignmentSettings,
-  OrderAssignmentWeight,
-} from "../../services/orderAssignmentSettings";
+  type AssignmentMethod,
+  type OrderAssignmentSettings,
+  type OrderAssignmentWeight,
+} from "../../services/orderAssignment";
 import { fetchOrganizationMembers } from "../../services/organizations";
 import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { OrganizationMember } from "../../types/organization";
@@ -46,17 +46,12 @@ export function OrderAssignmentSettings({
       setError(null);
 
       // Load settings
-      const settingsData = await fetchOrderAssignmentSettings(organizationId);
-      if (settingsData) {
-        setSettings(settingsData);
-        setAssignmentMethod(settingsData.assignment_method);
-      } else {
-        // Create default settings
-        setAssignmentMethod("round_robin");
-      }
+      const settingsData = await fetchOrderAssignmentSettings();
+      setSettings(settingsData);
+      setAssignmentMethod(settingsData.assignment_method);
 
       // Load weights
-      const weightsData = await fetchOrderAssignmentWeights(organizationId);
+      const weightsData = await fetchOrderAssignmentWeights();
       setWeights(weightsData);
 
       // Load members to get CSR users
@@ -82,14 +77,14 @@ export function OrderAssignmentSettings({
       setSaving(true);
       setError(null);
 
-      await upsertOrderAssignmentSettings(organizationId, assignmentMethod);
+      await updateOrderAssignmentSettings(assignmentMethod);
 
       const csrMembersList = members.filter((m) => m.role === "Customer Relations");
 
       if (assignmentMethod === "round_robin") {
         for (const member of csrMembersList) {
           if (!weights.find((w) => w.user_id === member.user_id)) {
-            await upsertOrderAssignmentWeight(organizationId, member.user_id, 0, false);
+            await upsertOrderAssignmentWeight(member.user_id, 0, false);
           }
         }
       } else {
@@ -100,7 +95,7 @@ export function OrderAssignmentSettings({
           for (const member of csrMembersList) {
             const pct = base + (remainder > 0 ? 1 : 0);
             if (remainder > 0) remainder--;
-            await upsertOrderAssignmentWeight(organizationId, member.user_id, pct, false);
+            await upsertOrderAssignmentWeight(member.user_id, pct, false);
           }
         }
       }
@@ -122,7 +117,7 @@ export function OrderAssignmentSettings({
       const weight = weights.find((w) => w.user_id === userId);
       const isPaused = weight?.is_paused || false;
 
-      await upsertOrderAssignmentWeight(organizationId, userId, percentage, isPaused);
+      await upsertOrderAssignmentWeight(userId, percentage, isPaused);
       setSuccess("Weight updated successfully!");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -138,7 +133,7 @@ export function OrderAssignmentSettings({
       const weight = weights.find((w) => w.user_id === userId);
       const percentage = weight?.percentage || editingWeights[userId] || 0;
 
-      await upsertOrderAssignmentWeight(organizationId, userId, percentage, !isPaused);
+      await upsertOrderAssignmentWeight(userId, percentage, !isPaused);
       setSuccess(isPaused ? "CSR included in rotation" : "CSR excluded from rotation");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -153,9 +148,12 @@ export function OrderAssignmentSettings({
       return;
     }
 
+    const weight = weights.find((w) => w.user_id === userId);
+    if (!weight) return;
+
     try {
       setError(null);
-      await deleteOrderAssignmentWeight(organizationId, userId);
+      await deleteOrderAssignmentWeight(weight.id);
       setSuccess("Weight removed successfully!");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -168,7 +166,7 @@ export function OrderAssignmentSettings({
   const handleAddWeight = async (userId: string) => {
     try {
       setError(null);
-      await upsertOrderAssignmentWeight(organizationId, userId, 0, false);
+      await upsertOrderAssignmentWeight(userId, 0, false);
       setSuccess("User added to assignment pool!");
       await loadData();
       setTimeout(() => setSuccess(null), 3000);

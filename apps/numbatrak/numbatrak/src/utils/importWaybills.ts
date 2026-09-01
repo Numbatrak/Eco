@@ -1,4 +1,3 @@
-import { supabase } from "../supabaseClient";
 import { createAgent, fetchAgents } from "../services/agents";
 import { createProduct, fetchProducts } from "../services/products";
 import { intakeDeliveryRecord } from "../services/waybillIntake";

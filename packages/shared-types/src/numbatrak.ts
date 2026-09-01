@@ -591,6 +591,24 @@ export const numbatrakMonthlyDeliverySummarySchema = z.object({
 });
 export type NumbatrakMonthlyDeliverySummary = z.infer<typeof numbatrakMonthlyDeliverySummarySchema>;
 
+export const numbatrakWaybillsByStateQuerySchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  state: z.string().optional(),
+});
+export type NumbatrakWaybillsByStateQuery = z.infer<typeof numbatrakWaybillsByStateQuerySchema>;
+
+export const numbatrakWaybillByStateSchema = z.object({
+  state: z.string(),
+  totalQuantity: z.number(),
+  totalCost: z.number(),
+  waybillCount: z.number().int(),
+  earliestDate: z.string().nullable(),
+  latestDate: z.string().nullable(),
+  averageDaysSinceWaybill: z.number().nullable(),
+});
+export type NumbatrakWaybillByState = z.infer<typeof numbatrakWaybillByStateSchema>;
+
 // ---------- unified expenses ----------
 // Category/subcategory normalization (legacy free-text -> canonical values)
 // stays a client-side concern (constants/expenseCategories.ts +
@@ -871,6 +889,46 @@ export const numbatrakDeliveryRateByLocationSchema = z.object({
   deliveryRate: z.number(),
 });
 export type NumbatrakDeliveryRateByLocation = z.infer<typeof numbatrakDeliveryRateByLocationSchema>;
+
+// ---------- delivery analytics (headline + breakdown) ----------
+
+export const numbatrakDeliveryAnalyticsQuerySchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  agentId: z.coerce.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  status: numbatrakDeliveryStatusSchema.optional(),
+  subBrand: z.string().optional(),
+  location: z.enum(["all", "lagos", "outside_lagos"]).optional(),
+});
+export type NumbatrakDeliveryAnalyticsQuery = z.infer<typeof numbatrakDeliveryAnalyticsQuerySchema>;
+
+export const numbatrakDeliveryBreakdownQuerySchema = numbatrakDeliveryAnalyticsQuerySchema.extend({
+  groupBy: z.enum(["agent", "product", "location"]),
+});
+export type NumbatrakDeliveryBreakdownQuery = z.infer<typeof numbatrakDeliveryBreakdownQuerySchema>;
+
+export const numbatrakDeliveryAnalyticsHeadlineSchema = z.object({
+  waybilledValue: z.number(),
+  deliveredValue: z.number(),
+  balance: z.number(),
+  deliveryRate: z.number(),
+  waybilledCount: z.number().int(),
+  deliveredCount: z.number().int(),
+});
+export type NumbatrakDeliveryAnalyticsHeadline = z.infer<typeof numbatrakDeliveryAnalyticsHeadlineSchema>;
+
+export const numbatrakDeliveryBreakdownRowSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  waybilledValue: z.number(),
+  deliveredValue: z.number(),
+  balance: z.number(),
+  deliveryRate: z.number(),
+  waybilledCount: z.number().int(),
+  deliveredCount: z.number().int(),
+});
+export type NumbatrakDeliveryBreakdownRow = z.infer<typeof numbatrakDeliveryBreakdownRowSchema>;
 
 // ---------- forms (admin CRUD) ----------
 // The `schema` jsonb column (fields/submitButton/confirmation) is owned and

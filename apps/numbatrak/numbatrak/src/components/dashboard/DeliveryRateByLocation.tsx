@@ -41,7 +41,7 @@ function getLocationStyle(location: string): LocationCardStyle {
 }
 
 import { DateFilter } from "../../utils/dateRange";
-import type { DeliveryAnalyticsFilters } from "../../services/deliveryAnalytics";
+import { fetchDeliveryRateByLocationFiltered, type DeliveryAnalyticsFilters } from "../../services/deliveryAnalytics";
 
 interface DeliveryRateByLocationComponentProps {
   /** When true, parent page already enforced role access */
@@ -70,21 +70,9 @@ export function DeliveryRateByLocationComponent({
   const loadData = async () => {
     try {
       setLoading(true);
-      // services/deliveryAnalytics.ts isn't ported off Supabase yet (it
-      // backs the not-yet-ported Delivery Analytics page) - dynamic import
-      // so Dashboard, which never passes analyticsFilters, never evaluates
-      // that module at all.
       const result = analyticsFilters
-        ? await (
-            await import("../../services/deliveryAnalytics")
-          ).fetchDeliveryRateByLocationFiltered(
-            currentOrganization?.id ?? null,
-            analyticsFilters
-          )
-        : await fetchDeliveryRateByLocation(
-            currentOrganization?.id ?? null,
-            dateFilter
-          );
+        ? await fetchDeliveryRateByLocationFiltered(currentOrganization?.id ?? null, analyticsFilters)
+        : await fetchDeliveryRateByLocation(currentOrganization?.id ?? null, dateFilter);
       setData(result);
     } catch (err) {
       console.error("Error loading delivery rate by location:", err);

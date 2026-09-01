@@ -1,12 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { numbatrakAgents, numbatrakDeliveries, type Database } from "@platform/db";
-import type { NumbatrakDeliveryRateByLocation } from "@platform/shared-types";
-
-function withinRange(dateStr: string, startDate?: string, endDate?: string): boolean {
-  if (startDate && dateStr < startDate) return false;
-  if (endDate && dateStr > endDate) return false;
-  return true;
-}
+import type { NumbatrakDeliveryRateByLocation, NumbatrakDeliveryStatus } from "@platform/shared-types";
 
 function bucket(totalDeliveries: number, deliveredCount: number, waybilledCount: number) {
   return {
@@ -17,22 +11,38 @@ function bucket(totalDeliveries: number, deliveredCount: number, waybilledCount:
   };
 }
 
+export interface DeliveryRateExtraFilters {
+  agentId?: number;
+  productId?: string;
+  status?: NumbatrakDeliveryStatus;
+  subBrand?: string;
+}
+
 /** Server-side port of services/dashboard.ts's fetchDeliveryRateByLocation -
  * buckets deliveries into Lagos vs Outside-Lagos by the delivering agent's
  * `locations` field (comma-separated, case-insensitive "lagos" match).
- * Deliveries with no agent or no location data are skipped, same as source. */
+ * Deliveries with no agent or no location data are skipped, same as source.
+ * `extra` filters are only ever set by the Delivery Analytics page (the plain
+ * Dashboard widget only passes dateFrom/dateTo). */
 export async function fetchDeliveryRateByLocation(
   db: Database,
   organizationId: string,
   dateFrom?: string,
   dateTo?: string,
+  extra?: DeliveryRateExtraFilters,
 ): Promise<NumbatrakDeliveryRateByLocation[]> {
-  const rows = await db
+  const conditions = [eq(numbatrakDeliveries.organizationId, organizationId)];
+  if (dateFrom) conditions.push(gte(numbatrakDeliveries.date, dateFrom));
+  if (dateTo) conditions.push(lte(numbatrakDeliveries.date, dateTo));
+  if (extra?.agentId != null) conditions.push(eq(numbatrakDeliveries.agentId, extra.agentId));
+  if (extra?.productId) conditions.push(eq(numbatrakDeliveries.productUuid, extra.productId));
+  if (extra?.status) conditions.push(eq(numbatrakDeliveries.status, extra.status));
+  if (extra?.subBrand) conditions.push(eq(numbatrakDeliveries.subBrand, extra.subBrand));
+
+  const data = await db
     .select({ date: numbatrakDeliveries.date, status: numbatrakDeliveries.status, agentId: numbatrakDeliveries.agentId })
     .from(numbatrakDeliveries)
-    .where(eq(numbatrakDeliveries.organizationId, organizationId));
-
-  const data = rows.filter((r) => withinRange(r.date, dateFrom, dateTo));
+    .where(and(...conditions));
 
   const agentIds = [...new Set(data.map((d) => d.agentId).filter((id): id is number => id != null))];
   const lagosIds = new Set<number>();

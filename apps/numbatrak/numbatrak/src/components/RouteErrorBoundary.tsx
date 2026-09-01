@@ -39,14 +39,10 @@ export class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div style={{ padding: 32, maxWidth: 640 }}>
-          <h2 style={{ marginBottom: 8 }}>This page isn't available yet</h2>
+          <h2 style={{ marginBottom: 8 }}>Something went wrong loading this page</h2>
           <p style={{ color: "var(--muted-foreground, #888)" }}>
-            This part of Numbatrak hasn't been ported off Supabase yet, so it can't load right now.
-            Try a different page from the sidebar.
+            Try a different page from the sidebar, or refresh and try again.
           </p>
-          <pre style={{ marginTop: 16, fontSize: 12, opacity: 0.6, whiteSpace: "pre-wrap" }}>
-            {this.state.error.message}
-          </pre>
         </div>
       );
     }

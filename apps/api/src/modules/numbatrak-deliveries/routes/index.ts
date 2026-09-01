@@ -5,6 +5,7 @@ import waybillBatchRoutes from "./waybill-batch.js";
 import updateDeliveryRoutes from "./update.js";
 import deleteDeliveryRoutes from "./delete.js";
 import monthlySummaryRoutes from "./monthly-summary.js";
+import waybillsByStateRoutes from "./waybills-by-state.js";
 
 export default async function numbatrakDeliveriesRoutes(app: FastifyInstance): Promise<void> {
   await app.register(listDeliveriesRoutes);
@@ -13,4 +14,5 @@ export default async function numbatrakDeliveriesRoutes(app: FastifyInstance): P
   await app.register(updateDeliveryRoutes);
   await app.register(deleteDeliveryRoutes);
   await app.register(monthlySummaryRoutes);
+  await app.register(waybillsByStateRoutes);
 }

@@ -2,9 +2,11 @@
 
 import { apiRequest } from "../lib/apiClient";
 
+export type AssignmentMethod = "round_robin" | "percentage";
+
 export interface OrderAssignmentSettings {
   id: string;
-  assignment_method: "round_robin" | "percentage";
+  assignment_method: AssignmentMethod;
   last_assigned_user_id: string | null;
   created_at: string | null;
   updated_at: string | null;
