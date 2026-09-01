@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { ErrorAlert } from "../agents/ErrorAlert";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 import { Package, Plus } from "lucide-react";
 
 type Line = {
@@ -225,11 +226,11 @@ export function WaybillBatchDialog({
                     <div className="dialog-form-field space-y-2">
                       <Label className="dialog-field-label">Quantity *</Label>
                       <Input
-                        type="number"
-                        min={1}
+                        type="text"
+                        inputMode="numeric"
                         value={line.quantity}
                         onChange={(e) =>
-                          updateLine(i, { quantity: e.target.value })
+                          updateLine(i, { quantity: sanitizeIntegerInput(e.target.value) })
                         }
                         className="w-full max-w-none"
                       />
@@ -238,12 +239,11 @@ export function WaybillBatchDialog({
                     <div className="dialog-form-field space-y-2">
                       <Label className="dialog-field-label">Cost (₦)</Label>
                       <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={line.cost}
                         onChange={(e) =>
-                          updateLine(i, { cost: e.target.value })
+                          updateLine(i, { cost: sanitizeDecimalInput(e.target.value) })
                         }
                         className="w-full max-w-none"
                       />
@@ -254,12 +254,11 @@ export function WaybillBatchDialog({
                         Waybill Fee (₦)
                       </Label>
                       <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={line.fee}
                         onChange={(e) =>
-                          updateLine(i, { fee: e.target.value })
+                          updateLine(i, { fee: sanitizeDecimalInput(e.target.value) })
                         }
                         className="w-full max-w-none"
                       />

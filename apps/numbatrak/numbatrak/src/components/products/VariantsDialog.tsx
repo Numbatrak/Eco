@@ -8,6 +8,7 @@ import { ErrorAlert } from "../agents/ErrorAlert";
 import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { formatNaira } from "../../utils/currency";
 import { Layers, Plus, Trash2, X } from "lucide-react";
+import { sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface VariantFormData {
   name: string;
@@ -239,12 +240,11 @@ export function VariantsDialog({
                       Sales price (₦)
                     </Label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.base_price}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "base_price", e.target.value)
+                        handleUpdateEntry(index, "base_price", sanitizeDecimalInput(e.target.value))
                       }
                       required
                     />
@@ -254,12 +254,11 @@ export function VariantsDialog({
                       Cost price (₦)
                     </Label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.cost_price}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "cost_price", e.target.value)
+                        handleUpdateEntry(index, "cost_price", sanitizeDecimalInput(e.target.value))
                       }
                       required
                     />

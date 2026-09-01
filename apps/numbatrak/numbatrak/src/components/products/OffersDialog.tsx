@@ -15,6 +15,7 @@ import { ErrorAlert } from "../agents/ErrorAlert";
 import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { formatNaira } from "../../utils/currency";
 import { Tag, Plus, Trash2, X } from "lucide-react";
+import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface OfferFormData {
   offer_type: ProductOfferType;
@@ -320,11 +321,11 @@ export function OffersDialog({
                         {entry.offer_type === "buy_x_get_y" ? "Buy (X)" : "Min qty"}
                       </Label>
                       <Input
-                        type="number"
-                        min="1"
+                        type="text"
+                        inputMode="numeric"
                         value={entry.min_quantity}
                         onChange={(e) =>
-                          handleUpdateEntry(index, "min_quantity", e.target.value)
+                          handleUpdateEntry(index, "min_quantity", sanitizeIntegerInput(e.target.value))
                         }
                         required
                       />
@@ -336,11 +337,11 @@ export function OffersDialog({
                         Free (Y)
                       </Label>
                       <Input
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="numeric"
                         value={entry.free_quantity}
                         onChange={(e) =>
-                          handleUpdateEntry(index, "free_quantity", e.target.value)
+                          handleUpdateEntry(index, "free_quantity", sanitizeIntegerInput(e.target.value))
                         }
                         required
                       />
@@ -353,12 +354,11 @@ export function OffersDialog({
                         : "Price (₦)"}
                     </Label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.price}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "price", e.target.value)
+                        handleUpdateEntry(index, "price", sanitizeDecimalInput(e.target.value))
                       }
                       required
                     />
@@ -368,12 +368,11 @@ export function OffersDialog({
                       Unit cost (₦)
                     </Label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.unit_cost}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "unit_cost", e.target.value)
+                        handleUpdateEntry(index, "unit_cost", sanitizeDecimalInput(e.target.value))
                       }
                       required
                     />

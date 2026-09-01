@@ -7,6 +7,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { AbandonedCartWithRelations } from "../../types/abandonedCart";
 import { parseSelectedItems } from "../../utils/parseSelectedItems";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 import { ShoppingCart } from "lucide-react";
 
 interface AbandonedCartDialogProps {
@@ -285,10 +286,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="quantity"
                     name="quantity"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
+                    onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -299,10 +300,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="mail_quan"
                     name="mail_quan"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={mailQuan}
-                    onChange={(e) => setMailQuan(e.target.value)}
+                    onChange={(e) => setMailQuan(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -313,10 +314,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="agent_quan"
                     name="agent_quan"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={agentQuan}
-                    onChange={(e) => setAgentQuan(e.target.value)}
+                    onChange={(e) => setAgentQuan(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -340,10 +341,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="quantity2"
                     name="quantity2"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={quantity2}
-                    onChange={(e) => setQuantity2(e.target.value)}
+                    onChange={(e) => setQuantity2(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -354,10 +355,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="mail_quan2"
                     name="mail_quan2"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={mailQuan2}
-                    onChange={(e) => setMailQuan2(e.target.value)}
+                    onChange={(e) => setMailQuan2(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -368,10 +369,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="agent_quan2"
                     name="agent_quan2"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={agentQuan2}
-                    onChange={(e) => setAgentQuan2(e.target.value)}
+                    onChange={(e) => setAgentQuan2(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -382,11 +383,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="sales_price"
                     name="sales_price"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={salesPrice}
-                    onChange={(e) => setSalesPrice(e.target.value)}
+                    onChange={(e) => setSalesPrice(sanitizeDecimalInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>
@@ -419,10 +419,10 @@ export function AbandonedCartDialog({
                   <Input
                     id="filled_fields_count"
                     name="filled_fields_count"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={filledFieldsCount}
-                    onChange={(e) => setFilledFieldsCount(e.target.value)}
+                    onChange={(e) => setFilledFieldsCount(sanitizeIntegerInput(e.target.value))}
                     className="w-full max-w-none"
                   />
                 </div>

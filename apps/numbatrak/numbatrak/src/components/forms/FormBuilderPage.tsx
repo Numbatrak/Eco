@@ -55,6 +55,7 @@ import {
   ensureRequiredFields,
 } from "../../utils/formValidation";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 import { PageLayout } from "../layout/PageLayout";
 import { LoadingState } from "../ui/LoadingState";
 import {
@@ -927,15 +928,15 @@ export default function FormBuilderPage() {
                       <input
                         type="text"
                         value={formToken}
-                        onChange={(e) => setFormToken(e.target.value)}
                         placeholder="e.g., form_live_abc123"
                         className="w-full px-4 py-3 border-2 border-border rounded-lg text-sm font-mono focus:border-primary focus:ring-0 transition-colors disabled:bg-muted disabled:cursor-not-allowed"
                         required
-                        disabled={mode === "edit"}
+                        disabled
+                        readOnly
                       />
                       <p className="text-xs text-muted-foreground mt-2">
                         {mode === "create"
-                          ? "Unique identifier for embedding this form"
+                          ? "Auto-generated identifier for embedding this form"
                           : "Token cannot be changed after creation"}
                       </p>
                     </div>
@@ -1465,15 +1466,14 @@ export default function FormBuilderPage() {
                                         Price (₦):
                                       </label>
                                       <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={field.orderBump.price ?? 0}
                                         onChange={(e) =>
                                           updateField(index, {
                                             orderBump: {
                                               ...field.orderBump!,
-                                              price: parseFloat(e.target.value) || 0,
+                                              price: parseFloat(sanitizeDecimalInput(e.target.value)) || 0,
                                             },
                                           })
                                         }
@@ -1517,8 +1517,8 @@ export default function FormBuilderPage() {
                                               ))}
                                             </select>
                                             <input
-                                              type="number"
-                                              min="1"
+                                              type="text"
+                                              inputMode="numeric"
                                               value={product.quantity}
                                               onChange={(e) => {
                                                 const products = [
@@ -1527,7 +1527,7 @@ export default function FormBuilderPage() {
                                                 products[prodIndex] = {
                                                   ...products[prodIndex],
                                                   quantity:
-                                                    parseInt(e.target.value, 10) || 1,
+                                                    parseInt(sanitizeIntegerInput(e.target.value), 10) || 1,
                                                 };
                                                 updateField(index, {
                                                   orderBump: {
@@ -1680,16 +1680,17 @@ export default function FormBuilderPage() {
                                                           Price (₦):
                                                         </label>
                                                         <input
-                                                          type="number"
-                                                          step="0.01"
-                                                          min="0"
+                                                          type="text"
+                                                          inputMode="decimal"
                                                           value={
                                                             option.price ?? 0
                                                           }
                                                           onChange={(e) => {
                                                             const price =
                                                               parseFloat(
-                                                                e.target.value
+                                                                sanitizeDecimalInput(
+                                                                  e.target.value
+                                                                )
                                                               ) || 0;
                                                             updateRadioOption(
                                                               index,
@@ -1955,8 +1956,8 @@ export default function FormBuilderPage() {
                                                                 )}
                                                               </select>
                                                               <input
-                                                                type="number"
-                                                                min="1"
+                                                                type="text"
+                                                                inputMode="numeric"
                                                                 value={
                                                                   product.quantity
                                                                 }
@@ -1968,9 +1969,11 @@ export default function FormBuilderPage() {
                                                                     {
                                                                       quantity:
                                                                         parseInt(
-                                                                          e
-                                                                            .target
-                                                                            .value
+                                                                          sanitizeIntegerInput(
+                                                                            e
+                                                                              .target
+                                                                              .value
+                                                                          )
                                                                         ) || 1,
                                                                     }
                                                                   )
@@ -2230,10 +2233,10 @@ export default function FormBuilderPage() {
                     <input
                       type="text"
                       value={formToken}
-                      onChange={(e) => setFormToken(e.target.value)}
                       placeholder="Form Token"
                       className="form-input font-mono"
-                      disabled={mode === "edit"}
+                      disabled
+                      readOnly
                     />
                   </div>
 

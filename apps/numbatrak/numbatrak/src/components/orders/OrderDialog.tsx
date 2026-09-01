@@ -19,6 +19,10 @@ import { useOrganization } from "../../contexts/OrganizationContext";
 import { fetchProducts, Product } from "../../services/products";
 import { getProductPriceByName } from "../../services/products";
 import { filterActiveAgents } from "../../utils/agentFilters";
+import {
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from "../../utils/numericInput";
 
 interface OrderDialogProps {
   open: boolean;
@@ -615,10 +619,10 @@ export function OrderDialog({
                   <Input
                     id="quantity"
                     name="quantity"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={quantity}
-                    onChange={(e) => handleQuantityChange(e.target.value)}
+                    onChange={(e) => handleQuantityChange(sanitizeIntegerInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -631,10 +635,10 @@ export function OrderDialog({
                   <Input
                     id="mail_quan"
                     name="mail_quan"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={mailQuan}
-                    onChange={(e) => setMailQuan(e.target.value)}
+                    onChange={(e) => setMailQuan(sanitizeIntegerInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -647,10 +651,10 @@ export function OrderDialog({
                   <Input
                     id="agent_quan"
                     name="agent_quan"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={agentQuan}
-                    onChange={(e) => setAgentQuan(e.target.value)}
+                    onChange={(e) => setAgentQuan(sanitizeIntegerInput(e.target.value))}
                   />
                 </div>
               </div>
@@ -717,10 +721,10 @@ export function OrderDialog({
                   <Input
                     id="upsell_quantity"
                     name="upsell_quantity"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={upsellQuantity}
-                    onChange={(e) => handleUpsellQuantityChange(e.target.value)}
+                    onChange={(e) => handleUpsellQuantityChange(sanitizeIntegerInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -733,12 +737,11 @@ export function OrderDialog({
                   <Input
                     id="upsell_price"
                     name="upsell_price"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={upsellPrice}
                     onChange={(e) => {
-                      setUpsellPrice(e.target.value);
+                      setUpsellPrice(sanitizeDecimalInput(e.target.value));
                       calculateProfit();
                     }}
                     placeholder="Auto-calculated"
@@ -767,11 +770,10 @@ export function OrderDialog({
                   <Input
                     id="cost_price"
                     name="cost_price"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={costPrice}
-                    onChange={(e) => handlePriceChange("cost", e.target.value)}
+                    onChange={(e) => handlePriceChange("cost", sanitizeDecimalInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -784,11 +786,10 @@ export function OrderDialog({
                   <Input
                     id="delivery_fee"
                     name="delivery_fee"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={deliveryFee}
-                    onChange={(e) => handlePriceChange("delivery", e.target.value)}
+                    onChange={(e) => handlePriceChange("delivery", sanitizeDecimalInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -801,11 +802,10 @@ export function OrderDialog({
                   <Input
                     id="sales_price"
                     name="sales_price"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={salesPrice}
-                    onChange={(e) => handlePriceChange("sales", e.target.value)}
+                    onChange={(e) => handlePriceChange("sales", sanitizeDecimalInput(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">

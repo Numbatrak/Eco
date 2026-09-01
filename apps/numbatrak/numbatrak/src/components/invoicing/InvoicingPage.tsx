@@ -10,6 +10,7 @@ import {
   type Invoice,
 } from "../../services/invoicing";
 import { generateInvoicePDF } from "../../utils/generateInvoice";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 import { Plus, Send, CheckCircle, XCircle, Download } from "lucide-react";
 
 function currency(v: number): string {
@@ -159,8 +160,8 @@ export function InvoicingPage() {
               {lineItems.map((item, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <input placeholder="Item name" value={item.name} onChange={(e) => updateLineItem(idx, "name", e.target.value)} className="border rounded px-2 py-1 text-sm flex-1 bg-background" />
-                  <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateLineItem(idx, "quantity", Number(e.target.value))} className="border rounded px-2 py-1 text-sm w-20 bg-background" />
-                  <input type="number" placeholder="Price" value={item.unitPrice} onChange={(e) => updateLineItem(idx, "unitPrice", Number(e.target.value))} className="border rounded px-2 py-1 text-sm w-28 bg-background" />
+                  <input type="text" inputMode="numeric" placeholder="Qty" value={item.quantity} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "quantity", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-20 bg-background" />
+                  <input type="text" inputMode="numeric" placeholder="Price" value={item.unitPrice} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "unitPrice", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-28 bg-background" />
                   {lineItems.length > 1 && (
                     <button onClick={() => removeLineItem(idx)} className="text-red-500 text-sm">Remove</button>
                   )}
@@ -170,7 +171,7 @@ export function InvoicingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input type="number" placeholder="Delivery Fee" value={deliveryFee} onChange={(e) => setDeliveryFee(Number(e.target.value))} className="border rounded px-3 py-2 text-sm bg-background" />
+              <input type="text" inputMode="numeric" placeholder="Delivery Fee" value={deliveryFee} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setDeliveryFee(v === "" ? 0 : Number(v)); }} className="border rounded px-3 py-2 text-sm bg-background" />
               <input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="border rounded px-3 py-2 text-sm bg-background" />
             </div>
 

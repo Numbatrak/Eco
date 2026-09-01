@@ -18,6 +18,7 @@ import { Product } from "../../types/product";
 import { AlertTriangle, X, Check } from "lucide-react";
 import type { ShrinkageMovementType } from "../../types/stockMovement";
 import { filterStockHolders } from "../../utils/agentFilters";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 export type AdjustStockFormValues = {
   movement_type: ShrinkageMovementType;
@@ -193,11 +194,10 @@ export function AdjustStockDialog({
               </Label>
               <Input
                 id="adj-qty"
-                type="number"
-                min={1}
-                max={availableQty || undefined}
+                type="text"
+                inputMode="numeric"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
               />
             </div>
 

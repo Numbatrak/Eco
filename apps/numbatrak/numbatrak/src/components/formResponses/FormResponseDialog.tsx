@@ -35,6 +35,7 @@ import {
   orderStatusLabel,
 } from "../../constants/orderStatus";
 import { Product } from "../../types/product";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 import { Package, FileText, DollarSign, Truck, ArrowRight, XCircle } from "lucide-react";
 
 interface FormResponseDialogProps {
@@ -443,11 +444,10 @@ export function FormResponseDialog({
                   <Input
                     id="amount_paid"
                     name="amount_paid"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={amountPaid}
-                    onChange={(e) => setAmountPaid(e.target.value)}
+                    onChange={(e) => setAmountPaid(sanitizeDecimalInput(e.target.value))}
                     placeholder={formatCurrency(fullPrice)}
                     className="mt-1 w-full max-w-none"
                   />
@@ -474,11 +474,10 @@ export function FormResponseDialog({
                   <Input
                     id="delivery_fee"
                     name="delivery_fee"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={deliveryFee}
-                    onChange={(e) => setDeliveryFee(e.target.value)}
+                    onChange={(e) => setDeliveryFee(sanitizeDecimalInput(e.target.value))}
                     placeholder="0"
                     className="mt-1 w-full max-w-none"
                   />
@@ -633,10 +632,10 @@ export function FormResponseDialog({
                     </div>
                     <Input
                       className="w-20"
-                      type="number"
-                      min={1}
+                      type="text"
+                      inputMode="numeric"
                       value={upsellQty}
-                      onChange={(e) => setUpsellQty(e.target.value)}
+                      onChange={(e) => setUpsellQty(sanitizeIntegerInput(e.target.value))}
                     />
                     <Button
                       type="button"

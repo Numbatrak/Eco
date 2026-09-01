@@ -7,6 +7,7 @@ import { Label } from "../ui/label";
 import { formatNaira } from "../../utils/currency";
 import { Package } from "lucide-react";
 import { ProductType } from "../../types/product";
+import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
 export interface ProductFormValues {
   productName: string;
@@ -186,11 +187,10 @@ export function ProductDialog({
                 </Label>
                 <Input
                   id="base-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={values.basePrice}
-                  onChange={(e) => onChange({ basePrice: e.target.value })}
+                  onChange={(e) => onChange({ basePrice: sanitizeDecimalInput(e.target.value) })}
                   required
                 />
                 {salesNum > 0 && (
@@ -205,11 +205,10 @@ export function ProductDialog({
                 </Label>
                 <Input
                   id="cost-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={values.costPrice}
-                  onChange={(e) => onChange({ costPrice: e.target.value })}
+                  onChange={(e) => onChange({ costPrice: sanitizeDecimalInput(e.target.value) })}
                   required
                 />
               </div>
@@ -219,11 +218,11 @@ export function ProductDialog({
                 </Label>
                 <Input
                   id="low-stock"
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={values.lowStockThreshold}
                   onChange={(e) =>
-                    onChange({ lowStockThreshold: e.target.value })
+                    onChange({ lowStockThreshold: sanitizeIntegerInput(e.target.value) })
                   }
                   placeholder="Leave empty for no alert"
                 />

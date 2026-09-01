@@ -12,6 +12,7 @@ import {
   resetDashboardAlertThresholds,
 } from "../../services/dashboardAlertSettings";
 import { Button } from "../ui/button";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface DashboardAlertThresholdsSettingsProps {
   organizationId: string;
@@ -83,20 +84,24 @@ export function DashboardAlertThresholdsSettings({
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-        {FIELDS.map(({ key, label, step = 1, suffix }) => (
+        {FIELDS.map(({ key, label, step = 1, suffix }) => {
+          const isDecimal = !Number.isInteger(step);
+          const sanitize = isDecimal ? sanitizeDecimalInput : sanitizeIntegerInput;
+          return (
           <label key={key} className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2">
               <input
-                type="number"
-                step={step}
+                type="text"
+                inputMode={isDecimal ? "decimal" : "numeric"}
                 value={thresholds[key]}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const v = sanitize(e.target.value);
                   setThresholds((prev) => ({
                     ...prev,
-                    [key]: Number(e.target.value),
-                  }))
-                }
+                    [key]: v === "" ? 0 : Number(v),
+                  }));
+                }}
                 className="org-settings-text-input flex-1"
               />
               {suffix && (
@@ -106,7 +111,8 @@ export function DashboardAlertThresholdsSettings({
               )}
             </div>
           </label>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap gap-2">

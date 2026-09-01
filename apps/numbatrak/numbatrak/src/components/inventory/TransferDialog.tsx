@@ -17,6 +17,7 @@ import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import { ArrowRightLeft, X, Check } from "lucide-react";
 import { filterStockHolders } from "../../utils/agentFilters";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 export type TransferFormValues = {
   from_agent_id: number;
@@ -211,11 +212,10 @@ export function TransferDialog({
               </div>
               <Input
                 id="transfer-qty"
-                type="number"
-                min={1}
-                max={availableQuantity || undefined}
+                type="text"
+                inputMode="numeric"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
               />
             </div>
 

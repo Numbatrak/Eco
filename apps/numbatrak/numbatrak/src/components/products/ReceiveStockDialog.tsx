@@ -7,6 +7,7 @@ import { Label } from "../ui/label";
 import { ErrorAlert } from "../agents/ErrorAlert";
 import { Package } from "lucide-react";
 import { formatNaira } from "../../utils/currency";
+import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface ReceiveStockDialogProps {
   open: boolean;
@@ -103,10 +104,10 @@ export function ReceiveStockDialog({
                 </Label>
                 <Input
                   id="receive-qty"
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
                   placeholder="e.g. 100"
                   required
                 />
@@ -117,11 +118,10 @@ export function ReceiveStockDialog({
                 </Label>
                 <Input
                   id="receive-cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={unitCost}
-                  onChange={(e) => setUnitCost(e.target.value)}
+                  onChange={(e) => setUnitCost(sanitizeDecimalInput(e.target.value))}
                   placeholder="e.g. 500"
                   required
                 />

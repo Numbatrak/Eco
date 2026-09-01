@@ -15,6 +15,7 @@ import { OrganizationMember } from "../../types/organization";
 import { Loader2, Save, Pause, Play, Trash2, AlertCircle, Check } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { getDisplayName } from "../../utils/userDisplay";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 import "./OrderAssignmentSettings.css";
 import { LoadingState } from "../ui/LoadingState";
 
@@ -325,12 +326,12 @@ export function OrderAssignmentSettings({
                         <div className="order-assignment-settings-weight-controls">
                           <div className="order-assignment-settings-weight-input-group">
                             <input
-                              type="number"
-                              min="0"
-                              max="100"
+                              type="text"
+                              inputMode="numeric"
                               value={editingPercentage}
                               onChange={(e) => {
-                                const value = parseInt(e.target.value) || 0;
+                                const sanitized = sanitizeIntegerInput(e.target.value);
+                                const value = sanitized === "" ? 0 : Number(sanitized);
                                 setEditingWeights({
                                   ...editingWeights,
                                   [member.user_id]: Math.max(0, Math.min(100, value)),

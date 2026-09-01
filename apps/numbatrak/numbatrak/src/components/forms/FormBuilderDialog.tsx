@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Badge } from "../ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface FormBuilderDialogProps {
   open: boolean;
@@ -605,12 +606,12 @@ export function FormBuilderDialog({
                                                 Price (₦):
                                               </Label>
                                               <Input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
+                                                type="text"
+                                                inputMode="decimal"
                                                 value={option.price ?? 0}
                                                 onChange={(e) => {
-                                                  const price = parseFloat(e.target.value) || 0;
+                                                  const raw = sanitizeDecimalInput(e.target.value);
+                                                  const price = parseFloat(raw) || 0;
                                                   updateRadioOption(index, optIndex, { price });
                                                 }}
                                                 placeholder="0.00"
@@ -676,10 +677,10 @@ export function FormBuilderDialog({
                                                   </SelectContent>
                                                 </Select>
                                                 <Input
-                                                  type="number"
-                                                  min="1"
+                                                  type="text"
+                                                  inputMode="numeric"
                                                   value={product.quantity}
-                                                  onChange={(e) => updateRadioOptionProduct(index, optIndex, prodIndex, { quantity: parseInt(e.target.value) || 1 })}
+                                                  onChange={(e) => updateRadioOptionProduct(index, optIndex, prodIndex, { quantity: parseInt(sanitizeIntegerInput(e.target.value)) || 1 })}
                                                   placeholder="Qty"
                                                   className="w-20 text-xs h-8"
                                                 />

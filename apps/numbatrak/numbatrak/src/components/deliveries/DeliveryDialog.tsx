@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { DeliveryWithRelations } from "../../types/delivery";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import { Truck } from "lucide-react";
@@ -224,10 +225,10 @@ export function DeliveryDialog({
                 <Input
                   id="quantity"
                   name="quantity"
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
                   className="w-full max-w-none"
                   required
                 />
@@ -242,11 +243,10 @@ export function DeliveryDialog({
                 <Input
                   id="cost"
                   name="cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={cost}
-                  onChange={(e) => setCost(e.target.value)}
+                  onChange={(e) => setCost(sanitizeDecimalInput(e.target.value))}
                   className="w-full max-w-none"
                   required
                 />
@@ -259,11 +259,10 @@ export function DeliveryDialog({
                 <Input
                   id="waybilling-fee"
                   name="waybilling_fee"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={waybillingFee}
-                  onChange={(e) => setWaybillingFee(e.target.value)}
+                  onChange={(e) => setWaybillingFee(sanitizeDecimalInput(e.target.value))}
                   placeholder="Optional"
                   className="w-full max-w-none"
                 />

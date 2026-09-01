@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { PageLayout } from "../layout/PageLayout";
+import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
 import {
@@ -176,7 +177,7 @@ export function MediaBuyersPage() {
                     <option value="sound">Sound</option>
                     <option value="other">Other</option>
                   </select>
-                  <input type="number" placeholder="Videos" value={batchCount} onChange={(e) => setBatchCount(Number(e.target.value))} className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={1} />
+                  <input type="text" inputMode="numeric" placeholder="Videos" value={batchCount} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setBatchCount(v === "" ? 0 : Number(v)); }} className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" placeholder="Brand" value={batchBrand} onChange={(e) => setBatchBrand(e.target.value)} className="w-32 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => {
@@ -224,7 +225,7 @@ export function MediaBuyersPage() {
                     <option value="vo_artist">VO Artist</option>
                     <option value="video_editor">Video Editor</option>
                   </select>
-                  <input type="number" placeholder="Rate" value={newRate || ""} onChange={(e) => setNewRate(Number(e.target.value))} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={0} />
+                  <input type="text" inputMode="decimal" placeholder="Rate" value={newRate || ""} onChange={(e) => { const v = sanitizeDecimalInput(e.target.value); setNewRate(v === "" ? 0 : Number(v)); }} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => { if (!newName) return; await createContractor(newName, newRole, newRate); setNewName(""); setNewRate(0); void load(); }}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
@@ -317,8 +318,8 @@ export function MediaBuyersPage() {
               {canManage && (
                 <div className="flex flex-wrap gap-2 items-end bg-muted/50 p-3 rounded-lg">
                   <input type="date" value={spendDate} onChange={(e) => setSpendDate(e.target.value)} className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
-                  <input type="number" placeholder="Spend" value={spendAmount || ""} onChange={(e) => setSpendAmount(Number(e.target.value))} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={0} />
-                  <input type="number" placeholder="Orders" value={spendOrders || ""} onChange={(e) => setSpendOrders(Number(e.target.value))} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={0} />
+                  <input type="text" inputMode="decimal" placeholder="Spend" value={spendAmount || ""} onChange={(e) => { const v = sanitizeDecimalInput(e.target.value); setSpendAmount(v === "" ? 0 : Number(v)); }} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
+                  <input type="text" inputMode="numeric" placeholder="Orders" value={spendOrders || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setSpendOrders(v === "" ? 0 : Number(v)); }} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" placeholder="Platform" value={spendPlatform} onChange={(e) => setSpendPlatform(e.target.value)} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => { if (!spendDate) return; await createSpend({ spendDate, spend: spendAmount, orders: spendOrders, platform: spendPlatform || null }); setSpendDate(""); setSpendAmount(0); setSpendOrders(0); setSpendPlatform(""); void load(); }}
@@ -357,8 +358,8 @@ export function MediaBuyersPage() {
               <h3 className="text-lg font-semibold text-foreground">CPA Targets & Budgets</h3>
               {canManage && (
                 <div className="flex flex-wrap gap-2 items-end bg-muted/50 p-3 rounded-lg">
-                  <input type="number" placeholder="CPA Target" value={targetCpa || ""} onChange={(e) => setTargetCpa(Number(e.target.value))} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={0} />
-                  <input type="number" placeholder="Weekly Budget" value={targetBudget || ""} onChange={(e) => setTargetBudget(Number(e.target.value))} className="w-32 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={0} />
+                  <input type="text" inputMode="decimal" placeholder="CPA Target" value={targetCpa || ""} onChange={(e) => { const v = sanitizeDecimalInput(e.target.value); setTargetCpa(v === "" ? 0 : Number(v)); }} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
+                  <input type="text" inputMode="decimal" placeholder="Weekly Budget" value={targetBudget || ""} onChange={(e) => { const v = sanitizeDecimalInput(e.target.value); setTargetBudget(v === "" ? 0 : Number(v)); }} className="w-32 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => { await upsertTarget({ cpaTarget: targetCpa, weeklyBudget: targetBudget }); setTargetCpa(0); setTargetBudget(0); void load(); }}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"

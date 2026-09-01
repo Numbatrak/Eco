@@ -12,6 +12,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { WalletRemittanceLine } from "../../types/wallet";
 import { formatNaira } from "../../utils/currency";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface RecordRemittanceDialogProps {
   line: WalletRemittanceLine | null;
@@ -87,11 +88,10 @@ export function RecordRemittanceDialog({
             <Label htmlFor="actual-amount">Actual amount received</Label>
             <Input
               id="actual-amount"
-              type="number"
-              min={0}
-              step={1}
+              type="text"
+              inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(sanitizeIntegerInput(e.target.value))}
             />
             {error && (
               <p className="text-xs text-destructive" role="alert">

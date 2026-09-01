@@ -31,6 +31,7 @@ import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import { ExpenseSubcategoryRow } from "../../services/expenseSubcategories";
 import { isAutoFedExpense } from "../../utils/expenseAttribution";
+import { sanitizeDecimalInput } from "../../utils/numericInput";
 
 export interface UnifiedExpenseFormValues {
   occurred_at: string;
@@ -249,11 +250,10 @@ export function UnifiedExpenseDialog({
               <Label htmlFor="expense-amount">Amount (NGN)</Label>
               <Input
                 id="expense-amount"
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => setAmount(sanitizeDecimalInput(e.target.value))}
                 required
                 disabled={isAutoFed}
               />

@@ -14,6 +14,7 @@ import {
   type LeaveRequest,
 } from "../../services/leave";
 import { Check, X, Plus, Clock } from "lucide-react";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 const LEAVE_TYPES = ["annual", "sick", "emergency", "unpaid"] as const;
 
@@ -236,30 +237,39 @@ export function LeavePage() {
           <div>
             <label className="block text-sm text-muted-foreground mb-1">Annual Leave</label>
             <input
-              type="number"
-              min={0}
+              type="text"
+              inputMode="numeric"
               value={editAnnual}
-              onChange={(e) => setEditAnnual(Number(e.target.value))}
+              onChange={(e) => {
+                const v = sanitizeIntegerInput(e.target.value);
+                setEditAnnual(v === "" ? 0 : Number(v));
+              }}
               className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
             />
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1">Sick Leave</label>
             <input
-              type="number"
-              min={0}
+              type="text"
+              inputMode="numeric"
               value={editSick}
-              onChange={(e) => setEditSick(Number(e.target.value))}
+              onChange={(e) => {
+                const v = sanitizeIntegerInput(e.target.value);
+                setEditSick(v === "" ? 0 : Number(v));
+              }}
               className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
             />
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1">Emergency Leave</label>
             <input
-              type="number"
-              min={0}
+              type="text"
+              inputMode="numeric"
               value={editEmergency}
-              onChange={(e) => setEditEmergency(Number(e.target.value))}
+              onChange={(e) => {
+                const v = sanitizeIntegerInput(e.target.value);
+                setEditEmergency(v === "" ? 0 : Number(v));
+              }}
               className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
             />
           </div>
@@ -311,10 +321,13 @@ export function LeavePage() {
             <div>
               <label className="block text-sm text-muted-foreground mb-1">Days</label>
               <input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 value={newDays}
-                onChange={(e) => setNewDays(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = sanitizeIntegerInput(e.target.value);
+                  setNewDays(v === "" ? 0 : Number(v));
+                }}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
               />
             </div>

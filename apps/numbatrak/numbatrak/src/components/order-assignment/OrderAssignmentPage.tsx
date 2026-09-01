@@ -13,6 +13,7 @@ import {
 } from "../../services/orderAssignment";
 import { fetchStaff } from "../../services/staff";
 import type { Staff } from "../../types/staff";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 import { Trash2, Plus, Pause, Play } from "lucide-react";
 
 export function OrderAssignmentPage() {
@@ -140,11 +141,13 @@ export function OrderAssignmentPage() {
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1">Percentage</label>
                     <input
-                      type="number"
-                      min={0}
-                      max={100}
+                      type="text"
+                      inputMode="numeric"
                       value={addPercentage}
-                      onChange={(e) => setAddPercentage(Number(e.target.value))}
+                      onChange={(e) => {
+                        const v = sanitizeIntegerInput(e.target.value);
+                        setAddPercentage(v === "" ? 0 : Number(v));
+                      }}
                       className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm w-24"
                     />
                   </div>

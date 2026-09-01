@@ -15,6 +15,7 @@ import { InventoryWithRelations } from "../../types/inventory";
 import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import { Boxes } from "lucide-react";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface InventoryDialogProps {
   open: boolean;
@@ -148,10 +149,10 @@ export function InventoryDialog({
               <Input
                 id="quantity"
                 name="total_quantity"
-                type="number"
-                min="0"
+                type="text"
+                inputMode="numeric"
                 value={totalQuantity}
-                onChange={(e) => setTotalQuantity(e.target.value)}
+                onChange={(e) => setTotalQuantity(sanitizeIntegerInput(e.target.value))}
                 className="w-full max-w-none"
                 required
               />

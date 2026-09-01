@@ -8,6 +8,7 @@ import { ErrorAlert } from "../agents/ErrorAlert";
 import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { formatNaira } from "../../utils/currency";
 import { X, Plus, Trash2, Banknote } from "lucide-react";
+import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface PriceDialogProps {
   open: boolean;
@@ -251,11 +252,11 @@ export function PriceDialog({
                     </Label>
                     <Input
                       id={`quantity-${index}`}
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
                       value={entry.quantity}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "quantity", e.target.value)
+                        handleUpdateEntry(index, "quantity", sanitizeIntegerInput(e.target.value))
                       }
                       className="w-full"
                       required
@@ -270,12 +271,11 @@ export function PriceDialog({
                     </Label>
                     <Input
                       id={`offer-${index}`}
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.offer}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "offer", e.target.value)
+                        handleUpdateEntry(index, "offer", sanitizeDecimalInput(e.target.value))
                       }
                       className="w-full"
                     />
@@ -289,12 +289,11 @@ export function PriceDialog({
                     </Label>
                     <Input
                       id={`sales-${index}`}
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.sales_price}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "sales_price", e.target.value)
+                        handleUpdateEntry(index, "sales_price", sanitizeDecimalInput(e.target.value))
                       }
                       className="w-full"
                       required
@@ -309,12 +308,11 @@ export function PriceDialog({
                     </Label>
                     <Input
                       id={`cost-${index}`}
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={entry.unit_cost}
                       onChange={(e) =>
-                        handleUpdateEntry(index, "unit_cost", e.target.value)
+                        handleUpdateEntry(index, "unit_cost", sanitizeDecimalInput(e.target.value))
                       }
                       className="w-full"
                       required

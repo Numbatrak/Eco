@@ -21,6 +21,10 @@ import {
   MONEY_RECEIVED_BY_OPTIONS,
   type MoneyReceivedBy,
 } from "../../constants/orderAttribution";
+import {
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from "../../utils/numericInput";
 
 export type ManualOrderLine = {
   product_id: string;
@@ -309,19 +313,20 @@ export function ManualOrderDialog({
                     <div className="dialog-form-field space-y-2 w-24 shrink-0">
                       <Label className="dialog-field-label text-xs">Qty</Label>
                       <Input
-                        type="number"
-                        min={1}
+                        type="text"
+                        inputMode="numeric"
                         placeholder="Qty"
                         value={line.quantity}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const v = sanitizeIntegerInput(e.target.value);
                           setLines((prev) =>
                             prev.map((l) =>
                               l.id === line.id
-                                ? { ...l, quantity: e.target.value }
+                                ? { ...l, quantity: v }
                                 : l
                             )
-                          )
-                        }
+                          );
+                        }}
                       />
                     </div>
                     {lines.length > 1 && (
@@ -398,11 +403,10 @@ export function ManualOrderDialog({
                 </Label>
                 <Input
                   id="manual-delivery-fee"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={deliveryFee}
-                  onChange={(e) => setDeliveryFee(e.target.value)}
+                  onChange={(e) => setDeliveryFee(sanitizeDecimalInput(e.target.value))}
                 />
               </div>
               <div className="dialog-form-field space-y-2">
@@ -414,11 +418,10 @@ export function ManualOrderDialog({
                 </Label>
                 <Input
                   id="manual-amount-paid"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={amountPaid}
-                  onChange={(e) => setAmountPaid(e.target.value)}
+                  onChange={(e) => setAmountPaid(sanitizeDecimalInput(e.target.value))}
                 />
               </div>
               <div className="dialog-form-field space-y-2">

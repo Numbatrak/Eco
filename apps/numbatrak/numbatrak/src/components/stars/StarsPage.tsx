@@ -19,6 +19,7 @@ import {
 import { fetchStaff } from "../../services/staff";
 import type { Staff } from "../../types/staff";
 import { Star, Trophy, Plus, Trash2, Award } from "lucide-react";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 export function StarsPage() {
   const { currentOrganization } = useOrganization();
@@ -223,9 +224,13 @@ export function StarsPage() {
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Min Points</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={newTierMinPoints}
-                  onChange={(e) => setNewTierMinPoints(Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = sanitizeIntegerInput(e.target.value);
+                    setNewTierMinPoints(v === "" ? 0 : Number(v));
+                  }}
                   className="px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm w-24"
                 />
               </div>
@@ -313,10 +318,13 @@ export function StarsPage() {
             <div>
               <label className="block text-sm text-muted-foreground mb-1">Points</label>
               <input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 value={awardPoints}
-                onChange={(e) => setAwardPoints(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = sanitizeIntegerInput(e.target.value);
+                  setAwardPoints(v === "" ? 0 : Number(v));
+                }}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
               />
             </div>

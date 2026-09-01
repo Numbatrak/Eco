@@ -13,6 +13,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { WalletRemittanceLine } from "../../types/wallet";
 import { formatNaira } from "../../utils/currency";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface NetOffDialogProps {
   line: WalletRemittanceLine | null;
@@ -76,11 +77,10 @@ export function NetOffDialog({
             <Label htmlFor="netoff-amount">Amount business owes agent</Label>
             <Input
               id="netoff-amount"
-              type="number"
-              min={1}
-              step={1}
+              type="text"
+              inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(sanitizeIntegerInput(e.target.value))}
             />
           </div>
 

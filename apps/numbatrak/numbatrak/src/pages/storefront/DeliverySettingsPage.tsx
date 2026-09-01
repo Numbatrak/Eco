@@ -6,6 +6,7 @@ import { PageLayout } from "../../components/layout/PageLayout";
 import { TextField } from "../../components/storefront/TextField";
 import { storefrontSettingsApi } from "../../services/storefrontSettings";
 import { ApiError } from "../../lib/apiClient";
+import { sanitizeDecimalInput } from "../../utils/numericInput";
 
 const formSchema = z.object({
   deliveryFeeAmount: z.coerce.number().nonnegative("Fee can't be negative"),
@@ -60,6 +61,10 @@ export function DeliverySettingsPage() {
 
   const vatEnabled = watch("vatEnabled");
 
+  const deliveryFeeAmountField = register("deliveryFeeAmount");
+  const freeDeliveryThresholdAmountField = register("freeDeliveryThresholdAmount");
+  const vatRatePercentField = register("vatRatePercent");
+
   async function onSubmit(values: FormValues): Promise<void> {
     setFormError(null);
     setSavedNotice(null);
@@ -94,26 +99,32 @@ export function DeliverySettingsPage() {
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
             <TextField
               label="Delivery fee"
-              type="number"
-              min={0}
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               hint={!errors.deliveryFeeAmount ? "Flat fee charged on every order, unless waived below." : undefined}
               error={errors.deliveryFeeAmount?.message}
-              {...register("deliveryFeeAmount")}
+              {...deliveryFeeAmountField}
+              onChange={(e) => {
+                e.target.value = sanitizeDecimalInput(e.target.value);
+                void deliveryFeeAmountField.onChange(e);
+              }}
             />
 
             <TextField
               label="Free delivery over"
-              type="number"
-              min={0}
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               hint={
                 !errors.freeDeliveryThresholdAmount
                   ? "Optional - leave blank to always charge the delivery fee."
                   : undefined
               }
               error={errors.freeDeliveryThresholdAmount?.message}
-              {...register("freeDeliveryThresholdAmount")}
+              {...freeDeliveryThresholdAmountField}
+              onChange={(e) => {
+                e.target.value = sanitizeDecimalInput(e.target.value);
+                void freeDeliveryThresholdAmountField.onChange(e);
+              }}
             />
 
             <label className="flex items-center gap-2 text-sm text-foreground">
@@ -128,13 +139,15 @@ export function DeliverySettingsPage() {
             {vatEnabled ? (
               <TextField
                 label="VAT rate (%)"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
+                type="text"
+                inputMode="decimal"
                 hint={!errors.vatRatePercent ? "Applied to subtotal + delivery fee." : undefined}
                 error={errors.vatRatePercent?.message}
-                {...register("vatRatePercent")}
+                {...vatRatePercentField}
+                onChange={(e) => {
+                  e.target.value = sanitizeDecimalInput(e.target.value);
+                  void vatRatePercentField.onChange(e);
+                }}
               />
             ) : null}
 

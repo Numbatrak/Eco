@@ -14,6 +14,7 @@ import {
 } from "../../services/strikes";
 import type { Staff } from "../../types/staff";
 import { AlertTriangle, Plus, X, Settings } from "lucide-react";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 export function StrikesPage() {
   const { currentOrganization } = useOrganization();
@@ -125,10 +126,13 @@ export function StrikesPage() {
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Threshold</label>
               <input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = sanitizeIntegerInput(e.target.value);
+                  setThreshold(v === "" ? 0 : Number(v));
+                }}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
               />
             </div>

@@ -31,6 +31,7 @@ import {
   type ComplaintDashboard,
 } from "../../services/crm";
 import { Plus, Phone, AlertTriangle, ShoppingBag, Send, CreditCard, BarChart3, Users } from "lucide-react";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 type Tab = "customers" | "feedback" | "complaints" | "purchases" | "campaigns" | "credits" | "feedback-dashboard" | "complaint-dashboard";
 
@@ -136,14 +137,15 @@ export function CrmPage() {
             <div className="mb-4 flex items-center gap-3">
               <label className="text-sm text-muted-foreground">Call Window (days)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={settings.call_window_days}
                 onChange={async (e) => {
-                  const updated = await updateFeedbackSettings(Number(e.target.value));
+                  const v = sanitizeIntegerInput(e.target.value);
+                  const updated = await updateFeedbackSettings(v === "" ? 0 : Number(v));
                   setSettings(updated);
                 }}
                 className="w-16 px-2 py-1 text-sm border border-border rounded bg-background text-foreground"
-                min={1}
               />
             </div>
           )}
@@ -360,7 +362,7 @@ export function CrmPage() {
                     <option value="email">Email</option>
                     <option value="whatsapp">WhatsApp</option>
                   </select>
-                  <input type="number" placeholder="Amount" value={creditAmount || ""} onChange={(e) => setCreditAmount(Number(e.target.value))} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" min={1} />
+                  <input type="text" inputMode="numeric" placeholder="Amount" value={creditAmount || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setCreditAmount(v === "" ? 0 : Number(v)); }} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => { if (creditAmount <= 0) return; await addCredits(creditChannel, creditAmount); setCreditAmount(0); void load(); }}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"

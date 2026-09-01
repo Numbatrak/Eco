@@ -16,6 +16,7 @@ import type {
 } from "../../types/siteConfig";
 import { TEMPLATE_PRESETS, FONT_PAIRINGS, SECTION_CATALOG, defaultSiteConfig } from "../../types/siteConfig";
 import { StorefrontPreview } from "../../components/storefront/StorefrontPreview";
+import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 const STOREFRONT_BASE_DOMAIN = import.meta.env.VITE_STOREFRONT_BASE_DOMAIN ?? "numbatrak.com";
 
@@ -676,11 +677,13 @@ export function StorefrontBuilderPage(): React.ReactElement {
                     <div className="flex flex-col gap-1">
                       <label className="text-[11.5px] text-muted-foreground">Max items</label>
                       <input
-                        type="number"
-                        min={1}
-                        max={6}
+                        type="text"
+                        inputMode="numeric"
                         value={selectedSection.maxItems ?? 3}
-                        onChange={(e) => updateSectionField(selectedSectionIndex, "maxItems", parseInt(e.target.value) || 3)}
+                        onChange={(e) => {
+                          const v = sanitizeIntegerInput(e.target.value);
+                          updateSectionField(selectedSectionIndex, "maxItems", v === "" ? 3 : Number(v));
+                        }}
                         className="w-16 rounded-[7px] border border-border bg-background px-2 py-2 text-[13px] text-foreground outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
