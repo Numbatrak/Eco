@@ -8,8 +8,16 @@ import {
   Ban,
   RotateCcw,
   Layers,
+  MoreVertical,
 } from "lucide-react";
 import { formatNaira, formatShortId } from "../../utils/currency";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 interface ProductTableRowProps {
   product: ProductWithDetails;
@@ -128,77 +136,58 @@ export function ProductTableRow({
       </TableCell>
       <TableCell className="px-6 py-4 text-right">
         {(canEdit || canDelete) && (
-          <div className="flex items-center justify-end gap-2">
-            {canEdit && (
-              <>
-                {onSetActive && (
-                  <button
-                    type="button"
-                    onClick={() => onSetActive(product, !isActive)}
-                    className={`rounded-lg p-2 shadow-sm transition-all hover:shadow-md ${
-                      isActive
-                        ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white"
-                        : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white"
-                    }`}
-                    title={isActive ? "Deactivate product" : "Reactivate product"}
-                  >
-                    {isActive ? (
-                      <Ban className="h-4 w-4" />
-                    ) : (
-                      <RotateCcw className="h-4 w-4" />
-                    )}
-                  </button>
-                )}
-                {onReceiveStock && isActive && (
-                  <button
-                    type="button"
-                    onClick={() => onReceiveStock(product)}
-                    className="rounded-lg bg-primary/10 p-2 text-primary shadow-sm transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
-                    title="Receive stock (FIFO lot)"
-                  >
-                    <Package className="h-4 w-4" />
-                  </button>
-                )}
-                {onManageVariants && product.allows_variants && isActive && (
-                  <button
-                    type="button"
-                    onClick={() => onManageVariants(product)}
-                    className="rounded-lg bg-primary/10 p-2 text-primary shadow-sm transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
-                    title="Manage variants"
-                  >
-                    <Layers className="h-4 w-4" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onManageOffers(product)}
-                  className="rounded-lg bg-primary/10 p-2 text-primary shadow-sm transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
-                  title="Manage offers"
-                  disabled={!isActive}
-                >
-                  <Tag className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onEdit(product)}
-                  className="rounded-lg bg-primary/10 p-2 text-primary shadow-sm transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
-                  title="Edit product"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              </>
-            )}
-            {canDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                onClick={() => onDelete(product.id)}
-                className="rounded-lg bg-destructive/10 p-2 text-destructive shadow-sm transition-all hover:bg-destructive hover:text-destructive-foreground hover:shadow-md"
-                title="Delete product"
+                className="rounded-lg p-2 text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground"
+                title="Product actions"
               >
-                <Trash2 className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4" />
               </button>
-            )}
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canEdit && (
+                <>
+                  {onSetActive && (
+                    <DropdownMenuItem onClick={() => onSetActive(product, !isActive)}>
+                      {isActive ? <Ban /> : <RotateCcw />}
+                      {isActive ? "Deactivate product" : "Reactivate product"}
+                    </DropdownMenuItem>
+                  )}
+                  {onReceiveStock && isActive && (
+                    <DropdownMenuItem onClick={() => onReceiveStock(product)}>
+                      <Package />
+                      Receive stock (FIFO lot)
+                    </DropdownMenuItem>
+                  )}
+                  {onManageVariants && product.allows_variants && isActive && (
+                    <DropdownMenuItem onClick={() => onManageVariants(product)}>
+                      <Layers />
+                      Manage variants
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => onManageOffers(product)} disabled={!isActive}>
+                    <Tag />
+                    Manage offers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(product)}>
+                    <Pencil />
+                    Edit product
+                  </DropdownMenuItem>
+                </>
+              )}
+              {canDelete && (
+                <>
+                  {canEdit && <DropdownMenuSeparator />}
+                  <DropdownMenuItem variant="destructive" onClick={() => onDelete(product.id)}>
+                    <Trash2 />
+                    Delete product
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </TableCell>
     </TableRow>

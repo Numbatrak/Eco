@@ -42,7 +42,7 @@ export function lineToOrderItem(
 }
 
 export function offerLabel(offer: ProductOffer): string {
-  return `${offer.label} (${offer.offer_type.replace(/_/g, " ")}) — ₦${offer.price.toLocaleString("en-NG")}`;
+  return `${offer.label} — ₦${offer.price.toLocaleString("en-NG")}`;
 }
 
 export function offersForProduct(

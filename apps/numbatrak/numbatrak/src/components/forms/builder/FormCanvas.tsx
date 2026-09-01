@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { GripVertical, Package, Sparkles, Trash2 } from "lucide-react";
 import { FormField } from "../../../types/form";
 import { isRequiredField } from "../../../utils/formValidation";
+import { getFieldIcon } from "./fieldIcons";
 
 interface FormCanvasProps {
   fields: FormField[];
@@ -9,7 +10,6 @@ interface FormCanvasProps {
   onSelectField: (id: string) => void;
   onMoveField: (fromIndex: number, toIndex: number) => void;
   onRemoveField: (index: number) => void;
-  getFieldIcon: (type: string) => React.ReactElement;
 }
 
 function FieldPreviewControl({ field }: { field: FormField }) {
@@ -89,7 +89,7 @@ function FieldPreviewControl({ field }: { field: FormField }) {
 }
 
 /** WYSIWYG list of form fields — click a block to edit it, drag the handle to reorder. */
-export function FormCanvas({ fields, selectedFieldId, onSelectField, onMoveField, onRemoveField, getFieldIcon }: FormCanvasProps) {
+export function FormCanvas({ fields, selectedFieldId, onSelectField, onMoveField, onRemoveField }: FormCanvasProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const dragHandleActive = useRef(false);
 
