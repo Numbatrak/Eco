@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { PageLayout } from "../layout/PageLayout";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
+import { fetchStaff } from "../../services/staff";
+import type { Staff } from "../../types/staff";
 import {
   fetchPayStructures,
   fetchPayrollRun,
@@ -9,12 +11,20 @@ import {
   awardSotm,
   markLinePaid,
   fetchMyEarnings,
+  upsertPayStructure,
+  overridePayrollLine,
+  setManualAdjustment,
+  fetchPayrollLineTrace,
   type PayStructure,
   type PayrollRun,
   type PayrollLine,
   type MyEarnings,
+  type PayrollTrace,
 } from "../../services/payroll";
-import { DollarSign, Play, Check, Star, AlertTriangle } from "lucide-react";
+import { PayStructureDialog, type PayStructureFormValues } from "./PayStructureDialog";
+import { PayrollLineEditDialog, type PayrollLineEditValues } from "./PayrollLineEditDialog";
+import { PayrollTraceDialog } from "./PayrollTraceDialog";
+import { DollarSign, Play, Check, Star, AlertTriangle, PenLine, FileSearch, Plus } from "lucide-react";
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -34,9 +44,24 @@ export function PayrollPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [payrollRun, setPayrollRun] = useState<PayrollRun | null>(null);
   const [structures, setStructures] = useState<PayStructure[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [myEarnings, setMyEarnings] = useState<MyEarnings | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+
+  const [structureDialogOpen, setStructureDialogOpen] = useState(false);
+  const [editingStructure, setEditingStructure] = useState<PayStructure | null>(null);
+  const [structureSaving, setStructureSaving] = useState(false);
+  const [structureError, setStructureError] = useState<string | null>(null);
+
+  const [lineDialogOpen, setLineDialogOpen] = useState(false);
+  const [editingLine, setEditingLine] = useState<PayrollLine | null>(null);
+  const [lineSaving, setLineSaving] = useState(false);
+  const [lineError, setLineError] = useState<string | null>(null);
+
+  const [traceDialogOpen, setTraceDialogOpen] = useState(false);
+  const [trace, setTrace] = useState<PayrollTrace | null>(null);
+  const [traceLoading, setTraceLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!currentOrganization) return;
@@ -46,9 +71,14 @@ export function PayrollPage() {
         const earnings = await fetchMyEarnings();
         setMyEarnings(earnings);
       } else {
-        const [s, r] = await Promise.all([fetchPayStructures(), fetchPayrollRun(month)]);
+        const [s, r, staffList] = await Promise.all([
+          fetchPayStructures(),
+          fetchPayrollRun(month),
+          fetchStaff(currentOrganization.id),
+        ]);
         setStructures(s);
         setPayrollRun(r);
+        setStaff(staffList);
       }
     } catch (err) {
       console.error("Failed to load payroll data", err);
@@ -79,6 +109,74 @@ export function PayrollPage() {
   const handleAwardSotm = async (lineId: string, awarded: boolean) => {
     await awardSotm(lineId, awarded);
     void load();
+  };
+
+  const openNewStructure = () => {
+    setEditingStructure(null);
+    setStructureError(null);
+    setStructureDialogOpen(true);
+  };
+
+  const openEditStructure = (s: PayStructure) => {
+    setEditingStructure(s);
+    setStructureError(null);
+    setStructureDialogOpen(true);
+  };
+
+  const handleSaveStructure = async (values: PayStructureFormValues) => {
+    setStructureSaving(true);
+    setStructureError(null);
+    try {
+      await upsertPayStructure(values);
+      await load();
+    } catch (err) {
+      setStructureError(err instanceof Error ? err.message : "Failed to save pay structure.");
+      throw err;
+    } finally {
+      setStructureSaving(false);
+    }
+  };
+
+  const openEditLine = (line: PayrollLine) => {
+    setEditingLine(line);
+    setLineError(null);
+    setLineDialogOpen(true);
+  };
+
+  const handleSaveLine = async (values: PayrollLineEditValues) => {
+    if (!editingLine) return;
+    setLineSaving(true);
+    setLineError(null);
+    try {
+      await Promise.all([
+        overridePayrollLine(editingLine.id, {
+          overrideBaseSalary: values.overrideBaseSalary,
+          overrideCommission: values.overrideCommission,
+        }),
+        setManualAdjustment(editingLine.id, {
+          manualAdjustment: values.manualAdjustment,
+          manualAdjustmentNote: values.manualAdjustmentNote,
+        }),
+      ]);
+      await load();
+    } catch (err) {
+      setLineError(err instanceof Error ? err.message : "Failed to save changes.");
+      throw err;
+    } finally {
+      setLineSaving(false);
+    }
+  };
+
+  const openTrace = async (lineId: string) => {
+    setTraceDialogOpen(true);
+    setTraceLoading(true);
+    setTrace(null);
+    try {
+      const t = await fetchPayrollLineTrace(lineId);
+      setTrace(t);
+    } finally {
+      setTraceLoading(false);
+    }
   };
 
   if (isStaffOnly) {
@@ -114,6 +212,27 @@ export function PayrollPage() {
 
   return (
     <PageLayout>
+      <PayStructureDialog
+        open={structureDialogOpen}
+        onOpenChange={setStructureDialogOpen}
+        structure={editingStructure}
+        staff={staff}
+        saving={structureSaving}
+        error={structureError}
+        onSubmit={handleSaveStructure}
+      />
+
+      <PayrollLineEditDialog
+        open={lineDialogOpen}
+        onOpenChange={setLineDialogOpen}
+        line={editingLine}
+        saving={lineSaving}
+        error={lineError}
+        onSubmit={handleSaveLine}
+      />
+
+      <PayrollTraceDialog open={traceDialogOpen} onOpenChange={setTraceDialogOpen} trace={trace} loading={traceLoading} />
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-semibold text-foreground">Payroll</h1>
         <div className="flex items-center gap-3">
@@ -153,7 +272,7 @@ export function PayrollPage() {
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">Adj.</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">Total</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  {canManage && <th className="text-center px-4 py-3 font-medium text-muted-foreground">Actions</th>}
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -164,6 +283,8 @@ export function PayrollPage() {
                     canManage={canManage}
                     onMarkPaid={handleMarkPaid}
                     onAwardSotm={handleAwardSotm}
+                    onEdit={openEditLine}
+                    onViewTrace={openTrace}
                   />
                 ))}
               </tbody>
@@ -181,12 +302,28 @@ export function PayrollPage() {
         </div>
       )}
 
-      {structures.length > 0 && (
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-3">Pay Structures ({structures.length})</h2>
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-medium text-foreground">Pay Structures ({structures.length})</h2>
+          {canManage && (
+            <button
+              onClick={openNewStructure}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <Plus className="w-4 h-4" />
+              Add pay structure
+            </button>
+          )}
+        </div>
+        {structures.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {structures.map((s) => (
-              <div key={s.id} className="p-4 rounded-lg border border-border bg-card">
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => canManage && openEditStructure(s)}
+                className={`text-left p-4 rounded-lg border border-border bg-card ${canManage ? "hover:border-primary cursor-pointer" : "cursor-default"}`}
+              >
                 <div className="font-medium text-foreground mb-2">
                   {s.scope_type === "role" ? `Role: ${s.role}` : `Staff: ${s.staff_name ?? s.staff_id}`}
                 </div>
@@ -200,13 +337,22 @@ export function PayrollPage() {
                   )}
                   {s.upsell_bonus_enabled && <div>Upsell: {formatCurrency(s.upsell_bonus_amount)}/upsell</div>}
                   {s.sotm_bonus_enabled && <div>SOTM: {formatCurrency(s.sotm_bonus_amount)}</div>}
-                  {s.manager_bonus_enabled && <div>Manager: {formatCurrency(s.manager_bonus_amount)}</div>}
+                  {s.manager_bonus_enabled && (
+                    <div>
+                      Manager: {formatCurrency(s.manager_bonus_amount)}
+                      {s.manager_gate_enabled && ` (gate: ${s.manager_gate_team_ratio_percent}% of team @ ${s.manager_gate_kpi_threshold_percent}% KPI)`}
+                    </div>
+                  )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-8 text-center text-muted-foreground border border-dashed border-border rounded-lg text-sm">
+            No pay structures set — add one per role or staff member to start paying people through Payroll.
+          </div>
+        )}
+      </div>
     </PageLayout>
   );
 }
@@ -216,11 +362,15 @@ function PayrollLineRow({
   canManage,
   onMarkPaid,
   onAwardSotm,
+  onEdit,
+  onViewTrace,
 }: {
   line: PayrollLine;
   canManage: boolean;
   onMarkPaid: (lineId: string, paid: boolean) => void;
   onAwardSotm: (lineId: string, awarded: boolean) => void;
+  onEdit: (line: PayrollLine) => void;
+  onViewTrace: (lineId: string) => void;
 }) {
   const effectiveBase = line.override_base_salary ?? line.calculated_base_salary;
   const effectiveCommission = line.override_commission ?? line.calculated_commission;
@@ -244,7 +394,9 @@ function PayrollLineRow({
       <td className="px-4 py-3 text-right text-foreground">
         {line.sotm_awarded ? formatCurrency(line.calculated_sotm_bonus) : "-"}
       </td>
-      <td className="px-4 py-3 text-right text-foreground">{formatCurrency(line.calculated_manager_bonus)}</td>
+      <td className="px-4 py-3 text-right text-foreground">
+        {line.manager_gate_missed ? <span className="text-destructive">Gate missed</span> : formatCurrency(line.calculated_manager_bonus)}
+      </td>
       <td className="px-4 py-3 text-right text-foreground">
         {line.manual_adjustment !== 0 ? formatCurrency(line.manual_adjustment) : "-"}
       </td>
@@ -258,26 +410,42 @@ function PayrollLineRow({
           <span className="text-xs text-muted-foreground">Unpaid</span>
         )}
       </td>
-      {canManage && (
-        <td className="px-4 py-3 text-center">
-          <div className="flex items-center justify-center gap-1">
-            <button
-              onClick={() => onMarkPaid(line.id, !line.paid)}
-              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-              title={line.paid ? "Mark unpaid" : "Mark paid"}
-            >
-              <DollarSign className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onAwardSotm(line.id, !line.sotm_awarded)}
-              className={`p-1.5 rounded hover:bg-muted ${line.sotm_awarded ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"}`}
-              title={line.sotm_awarded ? "Remove SOTM" : "Award SOTM"}
-            >
-              <Star className="w-4 h-4" />
-            </button>
-          </div>
-        </td>
-      )}
+      <td className="px-4 py-3 text-center">
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => onViewTrace(line.id)}
+            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+            title="View calculation trace"
+          >
+            <FileSearch className="w-4 h-4" />
+          </button>
+          {canManage && (
+            <>
+              <button
+                onClick={() => onEdit(line)}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                title="Override or adjust this line"
+              >
+                <PenLine className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onMarkPaid(line.id, !line.paid)}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                title={line.paid ? "Mark unpaid" : "Mark paid"}
+              >
+                <DollarSign className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onAwardSotm(line.id, !line.sotm_awarded)}
+                className={`p-1.5 rounded hover:bg-muted ${line.sotm_awarded ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"}`}
+                title={line.sotm_awarded ? "Remove SOTM" : "Award SOTM"}
+              >
+                <Star className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </td>
     </tr>
   );
 }

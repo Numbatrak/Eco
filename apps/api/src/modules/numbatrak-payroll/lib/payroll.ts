@@ -15,6 +15,8 @@ import type {
   NumbatrakPayrollRun,
   NumbatrakPayrollLine,
   NumbatrakMyEarnings,
+  NumbatrakPayrollTrace,
+  NumbatrakPayrollTraceStep,
 } from "@platform/shared-types";
 
 type PayStructureRow = typeof numbatrakPayStructures.$inferSelect;
@@ -85,12 +87,37 @@ function serializeLine(row: PayrollLineRow, staffName: string | null, primaryRol
   };
 }
 
-export async function listPayStructures(db: Database, organizationId: string): Promise<NumbatrakPayStructure[]> {
+export type PayrollScope = { all: true } | { all: false; ownUserId: string };
+
+export async function listPayStructures(
+  db: Database,
+  organizationId: string,
+  scope: PayrollScope = { all: true },
+): Promise<NumbatrakPayStructure[]> {
   const rows = await db
     .select()
     .from(numbatrakPayStructures)
     .where(eq(numbatrakPayStructures.organizationId, organizationId));
-  return rows.map((row) => serializePayStructure(row));
+
+  if (scope.all) return rows.map((row) => serializePayStructure(row));
+
+  // Row-scoped: only the caller's own staff-specific override (if any) and
+  // their own role's tier structure - same "own record only" boundary as
+  // numbatrak-staff's list route, applied to pay rates instead of HR fields.
+  const [staffRow] = await db
+    .select()
+    .from(numbatrakStaff)
+    .where(and(eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.userId, scope.ownUserId)))
+    .limit(1);
+  if (!staffRow) return [];
+
+  return rows
+    .filter(
+      (row) =>
+        (row.scopeType === "staff" && row.staffId === staffRow.id) ||
+        (row.scopeType === "role" && row.role === staffRow.primaryRole),
+    )
+    .map((row) => serializePayStructure(row));
 }
 
 export async function upsertPayStructure(
@@ -139,6 +166,7 @@ export async function getPayrollRun(
   db: Database,
   organizationId: string,
   month: string,
+  scope: PayrollScope = { all: true },
 ): Promise<NumbatrakPayrollRun | null> {
   const [run] = await db
     .select()
@@ -147,12 +175,18 @@ export async function getPayrollRun(
     .limit(1);
   if (!run) return null;
 
+  // Row-scoped: a CSR-permissioned caller only ever gets their own line, not
+  // the whole org's pay - mirrors numbatrak-orders' csrScopeUserId pattern.
+  const runConditions = scope.all
+    ? [eq(numbatrakPayrollLines.runId, run.id)]
+    : [eq(numbatrakPayrollLines.runId, run.id), eq(numbatrakStaff.userId, scope.ownUserId)];
+
   const lineRows = await db
     .select({ line: numbatrakPayrollLines, userName: user.name, primaryRole: numbatrakStaff.primaryRole })
     .from(numbatrakPayrollLines)
     .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
     .innerJoin(user, eq(numbatrakStaff.userId, user.id))
-    .where(eq(numbatrakPayrollLines.runId, run.id));
+    .where(and(...runConditions));
 
   return {
     id: run.id,
@@ -195,13 +229,14 @@ export async function runPayroll(db: Database, organizationId: string, month: st
 
     const roleStructures = new Map(structures.filter((s) => s.scopeType === "role").map((s) => [s.role, s]));
     const staffStructures = new Map(structures.filter((s) => s.scopeType === "staff").map((s) => [s.staffId, s]));
+    const teamDeliveryRates = await getTeamDeliveryRates(tx, organizationId, month);
 
     for (const staff of activeStaff) {
       const ps = staffStructures.get(staff.id) ?? roleStructures.get(staff.primaryRole);
       if (!ps) continue;
 
       const orderData = await getStaffOrderData(tx, organizationId, staff.userId, month);
-      const calculated = calculatePay(ps, orderData);
+      const calculated = calculatePay(ps, orderData, teamDeliveryRates);
 
       const [existing] = await tx
         .select()
@@ -307,9 +342,39 @@ async function getStaffOrderData(
   };
 }
 
+/**
+ * Team hit-KPI rate for the manager gate: every active CRS-primary-role
+ * staff org-wide (no reporting hierarchy exists in this schema - see
+ * payroll.ts schema comment), each person's own delivery rate for the
+ * month. Computed once per run and reused across every manager's gate
+ * check, since "team" is the same set of people regardless of which
+ * manager is being paid - only the KPI threshold to compare against varies
+ * per manager's own pay structure.
+ */
+async function getTeamDeliveryRates(db: Queryable, organizationId: string, month: string): Promise<number[]> {
+  const crsStaff = await db
+    .select()
+    .from(numbatrakStaff)
+    .where(
+      and(
+        eq(numbatrakStaff.organizationId, organizationId),
+        eq(numbatrakStaff.active, true),
+        eq(numbatrakStaff.primaryRole, "CRS"),
+      ),
+    );
+
+  const rates: number[] = [];
+  for (const staff of crsStaff) {
+    const data = await getStaffOrderData(db, organizationId, staff.userId, month);
+    rates.push(data.deliveryRate);
+  }
+  return rates;
+}
+
 function calculatePay(
   ps: typeof numbatrakPayStructures.$inferSelect,
   orderData: Awaited<ReturnType<typeof getStaffOrderData>>,
+  teamDeliveryRates: number[],
 ) {
   const baseSalary = ps.baseSalaryEnabled ? Number(ps.baseSalaryAmount) : 0;
 
@@ -328,18 +393,31 @@ function calculatePay(
   }
 
   const upsellBonus = ps.upsellBonusEnabled ? orderData.upsellCount * Number(ps.upsellBonusAmount) : 0;
-  const managerBonus = ps.managerBonusEnabled ? Number(ps.managerBonusAmount) : 0;
+
+  let managerBonus = 0;
+  let managerGateMissed: boolean | null = null;
+  if (ps.managerBonusEnabled) {
+    if (ps.managerGateEnabled) {
+      const kpiThreshold = Number(ps.managerGateKpiThresholdPercent);
+      // No team to measure against - nothing to fail the gate on, so it pays.
+      const teamRatio =
+        teamDeliveryRates.length === 0
+          ? 100
+          : (teamDeliveryRates.filter((rate) => rate >= kpiThreshold).length / teamDeliveryRates.length) * 100;
+      managerGateMissed = teamRatio < Number(ps.managerGateTeamRatioPercent);
+    }
+    managerBonus = managerGateMissed ? 0 : Number(ps.managerBonusAmount);
+  }
 
   return {
     calculatedBaseSalary: String(baseSalary),
     calculatedCommission: String(commission),
     calculatedUpsellBonus: String(upsellBonus),
-    calculatedSotmBonus: "0",
     calculatedManagerBonus: String(managerBonus),
     deliveryRatePercent: String(orderData.deliveryRate.toFixed(2)),
     commissionGateMissed,
     upsellCount: orderData.upsellCount,
-    managerGateMissed: null as boolean | null,
+    managerGateMissed,
   };
 }
 
@@ -377,9 +455,27 @@ export async function setManualAdjustment(
 }
 
 export async function awardSotm(db: Database, lineId: string, awarded: boolean): Promise<PayrollLineRow | null> {
+  const [line] = await db.select().from(numbatrakPayrollLines).where(eq(numbatrakPayrollLines.id, lineId)).limit(1);
+  if (!line) return null;
+
+  let sotmBonus = 0;
+  if (awarded) {
+    const [staff] = await db.select().from(numbatrakStaff).where(eq(numbatrakStaff.id, line.staffId)).limit(1);
+    if (staff) {
+      const structures = await db
+        .select()
+        .from(numbatrakPayStructures)
+        .where(eq(numbatrakPayStructures.organizationId, staff.organizationId));
+      const ps =
+        structures.find((s) => s.scopeType === "staff" && s.staffId === staff.id) ??
+        structures.find((s) => s.scopeType === "role" && s.role === staff.primaryRole);
+      if (ps?.sotmBonusEnabled) sotmBonus = Number(ps.sotmBonusAmount);
+    }
+  }
+
   const [row] = await db
     .update(numbatrakPayrollLines)
-    .set({ sotmAwarded: awarded, updatedAt: new Date() })
+    .set({ sotmAwarded: awarded, calculatedSotmBonus: String(sotmBonus), updatedAt: new Date() })
     .where(eq(numbatrakPayrollLines.id, lineId))
     .returning();
   return row ?? null;
@@ -458,5 +554,126 @@ export async function getMyEarnings(
     upsellBonusSoFar,
     onTrackTotal,
     gateStatusMessage,
+  };
+}
+
+function formatMoney(amount: number): string {
+  return `₦${amount.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * The Calculation Trace screen (spec Layer 1): explains every figure on a
+ * stored payroll line component by component, built from the line's own
+ * recorded values (not a live recompute) so the trace always matches what
+ * was actually paid, including after an override or a re-run.
+ */
+export async function getPayrollLineTrace(db: Database, lineId: string): Promise<NumbatrakPayrollTrace | null> {
+  const [row] = await db
+    .select({
+      line: numbatrakPayrollLines,
+      userName: user.name,
+      month: numbatrakPayrollRuns.month,
+      staffOrgId: numbatrakStaff.organizationId,
+      staffPrimaryRole: numbatrakStaff.primaryRole,
+    })
+    .from(numbatrakPayrollLines)
+    .innerJoin(numbatrakPayrollRuns, eq(numbatrakPayrollLines.runId, numbatrakPayrollRuns.id))
+    .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
+    .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+    .where(eq(numbatrakPayrollLines.id, lineId))
+    .limit(1);
+  if (!row) return null;
+
+  const line = row.line;
+  const structures = await db
+    .select()
+    .from(numbatrakPayStructures)
+    .where(eq(numbatrakPayStructures.organizationId, row.staffOrgId));
+  const ps =
+    structures.find((s) => s.scopeType === "staff" && s.staffId === line.staffId) ??
+    structures.find((s) => s.scopeType === "role" && s.role === row.staffPrimaryRole);
+
+  const effectiveBase = line.overrideBaseSalary != null ? Number(line.overrideBaseSalary) : Number(line.calculatedBaseSalary);
+  const effectiveCommission =
+    line.overrideCommission != null ? Number(line.overrideCommission) : Number(line.calculatedCommission);
+
+  const steps: NumbatrakPayrollTraceStep[] = [];
+
+  const baseEnabled = ps?.baseSalaryEnabled ?? Number(line.calculatedBaseSalary) > 0;
+  let baseDetail = baseEnabled ? "Fixed monthly base salary. Always safe — no gate ever touches it." : "Base salary is not enabled for this pay structure.";
+  if (line.overrideBaseSalary != null) {
+    baseDetail += ` Calculated as ${formatMoney(Number(line.calculatedBaseSalary))}, overridden to ${formatMoney(effectiveBase)}.`;
+  }
+  steps.push({ component: "base_salary", label: "Base salary", enabled: baseEnabled, amount: effectiveBase, detail: baseDetail });
+
+  const commissionEnabled = ps?.commissionEnabled ?? false;
+  let commissionDetail: string;
+  if (!commissionEnabled) {
+    commissionDetail = "Commission is not enabled for this pay structure.";
+  } else {
+    const basisLabel = ps?.commissionBasis === "percentage_of_sale" ? `${Number(ps.commissionRate)}% of delivered sale value` : `${formatMoney(Number(ps?.commissionRate ?? 0))} per delivered order`;
+    commissionDetail = `Basis: ${basisLabel}.`;
+    if (ps?.commissionGateEnabled) {
+      const rate = line.deliveryRatePercent != null ? Number(line.deliveryRatePercent) : null;
+      const threshold = Number(ps.commissionGateThresholdPercent);
+      commissionDetail += line.commissionGateMissed
+        ? ` Delivery-rate gate: ${rate?.toFixed(1) ?? "?"}% is below the ${threshold}% threshold — the whole month's commission zeroes.`
+        : ` Delivery-rate gate: ${rate?.toFixed(1) ?? "?"}% clears the ${threshold}% threshold.`;
+    } else {
+      commissionDetail += " No delivery-rate gate on this structure — commission is paid straight.";
+    }
+    if (line.overrideCommission != null) {
+      commissionDetail += ` Calculated as ${formatMoney(Number(line.calculatedCommission))}, overridden to ${formatMoney(effectiveCommission)}.`;
+    }
+  }
+  steps.push({ component: "commission", label: "Commission", enabled: commissionEnabled, amount: effectiveCommission, detail: commissionDetail });
+
+  const upsellEnabled = ps?.upsellBonusEnabled ?? line.upsellCount > 0;
+  const upsellDetail = upsellEnabled
+    ? `${line.upsellCount} upsell(s) × ${formatMoney(Number(ps?.upsellBonusAmount ?? 0))} = ${formatMoney(Number(line.calculatedUpsellBonus))}. Never gated — always earned.`
+    : "Upsell bonus is not enabled for this pay structure.";
+  steps.push({ component: "upsell_bonus", label: "Upsell bonus", enabled: upsellEnabled, amount: Number(line.calculatedUpsellBonus), detail: upsellDetail });
+
+  const sotmEnabled = ps?.sotmBonusEnabled ?? false;
+  const sotmDetail = !sotmEnabled
+    ? "Star of the Month bonus is not enabled for this pay structure."
+    : line.sotmAwarded
+      ? `Awarded Star of the Month this month — ${formatMoney(Number(line.calculatedSotmBonus))}.`
+      : "Not awarded Star of the Month this month.";
+  steps.push({ component: "sotm_bonus", label: "Star of the Month bonus", enabled: sotmEnabled, amount: Number(line.calculatedSotmBonus), detail: sotmDetail });
+
+  const managerEnabled = ps?.managerBonusEnabled ?? false;
+  let managerDetail: string;
+  if (!managerEnabled) {
+    managerDetail = "Manager bonus is not enabled for this pay structure.";
+  } else if (!ps?.managerGateEnabled) {
+    managerDetail = "No team-ratio gate on this structure — manager bonus is paid in full.";
+  } else if (line.managerGateMissed) {
+    managerDetail = `Team-ratio gate missed — fewer than ${Number(ps.managerGateTeamRatioPercent)}% of the team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month, so the manager bonus zeroes.`;
+  } else {
+    managerDetail = `Team-ratio gate cleared — at least ${Number(ps.managerGateTeamRatioPercent)}% of the team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month.`;
+  }
+  steps.push({ component: "manager_bonus", label: "Manager bonus", enabled: managerEnabled, amount: Number(line.calculatedManagerBonus), detail: managerDetail });
+
+  const adjustment = Number(line.manualAdjustment);
+  steps.push({
+    component: "manual_adjustment",
+    label: "Manual adjustment",
+    enabled: adjustment !== 0,
+    amount: adjustment,
+    detail: adjustment !== 0 ? (line.manualAdjustmentNote ?? "No note provided.") : "No manual adjustment this month.",
+  });
+
+  const totalPay =
+    effectiveBase + effectiveCommission + Number(line.calculatedUpsellBonus) + Number(line.calculatedSotmBonus) + Number(line.calculatedManagerBonus) + adjustment;
+
+  return {
+    lineId: line.id,
+    staffId: line.staffId,
+    staffName: row.userName,
+    month: row.month,
+    steps,
+    totalPay,
+    paid: line.paid,
   };
 }

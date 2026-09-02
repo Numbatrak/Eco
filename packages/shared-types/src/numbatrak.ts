@@ -1340,6 +1340,28 @@ export const numbatrakMyEarningsSchema = z.object({
 });
 export type NumbatrakMyEarnings = z.infer<typeof numbatrakMyEarningsSchema>;
 
+// The Calculation Trace screen (spec Layer 1): a line-by-line breakdown of
+// how one person's one month of pay was built, component by component.
+export const numbatrakPayrollTraceStepSchema = z.object({
+  component: z.enum(["base_salary", "commission", "upsell_bonus", "sotm_bonus", "manager_bonus", "manual_adjustment"]),
+  label: z.string(),
+  enabled: z.boolean(),
+  amount: z.number(),
+  detail: z.string(),
+});
+export type NumbatrakPayrollTraceStep = z.infer<typeof numbatrakPayrollTraceStepSchema>;
+
+export const numbatrakPayrollTraceSchema = z.object({
+  lineId: z.string().uuid(),
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  month: z.string(),
+  steps: z.array(numbatrakPayrollTraceStepSchema),
+  totalPay: z.number(),
+  paid: z.boolean(),
+});
+export type NumbatrakPayrollTrace = z.infer<typeof numbatrakPayrollTraceSchema>;
+
 // ---------------------------------------------------------------------------
 // Attendance
 // ---------------------------------------------------------------------------

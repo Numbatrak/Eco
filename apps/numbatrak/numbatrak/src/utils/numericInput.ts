@@ -18,3 +18,10 @@ export function sanitizeDecimalInput(value: string): string {
   if (firstDot === -1) return cleaned;
   return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
 }
+
+/** Same as sanitizeDecimalInput, but keeps a single leading minus - for +/- amount fields. */
+export function sanitizeSignedDecimalInput(value: string): string {
+  const negative = value.trim().startsWith("-");
+  const magnitude = sanitizeDecimalInput(value);
+  return negative ? `-${magnitude}` : magnitude;
+}

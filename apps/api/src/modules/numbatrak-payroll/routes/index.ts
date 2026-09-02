@@ -1,5 +1,7 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
+import { and, eq } from "drizzle-orm";
+import { member, numbatrakStaff } from "@platform/db";
 import { auth } from "../../../lib/auth.js";
 import {
   listPayStructures,
@@ -11,7 +13,34 @@ import {
   awardSotm,
   markPaid,
   getMyEarnings,
+  getPayrollLineTrace,
+  type PayrollScope,
 } from "../lib/payroll.js";
+
+// Same session-refetch + member-role check as numbatrak-staff/routes/list.ts's
+// scoping ("team" has no reporting hierarchy in this schema yet, so manager
+// is treated as org-wide for now, mirroring that same simplification).
+const BROAD_VISIBILITY_ROLES = new Set(["owner", "admin", "manager"]);
+
+async function resolvePayrollScope(
+  app: FastifyInstance,
+  request: FastifyRequest,
+  organizationId: string,
+): Promise<PayrollScope> {
+  const db = app.getDb();
+  const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+  if (!session) return { all: false, ownUserId: "" };
+
+  const [membership] = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, organizationId), eq(member.userId, session.user.id)))
+    .limit(1);
+  if (!membership || !BROAD_VISIBILITY_ROLES.has(membership.role)) {
+    return { all: false, ownUserId: session.user.id };
+  }
+  return { all: true };
+}
 
 export default async function numbatrakPayrollRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -20,7 +49,8 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
     async (request, reply) => {
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
-      const structures = await listPayStructures(db, organizationId);
+      const scope = await resolvePayrollScope(app, request, organizationId);
+      const structures = await listPayStructures(db, organizationId, scope);
       return reply.send({ structures });
     },
   );
@@ -44,7 +74,8 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
       const { month } = request.params as { month: string };
-      const run = await getPayrollRun(db, organizationId, month);
+      const scope = await resolvePayrollScope(app, request, organizationId);
+      const run = await getPayrollRun(db, organizationId, month, scope);
       if (!run) return reply.status(404).send({ error: "No payroll run found for this month" });
       return reply.send(run);
     },
@@ -111,6 +142,32 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
       const row = await markPaid(db, lineId, paid);
       if (!row) return reply.status(404).send({ error: "Line not found" });
       return reply.send({ ok: true });
+    },
+  );
+
+  app.get(
+    "/org/numbatrak/payroll/lines/:lineId/trace",
+    { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["view"] }) },
+    async (request, reply) => {
+      const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
+      const { lineId } = request.params as { lineId: string };
+      const trace = await getPayrollLineTrace(db, lineId);
+      if (!trace) return reply.status(404).send({ error: "Line not found" });
+
+      const scope = await resolvePayrollScope(app, request, organizationId);
+      if (!scope.all) {
+        const [staffRow] = await db
+          .select({ userId: numbatrakStaff.userId })
+          .from(numbatrakStaff)
+          .where(eq(numbatrakStaff.id, trace.staffId))
+          .limit(1);
+        if (staffRow?.userId !== scope.ownUserId) {
+          return reply.status(404).send({ error: "Line not found" });
+        }
+      }
+
+      return reply.send(trace);
     },
   );
 

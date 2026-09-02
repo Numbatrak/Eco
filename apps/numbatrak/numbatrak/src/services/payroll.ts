@@ -61,6 +61,24 @@ export interface PayrollRun {
   updated_at: string | null;
 }
 
+export interface PayrollTraceStep {
+  component: "base_salary" | "commission" | "upsell_bonus" | "sotm_bonus" | "manager_bonus" | "manual_adjustment";
+  label: string;
+  enabled: boolean;
+  amount: number;
+  detail: string;
+}
+
+export interface PayrollTrace {
+  line_id: string;
+  staff_id: string;
+  staff_name: string | null;
+  month: string;
+  steps: PayrollTraceStep[];
+  total_pay: number;
+  paid: boolean;
+}
+
 export interface MyEarnings {
   month: string;
   base_salary: number;
@@ -203,7 +221,29 @@ export async function fetchPayStructures(): Promise<PayStructure[]> {
   return structures.map(structureFromDto);
 }
 
-export async function upsertPayStructure(input: Record<string, unknown>): Promise<PayStructure> {
+export interface UpsertPayStructureInput {
+  scopeType: "role" | "staff";
+  role: string | null;
+  staffId: string | null;
+  baseSalaryEnabled: boolean;
+  baseSalaryAmount: number;
+  commissionEnabled: boolean;
+  commissionBasis: "flat_per_order" | "percentage_of_sale" | null;
+  commissionRate: number;
+  commissionGateEnabled: boolean;
+  commissionGateThresholdPercent: number;
+  upsellBonusEnabled: boolean;
+  upsellBonusAmount: number;
+  sotmBonusEnabled: boolean;
+  sotmBonusAmount: number;
+  managerBonusEnabled: boolean;
+  managerBonusAmount: number;
+  managerGateEnabled: boolean;
+  managerGateTeamRatioPercent: number;
+  managerGateKpiThresholdPercent: number;
+}
+
+export async function upsertPayStructure(input: UpsertPayStructureInput): Promise<PayStructure> {
   const dto = await apiRequest<PayStructureDto>("/org/numbatrak/payroll/structures", {
     method: "POST",
     body: input,
@@ -260,6 +300,31 @@ export async function markLinePaid(lineId: string, paid: boolean): Promise<void>
     method: "PATCH",
     body: { paid },
   });
+}
+
+export async function fetchPayrollLineTrace(lineId: string): Promise<PayrollTrace | null> {
+  try {
+    const dto = await apiRequest<{
+      lineId: string;
+      staffId: string;
+      staffName: string | null;
+      month: string;
+      steps: PayrollTraceStep[];
+      totalPay: number;
+      paid: boolean;
+    }>(`/org/numbatrak/payroll/lines/${lineId}/trace`);
+    return {
+      line_id: dto.lineId,
+      staff_id: dto.staffId,
+      staff_name: dto.staffName,
+      month: dto.month,
+      steps: dto.steps,
+      total_pay: dto.totalPay,
+      paid: dto.paid,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchMyEarnings(): Promise<MyEarnings | null> {

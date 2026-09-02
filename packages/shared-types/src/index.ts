@@ -327,6 +327,10 @@ export {
   type MarkNumbatrakPayrollLinePaidRequest,
   numbatrakMyEarningsSchema,
   type NumbatrakMyEarnings,
+  numbatrakPayrollTraceStepSchema,
+  type NumbatrakPayrollTraceStep,
+  numbatrakPayrollTraceSchema,
+  type NumbatrakPayrollTrace,
   // Strikes
   numbatrakStrikeSettingsSchema,
   type NumbatrakStrikeSettings,
