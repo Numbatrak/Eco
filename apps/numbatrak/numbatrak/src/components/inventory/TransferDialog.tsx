@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState, useEffect } from "react";
+import { FormEvent, useRef, useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { BrandedDialogHero } from "../brand/BrandedDialogHero";
 import { ErrorAlert } from "../agents/ErrorAlert";
@@ -55,11 +55,11 @@ export function TransferDialog({
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [notes, setNotes] = useState("");
-  const [fee, setFee] = useState("0");
+  const [fee, setFee] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const holders = filterStockHolders(agents);
-  const activeProducts = products.filter((p) => p.active !== false);
+  const holders = useMemo(() => filterStockHolders(agents), [agents]);
+  const activeProducts = useMemo(() => products.filter((p) => p.active !== false), [products]);
 
   const availableQuantity =
     fromAgentId && productId
@@ -73,7 +73,7 @@ export function TransferDialog({
     setProductId(activeProducts[0]?.id ?? "");
     setQuantity("1");
     setNotes("");
-    setFee("0");
+    setFee("");
     setLocalError(null);
   }, [open, activeProducts]);
 

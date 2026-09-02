@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { BrandedDialogHero } from "../brand/BrandedDialogHero";
 import { ErrorAlert } from "../agents/ErrorAlert";
@@ -58,8 +58,8 @@ export function AdjustStockDialog({
   const [notes, setNotes] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const holders = filterStockHolders(agents);
-  const activeProducts = products.filter((p) => p.active !== false);
+  const holders = useMemo(() => filterStockHolders(agents), [agents]);
+  const activeProducts = useMemo(() => products.filter((p) => p.active !== false), [products]);
 
   const availableQty =
     agentId && productId

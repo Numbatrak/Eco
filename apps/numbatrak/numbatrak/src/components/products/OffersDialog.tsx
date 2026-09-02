@@ -5,8 +5,10 @@ import {
   OFFER_TYPE_LABELS,
   Product,
   ProductOffer,
+  ProductOfferBundleItem,
   ProductOfferType,
   ProductVariant,
+  ProductWithDetails,
   computeBuyXGetYUnits,
 } from "../../types/product";
 import { Input } from "../ui/input";
@@ -14,7 +16,7 @@ import { Label } from "../ui/label";
 import { ErrorAlert } from "../agents/ErrorAlert";
 import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { formatNaira } from "../../utils/currency";
-import { Tag, Plus, Trash2, X } from "lucide-react";
+import { Tag, Plus, Trash2, X, Package } from "lucide-react";
 import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface OfferFormData {
@@ -25,6 +27,7 @@ interface OfferFormData {
   price: number;
   unit_cost: number;
   variant_id: string;
+  bundle_items: ProductOfferBundleItem[];
 }
 
 interface OffersDialogProps {
@@ -33,6 +36,7 @@ interface OffersDialogProps {
   product: Product | null;
   variants: ProductVariant[];
   offers: ProductOffer[];
+  allProducts: ProductWithDetails[];
   onSave: (
     offers: Omit<
       ProductOffer,
@@ -53,6 +57,7 @@ const defaultEntry = (): OfferFormData => ({
   price: 0,
   unit_cost: 0,
   variant_id: "",
+  bundle_items: [],
 });
 
 export function OffersDialog({
@@ -61,6 +66,7 @@ export function OffersDialog({
   product,
   variants,
   offers,
+  allProducts,
   onSave,
   onDelete,
   onToggleActive,
@@ -99,6 +105,43 @@ export function OffersDialog({
     setEntries(updated);
   };
 
+  const handleAddBundleItem = (entryIndex: number) => {
+    const updated = [...entries];
+    updated[entryIndex] = {
+      ...updated[entryIndex],
+      bundle_items: [
+        ...updated[entryIndex].bundle_items,
+        { product_id: allProducts[0]?.id ?? "", variant_id: null, quantity: 1 },
+      ],
+    };
+    setEntries(updated);
+  };
+
+  const handleUpdateBundleItem = (
+    entryIndex: number,
+    itemIndex: number,
+    updates: Partial<ProductOfferBundleItem>
+  ) => {
+    const updated = [...entries];
+    const items = [...updated[entryIndex].bundle_items];
+    const merged = { ...items[itemIndex], ...updates };
+    if (updates.product_id !== undefined && updates.product_id !== items[itemIndex].product_id) {
+      merged.variant_id = null;
+    }
+    items[itemIndex] = merged;
+    updated[entryIndex] = { ...updated[entryIndex], bundle_items: items };
+    setEntries(updated);
+  };
+
+  const handleRemoveBundleItem = (entryIndex: number, itemIndex: number) => {
+    const updated = [...entries];
+    updated[entryIndex] = {
+      ...updated[entryIndex],
+      bundle_items: updated[entryIndex].bundle_items.filter((_, i) => i !== itemIndex),
+    };
+    setEntries(updated);
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!product) return;
@@ -113,7 +156,10 @@ export function OffersDialog({
         min_quantity: entry.min_quantity || 1,
         free_quantity:
           entry.offer_type === "buy_x_get_y" ? entry.free_quantity : 0,
-        bundle_items: null,
+        bundle_items:
+          entry.offer_type === "bundle"
+            ? entry.bundle_items.filter((item) => item.product_id)
+            : null,
         price: entry.price,
         unit_cost: entry.unit_cost,
         starts_at: null,
@@ -378,6 +424,129 @@ export function OffersDialog({
                     />
                   </div>
                 </div>
+
+                {entry.offer_type === "bundle" && (
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-bold text-foreground">Attached products</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({entry.bundle_items.length})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleAddBundleItem(index)}
+                        disabled={allProducts.length === 0}
+                        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add product
+                      </button>
+                    </div>
+
+                    {entry.bundle_items.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No products attached yet — add the incentive or extra items included in
+                        this bundle.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {entry.bundle_items.map((item, itemIndex) => {
+                          const attachedProduct = allProducts.find((p) => p.id === item.product_id);
+                          const attachedVariants =
+                            attachedProduct?.variants?.filter((v) => v.active) ?? [];
+                          return (
+                            <div
+                              key={itemIndex}
+                              className="space-y-2 rounded-lg border border-border bg-card p-2"
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <select
+                                  value={item.product_id}
+                                  onChange={(e) =>
+                                    handleUpdateBundleItem(index, itemIndex, {
+                                      product_id: e.target.value,
+                                    })
+                                  }
+                                  className="min-w-[10rem] flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                                >
+                                  <option value="">Select product</option>
+                                  {allProducts.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name}
+                                      {p.type === "INCENTIVE" ? " (Incentive)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    handleUpdateBundleItem(index, itemIndex, {
+                                      quantity: parseInt(sanitizeIntegerInput(e.target.value)) || 1,
+                                    })
+                                  }
+                                  className="w-20 text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveBundleItem(index, itemIndex)}
+                                  className="rounded p-1.5 text-destructive transition-colors hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                              {attachedVariants.length > 0 && (
+                                <select
+                                  value={item.variant_id ?? ""}
+                                  onChange={(e) =>
+                                    handleUpdateBundleItem(index, itemIndex, {
+                                      variant_id: e.target.value || null,
+                                    })
+                                  }
+                                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                                >
+                                  <option value="">No variant</option>
+                                  {attachedVariants.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {v.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {entry.bundle_items.length > 0 &&
+                      (() => {
+                        const totalCost = entry.bundle_items.reduce((sum, item) => {
+                          const p = allProducts.find((ap) => ap.id === item.product_id);
+                          return sum + (p?.cost_price ?? 0) * (item.quantity || 1);
+                        }, 0);
+                        const profit = (entry.price || 0) - totalCost;
+                        return (
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span>Total cost: {formatNaira(totalCost)}</span>
+                            <span
+                              className={
+                                profit >= 0
+                                  ? "font-semibold text-emerald-600"
+                                  : "font-semibold text-destructive"
+                              }
+                            >
+                              Profit: {formatNaira(profit)}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                  </div>
+                )}
               </div>
             ))}
           </form>

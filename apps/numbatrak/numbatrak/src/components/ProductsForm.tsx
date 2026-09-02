@@ -464,6 +464,7 @@ export default function ProductsForm() {
             product={selectedProduct}
             variants={selectedProduct.variants ?? []}
             offers={selectedProduct.offers ?? []}
+            allProducts={products}
             onSave={handleSaveOffers}
             onDelete={handleDeleteOffer}
             onToggleActive={handleToggleOfferActive}
