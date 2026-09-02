@@ -1,5 +1,11 @@
 import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
-import { numbatrakAgents, numbatrakProducts, numbatrakStockMovements, type Database } from "@platform/db";
+import {
+  numbatrakAgents,
+  numbatrakProducts,
+  numbatrakStockMovements,
+  numbatrakUnifiedExpenses,
+  type Database,
+} from "@platform/db";
 import type {
   CreateNumbatrakShrinkageMovementRequest,
   CreateNumbatrakTransferMovementRequest,
@@ -138,6 +144,7 @@ export async function createTransfer(
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
 
+  const fee = input.fee ?? 0;
   const [row] = await db
     .insert(numbatrakStockMovements)
     .values({
@@ -148,9 +155,30 @@ export async function createTransfer(
       fromAgentId: input.fromAgentId,
       toAgentId: input.toAgentId,
       notes: input.notes,
+      fee: String(fee),
     })
     .returning();
   if (!row) throw new Error("Failed to create transfer movement");
+
+  // Mirrors the waybill-batch flow: an idempotent org-scope expense for the
+  // fee only - the transferred stock itself is inventory value, not an
+  // operational cost.
+  if (fee > 0) {
+    await db
+      .insert(numbatrakUnifiedExpenses)
+      .values({
+        organizationId,
+        scope: "org",
+        category: "operational",
+        subcategory: "logistics_delivery_fees",
+        amount: String(fee),
+        note: `Stock transfer fee — movement #${row.id}`,
+        sourceType: "stock_transfer_fee",
+        sourceId: row.id,
+      })
+      .onConflictDoNothing();
+  }
+
   const [full] = await attachNames(db, [row]);
   return full!;
 }

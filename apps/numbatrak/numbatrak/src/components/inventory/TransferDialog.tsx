@@ -17,7 +17,7 @@ import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import { ArrowRightLeft, X, Check } from "lucide-react";
 import { filterStockHolders } from "../../utils/agentFilters";
-import { sanitizeIntegerInput } from "../../utils/numericInput";
+import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
 
 export type TransferFormValues = {
   from_agent_id: number;
@@ -25,6 +25,7 @@ export type TransferFormValues = {
   product_id: string;
   quantity: number;
   notes: string;
+  fee: number;
 };
 
 interface TransferDialogProps {
@@ -54,6 +55,7 @@ export function TransferDialog({
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [notes, setNotes] = useState("");
+  const [fee, setFee] = useState("0");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const holders = filterStockHolders(agents);
@@ -71,6 +73,7 @@ export function TransferDialog({
     setProductId(activeProducts[0]?.id ?? "");
     setQuantity("1");
     setNotes("");
+    setFee("0");
     setLocalError(null);
   }, [open, activeProducts]);
 
@@ -107,6 +110,7 @@ export function TransferDialog({
         product_id: productId,
         quantity: qty,
         notes: notes.trim(),
+        fee: parseFloat(fee) || 0,
       });
       onOpenChange(false);
     } catch (err: unknown) {
@@ -216,6 +220,20 @@ export function TransferDialog({
                 inputMode="numeric"
                 value={quantity}
                 onChange={(e) => setQuantity(sanitizeIntegerInput(e.target.value))}
+              />
+            </div>
+
+            <div className="dialog-form-field space-y-2">
+              <Label htmlFor="transfer-fee" className="dialog-field-label">
+                Fee (₦)
+              </Label>
+              <Input
+                id="transfer-fee"
+                type="text"
+                inputMode="decimal"
+                value={fee}
+                onChange={(e) => setFee(sanitizeDecimalInput(e.target.value))}
+                placeholder="Optional — e.g. courier cost for this move"
               />
             </div>
 

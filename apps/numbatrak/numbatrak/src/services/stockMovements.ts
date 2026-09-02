@@ -74,6 +74,7 @@ export async function createTransferMovement(input: {
   product_id: string;
   quantity: number;
   notes: string;
+  fee?: number;
   recorded_by_user_id?: string | null;
   occurred_at?: string;
 }): Promise<{ id: string }> {
@@ -85,6 +86,7 @@ export async function createTransferMovement(input: {
       productId: input.product_id,
       quantity: input.quantity,
       notes: input.notes.trim(),
+      fee: input.fee ?? 0,
     },
   });
   return { id: dto.id };

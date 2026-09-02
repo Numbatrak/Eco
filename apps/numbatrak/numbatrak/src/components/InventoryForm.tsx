@@ -118,9 +118,14 @@ export default function InventoryForm() {
         product_id: values.product_id,
         quantity: values.quantity,
         notes: values.notes,
+        fee: values.fee,
         recorded_by_user_id: user?.id ?? null,
       });
-      setSuccess("Stock transferred on the ledger.");
+      setSuccess(
+        values.fee > 0
+          ? "Stock transferred on the ledger — fee recorded as an expense."
+          : "Stock transferred on the ledger."
+      );
       setTransferOpen(false);
       await loadLedger();
       setTimeout(() => setSuccess(null), 3000);

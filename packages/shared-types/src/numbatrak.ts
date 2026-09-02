@@ -619,7 +619,13 @@ export type NumbatrakWaybillByState = z.infer<typeof numbatrakWaybillByStateSche
 export const numbatrakExpenseScopeSchema = z.enum(["org", "agent"]);
 export type NumbatrakExpenseScope = z.infer<typeof numbatrakExpenseScopeSchema>;
 
-export const numbatrakExpenseSourceTypeSchema = z.enum(["manual", "waybill_fee", "failed_delivery", "wallet_net_off"]);
+export const numbatrakExpenseSourceTypeSchema = z.enum([
+  "manual",
+  "waybill_fee",
+  "failed_delivery",
+  "wallet_net_off",
+  "stock_transfer_fee",
+]);
 export type NumbatrakExpenseSourceType = z.infer<typeof numbatrakExpenseSourceTypeSchema>;
 
 export const numbatrakUnifiedExpenseSchema = z.object({
@@ -1071,6 +1077,7 @@ export const createNumbatrakTransferMovementRequestSchema = z.object({
   productId: z.string().uuid(),
   quantity: z.number().int().positive(),
   notes: z.string().trim().min(1),
+  fee: z.number().nonnegative().optional(),
 });
 export type CreateNumbatrakTransferMovementRequest = z.infer<typeof createNumbatrakTransferMovementRequestSchema>;
 
