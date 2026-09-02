@@ -139,7 +139,7 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
       const db = app.getDb();
       const { lineId } = request.params as { lineId: string };
       const { paid } = request.body as { paid: boolean };
-      const row = await markPaid(db, lineId, paid);
+      const row = await markPaid(db, request.log, lineId, paid);
       if (!row) return reply.status(404).send({ error: "Line not found" });
       return reply.send({ ok: true });
     },

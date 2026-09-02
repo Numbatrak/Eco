@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import {
   numbatrakPayStructures,
   numbatrakPayrollRuns,
@@ -18,6 +19,8 @@ import type {
   NumbatrakPayrollTrace,
   NumbatrakPayrollTraceStep,
 } from "@platform/shared-types";
+import { sendEmail } from "../../auth/lib/email.js";
+import { payslipEmail } from "../../../lib/email-templates.js";
 
 type PayStructureRow = typeof numbatrakPayStructures.$inferSelect;
 type PayrollLineRow = typeof numbatrakPayrollLines.$inferSelect;
@@ -481,13 +484,68 @@ export async function awardSotm(db: Database, lineId: string, awarded: boolean):
   return row ?? null;
 }
 
-export async function markPaid(db: Database, lineId: string, paid: boolean): Promise<PayrollLineRow | null> {
+export async function markPaid(
+  db: Database,
+  logger: FastifyBaseLogger,
+  lineId: string,
+  paid: boolean,
+): Promise<PayrollLineRow | null> {
   const [row] = await db
     .update(numbatrakPayrollLines)
     .set({ paid, paidAt: paid ? new Date() : null, updatedAt: new Date() })
     .where(eq(numbatrakPayrollLines.id, lineId))
     .returning();
-  return row ?? null;
+  if (!row) return null;
+
+  // Payslip email on mark-paid, per the spec's "notified when marked paid"
+  // rule. The in-app bell half of that rule needs the (still-unbuilt)
+  // shared Notifications system - email alone covers the "must not be
+  // missed" part in the meantime. Never let an email failure undo or fail
+  // the mark-paid action itself, since the DB write already succeeded.
+  if (paid) {
+    try {
+      await sendPayslipEmail(db, logger, row);
+    } catch (err) {
+      logger.warn({ err, lineId }, "Failed to send payslip email");
+    }
+  }
+
+  return row;
+}
+
+async function sendPayslipEmail(db: Database, logger: FastifyBaseLogger, line: PayrollLineRow): Promise<void> {
+  const [row] = await db
+    .select({ userName: user.name, userEmail: user.email, month: numbatrakPayrollRuns.month })
+    .from(numbatrakStaff)
+    .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+    .innerJoin(numbatrakPayrollRuns, eq(numbatrakPayrollRuns.id, line.runId))
+    .where(eq(numbatrakStaff.id, line.staffId))
+    .limit(1);
+  if (!row) return;
+
+  const baseSalary = line.overrideBaseSalary != null ? Number(line.overrideBaseSalary) : Number(line.calculatedBaseSalary);
+  const commission = line.overrideCommission != null ? Number(line.overrideCommission) : Number(line.calculatedCommission);
+  const upsellBonus = Number(line.calculatedUpsellBonus);
+  const sotmBonus = Number(line.calculatedSotmBonus);
+  const managerBonus = Number(line.calculatedManagerBonus);
+  const manualAdjustment = Number(line.manualAdjustment);
+  const totalPay = baseSalary + commission + upsellBonus + sotmBonus + managerBonus + manualAdjustment;
+
+  await sendEmail(logger, {
+    to: row.userEmail,
+    subject: `Your ${row.month} payslip is ready`,
+    body: payslipEmail({
+      staffName: row.userName,
+      month: row.month,
+      baseSalary,
+      commission,
+      upsellBonus,
+      sotmBonus,
+      managerBonus,
+      manualAdjustment,
+      totalPay,
+    }),
+  });
 }
 
 export async function getMyEarnings(

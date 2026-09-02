@@ -147,6 +147,42 @@ export function organizationInvitationEmail(params: {
   );
 }
 
+export function payslipEmail(params: {
+  staffName: string;
+  month: string;
+  baseSalary: number;
+  commission: number;
+  upsellBonus: number;
+  sotmBonus: number;
+  managerBonus: number;
+  manualAdjustment: number;
+  totalPay: number;
+}): string {
+  const money = (n: number) => `₦${n.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
+  const rows = [
+    ["Base salary", params.baseSalary],
+    ["Commission", params.commission],
+    ["Upsell bonus", params.upsellBonus],
+    ["Star of the Month bonus", params.sotmBonus],
+    ["Manager bonus", params.managerBonus],
+    ["Manual adjustment", params.manualAdjustment],
+  ]
+    .filter(([, amount]) => (amount as number) !== 0)
+    .map(([label, amount]) => `<tr><td>${label}</td><td>${money(amount as number)}</td></tr>`)
+    .join("");
+
+  return layout(
+    `<p>Hi ${params.staffName},</p>
+<p>Your pay for <strong>${params.month}</strong> has been marked paid. Here's your payslip:</p>
+<table class="order-table">
+  ${rows}
+  <tr class="order-total"><td>Total</td><td>${money(params.totalPay)}</td></tr>
+</table>
+<p class="muted">If anything here looks wrong, reach out to your manager — this line stays editable and can be corrected after payment.</p>`,
+    `Your ${params.month} payslip is ready`,
+  );
+}
+
 export function testEmail(): string {
   return layout(
     `<p>Hi there,</p>
