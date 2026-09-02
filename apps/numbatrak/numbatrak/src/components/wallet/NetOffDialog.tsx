@@ -11,15 +11,23 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { WalletRemittanceLine } from "../../types/wallet";
 import { formatNaira } from "../../utils/currency";
 import { sanitizeIntegerInput } from "../../utils/numericInput";
+import { AGENT_EXPENSE_SUBCATEGORIES } from "../../constants/expenseCategories";
 
 interface NetOffDialogProps {
   line: WalletRemittanceLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (amount: number, note: string) => Promise<void>;
+  onSubmit: (amount: number, note: string, subcategory: string) => Promise<void>;
   saving?: boolean;
 }
 
@@ -32,12 +40,14 @@ export function NetOffDialog({
 }: NetOffDialogProps) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [subcategory, setSubcategory] = useState(AGENT_EXPENSE_SUBCATEGORIES[0]!.id);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setAmount("");
       setNote("");
+      setSubcategory(AGENT_EXPENSE_SUBCATEGORIES[0]!.id);
       setError(null);
     }
   }, [line, open]);
@@ -51,7 +61,7 @@ export function NetOffDialog({
       return;
     }
     setError(null);
-    await onSubmit(parsed, note);
+    await onSubmit(parsed, note, subcategory);
   };
 
   return (
@@ -82,6 +92,22 @@ export function NetOffDialog({
               value={amount}
               onChange={(e) => setAmount(sanitizeIntegerInput(e.target.value))}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="netoff-cost-type">Cost type</Label>
+            <Select value={subcategory} onValueChange={setSubcategory}>
+              <SelectTrigger id="netoff-cost-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AGENT_EXPENSE_SUBCATEGORIES.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

@@ -170,12 +170,12 @@ export function WalletPage() {
     }
   };
 
-  const handleNetOff = async (amount: number, note: string) => {
+  const handleNetOff = async (amount: number, note: string, subcategory: string) => {
     if (!user?.id || !netOffLine) return;
     try {
       setDialogSaving(true);
       setActionKey(netOffLine.lineKey);
-      await addNetOffToLine(netOffLine, amount, user.id, note);
+      await addNetOffToLine(netOffLine, amount, user.id, note, subcategory);
       setNetOffLine(null);
       setSuccess("Net-off recorded and expense created.");
       await loadLines();

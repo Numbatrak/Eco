@@ -83,23 +83,3 @@ export interface WalletSummary {
 }
 
 export type RemittanceStatusFilter = "all" | RemittanceLineStatus;
-
-/** @deprecated Use WalletSourceOrder — kept for migration compatibility */
-export interface WalletOrderRow {
-  id: string;
-  source: "customer_orders" | "form_responses";
-  customer_name: string | null;
-  phone_number: string | null;
-  agent_id: number | null;
-  agent_name: string | null;
-  order_revenue: number;
-  amount_paid: number | null;
-  payment_method: PaymentMethod;
-  money_received_by: MoneyReceivedBy;
-  wallet_status: WalletStatus | null;
-  completed_at: string | null;
-  remittance_confirmed_at: string | null;
-  released_at: string | null;
-}
-
-export type WalletStatusFilter = "all" | WalletStatus;

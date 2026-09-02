@@ -1,7 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { numbatrakAgents, numbatrakCustomerOrders, numbatrakWalletRemittanceLines, type Database } from "@platform/db";
+import type { FastifyBaseLogger } from "fastify";
+import { numbatrakAgents, numbatrakCustomerOrders, numbatrakWalletRemittanceLines, numbatrakStaff, user, type Database } from "@platform/db";
 import type { NumbatrakRemittanceLineStatus, NumbatrakWalletRemittanceLine, NumbatrakWalletSourceOrder } from "@platform/shared-types";
 import { DELIVERED_STATUSES } from "../../numbatrak-orders/lib/order-status.js";
+import { sendEmail } from "../../auth/lib/email.js";
+import { remittanceReviewEmail } from "../../../lib/email-templates.js";
 
 /**
  * Server-side port of src/services/wallet.ts. Deliberately queries
@@ -236,8 +239,59 @@ async function syncOrdersRemittanceStatus(
     .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), inArray(numbatrakCustomerOrders.id, orderIds)));
 }
 
+/**
+ * "Every mark pings the accountant" (LOCKED RULE) - she reviews and confirms
+ * externally, in the business's own chats, never inside the app. Email is
+ * the notification channel available today; the in-app bell half needs the
+ * still-unbuilt shared Notifications system. Never let an email failure
+ * undo or fail the mark-remitted action - the DB write already succeeded.
+ */
+async function pingAccountants(
+  db: Database,
+  logger: FastifyBaseLogger,
+  organizationId: string,
+  line: { agentName: string; remittanceDate: string; expectedRemittance: number; status: NumbatrakRemittanceLineStatus },
+  actualAmount: number,
+): Promise<void> {
+  if (line.status !== "remitted" && line.status !== "short" && line.status !== "net_owed") return;
+
+  const accountants = await db
+    .select({ email: user.email })
+    .from(numbatrakStaff)
+    .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+    .where(
+      and(
+        eq(numbatrakStaff.organizationId, organizationId),
+        eq(numbatrakStaff.primaryRole, "Accountant"),
+        eq(numbatrakStaff.active, true),
+      ),
+    );
+  if (accountants.length === 0) return;
+
+  const body = remittanceReviewEmail({
+    agentName: line.agentName,
+    remittanceDate: line.remittanceDate,
+    expectedRemittance: line.expectedRemittance,
+    actualAmount,
+    status: line.status,
+  });
+
+  for (const accountant of accountants) {
+    try {
+      await sendEmail(logger, {
+        to: accountant.email,
+        subject: `${line.agentName} — ${line.remittanceDate} remittance marked`,
+        body,
+      });
+    } catch (err) {
+      logger.warn({ err, organizationId }, "Failed to send remittance review email");
+    }
+  }
+}
+
 export async function recordRemittance(
   db: Database,
+  logger: FastifyBaseLogger,
   organizationId: string,
   agentId: number,
   remittanceDate: string,
@@ -287,6 +341,14 @@ export async function recordRemittance(
   if (status === "remitted") {
     await syncOrdersRemittanceStatus(db, organizationId, line.orders.map((o) => o.id), userId);
   }
+
+  await pingAccountants(
+    db,
+    logger,
+    organizationId,
+    { agentName: line.agentName, remittanceDate: line.remittanceDate, expectedRemittance: line.expectedRemittance, status },
+    actualAmount,
+  );
 
   const shortfall = status === "short" ? Math.max(0, line.expectedRemittance - actualAmount) : 0;
   return { ...line, actualAmount, status, shortfall, remittedAt: now.toISOString() };

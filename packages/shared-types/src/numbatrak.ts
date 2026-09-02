@@ -490,6 +490,11 @@ export const addNumbatrakWalletNetOffRequestSchema = z.object({
   agentId: z.number().int(),
   remittanceDate: z.string(),
   amount: z.number().positive(),
+  // Expense subcategory under the forced "operational" agent-scope category
+  // (packages/db's numbatrak_unified_expenses_agent_category_chk) - e.g.
+  // "failed_delivery", "pos_charge" - defaults to a generic net-off label
+  // when the caller doesn't pick one.
+  subcategory: z.string().trim().min(1).optional(),
   note: z.string().trim().nullable().optional(),
 });
 export type AddNumbatrakWalletNetOffRequest = z.infer<typeof addNumbatrakWalletNetOffRequestSchema>;

@@ -26,6 +26,7 @@ export default async function netOffRoutes(app: FastifyInstance): Promise<void> 
           body.amount,
           session.user.id,
           body.note,
+          body.subcategory,
         );
       } catch (err) {
         return reply.code(400).send({ error: err instanceof Error ? err.message : "Net-off failed" });

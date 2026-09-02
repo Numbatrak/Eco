@@ -10,6 +10,7 @@ export async function addNetOff(
   amount: number,
   userId: string,
   note: string | null | undefined,
+  subcategory: string | undefined,
 ): Promise<NumbatrakWalletRemittanceLine> {
   if (amount <= 0) throw new Error("Net-off amount must be positive.");
 
@@ -30,7 +31,7 @@ export async function addNetOff(
       organizationId,
       scope: "agent",
       category: "operational",
-      subcategory: "agent_remittance_net_off",
+      subcategory: subcategory?.trim() || "agent_remittance_net_off",
       amount: String(amount),
       agentId,
       note: note?.trim() || `Net-off on remittance ${line.agentName} ${line.remittanceDate}`,

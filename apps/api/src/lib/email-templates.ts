@@ -183,6 +183,33 @@ export function payslipEmail(params: {
   );
 }
 
+export function remittanceReviewEmail(params: {
+  agentName: string;
+  remittanceDate: string;
+  expectedRemittance: number;
+  actualAmount: number;
+  status: "remitted" | "short" | "net_owed";
+}): string {
+  const money = (n: number) => `₦${n.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
+  const statusLine =
+    params.status === "short"
+      ? `<p style="color:#b91c1c;font-weight:600;">Short — ${money(params.expectedRemittance - params.actualAmount)} less than expected came in. The shortfall stays standing against ${params.agentName}.</p>`
+      : params.status === "net_owed"
+        ? `<p style="color:#b45309;font-weight:600;">Net owed to agent — the business still owes ${params.agentName} overall; the balance carries forward.</p>`
+        : `<p style="color:#15803d;font-weight:600;">Remitted in full.</p>`;
+
+  return layout(
+    `<p>Hi there,</p>
+<p><strong>${params.agentName}</strong>'s remittance for <strong>${params.remittanceDate}</strong> has been marked in by their manager. Please review against the bank statement and confirm in the usual channel — this isn't an approval step inside the app.</p>
+<table class="order-table">
+  <tr><td>Expected</td><td>${money(params.expectedRemittance)}</td></tr>
+  <tr><td>Actual received</td><td>${money(params.actualAmount)}</td></tr>
+</table>
+${statusLine}`,
+    `${params.agentName} — ${params.remittanceDate} remittance marked`,
+  );
+}
+
 export function testEmail(): string {
   return layout(
     `<p>Hi there,</p>

@@ -10,35 +10,6 @@ import {
 } from "../types/wallet";
 import { resolveDateRange, withinDateRange, DateFilter } from "../utils/dateRange";
 
-export function remittanceLineKey(agentId: number, date: string): string {
-  return `${agentId}:${date}`;
-}
-
-export function toRemittanceCalendarDate(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
-}
-
-export function computeExpectedRemittance(input: {
-  totalDeliveredValue: number;
-  totalDeliveryFees: number;
-  netOffAmount: number;
-}): number {
-  return input.totalDeliveredValue - input.totalDeliveryFees - input.netOffAmount;
-}
-
-export function computeRemittanceLineStatus(input: {
-  expectedRemittance: number;
-  actualAmount: number | null;
-}): RemittanceLineStatus {
-  if (input.expectedRemittance < 0) return "net_owed";
-  if (input.actualAmount == null) return "standing";
-  if (input.actualAmount >= input.expectedRemittance) return "remitted";
-  return "short";
-}
-
 interface SourceOrderDto {
   id: string;
   customerName: string | null;
@@ -255,7 +226,8 @@ export async function addNetOffToLine(
   line: WalletRemittanceLine,
   amount: number,
   _userId: string,
-  note?: string
+  note?: string,
+  subcategory?: string
 ): Promise<WalletRemittanceLine> {
   const dto = await apiRequest<RemittanceLineDto>("/org/numbatrak/wallet/remittance-lines/net-off", {
     method: "POST",
@@ -264,6 +236,7 @@ export async function addNetOffToLine(
       remittanceDate: line.remittance_date,
       amount,
       note: note ?? null,
+      subcategory: subcategory ?? undefined,
     },
   });
   return { ...lineFromDto(dto), organization_id: line.organization_id };
@@ -279,25 +252,3 @@ export function collectWalletSubBrands(
   return [...set].sort();
 }
 
-/** @deprecated Use fetchWalletRemittanceLines. Dead: not wired into WalletPage.tsx (superseded by WalletRemittanceTable). Kept for signature compatibility. */
-export async function fetchWalletOrders(organizationId: string | null) {
-  const lines = await fetchWalletRemittanceLines(organizationId);
-  return lines.flatMap((line) =>
-    line.orders.map((o) => ({
-      id: o.id,
-      source: o.source,
-      customer_name: o.customer_name,
-      phone_number: o.phone_number,
-      agent_id: o.agent_id,
-      agent_name: o.agent_name,
-      order_revenue: o.order_revenue,
-      amount_paid: o.amount_paid,
-      payment_method: o.payment_method,
-      money_received_by: o.money_received_by,
-      wallet_status: o.wallet_status,
-      completed_at: o.completed_at,
-      remittance_confirmed_at: null,
-      released_at: null,
-    }))
-  );
-}

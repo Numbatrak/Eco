@@ -20,6 +20,7 @@ export default async function recordRemittanceRoutes(app: FastifyInstance): Prom
       try {
         line = await recordRemittance(
           db,
+          request.log,
           request.activeOrganizationId!,
           body.agentId,
           body.remittanceDate,
