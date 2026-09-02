@@ -58,7 +58,6 @@ const TermsOfServicePage = lazy(() =>
 const PrivacyPolicyPage = lazy(() =>
   import("./components/PrivacyPolicyPage").then((m) => ({ default: m.PrivacyPolicyPage })),
 );
-const ImportWaybills = lazy(() => import("./components/ImportWaybills").then((m) => ({ default: m.ImportWaybills })));
 const UnifiedExpensesForm = lazy(() => import("./components/UnifiedExpensesForm"));
 const OrdersForm = lazy(() => import("./components/OrdersForm"));
 const AbandonedCartsForm = lazy(() => import("./components/AbandonedCartsForm"));
@@ -550,14 +549,6 @@ function AppContent() {
                 <Route
                   path="/waybill-statistics"
                   element={<Navigate to="/delivery-analytics" replace />}
-                />
-                <Route
-                  path="/import"
-                  element={
-                    <ProtectedRoute roles={["Owner", "Admin", "Manager"]}>
-                      <ImportWaybills />
-                    </ProtectedRoute>
-                  }
                 />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route

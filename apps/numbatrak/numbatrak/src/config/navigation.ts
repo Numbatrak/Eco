@@ -17,7 +17,6 @@ import {
   Plug,
   Settings,
   Mail,
-  Upload,
   Users,
   DollarSign,
   Calendar,
@@ -116,14 +115,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: FileText,
         path: "/waybills",
         requiredPermission: { resource: "deliveries", action: "canView" },
-      },
-      {
-        id: "import-waybills",
-        label: "Import Waybills",
-        icon: Upload,
-        path: "/import",
-        requiredPermission: null,
-        requiredRoles: ["Manager", "Admin", "Owner"],
       },
       {
         id: "agents",
