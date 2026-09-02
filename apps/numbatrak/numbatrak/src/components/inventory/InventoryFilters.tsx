@@ -15,6 +15,8 @@ export type InventoryLedgerFilters = {
   agent_id?: number;
   product_id?: string;
   movement_type?: StockMovementType;
+  sub_brand?: string;
+  location?: string;
   date_from?: string;
   date_to?: string;
 };
@@ -42,6 +44,13 @@ export function InventoryFilters({
   filters,
   onChange,
 }: InventoryFiltersProps) {
+  const subBrands = Array.from(
+    new Set(products.map((p) => p.sub_brand).filter((v): v is string => !!v))
+  ).sort();
+  const locations = Array.from(
+    new Set(agents.flatMap((a) => a.locations))
+  ).sort();
+
   return (
     <div className="flex flex-wrap gap-3 items-end p-4 rounded-xl border border-border bg-muted/20">
       <div className="space-y-1.5 min-w-[140px]">
@@ -114,6 +123,56 @@ export function InventoryFilters({
             {MOVEMENT_TYPES.map((t) => (
               <SelectItem key={t.value} value={t.value}>
                 {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5 min-w-[140px]">
+        <Label className="text-xs text-muted-foreground">Sub-brand</Label>
+        <Select
+          value={filters.sub_brand ?? "all"}
+          onValueChange={(v) =>
+            onChange({
+              ...filters,
+              sub_brand: v === "all" ? undefined : v,
+            })
+          }
+        >
+          <SelectTrigger className="bg-background">
+            <SelectValue placeholder="All sub-brands" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sub-brands</SelectItem>
+            {subBrands.map((sb) => (
+              <SelectItem key={sb} value={sb}>
+                {sb}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5 min-w-[140px]">
+        <Label className="text-xs text-muted-foreground">Location</Label>
+        <Select
+          value={filters.location ?? "all"}
+          onValueChange={(v) =>
+            onChange({
+              ...filters,
+              location: v === "all" ? undefined : v,
+            })
+          }
+        >
+          <SelectTrigger className="bg-background">
+            <SelectValue placeholder="All locations" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All locations</SelectItem>
+            {locations.map((loc) => (
+              <SelectItem key={loc} value={loc}>
+                {loc}
               </SelectItem>
             ))}
           </SelectContent>

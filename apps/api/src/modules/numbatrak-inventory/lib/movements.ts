@@ -1,9 +1,10 @@
-import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import {
   numbatrakAgents,
   numbatrakProducts,
   numbatrakStockMovements,
   numbatrakUnifiedExpenses,
+  user,
   type Database,
 } from "@platform/db";
 import type {
@@ -11,9 +12,11 @@ import type {
   CreateNumbatrakTransferMovementRequest,
   ListNumbatrakStockMovementsQuery,
   NumbatrakAgentStockOnHandRow,
+  NumbatrakStockGridQuery,
   NumbatrakStockMovement,
 } from "@platform/shared-types";
 import { getAgentProductOnHand, getOrgStockGrid } from "../../../lib/numbatrak-stock.js";
+import { parseLocations } from "../../numbatrak-agents/lib/agents.js";
 
 export type StockMovementRow = typeof numbatrakStockMovements.$inferSelect;
 
@@ -44,6 +47,15 @@ async function attachNames(db: Database, rows: StockMovementRow[]): Promise<Numb
     for (const p of products) productNames.set(p.id, p.name);
   }
 
+  const userIds = [
+    ...new Set(rows.map((r) => r.recordedByUserId).filter((id): id is string => id != null)),
+  ];
+  const userNames = new Map<string, string>();
+  if (userIds.length > 0) {
+    const users = await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, userIds));
+    for (const u of users) userNames.set(u.id, u.name);
+  }
+
   return rows.map((row) => ({
     id: row.id,
     movementType: row.movementType as NumbatrakStockMovement["movementType"],
@@ -59,30 +71,54 @@ async function attachNames(db: Database, rows: StockMovementRow[]): Promise<Numb
     occurredAt: row.occurredAt.toISOString(),
     cost: row.cost ?? "0",
     fee: row.fee ?? "0",
+    recordedByUserId: row.recordedByUserId,
+    recordedByUserName: row.recordedByUserId != null ? (userNames.get(row.recordedByUserId) ?? null) : null,
     notes: row.notes,
     createdAt: row.createdAt?.toISOString() ?? null,
   }));
+}
+
+export interface StockGridResult {
+  cells: NumbatrakAgentStockOnHandRow[];
+  costOfInventory: string;
 }
 
 /**
  * The Inventory feature's stock grid - one row per (agent, product) with a
  * nonzero-or-any on-hand quantity, named. Mirrors the source app's
  * `agent_stock_v` read (services/agentStock.ts::fetchAgentStockOnHand).
+ * Also returns costOfInventory - every agent's holdings x cost price, summed
+ * across the whole grid - as the spec's LOCKED cost-of-inventory rule needs a
+ * server-side source of truth, not just the client's own recomputation.
  */
-export async function getStockGrid(db: Database, organizationId: string): Promise<NumbatrakAgentStockOnHandRow[]> {
+export async function getStockGrid(
+  db: Database,
+  organizationId: string,
+  filters: NumbatrakStockGridQuery = {},
+): Promise<StockGridResult> {
   const cells = await getOrgStockGrid(db, organizationId);
-  if (cells.length === 0) return [];
+  if (cells.length === 0) return { cells: [], costOfInventory: "0" };
 
   const agentIds = [...new Set(cells.map((c) => c.agentId))];
   const productIds = [...new Set(cells.map((c) => c.productId))];
 
   const [agents, products] = await Promise.all([
     db
-      .select({ id: numbatrakAgents.id, name: numbatrakAgents.name, isWarehouse: numbatrakAgents.isWarehouse })
+      .select({
+        id: numbatrakAgents.id,
+        name: numbatrakAgents.name,
+        isWarehouse: numbatrakAgents.isWarehouse,
+        locations: numbatrakAgents.locations,
+      })
       .from(numbatrakAgents)
       .where(and(eq(numbatrakAgents.organizationId, organizationId), inArray(numbatrakAgents.id, agentIds))),
     db
-      .select({ id: numbatrakProducts.id, name: numbatrakProducts.name })
+      .select({
+        id: numbatrakProducts.id,
+        name: numbatrakProducts.name,
+        costPrice: numbatrakProducts.costPrice,
+        subBrand: numbatrakProducts.subBrand,
+      })
       .from(numbatrakProducts)
       .where(and(eq(numbatrakProducts.organizationId, organizationId), inArray(numbatrakProducts.id, productIds))),
   ]);
@@ -90,16 +126,38 @@ export async function getStockGrid(db: Database, organizationId: string): Promis
   const agentById = new Map(agents.map((a) => [a.id, a]));
   const productById = new Map(products.map((p) => [p.id, p]));
 
-  return cells
-    .filter((c) => agentById.has(c.agentId) && productById.has(c.productId))
-    .map((c) => ({
+  // Cost-of-inventory is summed across every agent's holdings regardless of
+  // the grid's own product/agent/subBrand/location filters - it's a whole-org
+  // figure, not a filtered-view figure.
+  let costOfInventory = 0;
+  for (const cell of cells) {
+    const product = productById.get(cell.productId);
+    if (!product) continue;
+    costOfInventory += cell.quantityOnHand * Number(product.costPrice);
+  }
+
+  const filtered = cells.filter((c) => {
+    const agent = agentById.get(c.agentId);
+    const product = productById.get(c.productId);
+    if (!agent || !product) return false;
+    if (filters.agentId != null && c.agentId !== filters.agentId) return false;
+    if (filters.productId != null && c.productId !== filters.productId) return false;
+    if (filters.subBrand && product.subBrand !== filters.subBrand) return false;
+    if (filters.location && !parseLocations(agent.locations).includes(filters.location)) return false;
+    return true;
+  });
+
+  return {
+    cells: filtered.map((c) => ({
       agentId: c.agentId,
       agentName: agentById.get(c.agentId)!.name,
       isWarehouse: agentById.get(c.agentId)!.isWarehouse,
       productId: c.productId,
       productName: productById.get(c.productId)!.name,
       quantityOnHand: c.quantityOnHand,
-    }));
+    })),
+    costOfInventory: costOfInventory.toFixed(2),
+  };
 }
 
 export async function listMovements(
@@ -121,6 +179,27 @@ export async function listMovements(
   if (filters.dateFrom) conditions.push(gte(numbatrakStockMovements.occurredAt, new Date(filters.dateFrom)));
   if (filters.dateTo) conditions.push(lte(numbatrakStockMovements.occurredAt, new Date(filters.dateTo)));
 
+  if (filters.subBrand) {
+    const products = await db
+      .select({ id: numbatrakProducts.id })
+      .from(numbatrakProducts)
+      .where(and(eq(numbatrakProducts.organizationId, organizationId), eq(numbatrakProducts.subBrand, filters.subBrand)));
+    const ids = products.map((p) => p.id);
+    conditions.push(ids.length > 0 ? inArray(numbatrakStockMovements.productId, ids) : sql`false`);
+  }
+  if (filters.location) {
+    const agents = await db
+      .select({ id: numbatrakAgents.id, locations: numbatrakAgents.locations })
+      .from(numbatrakAgents)
+      .where(eq(numbatrakAgents.organizationId, organizationId));
+    const ids = agents.filter((a) => parseLocations(a.locations).includes(filters.location!)).map((a) => a.id);
+    conditions.push(
+      ids.length > 0
+        ? or(inArray(numbatrakStockMovements.fromAgentId, ids), inArray(numbatrakStockMovements.toAgentId, ids))!
+        : sql`false`,
+    );
+  }
+
   const query = db
     .select()
     .from(numbatrakStockMovements)
@@ -135,6 +214,7 @@ export async function createTransfer(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakTransferMovementRequest,
+  recordedByUserId: string | null,
 ): Promise<NumbatrakStockMovement> {
   if (input.fromAgentId === input.toAgentId) {
     throw new Error("Source and destination agents must differ.");
@@ -156,6 +236,7 @@ export async function createTransfer(
       toAgentId: input.toAgentId,
       notes: input.notes,
       fee: String(fee),
+      recordedByUserId,
     })
     .returning();
   if (!row) throw new Error("Failed to create transfer movement");
@@ -187,6 +268,7 @@ export async function createShrinkage(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakShrinkageMovementRequest,
+  recordedByUserId: string | null,
 ): Promise<NumbatrakStockMovement> {
   const onHand = await getAgentProductOnHand(db, organizationId, input.fromAgentId, input.productId);
   if (onHand < input.quantity) {
@@ -202,6 +284,7 @@ export async function createShrinkage(
       quantity: input.quantity,
       fromAgentId: input.fromAgentId,
       notes: input.notes,
+      recordedByUserId,
     })
     .returning();
   if (!row) throw new Error("Failed to create shrinkage movement");

@@ -24,6 +24,7 @@ export interface StockMovement {
   cost: number;
   fee: number;
   recorded_by_user_id: string | null;
+  recorded_by_user_name: string | null;
   notes: string | null;
   created_at: string | null;
 }
@@ -55,6 +56,8 @@ export interface StockMovementListOptions {
   product_id?: string;
   agent_id?: number;
   movement_type?: StockMovementType;
+  sub_brand?: string;
+  location?: string;
   date_from?: string;
   date_to?: string;
 }

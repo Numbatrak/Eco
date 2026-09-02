@@ -12,6 +12,10 @@ interface StockGridProps {
   loading?: boolean;
   filterAgentId?: number | null;
   filterProductId?: string | null;
+  filterSubBrand?: string | null;
+  filterLocation?: string | null;
+  /** Server-computed: every agent's holdings x cost price, summed org-wide. */
+  costOfInventory: number;
 }
 
 export function StockGrid({
@@ -21,10 +25,14 @@ export function StockGrid({
   loading,
   filterAgentId,
   filterProductId,
+  filterSubBrand,
+  filterLocation,
+  costOfInventory,
 }: StockGridProps) {
   const holderAgents = useMemo(() => {
     const list = agents
       .filter((a) => a.active !== false)
+      .filter((a) => !filterLocation || a.locations.includes(filterLocation))
       .sort((a, b) => {
         if (a.is_warehouse && !b.is_warehouse) return -1;
         if (!a.is_warehouse && b.is_warehouse) return 1;
@@ -34,38 +42,30 @@ export function StockGrid({
       return list.filter((a) => a.id === filterAgentId);
     }
     return list;
-  }, [agents, filterAgentId]);
+  }, [agents, filterAgentId, filterLocation]);
 
   const gridProducts = useMemo(() => {
-    const list = products.filter((p) => p.active !== false);
+    const list = products
+      .filter((p) => p.active !== false)
+      .filter((p) => !filterSubBrand || p.sub_brand === filterSubBrand);
     if (filterProductId) {
       return list.filter((p) => p.id === filterProductId);
     }
     return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [products, filterProductId]);
+  }, [products, filterProductId, filterSubBrand]);
 
   const onHandMap = useMemo(() => buildOnHandMap(onHandRows), [onHandRows]);
 
-  const costByProduct = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const p of products) {
-      map.set(p.id, p.cost_price ?? 0);
-    }
-    return map;
-  }, [products]);
-
-  const { totalUnits, totalCostValue } = useMemo(() => {
+  const totalUnits = useMemo(() => {
     let units = 0;
-    let cost = 0;
     for (const row of onHandRows) {
       if (filterAgentId != null && row.agent_id !== filterAgentId) continue;
       if (filterProductId && row.product_id !== filterProductId) continue;
       if (row.quantity_on_hand <= 0) continue;
       units += row.quantity_on_hand;
-      cost += row.quantity_on_hand * (costByProduct.get(row.product_id) ?? 0);
     }
-    return { totalUnits: units, totalCostValue: cost };
-  }, [onHandRows, filterAgentId, filterProductId, costByProduct]);
+    return units;
+  }, [onHandRows, filterAgentId, filterProductId]);
 
   if (loading) {
     return (
@@ -172,7 +172,7 @@ export function StockGrid({
                     <span className="text-muted-foreground">Cost of inventory: </span>
                     <span className="font-bold text-foreground tabular-nums">
                       ₦
-                      {totalCostValue.toLocaleString("en-NG", {
+                      {costOfInventory.toLocaleString("en-NG", {
                         maximumFractionDigits: 0,
                       })}
                     </span>

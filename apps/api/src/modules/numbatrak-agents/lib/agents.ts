@@ -11,7 +11,7 @@ export function parseAgentId(raw: string): number | null {
   return Number.isSafeInteger(id) ? id : null;
 }
 
-function parseLocations(locations: string | null): string[] {
+export function parseLocations(locations: string | null): string[] {
   if (!locations) return [];
   return locations
     .split(",")

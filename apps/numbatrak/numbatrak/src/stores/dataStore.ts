@@ -9,7 +9,6 @@ import type { AbandonedCartWithRelations } from "../types/abandonedCart";
 import type { FollowUpWithRelations } from "../types/followUp";
 import type { AgentExpenseWithRelations } from "../types/expense";
 import type { GeneralExpenseWithRelations } from "../types/generalExpense";
-import type { InventoryWithRelations } from "../types/inventory";
 import type { Staff } from "../types/staff";
 
 // Store structure for each organization
@@ -62,11 +61,6 @@ export const expensesStore = chunk<
 export const generalExpensesStore = chunk<
   Record<string, OrganizationData<GeneralExpenseWithRelations>>
 >({} as Record<string, OrganizationData<GeneralExpenseWithRelations>>);
-
-// Inventory store - keyed by organizationId
-export const inventoryStore = chunk<
-  Record<string, OrganizationData<InventoryWithRelations>>
->({} as Record<string, OrganizationData<InventoryWithRelations>>);
 
 // Staff store - keyed by organizationId
 export const staffStore = chunk<Record<string, OrganizationData<Staff>>>(
@@ -125,7 +119,6 @@ export function clearAllCaches(): void {
   followUpsStore.set(reset<FollowUpWithRelations>());
   expensesStore.set(reset<AgentExpenseWithRelations>());
   generalExpensesStore.set(reset<GeneralExpenseWithRelations>());
-  inventoryStore.set(reset<InventoryWithRelations>());
   staffStore.set(reset<Staff>());
 }
 

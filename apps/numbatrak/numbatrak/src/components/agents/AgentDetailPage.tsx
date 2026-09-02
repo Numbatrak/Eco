@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Package, Truck, Wallet } from "lucide-react";
 import { useOrganization } from "../../contexts/OrganizationContext";
@@ -78,6 +78,18 @@ export default function AgentDetailPage() {
       cancel = true;
     };
   }, [currentOrganization, id]);
+
+  // This agent's own holdings x cost price - not the org-wide cost-of-inventory
+  // figure the main Inventory grid shows, which is intentionally unfiltered.
+  const agentCostOfInventory = useMemo(() => {
+    let total = 0;
+    for (const row of rows) {
+      if (row.quantity_on_hand <= 0) continue;
+      const product = products.find((p) => p.id === row.product_id);
+      total += row.quantity_on_hand * (product?.cost_price ?? 0);
+    }
+    return total;
+  }, [rows, products]);
 
   if (Number.isNaN(id)) {
     return (
@@ -172,6 +184,7 @@ export default function AgentDetailPage() {
             products={products}
             loading={loading}
             filterAgentId={id}
+            costOfInventory={agentCostOfInventory}
           />
         </section>
 

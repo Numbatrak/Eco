@@ -4,17 +4,9 @@ import { Button } from "../ui/button";
 interface PageHeaderProps {
   onTransfer: () => void;
   onAdjust: () => void;
-  /** Legacy tab only — manual totals CRUD */
-  onAddLegacy?: () => void;
-  showLegacyActions?: boolean;
 }
 
-export function PageHeader({
-  onTransfer,
-  onAdjust,
-  onAddLegacy,
-  showLegacyActions = false,
-}: PageHeaderProps) {
+export function PageHeader({ onTransfer, onAdjust }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-4 flex-wrap">
       <div className="space-y-1">
@@ -33,11 +25,6 @@ export function PageHeader({
           <AlertTriangle className="w-4 h-4 mr-2" />
           Mark damaged / missing
         </Button>
-        {showLegacyActions && onAddLegacy && (
-          <Button type="button" onClick={onAddLegacy}>
-            Add legacy total
-          </Button>
-        )}
       </div>
     </div>
   );

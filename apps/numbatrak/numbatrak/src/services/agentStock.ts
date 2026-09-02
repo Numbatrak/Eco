@@ -12,20 +12,54 @@ interface StockGridCellDto {
   quantityOnHand: number;
 }
 
+export interface StockGridFilters {
+  agentId?: number;
+  productId?: string;
+  subBrand?: string;
+  location?: string;
+}
+
+/**
+ * True ledger on-hand, one row per (agent, product) with any recorded
+ * movement, plus the server-computed cost-of-inventory total (every agent's
+ * holdings x cost price, summed org-wide - unaffected by `filters`, which
+ * only narrow which grid cells come back).
+ */
+export async function fetchStockGrid(
+  organizationId: string,
+  filters: StockGridFilters = {}
+): Promise<{ rows: AgentStockOnHandRow[]; costOfInventory: number }> {
+  const params = new URLSearchParams();
+  if (filters.agentId != null) params.set("agentId", String(filters.agentId));
+  if (filters.productId) params.set("productId", filters.productId);
+  if (filters.subBrand) params.set("subBrand", filters.subBrand);
+  if (filters.location) params.set("location", filters.location);
+  const qs = params.toString();
+
+  const { cells, costOfInventory } = await apiRequest<{
+    cells: StockGridCellDto[];
+    costOfInventory: string;
+  }>(`/org/numbatrak/inventory/grid${qs ? `?${qs}` : ""}`);
+  return {
+    rows: cells.map((c) => ({
+      organization_id: organizationId,
+      agent_id: c.agentId,
+      product_id: c.productId,
+      quantity_on_hand: c.quantityOnHand,
+      agent_name: c.agentName,
+      product_name: c.productName,
+      is_warehouse: c.isWarehouse,
+    })),
+    costOfInventory: Number(costOfInventory),
+  };
+}
+
 /** True ledger on-hand, one row per (agent, product) with any recorded movement. */
 export async function fetchAgentStockOnHand(
-  _organizationId: string
+  organizationId: string
 ): Promise<AgentStockOnHandRow[]> {
-  const { cells } = await apiRequest<{ cells: StockGridCellDto[] }>("/org/numbatrak/inventory/grid");
-  return cells.map((c) => ({
-    organization_id: _organizationId,
-    agent_id: c.agentId,
-    product_id: c.productId,
-    quantity_on_hand: c.quantityOnHand,
-    agent_name: c.agentName,
-    product_name: c.productName,
-    is_warehouse: c.isWarehouse,
-  }));
+  const { rows } = await fetchStockGrid(organizationId);
+  return rows;
 }
 
 export async function getAgentProductOnHand(

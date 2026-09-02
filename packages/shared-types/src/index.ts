@@ -288,6 +288,8 @@ export {
   type NumbatrakAgentStockOnHandRow,
   listNumbatrakStockMovementsQuerySchema,
   type ListNumbatrakStockMovementsQuery,
+  numbatrakStockGridQuerySchema,
+  type NumbatrakStockGridQuery,
   numbatrakSpecRoleSchema,
   type NumbatrakSpecRole,
   NUMBATRAK_SPEC_ROLE_COMPATIBLE_MEMBER_ROLES,

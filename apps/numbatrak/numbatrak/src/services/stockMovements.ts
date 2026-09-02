@@ -23,6 +23,8 @@ interface StockMovementDto {
   occurredAt: string;
   cost: string;
   fee: string;
+  recordedByUserId: string | null;
+  recordedByUserName: string | null;
   notes: string | null;
   createdAt: string | null;
 }
@@ -42,7 +44,8 @@ function dtoToMovement(dto: StockMovementDto, organizationId: string): StockMove
     occurred_at: dto.occurredAt,
     cost: Number(dto.cost),
     fee: Number(dto.fee),
-    recorded_by_user_id: null,
+    recorded_by_user_id: dto.recordedByUserId,
+    recorded_by_user_name: dto.recordedByUserName,
     notes: dto.notes,
     created_at: dto.createdAt,
   };
@@ -56,6 +59,8 @@ export async function listStockMovements(
   if (options?.product_id) params.set("productId", options.product_id);
   if (options?.agent_id != null) params.set("agentId", String(options.agent_id));
   if (options?.movement_type) params.set("movementType", options.movement_type);
+  if (options?.sub_brand) params.set("subBrand", options.sub_brand);
+  if (options?.location) params.set("location", options.location);
   if (options?.date_from) params.set("dateFrom", options.date_from);
   if (options?.date_to) params.set("dateTo", options.date_to);
   if (options?.limit) params.set("limit", String(options.limit));
@@ -67,6 +72,9 @@ export async function listStockMovements(
   return movements.map((dto) => dtoToMovement(dto, organizationId));
 }
 
+// recordedByUserId isn't sent here - the server derives it from the
+// authenticated session (apps/api's transfer/adjust routes), so a caller
+// can't spoof attribution by passing someone else's id.
 export async function createTransferMovement(input: {
   organization_id: string;
   from_agent_id: number;
@@ -75,7 +83,6 @@ export async function createTransferMovement(input: {
   quantity: number;
   notes: string;
   fee?: number;
-  recorded_by_user_id?: string | null;
   occurred_at?: string;
 }): Promise<{ id: string }> {
   const dto = await apiRequest<StockMovementDto>("/org/numbatrak/inventory/transfer", {
@@ -121,7 +128,6 @@ export async function createShrinkageMovement(input: {
   product_id: string;
   quantity: number;
   notes: string;
-  recorded_by_user_id?: string | null;
   occurred_at?: string;
 }): Promise<{ id: string }> {
   const dto = await apiRequest<StockMovementDto>("/org/numbatrak/inventory/adjust", {

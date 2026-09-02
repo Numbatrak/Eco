@@ -83,6 +83,7 @@ export function StockMovementsLog({
               <th className="p-2.5 font-medium text-foreground">From</th>
               <th className="p-2.5 font-medium text-foreground">To</th>
               <th className="p-2.5 font-medium text-foreground">Reason / notes</th>
+              <th className="p-2.5 font-medium text-foreground">By</th>
               <th className="p-2.5 font-medium text-right text-foreground">
                 Cost
               </th>
@@ -128,6 +129,9 @@ export function StockMovementsLog({
                   title={m.notes ?? undefined}
                 >
                   {m.notes || "—"}
+                </td>
+                <td className="p-2.5 text-muted-foreground whitespace-nowrap">
+                  {m.recorded_by_user_name || "—"}
                 </td>
                 <td className="p-2.5 text-right tabular-nums text-foreground">
                   {Number(m.cost).toLocaleString("en-NG", {

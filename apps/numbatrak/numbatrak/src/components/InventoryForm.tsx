@@ -10,11 +10,10 @@ import {
 import { PageHeader } from "./inventory/PageHeader";
 import { SuccessNotification } from "./agents/SuccessNotification";
 import { useOrganization } from "../contexts/OrganizationContext";
-import { useAuth } from "../auth/AuthProvider";
 import { useCachedAgents } from "../hooks/useCachedAgents";
 import { useCachedProducts } from "../hooks/useCachedProducts";
 import {
-  fetchAgentStockOnHand,
+  fetchStockGrid,
   buildOnHandMap,
 } from "../services/agentStock";
 import {
@@ -35,7 +34,6 @@ import {
 
 export default function InventoryForm() {
   const { currentOrganization } = useOrganization();
-  const { user } = useAuth();
 
   const { data: agents, loading: agentsLoading } = useCachedAgents(
     currentOrganization?.id || null
@@ -53,6 +51,7 @@ export default function InventoryForm() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [ledgerOnHand, setLedgerOnHand] = useState<AgentStockOnHandRow[]>([]);
+  const [costOfInventory, setCostOfInventory] = useState(0);
   const [ledgerMov, setLedgerMov] = useState<StockMovement[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [ledgerFilters, setLedgerFilters] = useState<InventoryLedgerFilters>(
@@ -80,22 +79,29 @@ export default function InventoryForm() {
       await ensureWarehouseAgent(currentOrganization.id).catch(() => {
         /* migration may not be applied yet */
       });
-      const [onHand, movements] = await Promise.all([
-        fetchAgentStockOnHand(currentOrganization.id),
+      const [grid, movements] = await Promise.all([
+        // Fetched unfiltered - StockGrid applies sub-brand/location/agent/product
+        // filters client-side so the transfer/adjust dialogs' on-hand map (built
+        // from this same data) always sees every agent's real holdings.
+        fetchStockGrid(currentOrganization.id),
         listStockMovements(currentOrganization.id, {
           limit: 200,
           agent_id: ledgerFilters.agent_id,
           product_id: ledgerFilters.product_id,
           movement_type: ledgerFilters.movement_type,
+          sub_brand: ledgerFilters.sub_brand,
+          location: ledgerFilters.location,
           date_from: ledgerFilters.date_from,
           date_to: ledgerFilters.date_to,
         }),
       ]);
-      setLedgerOnHand(onHand);
+      setLedgerOnHand(grid.rows);
+      setCostOfInventory(grid.costOfInventory);
       setLedgerMov(movements);
     } catch (e) {
       console.warn("Ledger view:", e);
       setLedgerOnHand([]);
+      setCostOfInventory(0);
       setLedgerMov([]);
     } finally {
       setLedgerLoading(false);
@@ -119,7 +125,6 @@ export default function InventoryForm() {
         quantity: values.quantity,
         notes: values.notes,
         fee: values.fee,
-        recorded_by_user_id: user?.id ?? null,
       });
       setSuccess(
         values.fee > 0
@@ -150,7 +155,6 @@ export default function InventoryForm() {
         product_id: values.product_id,
         quantity: values.quantity,
         notes: values.notes,
-        recorded_by_user_id: user?.id ?? null,
       });
       setSuccess(
         values.movement_type === "damaged"
@@ -232,6 +236,9 @@ export default function InventoryForm() {
             loading={ledgerLoading || loading}
             filterAgentId={ledgerFilters.agent_id}
             filterProductId={ledgerFilters.product_id}
+            filterSubBrand={ledgerFilters.sub_brand}
+            filterLocation={ledgerFilters.location}
+            costOfInventory={costOfInventory}
           />
           <h3 className="text-sm font-semibold text-foreground">
             Movement history

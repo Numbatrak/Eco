@@ -1066,6 +1066,8 @@ export const numbatrakStockMovementSchema = z.object({
   occurredAt: z.string(),
   cost: z.string(),
   fee: z.string(),
+  recordedByUserId: z.string().nullable(),
+  recordedByUserName: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.string().nullable(),
 });
@@ -1104,11 +1106,21 @@ export const listNumbatrakStockMovementsQuerySchema = z.object({
   productId: z.string().uuid().optional(),
   agentId: z.coerce.number().int().optional(),
   movementType: numbatrakStockMovementTypeSchema.optional(),
+  subBrand: z.string().trim().optional(),
+  location: z.string().trim().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   limit: z.coerce.number().int().positive().optional(),
 });
 export type ListNumbatrakStockMovementsQuery = z.infer<typeof listNumbatrakStockMovementsQuerySchema>;
+
+export const numbatrakStockGridQuerySchema = z.object({
+  productId: z.string().uuid().optional(),
+  agentId: z.coerce.number().int().optional(),
+  subBrand: z.string().trim().optional(),
+  location: z.string().trim().optional(),
+});
+export type NumbatrakStockGridQuery = z.infer<typeof numbatrakStockGridQuerySchema>;
 
 // ---------- staff ----------
 
