@@ -36,7 +36,7 @@ export function OrderAssignmentPage() {
       const [s, w, staff] = await Promise.all([
         fetchOrderAssignmentSettings(),
         fetchOrderAssignmentWeights(),
-        canManage ? fetchStaff(currentOrganization.id) : Promise.resolve([]),
+        fetchStaff(currentOrganization.id),
       ]);
       setSettings(s);
       setWeights(w);
@@ -46,7 +46,7 @@ export function OrderAssignmentPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentOrganization, canManage]);
+  }, [currentOrganization]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -63,8 +63,8 @@ export function OrderAssignmentPage() {
     void load();
   };
 
-  const handleTogglePause = async (w: OrderAssignmentWeight) => {
-    await upsertOrderAssignmentWeight(w.user_id, w.percentage, !w.is_paused);
+  const handleTogglePause = async (userId: string, currentPercentage: number, isPaused: boolean) => {
+    await upsertOrderAssignmentWeight(userId, currentPercentage, !isPaused);
     void load();
   };
 
@@ -109,6 +109,62 @@ export function OrderAssignmentPage() {
                 : "Orders are distributed according to each member's configured percentage weight."}
             </p>
           </div>
+
+          {settings?.assignment_method === "round_robin" && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-foreground">Exclude from rotation</h3>
+                <p className="text-sm text-muted-foreground">
+                  Excluded CRS staff receive no new orders until re-included, without being removed from the team.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Staff</th>
+                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
+                      {canManage && <th className="text-center px-4 py-3 font-medium text-muted-foreground">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {staffList
+                      .filter((s) => s.primary_role === "CRS" && s.active)
+                      .map((s) => {
+                        const weight = weights.find((w) => w.user_id === s.user_id);
+                        const isPaused = weight?.is_paused ?? false;
+                        return (
+                          <tr key={s.user_id} className="hover:bg-muted/30">
+                            <td className="px-4 py-3 font-medium text-foreground">{s.user_name ?? s.user_email ?? s.user_id}</td>
+                            <td className="px-4 py-3 text-center">
+                              {isPaused ? (
+                                <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full">Excluded</span>
+                              ) : (
+                                <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">In rotation</span>
+                              )}
+                            </td>
+                            {canManage && (
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => handleTogglePause(s.user_id, weight?.percentage ?? 0, isPaused)}
+                                  className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  title={isPaused ? "Include in rotation" : "Exclude from rotation"}
+                                >
+                                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+                {staffList.filter((s) => s.primary_role === "CRS" && s.active).length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">No Customer Relations staff found.</div>
+                )}
+              </div>
+            </div>
+          )}
 
           {settings?.assignment_method === "percentage" && (
             <div className="space-y-4">
@@ -187,7 +243,7 @@ export function OrderAssignmentPage() {
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
-                                onClick={() => handleTogglePause(w)}
+                                onClick={() => handleTogglePause(w.user_id, w.percentage, w.is_paused)}
                                 className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
                                 title={w.is_paused ? "Resume" : "Pause"}
                               >

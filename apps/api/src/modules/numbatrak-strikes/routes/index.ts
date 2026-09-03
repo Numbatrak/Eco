@@ -53,7 +53,7 @@ export default async function numbatrakStrikesRoutes(app: FastifyInstance): Prom
       const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
       if (!session) return reply.status(401).send({ error: "Unauthorized" });
       const { staffIds, reason } = request.body as { staffIds: string[]; reason: string };
-      const strikes = await issueStrikes(db, organizationId, staffIds, reason, session.user.id);
+      const strikes = await issueStrikes(db, request.log, organizationId, staffIds, reason, session.user.id);
       return reply.status(201).send({ strikes });
     },
   );

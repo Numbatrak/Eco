@@ -210,6 +210,45 @@ ${statusLine}`,
   );
 }
 
+export function strikeIssuedEmail(params: { staffName: string; reason: string }): string {
+  return layout(
+    `<p>Hi ${params.staffName},</p>
+<p>A strike has been recorded against your record:</p>
+<p style="padding:12px 16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">${params.reason}</p>
+<p class="muted">This is a disciplinary record, not a deduction — it doesn't affect your pay. If you have questions, speak to your manager.</p>`,
+    "A strike has been recorded against your record",
+  );
+}
+
+export function leaveRequestSubmittedEmail(params: { staffName: string; leaveType: string; startDate: string; endDate: string }): string {
+  return layout(
+    `<p>Hi there,</p>
+<p><strong>${params.staffName}</strong> submitted a ${params.leaveType} leave request for <strong>${params.startDate}</strong> to <strong>${params.endDate}</strong>, awaiting your decision.</p>`,
+    `${params.staffName} requested leave`,
+  );
+}
+
+export function leaveDecidedEmail(params: {
+  staffName: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  status: "approved" | "declined";
+  decisionNote?: string | null;
+}): string {
+  const statusLine =
+    params.status === "approved"
+      ? `<p style="color:#15803d;font-weight:600;">Approved.</p>`
+      : `<p style="color:#b91c1c;font-weight:600;">Declined.</p>`;
+  return layout(
+    `<p>Hi ${params.staffName},</p>
+<p>Your ${params.leaveType} leave request for <strong>${params.startDate}</strong> to <strong>${params.endDate}</strong> has been decided.</p>
+${statusLine}
+${params.decisionNote ? `<p class="muted">${params.decisionNote}</p>` : ""}`,
+    `Your leave request was ${params.status}`,
+  );
+}
+
 export function testEmail(): string {
   return layout(
     `<p>Hi there,</p>

@@ -1,9 +1,11 @@
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import {
   numbatrakLeaveSettings,
   numbatrakLeaveBalances,
   numbatrakLeaveRequests,
   numbatrakStaff,
+  member,
   user,
   type Database,
 } from "@platform/db";
@@ -13,6 +15,14 @@ import type {
   NumbatrakLeaveRequest,
   NumbatrakLeaveType,
 } from "@platform/shared-types";
+import { sendEmail } from "../../auth/lib/email.js";
+import { leaveRequestSubmittedEmail, leaveDecidedEmail } from "../../../lib/email-templates.js";
+
+const DECISION_MAKER_ROLES = ["owner", "admin", "manager"];
+
+function formatLeaveDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 type SettingsRow = typeof numbatrakLeaveSettings.$inferSelect;
 type RequestRow = typeof numbatrakLeaveRequests.$inferSelect;
@@ -175,6 +185,7 @@ export async function listRequests(
 
 export async function createRequest(
   db: Database,
+  logger: FastifyBaseLogger,
   organizationId: string,
   staffId: string,
   input: { leaveType: string; startDate: string; endDate: string; days: number; reason?: string | null },
@@ -191,11 +202,37 @@ export async function createRequest(
       reason: input.reason ?? null,
     })
     .returning();
+
+  // "Requesting... fires notifications" (LOCKED RULE) - notify whoever can
+  // decide it (the real org role, not the HR primaryRole vocabulary, since
+  // that's the actual decision-making boundary per access-control.ts).
+  try {
+    const [requester] = await db.select({ name: user.name }).from(numbatrakStaff).innerJoin(user, eq(numbatrakStaff.userId, user.id)).where(eq(numbatrakStaff.id, staffId)).limit(1);
+    const deciders = await db
+      .select({ email: user.email })
+      .from(member)
+      .innerJoin(user, eq(member.userId, user.id))
+      .where(and(eq(member.organizationId, organizationId), inArray(member.role, DECISION_MAKER_ROLES)));
+
+    const body = leaveRequestSubmittedEmail({
+      staffName: requester?.name ?? "A staff member",
+      leaveType: input.leaveType,
+      startDate: input.startDate,
+      endDate: input.endDate,
+    });
+    for (const decider of deciders) {
+      await sendEmail(logger, { to: decider.email, subject: `${requester?.name ?? "A staff member"} requested leave`, body });
+    }
+  } catch (err) {
+    logger.warn({ err, staffId }, "Failed to send leave-request notification email");
+  }
+
   return serializeRequest(row!, null, null);
 }
 
 export async function decideRequest(
   db: Database,
+  logger: FastifyBaseLogger,
   organizationId: string,
   requestId: string,
   status: "approved" | "declined",
@@ -237,6 +274,34 @@ export async function decideRequest(
       .update(numbatrakLeaveBalances)
       .set(updateValues)
       .where(eq(numbatrakLeaveBalances.id, balance.id));
+  }
+
+  // "Deciding fires notifications" (LOCKED RULE) - tell the requester.
+  if (row) {
+    try {
+      const [requester] = await db
+        .select({ name: user.name, email: user.email })
+        .from(numbatrakStaff)
+        .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+        .where(eq(numbatrakStaff.id, row.staffId))
+        .limit(1);
+      if (requester) {
+        await sendEmail(logger, {
+          to: requester.email,
+          subject: `Your leave request was ${status}`,
+          body: leaveDecidedEmail({
+            staffName: requester.name,
+            leaveType: row.leaveType,
+            startDate: formatLeaveDate(row.startDate),
+            endDate: formatLeaveDate(row.endDate),
+            status,
+            decisionNote: row.decisionNote,
+          }),
+        });
+      }
+    } catch (err) {
+      logger.warn({ err, requestId }, "Failed to send leave-decision notification email");
+    }
   }
 
   return row ? serializeRequest(row, null, null) : null;

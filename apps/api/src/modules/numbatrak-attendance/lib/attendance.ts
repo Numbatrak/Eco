@@ -3,6 +3,7 @@ import {
   numbatrakAttendanceSettings,
   numbatrakAttendanceEvents,
   numbatrakAttendanceRecords,
+  numbatrakLeaveRequests,
   numbatrakStaff,
   user,
   type Database,
@@ -99,12 +100,20 @@ export async function listEvents(db: Database, organizationId: string): Promise<
   return rows.map(serializeEvent);
 }
 
+async function assertEnabled(db: Database, organizationId: string): Promise<void> {
+  const settings = await getOrCreateSettings(db, organizationId);
+  if (!settings.enabled) {
+    throw new Error("Attendance is switched off for this organization.");
+  }
+}
+
 export async function createEvent(
   db: Database,
   organizationId: string,
   input: { title: string; description?: string | null; eventDate: string },
   createdBy: string,
 ): Promise<NumbatrakAttendanceEvent> {
+  await assertEnabled(db, organizationId);
   const [row] = await db
     .insert(numbatrakAttendanceEvents)
     .values({
@@ -145,11 +154,30 @@ export async function getEventDetail(
 
 export async function markAttendance(
   db: Database,
+  organizationId: string,
   eventId: string,
   staffId: string,
   status: string,
   markedBy: string,
+  canManage: boolean,
 ): Promise<NumbatrakAttendanceRecord> {
+  await assertEnabled(db, organizationId);
+
+  // Self-marking only, unless the caller has manage rights (owner/admin/
+  // manager) - the route only requires "view" permission so that everyone
+  // can mark their own attendance, but that must not let a view-only caller
+  // mark anyone else's.
+  if (!canManage) {
+    const [staff] = await db
+      .select({ id: numbatrakStaff.id })
+      .from(numbatrakStaff)
+      .where(and(eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.userId, markedBy)))
+      .limit(1);
+    if (!staff || staff.id !== staffId) {
+      throw new Error("You can only mark your own attendance.");
+    }
+  }
+
   const [existing] = await db
     .select()
     .from(numbatrakAttendanceRecords)
@@ -174,11 +202,14 @@ export async function markAttendance(
 
 export async function exemptStaff(
   db: Database,
+  organizationId: string,
   eventId: string,
   staffId: string,
   exemptReason: string,
   markedBy: string,
 ): Promise<NumbatrakAttendanceRecord> {
+  await assertEnabled(db, organizationId);
+
   const [existing] = await db
     .select()
     .from(numbatrakAttendanceRecords)
@@ -206,6 +237,7 @@ export async function closeEvent(
   organizationId: string,
   eventId: string,
 ): Promise<NumbatrakAttendanceEvent | null> {
+  await assertEnabled(db, organizationId);
   return db.transaction(async (tx) => {
     const [event] = await tx
       .select()
@@ -225,11 +257,31 @@ export async function closeEvent(
       .where(eq(numbatrakAttendanceRecords.eventId, eventId));
 
     const markedStaffIds = new Set(existingRecords.map((r) => r.staffId));
-
     const unmarked = activeStaff.filter((s) => !markedStaffIds.has(s.id));
+
     if (unmarked.length > 0) {
+      // An approved leave day is not marked absent by Attendance (LOCKED
+      // rule) - compare calendar dates since eventDate/startDate/endDate are
+      // all timestamptz and an event's time-of-day shouldn't matter here.
+      const onLeave = await tx
+        .select({ staffId: numbatrakLeaveRequests.staffId })
+        .from(numbatrakLeaveRequests)
+        .where(
+          and(
+            eq(numbatrakLeaveRequests.organizationId, organizationId),
+            eq(numbatrakLeaveRequests.status, "approved"),
+            sql`${numbatrakLeaveRequests.startDate}::date <= ${event.eventDate}::date`,
+            sql`${numbatrakLeaveRequests.endDate}::date >= ${event.eventDate}::date`,
+          ),
+        );
+      const onLeaveStaffIds = new Set(onLeave.map((r) => r.staffId));
+
       await tx.insert(numbatrakAttendanceRecords).values(
-        unmarked.map((s) => ({ eventId, staffId: s.id, status: "absent" })),
+        unmarked.map((s) =>
+          onLeaveStaffIds.has(s.id)
+            ? { eventId, staffId: s.id, status: "exempt" as const, exemptReason: "On approved leave" }
+            : { eventId, staffId: s.id, status: "absent" as const },
+        ),
       );
     }
 

@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
+import { and, eq } from "drizzle-orm";
+import { member } from "@platform/db";
 import { auth } from "../../../lib/auth.js";
 import {
   getOrCreateSettings,
@@ -10,6 +12,9 @@ import {
   decideRequest,
   getStaffIdForUser,
 } from "../lib/leave.js";
+
+// Same session-refetch + member-role check used by numbatrak-staff/numbatrak-payroll/numbatrak-attendance.
+const BROAD_VISIBILITY_ROLES = new Set(["owner", "admin", "manager"]);
 
 export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -70,13 +75,26 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
       if (!session) return reply.status(401).send({ error: "Unauthorized" });
 
       const body = request.body as { staffId?: string; leaveType: string; startDate: string; endDate: string; days: number; reason?: string | null };
+      const ownStaffId = await getStaffIdForUser(db, organizationId, session.user.id);
+
       let staffId = body.staffId;
       if (!staffId) {
-        staffId = await getStaffIdForUser(db, organizationId, session.user.id) ?? undefined;
+        staffId = ownStaffId ?? undefined;
+      } else if (staffId !== ownStaffId) {
+        // Requesting leave on someone else's behalf requires manage rights -
+        // otherwise a view-only caller could pass an arbitrary staffId.
+        const [membership] = await db
+          .select({ role: member.role })
+          .from(member)
+          .where(and(eq(member.organizationId, organizationId), eq(member.userId, session.user.id)))
+          .limit(1);
+        if (!membership || !BROAD_VISIBILITY_ROLES.has(membership.role)) {
+          return reply.status(403).send({ error: "You can only request leave for yourself." });
+        }
       }
       if (!staffId) return reply.status(400).send({ error: "No staff record found" });
 
-      const leaveRequest = await createRequest(db, organizationId, staffId, body);
+      const leaveRequest = await createRequest(db, request.log, organizationId, staffId, body);
       return reply.status(201).send(leaveRequest);
     },
   );
@@ -91,7 +109,7 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
       if (!session) return reply.status(401).send({ error: "Unauthorized" });
       const { requestId } = request.params as { requestId: string };
       const { status, decisionNote } = request.body as { status: "approved" | "declined"; decisionNote?: string | null };
-      const result = await decideRequest(db, organizationId, requestId, status, session.user.id, decisionNote);
+      const result = await decideRequest(db, request.log, organizationId, requestId, status, session.user.id, decisionNote);
       if (!result) return reply.status(404).send({ error: "Request not found or already decided" });
       return reply.send(result);
     },

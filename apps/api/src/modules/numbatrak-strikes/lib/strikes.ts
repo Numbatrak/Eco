@@ -1,4 +1,5 @@
 import { and, eq, desc } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import {
   numbatrakStrikeSettings,
   numbatrakStrikes,
@@ -7,6 +8,8 @@ import {
   type Database,
 } from "@platform/db";
 import type { NumbatrakStrikeSettings, NumbatrakStrike } from "@platform/shared-types";
+import { sendEmail } from "../../auth/lib/email.js";
+import { strikeIssuedEmail } from "../../../lib/email-templates.js";
 
 type SettingsRow = typeof numbatrakStrikeSettings.$inferSelect;
 type StrikeRow = typeof numbatrakStrikes.$inferSelect;
@@ -100,6 +103,7 @@ export async function listStrikes(db: Database, organizationId: string): Promise
 
 export async function issueStrikes(
   db: Database,
+  logger: FastifyBaseLogger,
   organizationId: string,
   staffIds: string[],
   reason: string,
@@ -112,6 +116,27 @@ export async function issueStrikes(
       .values({ organizationId, staffId, reason, issuedBy })
       .returning();
     results.push(serializeStrike(row!, null, null));
+
+    // "Issuing notifies the staff member through the shared notification
+    // layer" (LOCKED RULE) - that layer doesn't exist yet, so email covers
+    // the "must not be missed" part in the meantime, same as Payroll/Wallet.
+    try {
+      const [staffUser] = await db
+        .select({ name: user.name, email: user.email })
+        .from(numbatrakStaff)
+        .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+        .where(eq(numbatrakStaff.id, staffId))
+        .limit(1);
+      if (staffUser) {
+        await sendEmail(logger, {
+          to: staffUser.email,
+          subject: "A strike has been recorded against your record",
+          body: strikeIssuedEmail({ staffName: staffUser.name, reason }),
+        });
+      }
+    } catch (err) {
+      logger.warn({ err, staffId }, "Failed to send strike notification email");
+    }
   }
   return results;
 }
