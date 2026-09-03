@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, RefreshCw } from "lucide-react";
+import { ReactNode, useState } from "react";
+import { Copy, RefreshCw, Webhook, Braces, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { FormSchema, FieldMapping, RadioOption } from "../../../types/form";
 import { API_BASE_URL } from "../../../lib/apiClient";
@@ -31,6 +31,46 @@ function collectRadioOptions(schema: FormSchema): RadioOption[] {
     if (field.type === "order-bump" && field.orderBump) options.push(field.orderBump);
   }
   return options;
+}
+
+function IntegrationCard({ icon, title, tagline, children }: { icon: ReactNode; title: string; tagline: string; children: ReactNode }) {
+  return (
+    <div className="border-2 border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 bg-muted/60 border-b-2 border-border">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">{icon}</div>
+        <div>
+          <h2 className="text-sm font-bold text-foreground">{title}</h2>
+          <p className="text-xs text-muted-foreground">{tagline}</p>
+        </div>
+      </div>
+      <ol className="px-5 py-5 space-y-5">{children}</ol>
+    </div>
+  );
+}
+
+function Step({ number, title, children }: { number: number; title: string; children?: ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+        {number}
+      </span>
+      <div className="flex-1 min-w-0 space-y-2 pt-0.5">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        {children}
+      </div>
+    </li>
+  );
+}
+
+function CopyField({ value, label, onCopy, mono = true }: { value: string; label: string; onCopy: (text: string, label: string) => void; mono?: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <code className={`flex-1 px-3 py-2 bg-muted rounded-lg text-xs break-all ${mono ? "font-mono" : ""}`}>{value}</code>
+      <button type="button" className="btn-secondary shrink-0" onClick={() => onCopy(value, label)} title={`Copy ${label.toLowerCase()}`}>
+        <Copy className="w-4 h-4" />
+      </button>
+    </div>
+  );
 }
 
 /** WPForms/Elementor order-intake setup - see Part A/B of the integration plan for why the two are handled so differently. */
@@ -110,70 +150,86 @@ export function IntegrationsPanel({
   };
 
   return (
-    <div className="form-section space-y-8 max-w-2xl">
-      <div className="space-y-4">
-        <div className="section-header">
-          <h2 className="section-title">WPForms</h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            WPForms' Webhooks addon lets you template the outgoing JSON yourself, so it hits our existing submit
-            endpoint directly — no extra setup here beyond pasting the URL and template into "Settings → Webhooks" on
-            your WPForms form.
+    <div className="form-section space-y-6 max-w-2xl">
+      <div>
+        <h1 className="text-base font-bold text-foreground">Order intake integrations</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Accept orders from forms built in other WordPress page builders, without embedding our script. Pick whichever
+          plugin you're already using below.
+        </p>
+      </div>
+
+      <IntegrationCard
+        icon={<Braces className="w-4 h-4" />}
+        title="WPForms"
+        tagline="Uses the Webhooks addon — no setup needed on our side."
+      >
+        <Step number={1} title="Install the Webhooks addon">
+          <p className="text-xs text-muted-foreground">
+            In your WordPress admin, go to <strong>WPForms → Addons</strong>, find <strong>Webhooks</strong>, and click
+            Install &amp; Activate (included with WPForms Pro and above).
           </p>
-        </div>
+        </Step>
 
-        <div>
-          <label className="form-label text-xs">Request URL</label>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">{submitUrl}</code>
-            <button type="button" className="btn-secondary shrink-0" onClick={() => onCopy(submitUrl, "Request URL")}>
-              <Copy className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <Step number={2} title="Open this form's Webhooks settings">
+          <p className="text-xs text-muted-foreground">
+            Edit your WPForms form, go to <strong>Settings → Webhooks</strong>, and click <strong>Add New</strong>.
+          </p>
+        </Step>
 
-        <div>
-          <label className="form-label text-xs">Request Body (JSON) template</label>
+        <Step number={3} title="Paste the request URL">
+          <CopyField value={submitUrl} label="Request URL" onCopy={onCopy} />
+          <p className="text-xs text-muted-foreground">
+            Set <strong>Request Format</strong> to <strong>JSON</strong> and <strong>Request Method</strong> to{" "}
+            <strong>POST</strong>.
+          </p>
+        </Step>
+
+        <Step number={4} title="Paste the request body template">
           <div className="flex items-start gap-2">
             <pre className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs overflow-x-auto whitespace-pre">
               {wpFormsTemplate}
             </pre>
-            <button type="button" className="btn-secondary shrink-0" onClick={() => onCopy(wpFormsTemplate, "JSON template")}>
+            <button
+              type="button"
+              className="btn-secondary shrink-0"
+              onClick={() => onCopy(wpFormsTemplate, "JSON template")}
+              title="Copy JSON template"
+            >
               <Copy className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Replace each {'{field_id="N"}'} smart tag with your own WPForms field IDs. WPForms has no concept of our
-            product catalog, so the "items" array must be hardcoded to real product IDs — best suited to
-            single-product or fixed-quantity forms.
+          <p className="text-xs text-muted-foreground">
+            Replace each {'{field_id="N"}'} smart tag with your own field IDs — hover a field in the WPForms builder to
+            see its ID, then use WPForms' smart tag picker to insert it. WPForms has no concept of our product catalog,
+            so the <code className="font-mono">items</code> array must be hardcoded to real product IDs, which works
+            best for single-product or fixed-quantity forms.
           </p>
-        </div>
-      </div>
+        </Step>
 
-      <div className="space-y-4">
-        <div className="section-header">
-          <h2 className="section-title">Elementor Pro</h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Elementor's native Webhook action always sends a fixed payload we can't reshape, so map its field IDs or
-            titles to the roles below.
+        <Step number={5} title="Save and test">
+          <p className="text-xs text-muted-foreground">
+            Save the webhook, then submit a test entry on your live WordPress form. The order (or an abandoned cart, if
+            no items resolved) should appear in Numbatrak within a few seconds.
           </p>
-        </div>
+        </Step>
+      </IntegrationCard>
 
+      <IntegrationCard
+        icon={<Webhook className="w-4 h-4" />}
+        title="Elementor Pro"
+        tagline="Always sends a fixed payload — map its fields to your form below."
+      >
         {!formId ? (
-          <p className="text-sm text-muted-foreground italic">Save this form first to configure the Elementor webhook.</p>
+          <Step number={1} title="Save this form first">
+            <p className="text-xs text-muted-foreground">
+              Elementor's webhook needs a saved form to generate a URL and secret for. Click <strong>Save Form</strong>{" "}
+              above, then come back to this tab.
+            </p>
+          </Step>
         ) : (
           <>
-            <div>
-              <label className="form-label text-xs">Webhook URL</label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">{webhookUrl}</code>
-                <button type="button" className="btn-secondary shrink-0" onClick={() => onCopy(webhookUrl, "Webhook URL")}>
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label text-xs">Webhook secret</label>
+            <Step number={1} title="Generate a webhook secret">
               <div className="flex items-center gap-2">
                 <code className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">
                   {revealedSecret ?? (hasWebhookSecret ? "Configured — rotate to view" : "Not generated yet")}
@@ -183,6 +239,7 @@ export function IntegrationsPanel({
                     type="button"
                     className="btn-secondary shrink-0"
                     onClick={() => onCopy(revealedSecret, "Webhook secret")}
+                    title="Copy webhook secret"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -192,72 +249,104 @@ export function IntegrationsPanel({
                   {hasWebhookSecret ? "Rotate" : "Generate"}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Send it as header <code className="font-mono">x-numbatrak-webhook-secret</code> or query param{" "}
-                <code className="font-mono">?secret=</code> in Elementor's Webhook action. Rotating invalidates the
-                previous secret immediately.
+              <p className="text-xs text-muted-foreground">
+                Keep this secret handy for step 4 below — rotating replaces it immediately and the old value stops
+                working.
               </p>
-            </div>
+            </Step>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {CONTACT_FIELD_ROLES.map(([key, label]) => (
-                <div key={key}>
-                  <label className="form-label text-xs">{label}</label>
-                  <input
-                    type="text"
-                    value={mapping.contactFields[key] ?? ""}
-                    onChange={(e) =>
-                      setMapping((prev) => ({ ...prev, contactFields: { ...prev.contactFields, [key]: e.target.value } }))
-                    }
-                    placeholder="Elementor field id or title"
-                    className="form-input text-sm"
-                  />
-                </div>
-              ))}
-            </div>
+            <Step number={2} title="Copy the webhook URL">
+              <CopyField value={webhookUrl} label="Webhook URL" onCopy={onCopy} />
+            </Step>
 
-            <div>
-              <label className="form-label text-xs">Package/product field</label>
-              <input
-                type="text"
-                value={mapping.productField ?? ""}
-                onChange={(e) => setMapping((prev) => ({ ...prev, productField: e.target.value }))}
-                placeholder="Elementor field id or title holding the package choice"
-                className="form-input text-sm"
-              />
-            </div>
-
-            {radioOptions.length > 0 && (
-              <div>
-                <label className="form-label text-xs">Package answer values</label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  For each package option, enter the exact answer text Elementor will send when that option is chosen.
-                </p>
-                <div className="space-y-2">
-                  {radioOptions.map((option) => (
-                    <div key={option.id} className="flex items-center gap-2">
-                      <span className="text-sm text-foreground w-40 shrink-0 truncate" title={option.title}>
-                        {option.title || option.value}
-                      </span>
-                      <input
-                        type="text"
-                        value={valueForOption(option.id)}
-                        onChange={(e) => setValueForOption(option.id, e.target.value)}
-                        placeholder="Exact Elementor answer value"
-                        className="form-input text-sm flex-1"
-                      />
-                    </div>
-                  ))}
-                </div>
+            <Step number={3} title="Map your Elementor fields">
+              <p className="text-xs text-muted-foreground mb-1">
+                Enter the field ID or title exactly as it appears in your Elementor form for each role below.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {CONTACT_FIELD_ROLES.map(([key, label]) => (
+                  <div key={key}>
+                    <label className="form-label text-xs">{label}</label>
+                    <input
+                      type="text"
+                      value={mapping.contactFields[key] ?? ""}
+                      onChange={(e) =>
+                        setMapping((prev) => ({ ...prev, contactFields: { ...prev.contactFields, [key]: e.target.value } }))
+                      }
+                      placeholder="Elementor field id or title"
+                      className="form-input text-sm"
+                    />
+                  </div>
+                ))}
               </div>
-            )}
 
-            <button type="button" className="btn-primary" onClick={() => void handleSaveMapping()} disabled={savingMapping}>
-              {savingMapping ? "Saving..." : "Save mapping"}
-            </button>
+              <div>
+                <label className="form-label text-xs">Package/product field</label>
+                <input
+                  type="text"
+                  value={mapping.productField ?? ""}
+                  onChange={(e) => setMapping((prev) => ({ ...prev, productField: e.target.value }))}
+                  placeholder="Elementor field id or title holding the package choice"
+                  className="form-input text-sm"
+                />
+              </div>
+
+              {radioOptions.length > 0 && (
+                <div>
+                  <label className="form-label text-xs">Package answer values</label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    For each package option, enter the exact answer text Elementor will send when that option is
+                    chosen.
+                  </p>
+                  <div className="space-y-2">
+                    {radioOptions.map((option) => (
+                      <div key={option.id} className="flex items-center gap-2">
+                        <span className="text-sm text-foreground w-40 shrink-0 truncate" title={option.title}>
+                          {option.title || option.value}
+                        </span>
+                        <input
+                          type="text"
+                          value={valueForOption(option.id)}
+                          onChange={(e) => setValueForOption(option.id, e.target.value)}
+                          placeholder="Exact Elementor answer value"
+                          className="form-input text-sm flex-1"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button type="button" className="btn-primary" onClick={() => void handleSaveMapping()} disabled={savingMapping}>
+                {savingMapping ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Save mapping
+                  </>
+                )}
+              </button>
+            </Step>
+
+            <Step number={4} title="Add the webhook action in Elementor">
+              <p className="text-xs text-muted-foreground">
+                Edit your Elementor form → <strong>Actions After Submit</strong> → add <strong>Webhook</strong> → paste
+                the URL from step 2. Then add your secret either as a custom header named{" "}
+                <code className="font-mono">x-numbatrak-webhook-secret</code>, or by appending{" "}
+                <code className="font-mono">?secret=your-secret</code> to the URL.
+              </p>
+            </Step>
+
+            <Step number={5} title="Test it">
+              <p className="text-xs text-muted-foreground">
+                Submit the live Elementor form and confirm the order (or abandoned cart, if the package didn't resolve)
+                shows up in Numbatrak.
+              </p>
+            </Step>
           </>
         )}
-      </div>
+      </IntegrationCard>
     </div>
   );
 }

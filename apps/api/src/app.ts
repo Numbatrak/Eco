@@ -49,6 +49,7 @@ import whatsappRoutes from "./modules/whatsapp/routes/index.js";
 import platformAdminRoutes from "./modules/platform-admin/routes/index.js";
 import platformBillingRoutes from "./modules/platform-billing/routes/index.js";
 import { recordError } from "./modules/platform-admin/lib/operations-store.js";
+import { ZodError } from "zod";
 
 export async function buildApp() {
   const app = Fastify({ logger: true });
@@ -117,6 +118,31 @@ export async function buildApp() {
     } catch {
       // Never let error logging break error handling.
     }
+  });
+
+  // Without this, Fastify's default handler echoes error.message verbatim to
+  // the client - fine for our own `throw new Error("Customer name is
+  // required")`-style validation, but drizzle/postgres-js embeds the raw SQL
+  // and bind params into Error.message on query failure, so an uncaught DB
+  // error would leak schema/query details straight into the HTTP response.
+  // Zod's `.parse()` throws are the one case we can label 400 with confidence
+  // (malformed request body/params); everything else uncaught is treated as
+  // an internal error - logged in full server-side, replied to generically.
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof ZodError) {
+      return reply.code(400).send({
+        error: "Invalid request",
+        issues: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
+      });
+    }
+
+    const status = (error as { statusCode?: number }).statusCode ?? 500;
+    if (status < 500) {
+      return reply.code(status).send({ error: (error as Error).message });
+    }
+
+    request.log.error({ err: error, method: request.method, url: request.url }, "Unhandled error");
+    return reply.code(500).send({ error: "Internal server error" });
   });
 
   return app;
