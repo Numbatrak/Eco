@@ -14,7 +14,7 @@
 import { sql } from "drizzle-orm";
 import { bigint, check, index, numeric, pgTable, text, timestamp, uuid, date, integer } from "drizzle-orm/pg-core";
 
-import { organization } from "../../auth-schema.js";
+import { organization, user } from "../../auth-schema.js";
 import { numbatrakAgents } from "./agents.js";
 import { numbatrakProducts } from "./products.js";
 
@@ -52,6 +52,9 @@ export const numbatrakDeliveries = pgTable(
     // Stabilization additions (migration 20260720160000)
     subBrand: text("sub_brand"),
     waybillBatchId: uuid("waybill_batch_id"),
+    // "Every waybill is dated and attributed" (LOCKED RULE) - who recorded
+    // this waybill. Nullable since older/imported rows predate this column.
+    recordedByUserId: text("recorded_by_user_id").references(() => user.id, { onDelete: "set null" }),
   },
   (table) => [
     index("numbatrak_deliveries_agent_idx").on(table.agentId),

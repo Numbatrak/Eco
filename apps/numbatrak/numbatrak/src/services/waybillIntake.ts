@@ -28,6 +28,8 @@ interface DeliveryDto {
   waybillingFee: string;
   subBrand: string | null;
   waybillBatchId: string | null;
+  recordedByUserId: string | null;
+  recordedByUserName: string | null;
   createdAt: string | null;
 }
 
@@ -44,6 +46,8 @@ function deliveryFromDto(dto: DeliveryDto): Delivery {
     waybilling_fee: Number(dto.waybillingFee ?? 0),
     sub_brand: dto.subBrand,
     waybill_batch_id: dto.waybillBatchId,
+    recorded_by_user_id: dto.recordedByUserId,
+    recorded_by_user_name: dto.recordedByUserName,
     created_at: dto.createdAt,
   };
 }
@@ -52,7 +56,8 @@ function deliveryFromDto(dto: DeliveryDto): Delivery {
  * Post a waybill: delivery row (Waybilled) + stock-in to agent + fee-only
  * expense, all atomic server-side (POST /deliveries/waybill-batch with a
  * single line). Product cost is inventory value, not booked as an
- * operational expense.
+ * operational expense. Attribution (recordedByUserId) is derived server-side
+ * from the session, not sent by the client.
  */
 export async function intakeWaybill(input: {
   organization_id: string;
@@ -65,7 +70,6 @@ export async function intakeWaybill(input: {
   csr?: string | null;
   sub_brand?: string | null;
   waybill_batch_id?: string | null;
-  recorded_by_user_id?: string | null;
 }): Promise<Delivery> {
   if (!input.agent_id) {
     throw new Error("Agent is required to post a waybill.");
@@ -103,7 +107,6 @@ export async function intakeWaybillBatch(input: {
   occurred_at: string;
   csr?: string | null;
   lines: WaybillIntakeLine[];
-  recorded_by_user_id?: string | null;
 }): Promise<{ batchId: string; deliveries: Delivery[] }> {
   if (!input.lines.length) {
     throw new Error("Add at least one waybill line.");

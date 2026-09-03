@@ -19,6 +19,7 @@ export async function createWaybillBatch(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakWaybillBatchRequest,
+  recordedByUserId: string | null,
 ): Promise<NumbatrakDelivery[]> {
   const batchId = randomUUID();
   const deliveryRows: (typeof numbatrakDeliveries.$inferSelect)[] = [];
@@ -38,6 +39,7 @@ export async function createWaybillBatch(
         waybillingFee: String(line.waybillingFee ?? 0),
         subBrand: input.subBrand ?? null,
         waybillBatchId: batchId,
+        recordedByUserId,
       })
       .returning();
     if (!delivery) throw new Error("Failed to create delivery row for waybill line");
@@ -53,6 +55,7 @@ export async function createWaybillBatch(
       legacyDeliveryId: delivery.id,
       cost: String(line.cost),
       fee: String(line.waybillingFee ?? 0),
+      recordedByUserId,
     });
 
     const fee = line.waybillingFee ?? 0;

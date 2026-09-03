@@ -1,5 +1,4 @@
 import { FormEvent, useState, useMemo, useEffect } from "react";
-import { useAuth } from "../auth/AuthProvider";
 import { WaybillBatchDialog } from "./deliveries/WaybillBatchDialog";
 import { DeliveryWithRelations } from "../types/delivery";
 import { DeliveryDialog } from "./deliveries/DeliveryDialog";
@@ -23,7 +22,6 @@ import { useClientPagination } from "../hooks/useClientPagination";
 import { agentsForAssignment, filterStockHolders } from "../utils/agentFilters";
 
 export default function DeliveriesForm() {
-  const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const { currentOrganization } = useOrganization();
   const { confirm } = useConfirm();
@@ -123,7 +121,6 @@ export default function DeliveriesForm() {
             cost: deliveryData.cost,
             waybilling_fee: deliveryData.waybilling_fee,
             sub_brand: deliveryData.sub_brand,
-            recorded_by_user_id: user?.id ?? null,
           });
         } else {
           await intakeDeliveryRecord({
@@ -270,7 +267,6 @@ export default function DeliveriesForm() {
           organizationId={currentOrganization.id}
           agents={waybillAgents}
           products={products}
-          recordedByUserId={user?.id ?? null}
           onSuccess={async () => {
             if (currentOrganization) {
               invalidateStoreCache(

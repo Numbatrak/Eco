@@ -518,6 +518,8 @@ export const numbatrakDeliverySchema = z.object({
   waybillingFee: z.string(),
   subBrand: z.string().nullable(),
   waybillBatchId: z.string().uuid().nullable(),
+  recordedByUserId: z.string().nullable(),
+  recordedByUserName: z.string().nullable(),
   createdAt: z.string().nullable(),
 });
 export type NumbatrakDelivery = z.infer<typeof numbatrakDeliverySchema>;
@@ -585,6 +587,24 @@ export const monthlyDeliverySummaryQuerySchema = z.object({
   location: z.enum(["all", "lagos", "outside_lagos"]).optional(),
 });
 export type MonthlyDeliverySummaryQuery = z.infer<typeof monthlyDeliverySummaryQuerySchema>;
+
+// ---------- delivery fee rules (Order Forms: location drives delivery fee) ----------
+
+export const numbatrakDeliveryFeeRuleSchema = z.object({
+  id: z.string().uuid(),
+  // null = the org's default/fallback rule.
+  state: z.string().nullable(),
+  fee: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakDeliveryFeeRule = z.infer<typeof numbatrakDeliveryFeeRuleSchema>;
+
+export const upsertNumbatrakDeliveryFeeRuleRequestSchema = z.object({
+  state: z.string().trim().nullable(),
+  fee: z.number().nonnegative(),
+});
+export type UpsertNumbatrakDeliveryFeeRuleRequest = z.infer<typeof upsertNumbatrakDeliveryFeeRuleRequestSchema>;
 
 export const numbatrakMonthlyDeliverySummarySchema = z.object({
   month: z.string(),

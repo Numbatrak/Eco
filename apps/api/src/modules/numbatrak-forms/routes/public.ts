@@ -3,6 +3,7 @@ import { submitPublicNumbatrakFormRequestSchema } from "@platform/shared-types";
 import { extractProductIdsFromSchema, fetchProductNames } from "../lib/public-form.js";
 import { findActiveFormByToken, submitFormOrder } from "../lib/intake.js";
 import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
+import { isHoneypotTriggered } from "../lib/validation.js";
 
 const NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -104,6 +105,19 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
       }
 
       const body = submitPublicNumbatrakFormRequestSchema.parse(request.body);
+
+      // Honeypot: a bot that filled the trap field gets a fake success with
+      // nothing persisted, rather than an error that would tip it off to
+      // adapt. Real visitors never see or fill this field.
+      if (isHoneypotTriggered(body.fieldValues)) {
+        return reply.send({
+          success: true,
+          kind: "order",
+          id: "00000000-0000-0000-0000-000000000000",
+          confirmation: { type: "message", message: "Thank you for your order. We'll be in touch soon." },
+        });
+      }
+
       try {
         const result = await submitFormOrder(db, form, {
           fieldValues: body.fieldValues,

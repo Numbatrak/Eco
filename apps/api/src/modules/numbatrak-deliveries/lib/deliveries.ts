@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, ilike, inArray, lte } from "drizzle-orm";
-import { numbatrakAgents, numbatrakDeliveries, numbatrakProducts, type Database } from "@platform/db";
+import { numbatrakAgents, numbatrakDeliveries, numbatrakProducts, user, type Database } from "@platform/db";
 import type {
   CreateNumbatrakDeliveryRequest,
   ListNumbatrakDeliveriesQuery,
@@ -34,6 +34,13 @@ export async function attachRelations(db: Database, rows: DeliveryRow[]): Promis
     for (const p of products) productNames.set(p.id, p.name);
   }
 
+  const userIds = [...new Set(rows.map((r) => r.recordedByUserId).filter((id): id is string => id != null))];
+  const userNames = new Map<string, string>();
+  if (userIds.length > 0) {
+    const users = await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, userIds));
+    for (const u of users) userNames.set(u.id, u.name);
+  }
+
   return rows.map((row) => ({
     id: row.id,
     date: row.date,
@@ -48,6 +55,8 @@ export async function attachRelations(db: Database, rows: DeliveryRow[]): Promis
     waybillingFee: row.waybillingFee,
     subBrand: row.subBrand,
     waybillBatchId: row.waybillBatchId,
+    recordedByUserId: row.recordedByUserId,
+    recordedByUserName: row.recordedByUserId != null ? (userNames.get(row.recordedByUserId) ?? null) : null,
     createdAt: row.createdAt?.toISOString() ?? null,
   }));
 }
@@ -82,6 +91,7 @@ export async function createDelivery(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakDeliveryRequest,
+  recordedByUserId: string | null,
 ): Promise<NumbatrakDelivery> {
   const [row] = await db
     .insert(numbatrakDeliveries)
@@ -96,6 +106,7 @@ export async function createDelivery(
       cost: String(input.cost),
       waybillingFee: String(input.waybillingFee ?? 0),
       subBrand: input.subBrand ?? null,
+      recordedByUserId,
     })
     .returning();
   if (!row) throw new Error("Failed to create delivery");

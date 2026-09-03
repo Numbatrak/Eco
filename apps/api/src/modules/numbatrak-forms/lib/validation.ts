@@ -30,6 +30,18 @@ function isFieldVisible(field: FormSchemaField, fieldValues: Record<string, unkn
   return String(current ?? "") === String(field.showWhen.equals ?? "");
 }
 
+// Reserved field name the public embed script renders as an off-screen,
+// tabindex-excluded input real visitors never see or fill; bots that
+// auto-fill every field on the page trip it. Not part of the form schema, so
+// it never collides with a business-defined field name.
+export const HONEYPOT_FIELD_NAME = "_numbatrak_hp";
+
+/** True if the honeypot trap field arrived non-empty - i.e., a bot filled it. */
+export function isHoneypotTriggered(fieldValues: Record<string, unknown>): boolean {
+  const value = fieldValues[HONEYPOT_FIELD_NAME];
+  return value != null && String(value).trim() !== "";
+}
+
 /** Returns an error message, or null if the submission is valid. */
 export function validateSubmissionAgainstSchema(
   schema: Record<string, unknown> | null | undefined,

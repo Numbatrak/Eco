@@ -28,6 +28,9 @@ interface AgentTableProps {
   canDelete?: boolean;
   hideInactive?: boolean;
   onHideInactiveChange?: (hide: boolean) => void;
+  locationOptions?: string[];
+  locationFilter?: string;
+  onLocationFilterChange?: (location: string) => void;
 }
 
 export function AgentTable({
@@ -48,6 +51,9 @@ export function AgentTable({
   canDelete = true,
   hideInactive = false,
   onHideInactiveChange,
+  locationOptions,
+  locationFilter = "",
+  onLocationFilterChange,
 }: AgentTableProps) {
   const {
     currentPage,
@@ -94,6 +100,20 @@ export function AgentTable({
                 className="agent-table-search-input"
               />
             </div>
+
+            {onLocationFilterChange && locationOptions && locationOptions.length > 0 && (
+              <select
+                value={locationFilter}
+                onChange={(e) => onLocationFilterChange(e.target.value)}
+                className="agent-table-search-input"
+                aria-label="Filter by location"
+              >
+                <option value="">All locations</option>
+                {locationOptions.map((loc) => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            )}
 
             {onHideInactiveChange && (
               <label className="agent-table-hide-inactive">

@@ -39,7 +39,6 @@ interface WaybillBatchDialogProps {
   organizationId: string;
   agents: Agent[];
   products: Product[];
-  recordedByUserId?: string | null;
   onSuccess?: () => void;
 }
 
@@ -49,7 +48,6 @@ export function WaybillBatchDialog({
   organizationId,
   agents,
   products,
-  recordedByUserId,
   onSuccess,
 }: WaybillBatchDialogProps) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -109,7 +107,6 @@ export function WaybillBatchDialog({
       await intakeWaybillBatch({
         organization_id: organizationId,
         occurred_at: new Date(occurredAt + "T12:00:00").toISOString(),
-        recorded_by_user_id: recordedByUserId ?? null,
         lines: parsed.map((l) => ({
           agent_id: l.to_agent_id,
           product_id: l.product_id,

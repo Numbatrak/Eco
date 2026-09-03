@@ -50,6 +50,7 @@ export default function AgentsForm() {
   const [agentMetrics] = useState<Map<number, AgentMetrics>>(new Map());
   const [metricsLoading] = useState(false);
   const [hideInactive, setHideInactive] = useState(false);
+  const [locationFilter, setLocationFilter] = useState("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -174,9 +175,13 @@ export default function AgentsForm() {
   };
 
   const activeAgentCount = agents.filter((agent) => agent.active !== false).length;
+  const locationOptions = Array.from(
+    new Set(agents.flatMap((agent) => agent.locations ?? []))
+  ).sort();
   const filteredAndSortedAgents = agents
     .filter((agent: Agent) => {
       if (hideInactive && agent.active === false) return false;
+      if (locationFilter && !agent.locations?.includes(locationFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -244,6 +249,9 @@ export default function AgentsForm() {
             canDelete={canDelete}
             hideInactive={hideInactive}
             onHideInactiveChange={setHideInactive}
+            locationOptions={locationOptions}
+            locationFilter={locationFilter}
+            onLocationFilterChange={setLocationFilter}
           />
       </PageLayout>
     </>

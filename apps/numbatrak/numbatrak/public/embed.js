@@ -492,6 +492,29 @@
         log("Warning: No schema or fields found");
       }
 
+      // Honeypot: off-screen trap field real visitors never see or fill,
+      // appended after the real fields so it never shadows the "first text
+      // input" customer-name fallback at submit time. Left empty by humans;
+      // a bot that auto-fills every input on the page trips it. Checked
+      // server-side in numbatrak-forms/lib/validation.js.
+      const honeypot = createElement("input", {
+        type: "text",
+        name: "_numbatrak_hp",
+        tabindex: "-1",
+        autocomplete: "off",
+        "aria-hidden": "true",
+        style: {
+          position: "absolute",
+          left: "-9999px",
+          top: "-9999px",
+          width: "1px",
+          height: "1px",
+          opacity: "0",
+          pointerEvents: "none",
+        },
+      });
+      form.appendChild(honeypot);
+
       // Render submit button
       const submitButton = createElement(
         "button",

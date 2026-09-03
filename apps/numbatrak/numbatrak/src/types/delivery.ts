@@ -11,6 +11,8 @@ export interface Delivery {
   waybilling_fee: number;
   sub_brand?: string | null;
   waybill_batch_id?: string | null;
+  recorded_by_user_id?: string | null;
+  recorded_by_user_name?: string | null;
   created_at?: string | null;
 }
 

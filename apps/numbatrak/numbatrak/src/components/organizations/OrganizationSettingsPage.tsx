@@ -19,6 +19,7 @@ import { OrganizationInvitation } from "../../types/organization";
 import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy, Check, Clock, Moon, Sun, Edit2, Save, Bell, UserCircle, CreditCard } from "lucide-react";
 import { InvitationDialog } from "./InvitationDialog";
 import { OrderAssignmentSettings } from "./OrderAssignmentSettings";
+import { DeliveryFeeSettings } from "./DeliveryFeeSettings";
 import { OrganizationBrandingSettings } from "./OrganizationBrandingSettings";
 import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSettings";
 import { SubscriptionSection } from "./SubscriptionSection";
@@ -722,6 +723,11 @@ export function OrganizationSettingsPage() {
         {/* Order Assignment Settings */}
         {canManageMembers && (
           <OrderAssignmentSettings organizationId={currentOrganization.id} />
+        )}
+
+        {/* Delivery Fee Settings */}
+        {canManageMembers && (
+          <DeliveryFeeSettings organizationId={currentOrganization.id} />
         )}
 
         {canEditOrganization && (

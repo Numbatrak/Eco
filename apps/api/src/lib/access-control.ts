@@ -78,6 +78,9 @@ const statement = {
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
+  // Per-location delivery-fee rules Order Forms reads from (spec §15's
+  // "location can drive the delivery fee, tying to the delivery configuration").
+  numbatrakDeliveryFees: ["view", "manage"],
   // Better Auth's own built-in resources - see note above.
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
@@ -116,6 +119,7 @@ export const OWNER_NUMBATRAK_GRANTS = {
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
+  numbatrakDeliveryFees: ["view", "manage"],
 } as const;
 
 export const ADMIN_NUMBATRAK_GRANTS = OWNER_NUMBATRAK_GRANTS;
@@ -140,6 +144,7 @@ export const MANAGER_NUMBATRAK_GRANTS = {
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
+  numbatrakDeliveryFees: ["view", "manage"],
 } as const;
 
 export const CSR_NUMBATRAK_GRANTS = {
@@ -161,6 +166,7 @@ export const CSR_NUMBATRAK_GRANTS = {
   numbatrakOrderAssignment: ["view"],
   numbatrakMediaBuyers: ["view"],
   numbatrakCrm: ["view"],
+  numbatrakDeliveryFees: ["view"],
 } as const;
 
 export const ownerRole = ac.newRole({

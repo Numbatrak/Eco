@@ -110,6 +110,7 @@ export {
   numbatrakCampaigns,
   numbatrakCrmCredits,
   numbatrakInvoices,
+  numbatrakDeliveryFeeRules,
   numbatrakProductTypeEnum,
   numbatrakProductOfferTypeEnum,
   securityEventTypeEnum,

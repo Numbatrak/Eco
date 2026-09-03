@@ -9,6 +9,7 @@ import {
 import type { PublicFormLineItem, SubmitPublicNumbatrakFormResult } from "@platform/shared-types";
 import { getNextAssignedUser } from "../../numbatrak-orders/lib/assignment.js";
 import { createCart } from "../../numbatrak-abandoned-carts/lib/abandoned-carts.js";
+import { getDeliveryFeeForLocation } from "../../numbatrak-delivery-fees/lib/delivery-fees.js";
 import { validateSubmissionAgainstSchema } from "./validation.js";
 import { resolveLinePricing } from "./offer-pricing.js";
 import { consumeFifoLots } from "./inventory-consumption.js";
@@ -166,6 +167,7 @@ export async function submitFormOrder(
 
     const csrId = await getNextAssignedUser(tx, form.organizationId);
     const profit = orderRevenue - orderCost;
+    const deliveryFee = await getDeliveryFeeForLocation(tx, form.organizationId, contact.state);
 
     const [order] = await tx
       .insert(numbatrakCustomerOrders)
@@ -182,7 +184,7 @@ export async function submitFormOrder(
         orderRevenue: String(orderRevenue),
         orderCost: String(orderCost),
         amountPaid: String(orderRevenue),
-        deliveryFee: "0",
+        deliveryFee: String(deliveryFee),
         profit: String(profit),
         funnelName: form.funnelName ?? form.name,
         offerName: input.offerName ?? input.packageName ?? null,

@@ -50,6 +50,13 @@
       "when": 1788395792243,
       "tag": "0006_hard_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788397138392,
+      "tag": "0007_far_stephen_strange",
+      "breakpoints": true
     }
   ]
 }
