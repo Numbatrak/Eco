@@ -1,4 +1,5 @@
 import { createAccessControl } from "better-auth/plugins/access";
+import type { NumbatrakSpecRole } from "@platform/shared-types";
 
 /**
  * Permission matrix for the organization plugin. Two kinds of resources are
@@ -87,15 +88,15 @@ const statement = {
 
 export const ac = createAccessControl(statement);
 
-export const ownerRole = ac.newRole({
-  billing: ["manage", "view"],
-  site: ["edit", "publish"],
-  products: ["edit", "view"],
-  collections: ["edit", "view"],
-  members: ["invite", "remove", "manage_roles"],
-  settings: ["manage"],
-  payments: ["manage"],
-  orders: ["view", "manage"],
+/**
+ * Numbatrak-only slice of each app role's grants, extracted so the extraRoles
+ * access-union (numbatrak-staff/lib/staff.ts's resolveExtraRoleGrants) has a
+ * single source of truth to read from instead of re-deriving these from the
+ * full ac.newRole() objects (whose internal shape belongs to better-auth, not
+ * us). Spread into the actual role definitions below so there's no risk of
+ * the two drifting apart.
+ */
+export const OWNER_NUMBATRAK_GRANTS = {
   numbatrakAgents: ["view", "manage"],
   numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
@@ -115,6 +116,63 @@ export const ownerRole = ac.newRole({
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
+} as const;
+
+export const ADMIN_NUMBATRAK_GRANTS = OWNER_NUMBATRAK_GRANTS;
+
+export const MANAGER_NUMBATRAK_GRANTS = {
+  numbatrakAgents: ["view", "manage"],
+  numbatrakProducts: ["view", "create", "update", "delete"],
+  numbatrakOrders: ["view", "create", "update", "delete"],
+  numbatrakDeliveries: ["view", "create", "update", "delete"],
+  numbatrakWallet: ["view", "manage"],
+  numbatrakExpenses: ["view", "create", "update", "delete"],
+  numbatrakFollowUps: ["view", "create", "update", "delete"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view", "create", "update", "delete"],
+  numbatrakInventory: ["view", "manage"],
+  numbatrakStaff: ["view", "manage"],
+  numbatrakPayroll: ["view", "manage"],
+  numbatrakAttendance: ["view", "manage"],
+  numbatrakStrikes: ["view", "manage"],
+  numbatrakStars: ["view", "manage"],
+  numbatrakLeave: ["view", "manage"],
+  numbatrakOrderAssignment: ["view", "manage"],
+  numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakCrm: ["view", "manage"],
+} as const;
+
+export const CSR_NUMBATRAK_GRANTS = {
+  numbatrakAgents: ["view"],
+  numbatrakProducts: ["view"],
+  numbatrakOrders: ["view", "create", "update"],
+  numbatrakDeliveries: ["view"],
+  numbatrakExpenses: ["view"],
+  numbatrakFollowUps: ["view", "create", "update"],
+  numbatrakDashboard: ["view"],
+  numbatrakForms: ["view"],
+  numbatrakInventory: ["view", "manage"],
+  numbatrakStaff: ["view"],
+  numbatrakPayroll: ["view"],
+  numbatrakAttendance: ["view"],
+  numbatrakStrikes: ["view"],
+  numbatrakStars: ["view"],
+  numbatrakLeave: ["view"],
+  numbatrakOrderAssignment: ["view"],
+  numbatrakMediaBuyers: ["view"],
+  numbatrakCrm: ["view"],
+} as const;
+
+export const ownerRole = ac.newRole({
+  billing: ["manage", "view"],
+  site: ["edit", "publish"],
+  products: ["edit", "view"],
+  collections: ["edit", "view"],
+  members: ["invite", "remove", "manage_roles"],
+  settings: ["manage"],
+  payments: ["manage"],
+  orders: ["view", "manage"],
+  ...OWNER_NUMBATRAK_GRANTS,
   organization: ["update", "delete"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -131,25 +189,7 @@ export const adminRole = ac.newRole({
   settings: ["manage"],
   payments: ["manage"],
   orders: ["view", "manage"],
-  numbatrakAgents: ["view", "manage"],
-  numbatrakProducts: ["view", "create", "update", "delete"],
-  numbatrakOrders: ["view", "create", "update", "delete"],
-  numbatrakDeliveries: ["view", "create", "update", "delete"],
-  numbatrakWallet: ["view", "manage"],
-  numbatrakExpenses: ["view", "create", "update", "delete"],
-  numbatrakFollowUps: ["view", "create", "update", "delete"],
-  numbatrakDashboard: ["view"],
-  numbatrakForms: ["view", "create", "update", "delete"],
-  numbatrakInventory: ["view", "manage"],
-  numbatrakStaff: ["view", "manage"],
-  numbatrakPayroll: ["view", "manage"],
-  numbatrakAttendance: ["view", "manage"],
-  numbatrakStrikes: ["view", "manage"],
-  numbatrakStars: ["view", "manage"],
-  numbatrakLeave: ["view", "manage"],
-  numbatrakOrderAssignment: ["view", "manage"],
-  numbatrakMediaBuyers: ["view", "manage"],
-  numbatrakCrm: ["view", "manage"],
+  ...ADMIN_NUMBATRAK_GRANTS,
   // Can manage members/invitations same as owner, but not delete/rename the
   // organization itself or touch dynamic access-control roles - mirrors
   // admin missing billing.manage: broad day-to-day power, not ownership-level.
@@ -189,27 +229,7 @@ export const viewerRole = ac.newRole({
  * management. No storefront grants (Numbatrak-specific role), same shape as
  * editorRole in that respect.
  */
-export const managerRole = ac.newRole({
-  numbatrakAgents: ["view", "manage"],
-  numbatrakProducts: ["view", "create", "update", "delete"],
-  numbatrakOrders: ["view", "create", "update", "delete"],
-  numbatrakDeliveries: ["view", "create", "update", "delete"],
-  numbatrakWallet: ["view", "manage"],
-  numbatrakExpenses: ["view", "create", "update", "delete"],
-  numbatrakFollowUps: ["view", "create", "update", "delete"],
-  numbatrakDashboard: ["view"],
-  numbatrakForms: ["view", "create", "update", "delete"],
-  numbatrakInventory: ["view", "manage"],
-  numbatrakStaff: ["view", "manage"],
-  numbatrakPayroll: ["view", "manage"],
-  numbatrakAttendance: ["view", "manage"],
-  numbatrakStrikes: ["view", "manage"],
-  numbatrakStars: ["view", "manage"],
-  numbatrakLeave: ["view", "manage"],
-  numbatrakOrderAssignment: ["view", "manage"],
-  numbatrakMediaBuyers: ["view", "manage"],
-  numbatrakCrm: ["view", "manage"],
-});
+export const managerRole = ac.newRole({ ...MANAGER_NUMBATRAK_GRANTS });
 
 /**
  * Numbatrak's "Customer Relations" - per the source app's own permission
@@ -221,35 +241,7 @@ export const managerRole = ac.newRole({
  * (lib/orders.ts's csrScopeUserId param), not by this statement - this only
  * gates the resource/actions, not which rows.
  */
-export const csrRole = ac.newRole({
-  numbatrakAgents: ["view"],
-  numbatrakProducts: ["view"],
-  numbatrakOrders: ["view", "create", "update"],
-  numbatrakDeliveries: ["view"],
-  numbatrakExpenses: ["view"],
-  // CSR gets create+update but not delete here too, mirroring numbatrakOrders
-  // (the source app literally reuses the "orders" resource for follow-ups).
-  numbatrakFollowUps: ["view", "create", "update"],
-  numbatrakDashboard: ["view"],
-  numbatrakForms: ["view"],
-  // Unlike most other csr grants here, this IS "manage" not "view" - the
-  // Feature Spec explicitly gives csr stock transfer/adjust rights, same as
-  // manager (see the statement's own comment above).
-  numbatrakInventory: ["view", "manage"],
-  // View-only, row-scoped to their own record by the list route (same
-  // pattern as numbatrakOrders' csrScopeUserId) - a csr can see but not edit
-  // their own HR/bank details.
-  numbatrakStaff: ["view"],
-  numbatrakPayroll: ["view"],
-  numbatrakAttendance: ["view"],
-  numbatrakStrikes: ["view"],
-  numbatrakStars: ["view"],
-  numbatrakLeave: ["view"],
-  numbatrakOrderAssignment: ["view"],
-  numbatrakMediaBuyers: ["view"],
-  numbatrakCrm: ["view"],
-  // numbatrakWallet intentionally omitted - csr gets zero wallet access, not even view.
-});
+export const csrRole = ac.newRole({ ...CSR_NUMBATRAK_GRANTS });
 
 export const orgRoles = {
   owner: ownerRole,
@@ -259,3 +251,47 @@ export const orgRoles = {
   manager: managerRole,
   csr: csrRole,
 };
+
+/**
+ * What each six-role spec vocabulary role grants on Numbatrak resources when
+ * HELD AS AN EXTRA ROLE (numbatrakStaff.extraRoles) - "access is the union of
+ * all roles held" (LOCKED RULE). Media/Accountant have no dedicated
+ * member.role today (see NUMBATRAK_SPEC_ROLE_COMPATIBLE_MEMBER_ROLES in
+ * shared-types), so they contribute admin-level grants, matching that same
+ * compatibility mapping.
+ */
+export const SPEC_ROLE_NUMBATRAK_GRANTS: Record<NumbatrakSpecRole, Record<string, readonly string[]>> = {
+  CRS: CSR_NUMBATRAK_GRANTS,
+  Manager: MANAGER_NUMBATRAK_GRANTS,
+  Admin: ADMIN_NUMBATRAK_GRANTS,
+  Founder: OWNER_NUMBATRAK_GRANTS,
+  Media: ADMIN_NUMBATRAK_GRANTS,
+  Accountant: ADMIN_NUMBATRAK_GRANTS,
+};
+
+/** True if `grants` covers every requested action on every requested resource. */
+export function grantsSatisfyPermissions(
+  grants: Record<string, readonly string[]>,
+  requested: Record<string, string[]>,
+): boolean {
+  return Object.entries(requested).every(([resource, actions]) => {
+    const granted = grants[resource];
+    if (!granted) return false;
+    return actions.every((action) => granted.includes(action));
+  });
+}
+
+/** Union of every held spec role's numbatrak grants - additive by construction (Set union per resource). */
+export function unionNumbatrakGrants(roles: NumbatrakSpecRole[]): Record<string, readonly string[]> {
+  const merged: Record<string, Set<string>> = {};
+  for (const role of roles) {
+    const grants = SPEC_ROLE_NUMBATRAK_GRANTS[role];
+    if (!grants) continue;
+    for (const [resource, actions] of Object.entries(grants)) {
+      const set = merged[resource] ?? new Set<string>();
+      for (const action of actions) set.add(action);
+      merged[resource] = set;
+    }
+  }
+  return Object.fromEntries(Object.entries(merged).map(([resource, set]) => [resource, [...set]]));
+}

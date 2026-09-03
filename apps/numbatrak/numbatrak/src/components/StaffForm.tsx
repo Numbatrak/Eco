@@ -21,6 +21,7 @@ const EMPTY_VALUES: StaffFormValues = {
   bank_name: "",
   bank_account_number: "",
   bank_account_name: "",
+  manager_id: null,
 };
 
 function staffToValues(staff: Staff): StaffFormValues {
@@ -33,6 +34,7 @@ function staffToValues(staff: Staff): StaffFormValues {
     bank_name: staff.bank_name ?? "",
     bank_account_number: staff.bank_account_number ?? "",
     bank_account_name: staff.bank_account_name ?? "",
+    manager_id: staff.manager_id,
   };
 }
 
@@ -90,6 +92,7 @@ export default function StaffForm() {
           bank_name: formValues.bank_name || null,
           bank_account_number: formValues.bank_account_number || null,
           bank_account_name: formValues.bank_account_name || null,
+          manager_id: formValues.manager_id,
         });
         updateItem(updated);
         setSuccess("Staff record updated.");
@@ -103,6 +106,7 @@ export default function StaffForm() {
           bank_name: formValues.bank_name || null,
           bank_account_number: formValues.bank_account_number || null,
           bank_account_name: formValues.bank_account_name || null,
+          manager_id: formValues.manager_id,
         });
         updateItem(created);
         setSuccess("Staff member added.");
@@ -149,6 +153,7 @@ export default function StaffForm() {
         onOpenChange={setOpen}
         mode={dialogMode}
         eligibleMembers={eligibleMembers}
+        staffOptions={staff.filter((s) => s.id !== editingStaffId)}
         values={values}
         onChange={setValues}
         error={dialogError}
@@ -203,6 +208,7 @@ export default function StaffForm() {
                   <th className="px-4 py-2">Primary role</th>
                   <th className="px-4 py-2">Extra roles</th>
                   <th className="px-4 py-2">Sub-brands</th>
+                  <th className="px-4 py-2">Manager</th>
                   <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2" />
                 </tr>
@@ -218,6 +224,7 @@ export default function StaffForm() {
                     <td className="px-4 py-2">{record.primary_role}</td>
                     <td className="px-4 py-2">{record.extra_roles.join(", ") || "—"}</td>
                     <td className="px-4 py-2">{record.sub_brands.join(", ") || "—"}</td>
+                    <td className="px-4 py-2">{record.manager_name ?? "—"}</td>
                     <td className="px-4 py-2">{record.active ? "Active" : "Inactive"}</td>
                     <td className="px-4 py-2 text-right space-x-2">
                       {canUpdate && (

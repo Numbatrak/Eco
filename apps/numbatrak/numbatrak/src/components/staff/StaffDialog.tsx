@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import type { EligibleMember } from "../../types/staff";
+import type { EligibleMember, Staff } from "../../types/staff";
 import { SpecRole, SPEC_TO_APP_ROLES } from "../../utils/specRoles";
 import { mapOrgRoleToUserRole } from "../../utils/roleMapping";
 import type { OrgRole } from "../../lib/authApi";
@@ -33,6 +33,7 @@ export interface StaffFormValues {
   bank_name: string;
   bank_account_number: string;
   bank_account_name: string;
+  manager_id: string | null;
 }
 
 interface StaffDialogProps {
@@ -40,6 +41,8 @@ interface StaffDialogProps {
   onOpenChange: (open: boolean) => void;
   mode: "create" | "edit";
   eligibleMembers: EligibleMember[];
+  /** Existing staff records, for the manager picker. Caller excludes the record being edited. */
+  staffOptions: Staff[];
   values: StaffFormValues;
   onChange: (values: StaffFormValues) => void;
   error: string | null;
@@ -58,6 +61,7 @@ export function StaffDialog({
   onOpenChange,
   mode,
   eligibleMembers,
+  staffOptions,
   values,
   onChange,
   error,
@@ -203,6 +207,29 @@ export function StaffDialog({
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Manager</Label>
+            <Select
+              value={values.manager_id ?? "none"}
+              onValueChange={(v) => onChange({ ...values, manager_id: v === "none" ? null : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="No manager" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No manager</SelectItem>
+                {staffOptions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.user_name ?? s.user_email ?? s.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Drives &quot;managers see their team&quot; scoping for Staff, Strikes, and Leave.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

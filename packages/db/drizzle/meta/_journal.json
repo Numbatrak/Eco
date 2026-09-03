@@ -36,6 +36,20 @@
       "when": 1788149524599,
       "tag": "0004_worried_typhoid_mary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788394758056,
+      "tag": "0005_strange_shadow_king",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788395792243,
+      "tag": "0006_hard_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

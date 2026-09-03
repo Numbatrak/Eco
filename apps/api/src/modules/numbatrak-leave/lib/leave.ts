@@ -17,6 +17,7 @@ import type {
 } from "@platform/shared-types";
 import { sendEmail } from "../../auth/lib/email.js";
 import { leaveRequestSubmittedEmail, leaveDecidedEmail } from "../../../lib/email-templates.js";
+import type { CallerStaffScope } from "../../numbatrak-staff/lib/staff.js";
 
 const DECISION_MAKER_ROLES = ["owner", "admin", "manager"];
 
@@ -119,12 +120,15 @@ export async function listBalances(
   db: Database,
   organizationId: string,
   year: number,
+  scope: CallerStaffScope,
 ): Promise<NumbatrakLeaveBalance[]> {
   const settings = await getOrCreateSettings(db, organizationId);
+  const conditions = [eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.active, true)];
+  if (!scope.all) conditions.push(inArray(numbatrakStaff.id, scope.staffIds));
   const staff = await db
     .select({ id: numbatrakStaff.id, userId: numbatrakStaff.userId, active: numbatrakStaff.active })
     .from(numbatrakStaff)
-    .where(and(eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.active, true)));
+    .where(and(...conditions));
 
   const result: NumbatrakLeaveBalance[] = [];
   for (const s of staff) {
@@ -153,12 +157,14 @@ export async function listBalances(
 export async function listRequests(
   db: Database,
   organizationId: string,
+  scope: CallerStaffScope,
   status?: string,
   staffId?: string,
 ): Promise<NumbatrakLeaveRequest[]> {
   const conditions = [eq(numbatrakLeaveRequests.organizationId, organizationId)];
   if (status) conditions.push(eq(numbatrakLeaveRequests.status, status));
   if (staffId) conditions.push(eq(numbatrakLeaveRequests.staffId, staffId));
+  if (!scope.all) conditions.push(inArray(numbatrakLeaveRequests.staffId, scope.staffIds));
 
   const rows = await db
     .select({
@@ -237,6 +243,7 @@ export async function decideRequest(
   requestId: string,
   status: "approved" | "declined",
   decidedBy: string,
+  scope: CallerStaffScope,
   decisionNote?: string | null,
 ): Promise<NumbatrakLeaveRequest | null> {
   const [existing] = await db
@@ -246,6 +253,12 @@ export async function decideRequest(
     .limit(1);
 
   if (!existing || existing.status !== "pending") return null;
+
+  // "Managers decide their team" (LOCKED RULE) - a manager can't decide a
+  // request from staff outside their direct reports; admin/owner unrestricted.
+  if (!scope.all && !scope.staffIds.includes(existing.staffId)) {
+    throw new Error("You can only decide leave requests for your own team.");
+  }
 
   const [row] = await db
     .update(numbatrakLeaveRequests)

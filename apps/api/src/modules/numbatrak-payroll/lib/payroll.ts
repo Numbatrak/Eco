@@ -457,22 +457,38 @@ export async function setManualAdjustment(
   return row ?? null;
 }
 
-export async function awardSotm(db: Database, lineId: string, awarded: boolean): Promise<PayrollLineRow | null> {
+/**
+ * `overrideAmount` lets the Stars module's confirm-SOTM flow pass its own
+ * configured `sotmPrizeAmount` directly, instead of falling back to the pay
+ * structure's `sotmBonusAmount` - the Stars settings are the source of truth
+ * when a winner is actually confirmed there; Payroll's own manual toggle
+ * (no override passed) keeps using the pay-structure amount as before.
+ */
+export async function awardSotm(
+  db: Database,
+  lineId: string,
+  awarded: boolean,
+  overrideAmount?: number,
+): Promise<PayrollLineRow | null> {
   const [line] = await db.select().from(numbatrakPayrollLines).where(eq(numbatrakPayrollLines.id, lineId)).limit(1);
   if (!line) return null;
 
   let sotmBonus = 0;
   if (awarded) {
-    const [staff] = await db.select().from(numbatrakStaff).where(eq(numbatrakStaff.id, line.staffId)).limit(1);
-    if (staff) {
-      const structures = await db
-        .select()
-        .from(numbatrakPayStructures)
-        .where(eq(numbatrakPayStructures.organizationId, staff.organizationId));
-      const ps =
-        structures.find((s) => s.scopeType === "staff" && s.staffId === staff.id) ??
-        structures.find((s) => s.scopeType === "role" && s.role === staff.primaryRole);
-      if (ps?.sotmBonusEnabled) sotmBonus = Number(ps.sotmBonusAmount);
+    if (overrideAmount != null) {
+      sotmBonus = overrideAmount;
+    } else {
+      const [staff] = await db.select().from(numbatrakStaff).where(eq(numbatrakStaff.id, line.staffId)).limit(1);
+      if (staff) {
+        const structures = await db
+          .select()
+          .from(numbatrakPayStructures)
+          .where(eq(numbatrakPayStructures.organizationId, staff.organizationId));
+        const ps =
+          structures.find((s) => s.scopeType === "staff" && s.staffId === staff.id) ??
+          structures.find((s) => s.scopeType === "role" && s.role === staff.primaryRole);
+        if (ps?.sotmBonusEnabled) sotmBonus = Number(ps.sotmBonusAmount);
+      }
     }
   }
 

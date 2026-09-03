@@ -43,6 +43,10 @@ export default function StaffDetailPage() {
               <div className="font-medium">{record.sub_brands.join(", ") || "—"}</div>
             </div>
             <div>
+              <div className="text-muted-foreground">Manager</div>
+              <div className="font-medium">{record.manager_name ?? "—"}</div>
+            </div>
+            <div>
               <div className="text-muted-foreground">Status</div>
               <div className="font-medium">{record.active ? "Active" : "Inactive"}</div>
             </div>

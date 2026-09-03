@@ -20,6 +20,8 @@ interface StaffDto {
   bankAccountNumber: string | null;
   bankAccountName: string | null;
   active: boolean;
+  managerId: string | null;
+  managerName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -47,6 +49,8 @@ function fromDto(dto: StaffDto): Staff {
     bank_account_number: dto.bankAccountNumber,
     bank_account_name: dto.bankAccountName,
     active: dto.active,
+    manager_id: dto.managerId,
+    manager_name: dto.managerName,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
   };
@@ -86,6 +90,7 @@ export async function createStaff(input: {
   bank_name?: string | null;
   bank_account_number?: string | null;
   bank_account_name?: string | null;
+  manager_id?: string | null;
 }): Promise<Staff> {
   const dto = await apiRequest<StaffDto>("/org/numbatrak/staff", {
     method: "POST",
@@ -98,6 +103,7 @@ export async function createStaff(input: {
       bankName: input.bank_name ?? null,
       bankAccountNumber: input.bank_account_number ?? null,
       bankAccountName: input.bank_account_name ?? null,
+      managerId: input.manager_id ?? null,
     },
   });
   return fromDto(dto);
@@ -113,6 +119,7 @@ export async function updateStaff(
     bank_name?: string | null;
     bank_account_number?: string | null;
     bank_account_name?: string | null;
+    manager_id?: string | null;
   }
 ): Promise<Staff> {
   const dto = await apiRequest<StaffDto>(`/org/numbatrak/staff/${staffId}`, {
@@ -125,6 +132,7 @@ export async function updateStaff(
       bankName: input.bank_name,
       bankAccountNumber: input.bank_account_number,
       bankAccountName: input.bank_account_name,
+      managerId: input.manager_id,
     },
   });
   return fromDto(dto);

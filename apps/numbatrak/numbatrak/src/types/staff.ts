@@ -15,6 +15,8 @@ export interface Staff {
   bank_account_number: string | null;
   bank_account_name: string | null;
   active: boolean;
+  manager_id: string | null;
+  manager_name: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

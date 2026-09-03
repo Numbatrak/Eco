@@ -11,7 +11,7 @@
 // HR/reporting/nav-gating metadata, validated for compatibility against the
 // member's real role at the application layer, not a new enforcement path.
 import { sql } from "drizzle-orm";
-import { boolean, check, index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, foreignKey, index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { organization, user } from "../../auth-schema.js";
 
@@ -37,16 +37,28 @@ export const numbatrakStaff = pgTable(
     bankAccountNumber: text("bank_account_number"),
     bankAccountName: text("bank_account_name"),
     active: boolean("active").notNull().default(true),
+    // Reporting hierarchy for the spec's "managers see their team" scoping
+    // (Staff/Strikes/Leave). Self-referencing, nullable (top-level staff and
+    // orgs that don't use hierarchy leave this null, which existing
+    // "manager = org-wide" scoping still falls back to). Set null on the
+    // manager's own deactivation/removal rather than cascading deletes onto
+    // their reports.
+    managerId: uuid("manager_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("numbatrak_staff_org_idx").on(table.organizationId),
     index("numbatrak_staff_user_idx").on(table.userId),
+    index("numbatrak_staff_manager_idx").on(table.managerId),
     uniqueIndex("numbatrak_staff_org_user_unique_idx").on(table.organizationId, table.userId),
     check(
       "numbatrak_staff_primary_role_chk",
       sql`${table.primaryRole} IN ('CRS', 'Manager', 'Admin', 'Media', 'Accountant', 'Founder')`,
+    ),
+    check("numbatrak_staff_manager_not_self_chk", sql`${table.managerId} IS NULL OR ${table.managerId} <> ${table.id}`),
+    foreignKey({ columns: [table.managerId], foreignColumns: [table.id], name: "numbatrak_staff_manager_fk" }).onDelete(
+      "set null",
     ),
   ],
 );

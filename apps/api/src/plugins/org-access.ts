@@ -1,10 +1,37 @@
 import fp from "fastify-plugin";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
-import { eq } from "drizzle-orm";
-import { organization, type Database } from "@platform/db";
+import { and, eq } from "drizzle-orm";
+import { organization, numbatrakStaff, type Database } from "@platform/db";
 import { auth } from "../lib/auth.js";
 import { recordUserActivity } from "../modules/platform-billing/lib/metrics/activity-store.js";
+import { grantsSatisfyPermissions, unionNumbatrakGrants } from "../lib/access-control.js";
+import type { NumbatrakSpecRole } from "@platform/shared-types";
+
+/**
+ * "Access is the union of all roles held" (LOCKED RULE) - a fallback checked
+ * only when the caller's real member.role grant (the primary/fast path)
+ * doesn't already cover the request, so extraRoles can only ADD access,
+ * never narrow what member.role already grants. Numbatrak-only: extraRoles
+ * is a Numbatrak Staff Management concept, not a storefront one.
+ */
+async function extraRolesGrantPermission(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  permissions: Record<string, string[]>,
+): Promise<boolean> {
+  const [staff] = await db
+    .select({ primaryRole: numbatrakStaff.primaryRole, extraRoles: numbatrakStaff.extraRoles })
+    .from(numbatrakStaff)
+    .where(and(eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.userId, userId)))
+    .limit(1);
+  if (!staff) return false;
+
+  const roles = [staff.primaryRole as NumbatrakSpecRole, ...((staff.extraRoles as NumbatrakSpecRole[]) ?? [])];
+  const grants = unionNumbatrakGrants(roles);
+  return grantsSatisfyPermissions(grants, permissions);
+}
 
 /**
  * Best-effort "user was active today" record for DAU/MAU. Never allowed to
@@ -91,8 +118,16 @@ export default fp(async (app) => {
       }
       const result = await auth.api.hasPermission({ headers, body: { organizationId, permissions } });
       if (!result.success) {
-        await reply.code(403).send({ error: "Missing required permission" });
-        return;
+        const grantedByExtraRole = await extraRolesGrantPermission(
+          app.getDb(),
+          organizationId,
+          session.user.id,
+          permissions,
+        );
+        if (!grantedByExtraRole) {
+          await reply.code(403).send({ error: "Missing required permission" });
+          return;
+        }
       }
       request.activeOrganizationId = organizationId;
       await recordActivitySafe(app.getDb(), session.user.id, organizationId);

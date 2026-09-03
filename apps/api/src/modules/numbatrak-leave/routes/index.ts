@@ -3,6 +3,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import { and, eq } from "drizzle-orm";
 import { member } from "@platform/db";
 import { auth } from "../../../lib/auth.js";
+import { resolveCallerStaffScope } from "../../numbatrak-staff/lib/staff.js";
 import {
   getOrCreateSettings,
   updateSettings,
@@ -12,9 +13,6 @@ import {
   decideRequest,
   getStaffIdForUser,
 } from "../lib/leave.js";
-
-// Same session-refetch + member-role check used by numbatrak-staff/numbatrak-payroll/numbatrak-attendance.
-const BROAD_VISIBILITY_ROLES = new Set(["owner", "admin", "manager"]);
 
 export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -46,9 +44,12 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
     async (request, reply) => {
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+      if (!session) return reply.status(401).send({ error: "Unauthorized" });
       const { year } = request.query as { year?: string };
       const y = year ? parseInt(year, 10) : new Date().getFullYear();
-      const balances = await listBalances(db, organizationId, y);
+      const scope = await resolveCallerStaffScope(db, organizationId, session.user.id);
+      const balances = await listBalances(db, organizationId, y, scope);
       return reply.send({ balances });
     },
   );
@@ -59,8 +60,11 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
     async (request, reply) => {
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+      if (!session) return reply.status(401).send({ error: "Unauthorized" });
       const { status, staffId } = request.query as { status?: string; staffId?: string };
-      const requests = await listRequests(db, organizationId, status, staffId);
+      const scope = await resolveCallerStaffScope(db, organizationId, session.user.id);
+      const requests = await listRequests(db, organizationId, scope, status, staffId);
       return reply.send({ requests });
     },
   );
@@ -88,7 +92,7 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
           .from(member)
           .where(and(eq(member.organizationId, organizationId), eq(member.userId, session.user.id)))
           .limit(1);
-        if (!membership || !BROAD_VISIBILITY_ROLES.has(membership.role)) {
+        if (!membership || !["owner", "admin", "manager"].includes(membership.role)) {
           return reply.status(403).send({ error: "You can only request leave for yourself." });
         }
       }
@@ -109,9 +113,14 @@ export default async function numbatrakLeaveRoutes(app: FastifyInstance): Promis
       if (!session) return reply.status(401).send({ error: "Unauthorized" });
       const { requestId } = request.params as { requestId: string };
       const { status, decisionNote } = request.body as { status: "approved" | "declined"; decisionNote?: string | null };
-      const result = await decideRequest(db, request.log, organizationId, requestId, status, session.user.id, decisionNote);
-      if (!result) return reply.status(404).send({ error: "Request not found or already decided" });
-      return reply.send(result);
+      const scope = await resolveCallerStaffScope(db, organizationId, session.user.id);
+      try {
+        const result = await decideRequest(db, request.log, organizationId, requestId, status, session.user.id, scope, decisionNote);
+        if (!result) return reply.status(404).send({ error: "Request not found or already decided" });
+        return reply.send(result);
+      } catch (err) {
+        return reply.status(403).send({ error: err instanceof Error ? err.message : "Decide request failed" });
+      }
     },
   );
 }

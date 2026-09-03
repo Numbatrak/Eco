@@ -220,6 +220,21 @@ export function strikeIssuedEmail(params: { staffName: string; reason: string })
   );
 }
 
+export function strikeThresholdReachedEmail(params: {
+  staffName: string;
+  threshold: number;
+  thresholdPeriod: string;
+  consequence: string;
+}): string {
+  return layout(
+    `<p>Hi there,</p>
+<p><strong>${params.staffName}</strong> has reached <strong>${params.threshold} strikes this ${params.thresholdPeriod}</strong>.</p>
+<p style="color:#b45309;font-weight:600;">Configured consequence: ${params.consequence}</p>
+<p class="muted">This is a disciplinary record, not a deduction — follow up per your usual process.</p>`,
+    `${params.staffName} reached the strike threshold`,
+  );
+}
+
 export function leaveRequestSubmittedEmail(params: { staffName: string; leaveType: string; startDate: string; endDate: string }): string {
   return layout(
     `<p>Hi there,</p>

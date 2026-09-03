@@ -1167,6 +1167,8 @@ export const numbatrakStaffSchema = z.object({
   bankAccountNumber: z.string().nullable(),
   bankAccountName: z.string().nullable(),
   active: z.boolean(),
+  managerId: z.string().uuid().nullable(),
+  managerName: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
@@ -1181,6 +1183,7 @@ const numbatrakStaffRequestBaseSchema = z.object({
   bankName: z.string().trim().max(200).nullable().optional(),
   bankAccountNumber: z.string().trim().max(50).nullable().optional(),
   bankAccountName: z.string().trim().max(200).nullable().optional(),
+  managerId: z.string().uuid().nullable().optional(),
 });
 
 export const createNumbatrakStaffRequestSchema = numbatrakStaffRequestBaseSchema;
@@ -1472,6 +1475,9 @@ export const numbatrakStrikeSchema = z.object({
   cleared: z.boolean(),
   clearedBy: z.string().nullable(),
   clearedAt: z.string().nullable(),
+  // Whether this staff member's active strike count in the configured
+  // threshold period is at or above the configured threshold, as of now.
+  thresholdReached: z.boolean(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
@@ -1498,13 +1504,19 @@ export const numbatrakSotmCriteriaSchema = z.enum([
 ]);
 export type NumbatrakSotmCriteria = z.infer<typeof numbatrakSotmCriteriaSchema>;
 
+export const numbatrakLeaderboardStyleSchema = z.enum(["by_tier", "by_revenue", "by_delivery_rate", "by_upsells"]);
+export type NumbatrakLeaderboardStyle = z.infer<typeof numbatrakLeaderboardStyleSchema>;
+
 export const numbatrakStarSettingsSchema = z.object({
   id: z.string().uuid(),
   enabled: z.boolean(),
+  leaderboardStyle: numbatrakLeaderboardStyleSchema,
   sotmEnabled: z.boolean(),
   sotmCriteria: numbatrakSotmCriteriaSchema,
   sotmMinStarTier: z.number().int(),
+  sotmStrikeDisqualifies: z.boolean(),
   sotmWinnerCount: z.number().int(),
+  sotmPrizeAmount: z.number(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
@@ -1512,10 +1524,13 @@ export type NumbatrakStarSettings = z.infer<typeof numbatrakStarSettingsSchema>;
 
 export const updateNumbatrakStarSettingsRequestSchema = z.object({
   enabled: z.boolean().optional(),
+  leaderboardStyle: numbatrakLeaderboardStyleSchema.optional(),
   sotmEnabled: z.boolean().optional(),
   sotmCriteria: numbatrakSotmCriteriaSchema.optional(),
   sotmMinStarTier: z.number().int().min(0).optional(),
+  sotmStrikeDisqualifies: z.boolean().optional(),
   sotmWinnerCount: z.number().int().min(1).optional(),
+  sotmPrizeAmount: z.number().nonnegative().optional(),
 });
 export type UpdateNumbatrakStarSettingsRequest = z.infer<typeof updateNumbatrakStarSettingsRequestSchema>;
 
@@ -1524,6 +1539,7 @@ export const numbatrakStarTierSchema = z.object({
   name: z.string(),
   minPoints: z.number().int(),
   displayOrder: z.number().int(),
+  criteria: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
@@ -1533,14 +1549,19 @@ export const createNumbatrakStarTierRequestSchema = z.object({
   name: z.string().trim().min(1),
   minPoints: z.number().int().min(0),
   displayOrder: z.number().int().optional(),
+  criteria: z.string().trim().nullable().optional(),
 });
 export type CreateNumbatrakStarTierRequest = z.infer<typeof createNumbatrakStarTierRequestSchema>;
+
+export const updateNumbatrakStarTierRequestSchema = createNumbatrakStarTierRequestSchema.partial();
+export type UpdateNumbatrakStarTierRequest = z.infer<typeof updateNumbatrakStarTierRequestSchema>;
 
 export const numbatrakStarSchema = z.object({
   id: z.string().uuid(),
   staffId: z.string().uuid(),
   staffName: z.string().nullable(),
-  points: z.number().int(),
+  tierId: z.string().uuid().nullable(),
+  tierName: z.string().nullable(),
   reason: z.string(),
   awardedBy: z.string().nullable(),
   awardedByName: z.string().nullable(),
@@ -1552,7 +1573,7 @@ export type NumbatrakStar = z.infer<typeof numbatrakStarSchema>;
 
 export const awardNumbatrakStarRequestSchema = z.object({
   staffId: z.string().uuid(),
-  points: z.number().int().min(1).default(1),
+  tierId: z.string().uuid(),
   reason: z.string().trim().min(1),
 });
 export type AwardNumbatrakStarRequest = z.infer<typeof awardNumbatrakStarRequestSchema>;
@@ -1560,11 +1581,37 @@ export type AwardNumbatrakStarRequest = z.infer<typeof awardNumbatrakStarRequest
 export const numbatrakLeaderboardEntrySchema = z.object({
   staffId: z.string().uuid(),
   staffName: z.string().nullable(),
-  totalPoints: z.number().int(),
   tierName: z.string().nullable(),
+  // The ranking metric - meaning depends on the configured leaderboardStyle
+  // (tier's displayOrder, revenue, delivery-rate percent, or upsell count).
+  value: z.number(),
   rank: z.number().int(),
 });
 export type NumbatrakLeaderboardEntry = z.infer<typeof numbatrakLeaderboardEntrySchema>;
+
+export const numbatrakSotmCandidateSchema = z.object({
+  staffId: z.string().uuid(),
+  staffName: z.string().nullable(),
+  tierName: z.string().nullable(),
+  value: z.number().nullable(),
+  hasActiveStrike: z.boolean(),
+  eligible: z.boolean(),
+  ineligibleReason: z.string().nullable(),
+});
+export type NumbatrakSotmCandidate = z.infer<typeof numbatrakSotmCandidateSchema>;
+
+export const numbatrakSotmCandidatesResponseSchema = z.object({
+  month: z.string(),
+  criteria: numbatrakSotmCriteriaSchema,
+  candidates: z.array(numbatrakSotmCandidateSchema),
+});
+export type NumbatrakSotmCandidatesResponse = z.infer<typeof numbatrakSotmCandidatesResponseSchema>;
+
+export const confirmNumbatrakSotmRequestSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/, "month must be in YYYY-MM format"),
+  staffIds: z.array(z.string().uuid()).min(1),
+});
+export type ConfirmNumbatrakSotmRequest = z.infer<typeof confirmNumbatrakSotmRequestSchema>;
 
 // ---------------------------------------------------------------------------
 // Leave
