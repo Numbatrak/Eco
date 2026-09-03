@@ -8,12 +8,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import "./FormBuilderPage.css";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { API_BASE_URL } from "../../lib/apiClient";
-import { createForm, updateForm, fetchFormById, generateFormToken } from "../../services/forms";
+import {
+  createForm,
+  updateForm,
+  fetchFormById,
+  generateFormToken,
+  updateFormFieldMapping,
+  rotateFormWebhookSecret,
+} from "../../services/forms";
 import { fetchProducts } from "../../services/products";
 import { fetchOffersForProducts } from "../../services/productOffers";
 import { fetchVariantsForProducts } from "../../services/productVariants";
 import { Product, ProductOffer, ProductVariant } from "../../types/product";
-import { FormField, FormSchema, RadioOption, RadioOptionProduct } from "../../types/form";
+import { FormField, FormSchema, RadioOption, RadioOptionProduct, FieldMapping } from "../../types/form";
 import { validateFormSchema, isRequiredField, getDefaultRequiredFields, ensureRequiredFields } from "../../utils/formValidation";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { PageLayout } from "../layout/PageLayout";
@@ -22,6 +29,9 @@ import { FormCanvas } from "./builder/FormCanvas";
 import { FieldPalette } from "./builder/FieldPalette";
 import { FieldSettingsPanel } from "./builder/FieldSettingsPanel";
 import { BasicSettingsPanel } from "./builder/BasicSettingsPanel";
+import { IntegrationsPanel } from "./builder/IntegrationsPanel";
+
+const EMPTY_FIELD_MAPPING: FieldMapping = { contactFields: {}, valueToOptionId: {} };
 
 /** True for a blank title or the auto-generated "Option N" default - i.e. one an offer selection is still free to fill in. */
 function isPlaceholderOptionTitle(title: string): boolean {
@@ -50,7 +60,9 @@ export default function FormBuilderPage() {
     fields: [],
     submitButton: { text: "Submit Order", loadingText: "Processing..." },
   });
-  const [activeTab, setActiveTab] = useState<"fields" | "settings">("fields");
+  const [activeTab, setActiveTab] = useState<"fields" | "settings" | "integrations">("fields");
+  const [fieldMapping, setFieldMapping] = useState<FieldMapping>(EMPTY_FIELD_MAPPING);
+  const [hasWebhookSecret, setHasWebhookSecret] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -211,6 +223,8 @@ export default function FormBuilderPage() {
         setActive(form.active);
         const schemaWithRequired = ensureRequiredFields(form.schema);
         setSchema(schemaWithRequired);
+        setFieldMapping(form.field_mapping ?? EMPTY_FIELD_MAPPING);
+        setHasWebhookSecret(form.has_webhook_secret ?? false);
       } else {
         setError("Form not found");
       }
@@ -614,11 +628,16 @@ export default function FormBuilderPage() {
 
         {!loading && (
           <form ref={formRef} onSubmit={handleSubmit} className="form-builder-main">
-            <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as "fields" | "settings")} className="flex-1 min-h-0 flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v: string) => setActiveTab(v as "fields" | "settings" | "integrations")}
+              className="flex-1 min-h-0 flex flex-col"
+            >
               <div className="form-builder-tabs-bar">
                 <TabsList>
                   <TabsTrigger value="fields">Fields ({schema.fields.length})</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
+                  <TabsTrigger value="integrations">Integrations</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -662,6 +681,28 @@ export default function FormBuilderPage() {
                   onActiveChange={setActive}
                   schema={schema}
                   onSchemaChange={(updates) => setSchema({ ...schema, ...updates })}
+                />
+              </TabsContent>
+
+              <TabsContent value="integrations" className="flex-1 min-h-0 overflow-y-auto">
+                <IntegrationsPanel
+                  formId={id ?? null}
+                  formToken={formToken}
+                  schema={schema}
+                  fieldMapping={fieldMapping}
+                  hasWebhookSecret={hasWebhookSecret}
+                  onSaveMapping={async (mapping) => {
+                    if (!id) return;
+                    const updated = await updateFormFieldMapping(id, mapping);
+                    setFieldMapping(updated.field_mapping);
+                  }}
+                  onRotateSecret={async () => {
+                    if (!id) throw new Error("Save the form first");
+                    const secret = await rotateFormWebhookSecret(id);
+                    setHasWebhookSecret(true);
+                    return secret;
+                  }}
+                  onCopy={copyToClipboard}
                 />
               </TabsContent>
             </Tabs>

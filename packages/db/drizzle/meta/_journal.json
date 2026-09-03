@@ -57,6 +57,13 @@
       "when": 1788397138392,
       "tag": "0007_far_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788400040214,
+      "tag": "0008_red_mephisto",
+      "breakpoints": true
     }
   ]
 }

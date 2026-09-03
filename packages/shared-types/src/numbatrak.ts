@@ -979,6 +979,8 @@ export const numbatrakFormSchema = z.object({
   funnelName: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
+  fieldMapping: z.lazy(() => numbatrakFormFieldMappingSchema),
+  hasWebhookSecret: z.boolean(),
 });
 export type NumbatrakForm = z.infer<typeof numbatrakFormSchema>;
 
@@ -993,6 +995,29 @@ export const createNumbatrakFormRequestSchema = z.object({
 });
 export type CreateNumbatrakFormRequest = z.infer<typeof createNumbatrakFormRequestSchema>;
 
+// Elementor's native webhook action posts a fixed flat payload the merchant
+// can't reshape (unlike WPForms, which templates its own JSON via smart tags
+// and needs no server-side mapping at all - see the public submit endpoint
+// below). This mapping tells the Elementor webhook handler how to turn that
+// flat payload into the same {fieldValues, items} shape submitFormOrder
+// already expects from the embed widget.
+export const numbatrakFormFieldMappingSchema = z.object({
+  contactFields: z
+    .object({
+      customerName: z.string().trim().min(1).optional(),
+      phone: z.string().trim().min(1).optional(),
+      whatsapp: z.string().trim().min(1).optional(),
+      address: z.string().trim().min(1).optional(),
+      state: z.string().trim().min(1).optional(),
+    })
+    .default({}),
+  // Elementor field id/title holding the package/product selection.
+  productField: z.string().trim().min(1).optional(),
+  // Elementor answer value -> this form's schema.fields[].radioOptions[].id.
+  valueToOptionId: z.record(z.string(), z.string()).default({}),
+});
+export type NumbatrakFormFieldMapping = z.infer<typeof numbatrakFormFieldMappingSchema>;
+
 export const updateNumbatrakFormRequestSchema = z.object({
   name: z.string().trim().min(1).optional(),
   formToken: z.string().trim().min(1).optional(),
@@ -1001,8 +1026,17 @@ export const updateNumbatrakFormRequestSchema = z.object({
   siteUrl: z.string().trim().nullable().optional(),
   subBrand: z.string().trim().nullable().optional(),
   funnelName: z.string().trim().nullable().optional(),
+  fieldMapping: numbatrakFormFieldMappingSchema.optional(),
 });
 export type UpdateNumbatrakFormRequest = z.infer<typeof updateNumbatrakFormRequestSchema>;
+
+// Returned only by the rotate action - the plaintext secret is shown once and
+// never re-returned by any subsequent read (the form's own GET/list responses
+// only ever expose whether a secret is configured, not its value).
+export const numbatrakFormWebhookSecretSchema = z.object({
+  secret: z.string(),
+});
+export type NumbatrakFormWebhookSecret = z.infer<typeof numbatrakFormWebhookSecretSchema>;
 
 // ---------- public form intake (WordPress embed) ----------
 // The one genuinely unauthenticated surface in the whole Numbatrak port - no

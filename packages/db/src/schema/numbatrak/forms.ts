@@ -26,7 +26,11 @@ export const numbatrakForms = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     siteUrl: text("site_url"),
+    // Elementor-webhook contact/product field mapping; see numbatrakFormFieldMappingSchema.
     fieldMapping: jsonb("field_mapping").default({}),
+    // AES-256-GCM encrypted shared secret for the Elementor webhook intake route
+    // (apps/api/src/lib/encryption.ts's encryptSecret/decryptSecret format).
+    webhookSecretEncrypted: text("webhook_secret_encrypted"),
     // Optional sub-brand tag; copied onto orders for filtering and roll-ups.
     subBrand: text("sub_brand"),
     // Optional funnel display name; when null the app uses `name`.

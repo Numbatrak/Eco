@@ -1,8 +1,10 @@
 "use client";
 
 import { apiRequest } from "../lib/apiClient";
-import { Form, FormSchema } from "../types/form";
+import { Form, FormSchema, FieldMapping } from "../types/form";
 import { emptyWithoutOrg } from "./orgQuery";
+
+const EMPTY_FIELD_MAPPING: FieldMapping = { contactFields: {}, valueToOptionId: {} };
 
 interface FormDto {
   id: string;
@@ -15,6 +17,8 @@ interface FormDto {
   funnelName: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  fieldMapping: FieldMapping;
+  hasWebhookSecret: boolean;
 }
 
 function dtoToForm(dto: FormDto, organizationId: string | null): Form {
@@ -29,6 +33,8 @@ function dtoToForm(dto: FormDto, organizationId: string | null): Form {
     funnel_name: dto.funnelName,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
+    field_mapping: dto.fieldMapping ?? EMPTY_FIELD_MAPPING,
+    has_webhook_secret: dto.hasWebhookSecret ?? false,
   };
 }
 
@@ -119,6 +125,28 @@ export async function updateForm(
  */
 export async function removeForm(formId: string): Promise<void> {
   await apiRequest<void>(`/org/numbatrak/forms/${formId}`, { method: "DELETE" });
+}
+
+/**
+ * Save the Elementor webhook field mapping for a form.
+ */
+export async function updateFormFieldMapping(formId: string, fieldMapping: FieldMapping): Promise<Form> {
+  const dto = await apiRequest<FormDto>(`/org/numbatrak/forms/${formId}`, {
+    method: "PATCH",
+    body: { fieldMapping },
+  });
+  return dtoToForm(dto, "");
+}
+
+/**
+ * Generate (or replace) this form's Elementor webhook secret. The plaintext
+ * value is returned once by this call and never re-exposed by any GET.
+ */
+export async function rotateFormWebhookSecret(formId: string): Promise<string> {
+  const { secret } = await apiRequest<{ secret: string }>(`/org/numbatrak/forms/${formId}/webhook-secret/rotate`, {
+    method: "POST",
+  });
+  return secret;
 }
 
 /**

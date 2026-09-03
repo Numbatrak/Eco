@@ -56,6 +56,27 @@ export interface FormSchema {
   confirmation?: FormConfirmation;
 }
 
+/**
+ * Elementor Pro's native webhook action posts a fixed flat payload the
+ * merchant can't reshape - this tells the Elementor webhook intake route how
+ * to turn that into the same {fieldValues, items} shape the embed widget
+ * already computes client-side (see apps/api's numbatrak-forms/lib/elementor.ts).
+ * WPForms needs no equivalent: its Webhooks addon templates its own JSON body.
+ */
+export interface FieldMapping {
+  contactFields: {
+    customerName?: string;
+    phone?: string;
+    whatsapp?: string;
+    address?: string;
+    state?: string;
+  };
+  /** Elementor field id/title holding the package/product selection. */
+  productField?: string;
+  /** Elementor answer value -> this form's schema.fields[].radioOptions[].id. */
+  valueToOptionId: Record<string, string>;
+}
+
 export interface Form {
   id: string;
   organization_id: string;
@@ -69,6 +90,8 @@ export interface Form {
   funnel_name?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  field_mapping: FieldMapping;
+  has_webhook_secret: boolean;
 }
 
 export interface FormProduct {

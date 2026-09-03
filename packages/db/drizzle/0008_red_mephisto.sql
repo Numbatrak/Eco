@@ -1,0 +1,1 @@
+ALTER TABLE "numbatrak_forms" ADD COLUMN "webhook_secret_encrypted" text;
