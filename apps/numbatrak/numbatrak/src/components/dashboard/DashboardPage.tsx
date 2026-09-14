@@ -227,7 +227,7 @@ export function DashboardPage() {
     }
     let cancelled = false;
     (async () => {
-      const thresholds = loadDashboardAlertThresholds(currentOrganization.id);
+      const thresholds = await loadDashboardAlertThresholds(currentOrganization.id);
       const priorMetrics = await fetchPriorPeriodMetrics(
         currentOrganization.id,
         filterValues.dateFilter,

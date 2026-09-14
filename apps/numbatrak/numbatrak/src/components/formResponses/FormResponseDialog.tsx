@@ -583,7 +583,7 @@ export function FormResponseDialog({
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-5 h-5 text-muted-foreground" />
                         <span className="text-sm font-semibold text-foreground">
-                          {isCompleted ? "Net Profit" : "Potential Net Profit"}:
+                          {isCompleted ? "Gross Profit" : "Potential Gross Profit"}:
                         </span>
                       </div>
                       <span

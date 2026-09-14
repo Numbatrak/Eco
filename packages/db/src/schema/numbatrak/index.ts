@@ -34,6 +34,9 @@ export * from "./media-buyers.js";
 export * from "./crm.js";
 export * from "./invoices.js";
 export * from "./delivery-fees.js";
+export * from "./dashboard-settings.js";
+export * from "./inventory-settings.js";
+export * from "./delivery-agent-settings.js";
 
 import { numbatrakAgents, numbatrakCsrNameAliases } from "./agents.js";
 import {
@@ -89,6 +92,9 @@ import {
 } from "./crm.js";
 import { numbatrakInvoices } from "./invoices.js";
 import { numbatrakDeliveryFeeRules } from "./delivery-fees.js";
+import { numbatrakDashboardAlertThresholds } from "./dashboard-settings.js";
+import { numbatrakInventorySettings } from "./inventory-settings.js";
+import { numbatrakDeliveryAgentSettings } from "./delivery-agent-settings.js";
 
 // Flat aggregate for merging into the main `schema` object in ../../schema.ts
 // (drizzle(client, { schema }) needs every table as a top-level key for
@@ -153,4 +159,7 @@ export const numbatrakSchema = {
   numbatrakCrmCredits,
   numbatrakInvoices,
   numbatrakDeliveryFeeRules,
+  numbatrakDashboardAlertThresholds,
+  numbatrakInventorySettings,
+  numbatrakDeliveryAgentSettings,
 };

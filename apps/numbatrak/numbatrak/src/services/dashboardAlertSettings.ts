@@ -1,39 +1,64 @@
+import { apiRequest } from "../lib/apiClient";
 import {
   DEFAULT_DASHBOARD_ALERT_THRESHOLDS,
   type DashboardAlertThresholds,
 } from "../constants/dashboardAlerts";
 
-const STORAGE_PREFIX = "numbatrak:dashboard-alert-thresholds:";
+// Mirrors apps/api's @platform/shared-types
+// numbatrakDashboardAlertThresholdsSchema shape locally rather than
+// importing it - this app doesn't depend on @platform/shared-types (see
+// lib/authApi.ts for the same convention).
+type DashboardAlertThresholdsRow = DashboardAlertThresholds & {
+  id: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
 
-function storageKey(organizationId: string): string {
-  return `${STORAGE_PREFIX}${organizationId}`;
+function toThresholds(row: DashboardAlertThresholdsRow): DashboardAlertThresholds {
+  return {
+    deliveryRateGreen: row.deliveryRateGreen,
+    deliveryRateAmber: row.deliveryRateAmber,
+    deliveryRateAlert: row.deliveryRateAlert,
+    roasGreen: row.roasGreen,
+    roasAmber: row.roasAmber,
+    profitPerOrderGreen: row.profitPerOrderGreen,
+    profitPerOrderAmber: row.profitPerOrderAmber,
+    businessRoiGreen: row.businessRoiGreen,
+    businessRoiAmber: row.businessRoiAmber,
+    realCpaAovGreen: row.realCpaAovGreen,
+    realCpaAovAmber: row.realCpaAovAmber,
+    minUndeliveredForAlert: row.minUndeliveredForAlert,
+    minWouldBeSalesForAlert: row.minWouldBeSalesForAlert,
+    cpaWeekOnWeekIncreasePct: row.cpaWeekOnWeekIncreasePct,
+  };
 }
 
-export function loadDashboardAlertThresholds(
+/** DB-backed as of this port - shared across every device/user in the org
+ * rather than the one browser that last saved it. */
+export async function loadDashboardAlertThresholds(
   organizationId: string | null | undefined
-): DashboardAlertThresholds {
-  if (!organizationId || typeof localStorage === "undefined") {
-    return { ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS };
-  }
+): Promise<DashboardAlertThresholds> {
+  if (!organizationId) return { ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS };
   try {
-    const raw = localStorage.getItem(storageKey(organizationId));
-    if (!raw) return { ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS };
-    const parsed = JSON.parse(raw) as Partial<DashboardAlertThresholds>;
-    return { ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS, ...parsed };
+    const row = await apiRequest<DashboardAlertThresholdsRow>(
+      "/org/numbatrak/dashboard/alert-thresholds"
+    );
+    return toThresholds(row);
   } catch {
     return { ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS };
   }
 }
 
-export function saveDashboardAlertThresholds(
-  organizationId: string,
+export async function saveDashboardAlertThresholds(
   thresholds: DashboardAlertThresholds
-): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.setItem(storageKey(organizationId), JSON.stringify(thresholds));
+): Promise<DashboardAlertThresholds> {
+  const row = await apiRequest<DashboardAlertThresholdsRow>(
+    "/org/numbatrak/dashboard/alert-thresholds",
+    { method: "PATCH", body: thresholds }
+  );
+  return toThresholds(row);
 }
 
-export function resetDashboardAlertThresholds(organizationId: string): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.removeItem(storageKey(organizationId));
+export async function resetDashboardAlertThresholds(): Promise<DashboardAlertThresholds> {
+  return saveDashboardAlertThresholds(DEFAULT_DASHBOARD_ALERT_THRESHOLDS);
 }

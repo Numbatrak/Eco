@@ -18,10 +18,13 @@ export interface DeliveryRateExtraFilters {
   subBrand?: string;
 }
 
-/** Server-side port of services/dashboard.ts's fetchDeliveryRateByLocation -
- * buckets deliveries into Lagos vs Outside-Lagos by the delivering agent's
- * `locations` field (comma-separated, case-insensitive "lagos" match).
- * Deliveries with no agent or no location data are skipped, same as source.
+const UNSPECIFIED_LOCATION = "Unspecified";
+
+/** Buckets deliveries by the delivering agent's real declared location (the
+ * `locations` field on numbatrak_agents - comma-separated since an agent can
+ * cover more than one state). An agent covering multiple locations is
+ * attributed to the first one listed; agents with no location on file group
+ * under "Unspecified" rather than being silently folded into another bucket.
  * `extra` filters are only ever set by the Delivery Analytics page (the plain
  * Dashboard widget only passes dateFrom/dateTo). */
 export async function fetchDeliveryRateByLocation(
@@ -45,38 +48,43 @@ export async function fetchDeliveryRateByLocation(
     .where(and(...conditions));
 
   const agentIds = [...new Set(data.map((d) => d.agentId).filter((id): id is number => id != null))];
-  const lagosIds = new Set<number>();
+  const primaryLocationByAgent = new Map<number, string>();
   if (agentIds.length > 0) {
     const agents = await db
       .select({ id: numbatrakAgents.id, locations: numbatrakAgents.locations })
       .from(numbatrakAgents)
       .where(inArray(numbatrakAgents.id, agentIds));
     for (const a of agents) {
-      const locs = a.locations ? a.locations.split(",").map((l) => l.trim()) : [];
-      if (locs.some((l) => l.toLowerCase() === "lagos")) lagosIds.add(a.id);
+      const locs = a.locations ? a.locations.split(",").map((l) => l.trim()).filter(Boolean) : [];
+      primaryLocationByAgent.set(a.id, locs[0] ?? UNSPECIFIED_LOCATION);
     }
   }
 
-  let lagosTotal = 0, lagosDelivered = 0, lagosWaybilled = 0;
-  let outsideTotal = 0, outsideDelivered = 0, outsideWaybilled = 0;
+  const totals = new Map<string, { total: number; delivered: number; waybilled: number }>();
+  let overallTotal = 0, overallDelivered = 0, overallWaybilled = 0;
 
   for (const row of data) {
     if (row.agentId == null) continue;
-    const isLagos = lagosIds.has(row.agentId);
-    if (isLagos) {
-      lagosTotal += 1;
-      if (row.status === "Delivered") lagosDelivered += 1;
-      else if (row.status === "Waybilled") lagosWaybilled += 1;
-    } else {
-      outsideTotal += 1;
-      if (row.status === "Delivered") outsideDelivered += 1;
-      else if (row.status === "Waybilled") outsideWaybilled += 1;
+    const location = primaryLocationByAgent.get(row.agentId) ?? UNSPECIFIED_LOCATION;
+    const entry = totals.get(location) ?? { total: 0, delivered: 0, waybilled: 0 };
+    entry.total += 1;
+    overallTotal += 1;
+    if (row.status === "Delivered") {
+      entry.delivered += 1;
+      overallDelivered += 1;
+    } else if (row.status === "Waybilled") {
+      entry.waybilled += 1;
+      overallWaybilled += 1;
     }
+    totals.set(location, entry);
   }
 
+  const byLocation = [...totals.entries()]
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([location, t]) => ({ location, ...bucket(t.total, t.delivered, t.waybilled) }));
+
   return [
-    { location: "Overall", ...bucket(lagosTotal + outsideTotal, lagosDelivered + outsideDelivered, lagosWaybilled + outsideWaybilled) },
-    { location: "Lagos", ...bucket(lagosTotal, lagosDelivered, lagosWaybilled) },
-    { location: "Outside Lagos", ...bucket(outsideTotal, outsideDelivered, outsideWaybilled) },
+    { location: "Overall", ...bucket(overallTotal, overallDelivered, overallWaybilled) },
+    ...byLocation,
   ];
 }

@@ -21,6 +21,7 @@ import {
   MONEY_RECEIVED_BY_OPTIONS,
   type MoneyReceivedBy,
 } from "../../constants/orderAttribution";
+import { nigeriaStates } from "../../constants/nigeriaStates";
 import {
   sanitizeDecimalInput,
   sanitizeIntegerInput,
@@ -241,11 +242,22 @@ export function ManualOrderDialog({
                 <Label htmlFor="manual-state" className="dialog-field-label">
                   State
                 </Label>
-                <Input
-                  id="manual-state"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                />
+                <Select
+                  value={state || "none"}
+                  onValueChange={(v) => setState(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger id="manual-state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No state</SelectItem>
+                    {nigeriaStates.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="dialog-form-field space-y-2">
                 <Label htmlFor="manual-address" className="dialog-field-label">

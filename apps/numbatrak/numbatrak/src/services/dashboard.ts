@@ -114,7 +114,9 @@ export async function fetchLatestAbandonedCarts(
 }
 
 export interface DeliveryRateByLocation {
-  location: "Lagos" | "Outside Lagos" | "Overall";
+  /** "Overall" is the aggregate row; every other value is a real agent
+   * location string (or "Unspecified" for agents with no location on file). */
+  location: string;
   totalDeliveries: number;
   deliveredCount: number;
   waybilledCount: number;
@@ -122,8 +124,8 @@ export interface DeliveryRateByLocation {
 }
 
 /**
- * Get delivery rate statistics for Lagos vs Outside Lagos - computed
- * server-side now (packages the same agent-locations bucketing logic).
+ * Get delivery rate statistics broken down by agent location - computed
+ * server-side (packages the same agent-locations bucketing logic).
  */
 export async function fetchDeliveryRateByLocation(
   organizationId: string | null,
@@ -131,8 +133,6 @@ export async function fetchDeliveryRateByLocation(
 ): Promise<DeliveryRateByLocation[]> {
   const empty: DeliveryRateByLocation[] = [
     { location: "Overall", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
-    { location: "Lagos", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
-    { location: "Outside Lagos", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
   ];
   if (!organizationId) return empty;
 

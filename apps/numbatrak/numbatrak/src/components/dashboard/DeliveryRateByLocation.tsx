@@ -88,7 +88,7 @@ export function DeliveryRateByLocationComponent({
       <Card>
         <CardHeader>
           <CardTitle>Delivery Rate by Location</CardTitle>
-          <CardDescription>Lagos vs Outside Lagos delivery performance</CardDescription>
+          <CardDescription>Delivery performance broken down by agent location</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,7 +109,7 @@ export function DeliveryRateByLocationComponent({
           Delivery Rate by Location
         </CardTitle>
         <CardDescription>
-          Overall delivery performance and comparison: Lagos vs Outside Lagos
+          Overall delivery performance, broken down by agent location
         </CardDescription>
       </CardHeader>
       <CardContent>

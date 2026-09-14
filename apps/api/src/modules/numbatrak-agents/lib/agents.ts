@@ -30,6 +30,7 @@ export function serializeAgent(row: AgentRow): Agent {
     contactPerson: row.contactPerson,
     contactPhone: row.contactPhone,
     contactEmail: row.contactEmail,
+    deliveryFeeOverride: row.deliveryFeeOverride != null ? Number(row.deliveryFeeOverride) : null,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -56,6 +57,7 @@ export async function createAgent(
       contactPerson: input.contactPerson ?? null,
       contactPhone: input.contactPhone ?? null,
       contactEmail: input.contactEmail ?? null,
+      deliveryFeeOverride: input.deliveryFeeOverride != null ? String(input.deliveryFeeOverride) : null,
     })
     .returning();
   if (!row) {
@@ -70,12 +72,15 @@ export async function updateAgent(
   agentId: number,
   patch: UpdateAgentRequest,
 ): Promise<AgentRow | null> {
-  const { locations, ...rest } = patch;
+  const { locations, deliveryFeeOverride, ...rest } = patch;
   const [row] = await db
     .update(numbatrakAgents)
     .set({
       ...rest,
       ...(locations !== undefined ? { locations: locations.join(", ") } : {}),
+      ...(deliveryFeeOverride !== undefined
+        ? { deliveryFeeOverride: deliveryFeeOverride != null ? String(deliveryFeeOverride) : null }
+        : {}),
     })
     .where(and(eq(numbatrakAgents.organizationId, organizationId), eq(numbatrakAgents.id, agentId)))
     .returning();

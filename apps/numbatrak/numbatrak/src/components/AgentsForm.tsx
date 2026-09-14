@@ -39,6 +39,7 @@ export default function AgentsForm() {
   const [contactPerson, setContactPerson] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [deliveryFeeOverride, setDeliveryFeeOverride] = useState("");
   const [open, setOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [editingAgentId, setEditingAgentId] = useState<number | null>(null);
@@ -63,6 +64,9 @@ export default function AgentsForm() {
       setSaving(true);
       setLocalError(null);
 
+      const deliveryFeeOverrideValue =
+        deliveryFeeOverride.trim() === "" ? null : Number(deliveryFeeOverride);
+
       if (dialogMode === "edit" && editingAgentId) {
         const updatedAgent = await updateAgent(editingAgentId, {
           name: agentName.trim(),
@@ -70,6 +74,7 @@ export default function AgentsForm() {
           contact_person: contactPerson,
           contact_phone: contactPhone,
           contact_email: contactEmail,
+          delivery_fee_override: deliveryFeeOverrideValue,
         });
         updateItem(updatedAgent); // Update cache
         setSuccess("Agent updated successfully!");
@@ -83,6 +88,7 @@ export default function AgentsForm() {
           contact_person: contactPerson,
           contact_phone: contactPhone,
           contact_email: contactEmail,
+          delivery_fee_override: deliveryFeeOverrideValue,
         });
         updateItem(newAgent); // Update cache
         setSuccess("Agent created successfully!");
@@ -105,6 +111,7 @@ export default function AgentsForm() {
     setContactPerson("");
     setContactPhone("");
     setContactEmail("");
+    setDeliveryFeeOverride("");
     setEditingAgentId(null);
     setDialogMode("create");
   };
@@ -123,6 +130,9 @@ export default function AgentsForm() {
     setContactPerson(agent.contact_person ?? "");
     setContactPhone(agent.contact_phone ?? "");
     setContactEmail(agent.contact_email ?? "");
+    setDeliveryFeeOverride(
+      agent.delivery_fee_override != null ? String(agent.delivery_fee_override) : ""
+    );
     setOpen(true);
   };
 
@@ -216,6 +226,8 @@ export default function AgentsForm() {
         onContactPhoneChange={setContactPhone}
         contactEmail={contactEmail}
         onContactEmailChange={setContactEmail}
+        deliveryFeeOverride={deliveryFeeOverride}
+        onDeliveryFeeOverrideChange={setDeliveryFeeOverride}
         error={error}
         saving={saving}
         onSubmit={handleSubmit}

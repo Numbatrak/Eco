@@ -432,6 +432,18 @@ export {
   type NumbatrakFeedbackDashboard,
   numbatrakComplaintDashboardSchema,
   type NumbatrakComplaintDashboard,
+  numbatrakDashboardAlertThresholdsSchema,
+  type NumbatrakDashboardAlertThresholds,
+  updateNumbatrakDashboardAlertThresholdsRequestSchema,
+  type UpdateNumbatrakDashboardAlertThresholdsRequest,
+  numbatrakInventorySettingsSchema,
+  type NumbatrakInventorySettings,
+  updateNumbatrakInventorySettingsRequestSchema,
+  type UpdateNumbatrakInventorySettingsRequest,
+  numbatrakDeliveryAgentSettingsSchema,
+  type NumbatrakDeliveryAgentSettings,
+  updateNumbatrakDeliveryAgentSettingsRequestSchema,
+  type UpdateNumbatrakDeliveryAgentSettingsRequest,
 } from "./numbatrak.js";
 export {
   tenantStatusSchema,

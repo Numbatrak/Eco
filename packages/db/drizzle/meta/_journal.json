@@ -64,6 +64,20 @@
       "when": 1788400040214,
       "tag": "0008_red_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789196669216,
+      "tag": "0009_cloudy_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789240926993,
+      "tag": "0010_gifted_martin_li",
+      "breakpoints": true
     }
   ]
 }

@@ -22,6 +22,7 @@ import {
   createShrinkageMovement,
 } from "../services/stockMovements";
 import { ensureWarehouseAgent } from "../services/warehouse";
+import { loadInventorySettings, DEFAULT_INVENTORY_SETTINGS } from "../services/inventorySettings";
 import { AgentStockOnHandRow } from "../types/stockMovement";
 import { StockMovement } from "../types/stockMovement";
 import { StockGrid } from "./inventory/StockGrid";
@@ -57,6 +58,19 @@ export default function InventoryForm() {
   const [ledgerFilters, setLedgerFilters] = useState<InventoryLedgerFilters>(
     {}
   );
+  const [defaultLowStockThreshold, setDefaultLowStockThreshold] = useState(
+    DEFAULT_INVENTORY_SETTINGS.defaultLowStockThreshold
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    loadInventorySettings(currentOrganization?.id).then((settings) => {
+      if (!cancelled) setDefaultLowStockThreshold(settings.defaultLowStockThreshold);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentOrganization?.id]);
 
   const activeProducts = useMemo(
     () => products.filter((product) => product.active !== false),
@@ -239,6 +253,7 @@ export default function InventoryForm() {
             filterSubBrand={ledgerFilters.sub_brand}
             filterLocation={ledgerFilters.location}
             costOfInventory={costOfInventory}
+            defaultLowStockThreshold={defaultLowStockThreshold}
           />
           <h3 className="text-sm font-semibold text-foreground">
             Movement history

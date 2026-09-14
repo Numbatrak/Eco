@@ -12,6 +12,8 @@ export const agentSchema = z.object({
   contactPerson: z.string().nullable(),
   contactPhone: z.string().nullable(),
   contactEmail: z.string().nullable(),
+  // Null = use the org's numbatrakDeliveryAgentSettings default instead.
+  deliveryFeeOverride: z.number().nullable(),
   createdAt: z.string().nullable(),
 });
 export type Agent = z.infer<typeof agentSchema>;
@@ -22,6 +24,7 @@ export const createAgentRequestSchema = z.object({
   contactPerson: z.string().trim().max(200).nullable().optional(),
   contactPhone: z.string().trim().max(50).nullable().optional(),
   contactEmail: z.string().trim().email().nullable().optional(),
+  deliveryFeeOverride: z.number().min(0).nullable().optional(),
 });
 export type CreateAgentRequest = z.infer<typeof createAgentRequestSchema>;
 
@@ -913,7 +916,9 @@ export const numbatrakDashboardFilterOptionsSchema = z.object({
 export type NumbatrakDashboardFilterOptions = z.infer<typeof numbatrakDashboardFilterOptionsSchema>;
 
 export const numbatrakDeliveryRateByLocationSchema = z.object({
-  location: z.enum(["Lagos", "Outside Lagos", "Overall"]),
+  // "Overall" is the aggregate row; every other value is a real agent
+  // location string (or "Unspecified" for agents with no location on file).
+  location: z.string(),
   totalDeliveries: z.number(),
   deliveredCount: z.number(),
   waybilledCount: z.number(),
@@ -2212,3 +2217,87 @@ export const numbatrakComplaintDashboardSchema = z.object({
   byType: z.array(z.object({ type: z.string(), count: z.number().int() })),
 });
 export type NumbatrakComplaintDashboard = z.infer<typeof numbatrakComplaintDashboardSchema>;
+
+// ---------------------------------------------------------------------------
+// Dashboard alert thresholds
+// ---------------------------------------------------------------------------
+
+export const numbatrakDashboardAlertThresholdsSchema = z.object({
+  id: z.string().uuid(),
+  deliveryRateGreen: z.number(),
+  deliveryRateAmber: z.number(),
+  deliveryRateAlert: z.number(),
+  roasGreen: z.number(),
+  roasAmber: z.number(),
+  profitPerOrderGreen: z.number(),
+  profitPerOrderAmber: z.number(),
+  businessRoiGreen: z.number(),
+  businessRoiAmber: z.number(),
+  realCpaAovGreen: z.number(),
+  realCpaAovAmber: z.number(),
+  minUndeliveredForAlert: z.number(),
+  minWouldBeSalesForAlert: z.number(),
+  cpaWeekOnWeekIncreasePct: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakDashboardAlertThresholds = z.infer<typeof numbatrakDashboardAlertThresholdsSchema>;
+
+export const updateNumbatrakDashboardAlertThresholdsRequestSchema = z.object({
+  deliveryRateGreen: z.number().optional(),
+  deliveryRateAmber: z.number().optional(),
+  deliveryRateAlert: z.number().optional(),
+  roasGreen: z.number().optional(),
+  roasAmber: z.number().optional(),
+  profitPerOrderGreen: z.number().optional(),
+  profitPerOrderAmber: z.number().optional(),
+  businessRoiGreen: z.number().optional(),
+  businessRoiAmber: z.number().optional(),
+  realCpaAovGreen: z.number().optional(),
+  realCpaAovAmber: z.number().optional(),
+  minUndeliveredForAlert: z.number().optional(),
+  minWouldBeSalesForAlert: z.number().optional(),
+  cpaWeekOnWeekIncreasePct: z.number().optional(),
+});
+export type UpdateNumbatrakDashboardAlertThresholdsRequest = z.infer<
+  typeof updateNumbatrakDashboardAlertThresholdsRequestSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Inventory settings (org-wide low-stock threshold default)
+// ---------------------------------------------------------------------------
+
+export const numbatrakInventorySettingsSchema = z.object({
+  id: z.string().uuid(),
+  defaultLowStockThreshold: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakInventorySettings = z.infer<typeof numbatrakInventorySettingsSchema>;
+
+export const updateNumbatrakInventorySettingsRequestSchema = z.object({
+  defaultLowStockThreshold: z.number().int().min(0).optional(),
+});
+export type UpdateNumbatrakInventorySettingsRequest = z.infer<
+  typeof updateNumbatrakInventorySettingsRequestSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Delivery agent settings (org-wide default delivery fee for agents without
+// their own override)
+// ---------------------------------------------------------------------------
+
+export const numbatrakDeliveryAgentSettingsSchema = z.object({
+  id: z.string().uuid(),
+  defaultAgentDeliveryFee: z.number(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakDeliveryAgentSettings = z.infer<typeof numbatrakDeliveryAgentSettingsSchema>;
+
+export const updateNumbatrakDeliveryAgentSettingsRequestSchema = z.object({
+  defaultAgentDeliveryFee: z.number().min(0).optional(),
+});
+export type UpdateNumbatrakDeliveryAgentSettingsRequest = z.infer<
+  typeof updateNumbatrakDeliveryAgentSettingsRequestSchema
+>;

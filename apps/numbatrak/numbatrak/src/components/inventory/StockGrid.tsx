@@ -16,6 +16,9 @@ interface StockGridProps {
   filterLocation?: string | null;
   /** Server-computed: every agent's holdings x cost price, summed org-wide. */
   costOfInventory: number;
+  /** Org-wide fallback (organizations/InventorySettings.tsx) used when a
+   * product's own low_stock_threshold is null. */
+  defaultLowStockThreshold?: number;
 }
 
 export function StockGrid({
@@ -28,6 +31,7 @@ export function StockGrid({
   filterSubBrand,
   filterLocation,
   costOfInventory,
+  defaultLowStockThreshold,
 }: StockGridProps) {
   const holderAgents = useMemo(() => {
     const list = agents
@@ -88,7 +92,8 @@ export function StockGrid({
     onHandMap.get(agentId)?.get(productId) ?? 0;
 
   const isLowStock = (agentId: number, productId: string, qty: number) => {
-    const threshold = products.find((p) => p.id === productId)?.low_stock_threshold;
+    const productThreshold = products.find((p) => p.id === productId)?.low_stock_threshold;
+    const threshold = productThreshold ?? defaultLowStockThreshold;
     if (threshold == null || threshold <= 0) return false;
     return qty <= threshold;
   };

@@ -53,19 +53,25 @@ export function DashboardAlertThresholdsSettings({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setThresholds(loadDashboardAlertThresholds(organizationId));
+    let cancelled = false;
+    loadDashboardAlertThresholds(organizationId).then((loaded) => {
+      if (!cancelled) setThresholds(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [organizationId]);
 
-  const handleSave = () => {
-    saveDashboardAlertThresholds(organizationId, thresholds);
+  const handleSave = async () => {
+    await saveDashboardAlertThresholds(thresholds);
     setSaved(true);
     onSaved?.();
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleReset = () => {
-    resetDashboardAlertThresholds(organizationId);
-    setThresholds({ ...DEFAULT_DASHBOARD_ALERT_THRESHOLDS });
+  const handleReset = async () => {
+    const reset = await resetDashboardAlertThresholds();
+    setThresholds(reset);
     onSaved?.();
   };
 
@@ -79,8 +85,8 @@ export function DashboardAlertThresholdsSettings({
       </div>
       <p className="text-sm text-muted-foreground mb-4">
         Six watchers ({DASHBOARD_WATCHERS.map((w) => WATCHER_LABELS[w]).join(", ")})
-        use these values for colour tonation and the notification bell. Stored per
-        browser until org settings sync ships.
+        use these values for colour tonation and the notification bell. Shared
+        across everyone in this organization.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">

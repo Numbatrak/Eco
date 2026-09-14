@@ -4,7 +4,7 @@
 // reference `user`. `id` stays bigint (identity) to match every other
 // Numbatrak table's `agent_id bigint` FK columns without a cast.
 import { sql } from "drizzle-orm";
-import { bigint, boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { organization, user } from "../../auth-schema.js";
 
@@ -28,6 +28,10 @@ export const numbatrakAgents = pgTable(
     contactPerson: text("contact_person"),
     contactPhone: text("contact_phone"),
     contactEmail: text("contact_email"),
+    // Null = use the org's numbatrakDeliveryAgentSettings.defaultAgentDeliveryFee
+    // (delivery-agent-settings.ts) instead. Not yet consumed by remittance
+    // calculations - see that table's doc comment.
+    deliveryFeeOverride: numeric("delivery_fee_override", { precision: 14, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

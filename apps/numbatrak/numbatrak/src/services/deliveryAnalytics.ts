@@ -75,12 +75,10 @@ export async function fetchDeliveryRateByLocationFiltered(
   if (!organizationId) {
     return [
       { location: "Overall", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
-      { location: "Lagos", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
-      { location: "Outside Lagos", totalDeliveries: 0, deliveredCount: 0, waybilledCount: 0, deliveryRate: 0 },
     ];
   }
-  // Location filtering is meaningless for this endpoint (it computes the
-  // Lagos/Outside-Lagos split itself) - drop it before building params.
+  // Location filtering is meaningless for this endpoint (it computes its own
+  // per-agent-location breakdown) - drop it before building params.
   const params = filtersToParams({ ...filters, location: "all" });
   const { rates } = await apiRequest<{ rates: DeliveryRateByLocation[] }>(
     `/org/numbatrak/dashboard/delivery-rate-by-location?${params.toString()}`

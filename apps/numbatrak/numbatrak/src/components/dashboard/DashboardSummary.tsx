@@ -77,9 +77,14 @@ export function DashboardSummary({
   const hasAdSpend = (metrics?.adSpend ?? 0) > 0;
 
   useEffect(() => {
-    if (currentOrganization) {
-      setThresholds(loadDashboardAlertThresholds(currentOrganization.id));
-    }
+    if (!currentOrganization) return;
+    let cancelled = false;
+    loadDashboardAlertThresholds(currentOrganization.id).then((loaded) => {
+      if (!cancelled) setThresholds(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [currentOrganization?.id]);
 
   useEffect(() => {

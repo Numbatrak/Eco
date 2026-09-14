@@ -61,7 +61,7 @@ export function DashboardNotificationBell(_props: DashboardNotificationBellProps
     }
     try {
       setLoading(true);
-      const thresholds = loadDashboardAlertThresholds(currentOrganization.id);
+      const thresholds = await loadDashboardAlertThresholds(currentOrganization.id);
       const { startDate, endDate } = resolveDateRange(dateFilter);
       const metricsScope = effectiveScope();
 

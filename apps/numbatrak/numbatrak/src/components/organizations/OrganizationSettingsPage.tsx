@@ -22,6 +22,8 @@ import { OrderAssignmentSettings } from "./OrderAssignmentSettings";
 import { DeliveryFeeSettings } from "./DeliveryFeeSettings";
 import { OrganizationBrandingSettings } from "./OrganizationBrandingSettings";
 import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSettings";
+import { InventorySettings } from "./InventorySettings";
+import { DeliveryAgentSettings } from "./DeliveryAgentSettings";
 import { SubscriptionSection } from "./SubscriptionSection";
 import { Switch } from "../ui/switch";
 import { PageLayout } from "../layout/PageLayout";
@@ -734,6 +736,14 @@ export function OrganizationSettingsPage() {
           <DashboardAlertThresholdsSettings
             organizationId={currentOrganization.id}
           />
+        )}
+
+        {canEditOrganization && (
+          <InventorySettings organizationId={currentOrganization.id} />
+        )}
+
+        {canEditOrganization && (
+          <DeliveryAgentSettings organizationId={currentOrganization.id} />
         )}
 
         {/* Subscription & Billing */}

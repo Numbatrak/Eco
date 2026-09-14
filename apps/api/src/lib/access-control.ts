@@ -55,8 +55,10 @@ const statement = {
   // Every role (including csr) can view the dashboard - csr just sees a
   // cut-down version (no money tiles) via client-side UI gating, mirroring
   // the source app's own role-based section visibility, not a resource-level
-  // access difference like numbatrakWallet has.
-  numbatrakDashboard: ["view"],
+  // access difference like numbatrakWallet has. "manage" gates writing the
+  // org's alert-threshold config (owner/admin/manager only, like the other
+  // settings-shaped resources below).
+  numbatrakDashboard: ["view", "manage"],
   // CSR gets view-only, like numbatrakProducts (not numbatrakOrders' create+update grant).
   numbatrakForms: ["view", "create", "update", "delete"],
   // Per the Feature Spec's confirmed decision: "Both CRS and manager can
@@ -107,7 +109,7 @@ export const OWNER_NUMBATRAK_GRANTS = {
   numbatrakWallet: ["view", "manage"],
   numbatrakExpenses: ["view", "create", "update", "delete"],
   numbatrakFollowUps: ["view", "create", "update", "delete"],
-  numbatrakDashboard: ["view"],
+  numbatrakDashboard: ["view", "manage"],
   numbatrakForms: ["view", "create", "update", "delete"],
   numbatrakInventory: ["view", "manage"],
   numbatrakStaff: ["view", "manage"],
@@ -132,7 +134,7 @@ export const MANAGER_NUMBATRAK_GRANTS = {
   numbatrakWallet: ["view", "manage"],
   numbatrakExpenses: ["view", "create", "update", "delete"],
   numbatrakFollowUps: ["view", "create", "update", "delete"],
-  numbatrakDashboard: ["view"],
+  numbatrakDashboard: ["view", "manage"],
   numbatrakForms: ["view", "create", "update", "delete"],
   numbatrakInventory: ["view", "manage"],
   numbatrakStaff: ["view", "manage"],

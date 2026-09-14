@@ -20,6 +20,7 @@ interface AgentDto {
   contactPerson: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
+  deliveryFeeOverride: number | null;
   createdAt: string | null;
 }
 
@@ -34,6 +35,7 @@ function fromDto(dto: AgentDto): Agent {
     contact_person: dto.contactPerson,
     contact_phone: dto.contactPhone,
     contact_email: dto.contactEmail,
+    delivery_fee_override: dto.deliveryFeeOverride,
     created_at: dto.createdAt,
   };
 }
@@ -86,6 +88,7 @@ export async function createAgent(input: {
   contact_person?: string | null;
   contact_phone?: string | null;
   contact_email?: string | null;
+  delivery_fee_override?: number | null;
 }): Promise<Agent> {
   const contact = normalizeAgentContact(input);
   const dto = await apiRequest<AgentDto>("/org/numbatrak/agents", {
@@ -96,6 +99,7 @@ export async function createAgent(input: {
       contactPerson: contact.contact_person,
       contactPhone: contact.contact_phone,
       contactEmail: contact.contact_email,
+      deliveryFeeOverride: input.delivery_fee_override ?? null,
     },
   });
   return fromDto(dto);
@@ -110,6 +114,7 @@ export async function updateAgent(
     contact_person?: string | null;
     contact_phone?: string | null;
     contact_email?: string | null;
+    delivery_fee_override?: number | null;
   }
 ): Promise<Agent> {
   const contact = normalizeAgentContact(input);
@@ -121,6 +126,7 @@ export async function updateAgent(
       contactPerson: contact.contact_person,
       contactPhone: contact.contact_phone,
       contactEmail: contact.contact_email,
+      deliveryFeeOverride: input.delivery_fee_override ?? null,
       ...(input.active !== undefined ? { active: input.active } : {}),
     },
   });

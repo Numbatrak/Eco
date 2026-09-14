@@ -12,6 +12,7 @@ import {
 import { listStockMovements } from "../../services/stockMovements";
 import { fetchAgents } from "../../services/agents";
 import { fetchProducts } from "../../services/products";
+import { loadInventorySettings, DEFAULT_INVENTORY_SETTINGS } from "../../services/inventorySettings";
 import { AgentStockOnHandRow } from "../../types/stockMovement";
 import { StockMovement } from "../../types/stockMovement";
 import { StockGrid } from "../inventory/StockGrid";
@@ -39,6 +40,19 @@ export default function AgentDetailPage() {
     []
   );
   const [loading, setLoading] = useState(true);
+  const [defaultLowStockThreshold, setDefaultLowStockThreshold] = useState(
+    DEFAULT_INVENTORY_SETTINGS.defaultLowStockThreshold
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    loadInventorySettings(currentOrganization?.id).then((settings) => {
+      if (!cancelled) setDefaultLowStockThreshold(settings.defaultLowStockThreshold);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentOrganization?.id]);
 
   useEffect(() => {
     if (!currentOrganization || Number.isNaN(id)) {
@@ -185,6 +199,7 @@ export default function AgentDetailPage() {
             loading={loading}
             filterAgentId={id}
             costOfInventory={agentCostOfInventory}
+            defaultLowStockThreshold={defaultLowStockThreshold}
           />
         </section>
 

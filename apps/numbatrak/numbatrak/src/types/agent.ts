@@ -10,5 +10,7 @@ export interface Agent {
   contact_person?: string | null;
   contact_phone?: string | null;
   contact_email?: string | null;
+  /** Null = use the org's DeliveryAgentSettings default instead. */
+  delivery_fee_override?: number | null;
   created_at?: string | null;
 }

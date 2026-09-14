@@ -7,6 +7,7 @@ import { AgentNameInput } from "./AgentNameInput";
 import { LocationSelector } from "./LocationSelector";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { sanitizeDecimalInput } from "../../utils/numericInput";
 
 interface AgentDialogProps {
   open: boolean;
@@ -22,6 +23,8 @@ interface AgentDialogProps {
   onContactPhoneChange: (value: string) => void;
   contactEmail: string;
   onContactEmailChange: (value: string) => void;
+  deliveryFeeOverride: string;
+  onDeliveryFeeOverrideChange: (value: string) => void;
   error: string | null;
   saving: boolean;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -41,6 +44,8 @@ export function AgentDialog({
   onContactPhoneChange,
   contactEmail,
   onContactEmailChange,
+  deliveryFeeOverride,
+  onDeliveryFeeOverrideChange,
   error,
   saving,
   onSubmit,
@@ -120,6 +125,23 @@ export function AgentDialog({
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="dialog-form-field space-y-2">
+              <Label htmlFor="delivery-fee-override" className="dialog-field-label">
+                Delivery fee override (₦)
+              </Label>
+              <Input
+                id="delivery-fee-override"
+                type="text"
+                inputMode="decimal"
+                value={deliveryFeeOverride}
+                onChange={(e) =>
+                  onDeliveryFeeOverrideChange(sanitizeDecimalInput(e.target.value))
+                }
+                placeholder="Leave blank to use the org default"
+                className="w-full max-w-none"
+              />
             </div>
           </form>
         </div>

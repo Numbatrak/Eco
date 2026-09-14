@@ -99,7 +99,7 @@ export function FormResponseTableHeader({
             onClick={() => handleSort("profit")}
             className="flex items-center gap-1 hover:text-primary ml-auto"
           >
-            Net Profit
+            Gross Profit
             <SortIcon column="profit" />
           </button>
         </th>
