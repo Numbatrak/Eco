@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, lt } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { orders, orderItems, type Database } from "@platform/db";
 import { sendEmail } from "../../auth/lib/email.js";
@@ -186,7 +186,7 @@ export async function findOrderById(
   return row ?? null;
 }
 
-/** Conditional update - only flips while still pending, so a webhook and a status-poll racing each other can't double-process. */
+/** Conditional update - only flips while still pending, so a webhook and a status-poll racing each other can't double-process. Also clears any abandoned-checkout flag, since the order just settled one way or the other. */
 async function transitionPendingOrder(
   db: Database,
   orderId: string,
@@ -194,8 +194,18 @@ async function transitionPendingOrder(
 ): Promise<boolean> {
   const result = await db
     .update(orders)
-    .set({ status: to, updatedAt: new Date() })
+    .set({ status: to, abandonedAt: null, updatedAt: new Date() })
     .where(and(eq(orders.id, orderId), eq(orders.status, "pending")))
+    .returning({ id: orders.id });
+  return result.length > 0;
+}
+
+/** Conditional update - only flips while still pending and not already flagged, so a concurrent sweep run can't double-notify. */
+export async function markOrderAbandoned(db: Database, orderId: string): Promise<boolean> {
+  const result = await db
+    .update(orders)
+    .set({ abandonedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(orders.id, orderId), eq(orders.status, "pending"), isNull(orders.abandonedAt)))
     .returning({ id: orders.id });
   return result.length > 0;
 }
@@ -266,4 +276,19 @@ export async function markOrderPaid(
 
 export async function markOrderFailed(db: Database, order: OrderRow): Promise<boolean> {
   return transitionPendingOrder(db, order.id, "failed");
+}
+
+/** Stale pending online-payment orders past the abandonment threshold, not yet flagged. COD orders settle to "paid" synchronously at checkout (see checkout.ts), so they never qualify. */
+export async function findAbandonedCheckoutCandidates(db: Database, olderThan: Date): Promise<OrderRow[]> {
+  return db
+    .select()
+    .from(orders)
+    .where(
+      and(
+        eq(orders.status, "pending"),
+        eq(orders.paymentMethod, "online"),
+        isNull(orders.abandonedAt),
+        lt(orders.createdAt, olderThan),
+      ),
+    );
 }

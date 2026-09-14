@@ -22,21 +22,21 @@ import { AgentContactCard } from "./AgentContactCard";
 import { Agent } from "../../types/agent";
 import { Product } from "../../types/product";
 import type { AgentMetrics } from "../../services/agentMetrics";
-import type { WalletRemittanceLine } from "../../types/wallet";
+import type { RemittanceLine } from "../../types/remittance";
 
 export default function AgentDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
   const id = agentId ? parseInt(agentId, 10) : NaN;
   const { currentOrganization } = useOrganization();
   const { hasAnyRole } = usePermissions();
-  const canViewWallet = hasAnyRole(["Manager", "Admin", "Owner"]);
+  const canViewRemittance = hasAnyRole(["Manager", "Admin", "Owner"]);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [rows, setRows] = useState<AgentStockOnHandRow[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [metrics, setMetrics] = useState<AgentMetrics | null>(null);
-  const [remittanceLines, setRemittanceLines] = useState<WalletRemittanceLine[]>(
+  const [remittanceLines, setRemittanceLines] = useState<RemittanceLine[]>(
     []
   );
   const [loading, setLoading] = useState(true);
@@ -203,12 +203,12 @@ export default function AgentDetailPage() {
           />
         </section>
 
-        {canViewWallet && (
+        {canViewRemittance && (
           <AgentRemittanceHistory
             lines={remittanceLines}
             loading={loading}
             agentId={id}
-            canViewWallet={canViewWallet}
+            canViewRemittance={canViewRemittance}
           />
         )}
 

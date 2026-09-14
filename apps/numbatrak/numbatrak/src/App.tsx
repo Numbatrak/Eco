@@ -29,7 +29,7 @@ const DeliveriesForm = lazy(() => import("./components/DeliveriesForm"));
 const DeliveryAnalyticsPage = lazy(() =>
   import("./components/deliveryAnalytics/DeliveryAnalyticsPage").then((m) => ({ default: m.DeliveryAnalyticsPage })),
 );
-const WalletPage = lazy(() => import("./components/wallet/WalletPage").then((m) => ({ default: m.WalletPage })));
+const RemittancePage = lazy(() => import("./components/remittance/RemittancePage").then((m) => ({ default: m.RemittancePage })));
 const PlaceholderPage = lazy(() => import("./components/PlaceholderPage").then((m) => ({ default: m.PlaceholderPage })));
 const InventoryForm = lazy(() => import("./components/InventoryForm"));
 const StaffForm = lazy(() => import("./components/StaffForm"));
@@ -488,7 +488,7 @@ function AppContent() {
                   path="/delivery-analytics"
                   element={<DeliveryAnalyticsPage />}
                 />
-                <Route path="/wallet" element={<WalletPage />} />
+                <Route path="/remittance" element={<RemittancePage />} />
                 <Route path="/inventory" element={<InventoryForm />} />
                 <Route path="/staff/:staffId" element={<StaffDetailPage />} />
                 <Route path="/staff" element={<StaffForm />} />
@@ -531,8 +531,8 @@ function AppContent() {
                 />
                 {/* Legacy paths → new structure (Developer Brief §03) */}
                 <Route
-                  path="/remittance"
-                  element={<Navigate to="/wallet" replace />}
+                  path="/wallet"
+                  element={<Navigate to="/remittance" replace />}
                 />
                 <Route
                   path="/reports"

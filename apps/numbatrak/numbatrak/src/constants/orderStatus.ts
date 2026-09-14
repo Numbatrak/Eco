@@ -29,7 +29,7 @@ export type OrderStatus =
   | TerminalOrderStatus
   | LegacyOrderStatus;
 
-/** Statuses that count as delivered for profit, wallet, and inventory. */
+/** Statuses that count as delivered for profit, remittance, and inventory. */
 export const DELIVERED_STATUSES: readonly string[] = ["delivered", "completed"];
 
 export const ACTIVE_PIPELINE_STATUSES: readonly OrderStatus[] = [

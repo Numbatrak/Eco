@@ -32,6 +32,7 @@ import {
 } from "../../services/crm";
 import { Plus, Phone, AlertTriangle, ShoppingBag, Send, CreditCard, BarChart3, Users } from "lucide-react";
 import { sanitizeIntegerInput } from "../../utils/numericInput";
+import { ORDER_STATUS_SELECT_OPTIONS, orderStatusLabel } from "../../constants/orderStatus";
 
 type Tab = "customers" | "feedback" | "complaints" | "purchases" | "campaigns" | "credits" | "feedback-dashboard" | "complaint-dashboard";
 
@@ -85,9 +86,18 @@ export function CrmPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const reloadCustomers = useCallback(async (status: string) => {
+    try {
+      setCustomers(await fetchCustomers(status ? { status } : undefined));
+    } catch (err) {
+      console.error("Failed to filter customers", err);
+    }
+  }, []);
+
   // --- Form state ---
   const [custName, setCustName] = useState("");
   const [custPhone, setCustPhone] = useState("");
+  const [customerStatusFilter, setCustomerStatusFilter] = useState("");
   const [complaintDesc, setComplaintDesc] = useState("");
   const [complaintCustId, setComplaintCustId] = useState("");
   const [campaignName, setCampaignName] = useState("");
@@ -154,6 +164,21 @@ export function CrmPage() {
           {tab === "customers" && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Customers</h3>
+              <div className="flex flex-wrap gap-2 items-end">
+                <label className="text-sm text-muted-foreground">
+                  Status
+                  <select
+                    value={customerStatusFilter}
+                    onChange={(e) => { setCustomerStatusFilter(e.target.value); void reloadCustomers(e.target.value); }}
+                    className="ml-2 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  >
+                    <option value="">All</option>
+                    {ORDER_STATUS_SELECT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               {canManage && (
                 <div className="flex flex-wrap gap-2 items-end bg-muted/50 p-3 rounded-lg">
                   <input type="text" placeholder="Name" value={custName} onChange={(e) => setCustName(e.target.value)} className="w-40 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
@@ -169,7 +194,7 @@ export function CrmPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-2 px-2">Name</th><th className="text-left py-2 px-2">Phone</th><th className="text-left py-2 px-2">Location</th><th className="text-right py-2 px-2">LTV</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">More Purchases</th>
+                    <th className="text-left py-2 px-2">Name</th><th className="text-left py-2 px-2">Phone</th><th className="text-left py-2 px-2">Location</th><th className="text-left py-2 px-2">Status</th><th className="text-left py-2 px-2">First Click</th><th className="text-left py-2 px-2">Last Click</th><th className="text-right py-2 px-2">Order Revenue</th><th className="text-right py-2 px-2">More Purchase Revenue</th><th className="text-right py-2 px-2">LTV</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">More Purchases</th>
                   </tr></thead>
                   <tbody>
                     {customers.map((c) => (
@@ -177,12 +202,17 @@ export function CrmPage() {
                         <td className="py-2 px-2 text-foreground">{c.name}</td>
                         <td className="py-2 px-2 text-foreground">{c.phone}</td>
                         <td className="py-2 px-2 text-foreground">{c.location ?? "—"}</td>
+                        <td className="py-2 px-2 text-foreground">{c.latest_order_status ? orderStatusLabel(c.latest_order_status) : "—"}</td>
+                        <td className="py-2 px-2 text-muted-foreground">{c.first_click_source ?? "—"}</td>
+                        <td className="py-2 px-2 text-muted-foreground">{c.last_click_source ?? "—"}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{c.order_revenue.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{c.more_purchase_revenue.toLocaleString()}</td>
                         <td className="py-2 px-2 text-right text-foreground font-medium">{c.ltv.toLocaleString()}</td>
                         <td className="py-2 px-2 text-right text-foreground">{c.order_count}</td>
                         <td className="py-2 px-2 text-right text-foreground">{c.more_purchase_count}</td>
                       </tr>
                     ))}
-                    {customers.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No customers yet</td></tr>}
+                    {customers.length === 0 && <tr><td colSpan={11} className="py-8 text-center text-muted-foreground">No customers yet</td></tr>}
                   </tbody>
                 </table>
               </div>

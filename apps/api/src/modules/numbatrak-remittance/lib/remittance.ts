@@ -1,13 +1,13 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { numbatrakAgents, numbatrakCustomerOrders, numbatrakWalletRemittanceLines, numbatrakStaff, user, type Database } from "@platform/db";
-import type { NumbatrakRemittanceLineStatus, NumbatrakWalletRemittanceLine, NumbatrakWalletSourceOrder } from "@platform/shared-types";
+import { numbatrakAgents, numbatrakCustomerOrders, numbatrakRemittanceLines, numbatrakStaff, user, type Database } from "@platform/db";
+import type { NumbatrakRemittanceLineStatus, NumbatrakRemittanceLine, NumbatrakRemittanceSourceOrder } from "@platform/shared-types";
 import { DELIVERED_STATUSES } from "../../numbatrak-orders/lib/order-status.js";
 import { sendEmail } from "../../auth/lib/email.js";
 import { remittanceReviewEmail } from "../../../lib/email-templates.js";
 
 /**
- * Server-side port of src/services/wallet.ts. Deliberately queries
+ * Server-side port of src/services/remittance.ts. Deliberately queries
  * numbatrak_customer_orders only - no form_responses fallback/merge, same
  * scope-narrowing precedent already accepted by the ported Orders module
  * (customerOrders.ts's own comment: "no form_responses merge this slice").
@@ -18,8 +18,8 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Whether a delivered order should appear in the Wallet remittance flow. */
-function entersWalletRemittance(moneyReceivedBy: string | null | undefined): boolean {
+/** Whether a delivered order should appear in the remittance flow. */
+function entersRemittanceFlow(moneyReceivedBy: string | null | undefined): boolean {
   return moneyReceivedBy === "agent_collected";
 }
 
@@ -67,7 +67,7 @@ export function computeRemittanceLineStatus(input: {
   return "short";
 }
 
-async function fetchSourceOrders(db: Database, organizationId: string): Promise<NumbatrakWalletSourceOrder[]> {
+async function fetchSourceOrders(db: Database, organizationId: string): Promise<NumbatrakRemittanceSourceOrder[]> {
   const rows = await db
     .select({
       id: numbatrakCustomerOrders.id,
@@ -80,7 +80,7 @@ async function fetchSourceOrders(db: Database, organizationId: string): Promise<
       subBrand: numbatrakCustomerOrders.subBrand,
       paymentMethod: numbatrakCustomerOrders.paymentMethod,
       moneyReceivedBy: numbatrakCustomerOrders.moneyReceivedBy,
-      walletStatus: numbatrakCustomerOrders.walletStatus,
+      remittanceStatus: numbatrakCustomerOrders.remittanceStatus,
       completedAt: numbatrakCustomerOrders.completedAt,
     })
     .from(numbatrakCustomerOrders)
@@ -101,11 +101,11 @@ async function fetchSourceOrders(db: Database, organizationId: string): Promise<
     for (const a of agents) agentNames.set(a.id, a.name);
   }
 
-  const result: NumbatrakWalletSourceOrder[] = [];
+  const result: NumbatrakRemittanceSourceOrder[] = [];
   for (const row of rows) {
     if (row.agentId == null) continue;
     const moneyReceivedBy = inferMoneyReceivedBy(row.moneyReceivedBy, row.paymentMethod);
-    if (!entersWalletRemittance(moneyReceivedBy)) continue;
+    if (!entersRemittanceFlow(moneyReceivedBy)) continue;
     if (!row.completedAt) continue;
 
     const orderRevenue = num(row.orderRevenue);
@@ -122,21 +122,21 @@ async function fetchSourceOrders(db: Database, organizationId: string): Promise<
       deliveredValue: deliveredValue(orderRevenue, amountPaid),
       subBrand: row.subBrand,
       paymentMethod: (row.paymentMethod as "cod" | "online") ?? "cod",
-      moneyReceivedBy: moneyReceivedBy as NumbatrakWalletSourceOrder["moneyReceivedBy"],
-      walletStatus: row.walletStatus as NumbatrakWalletSourceOrder["walletStatus"],
+      moneyReceivedBy: moneyReceivedBy as NumbatrakRemittanceSourceOrder["moneyReceivedBy"],
+      remittanceStatus: row.remittanceStatus as NumbatrakRemittanceSourceOrder["remittanceStatus"],
       completedAt: row.completedAt.toISOString(),
     });
   }
   return result;
 }
 
-type PersistedLine = typeof numbatrakWalletRemittanceLines.$inferSelect;
+type PersistedLine = typeof numbatrakRemittanceLines.$inferSelect;
 
 async function fetchPersistedLines(db: Database, organizationId: string): Promise<Map<string, PersistedLine>> {
   const rows = await db
     .select()
-    .from(numbatrakWalletRemittanceLines)
-    .where(eq(numbatrakWalletRemittanceLines.organizationId, organizationId));
+    .from(numbatrakRemittanceLines)
+    .where(eq(numbatrakRemittanceLines.organizationId, organizationId));
   const map = new Map<string, PersistedLine>();
   for (const row of rows) {
     map.set(remittanceLineKey(row.agentId, row.remittanceDate), row);
@@ -146,10 +146,10 @@ async function fetchPersistedLines(db: Database, organizationId: string): Promis
 
 function aggregateLines(
   organizationId: string,
-  orders: NumbatrakWalletSourceOrder[],
+  orders: NumbatrakRemittanceSourceOrder[],
   persisted: Map<string, PersistedLine>,
-): NumbatrakWalletRemittanceLine[] {
-  const groups = new Map<string, NumbatrakWalletSourceOrder[]>();
+): NumbatrakRemittanceLine[] {
+  const groups = new Map<string, NumbatrakRemittanceSourceOrder[]>();
   for (const order of orders) {
     const date = toRemittanceCalendarDate(order.completedAt);
     if (!date) continue;
@@ -159,7 +159,7 @@ function aggregateLines(
     groups.set(key, list);
   }
 
-  const lines: NumbatrakWalletRemittanceLine[] = [];
+  const lines: NumbatrakRemittanceLine[] = [];
   for (const [key, lineOrders] of groups) {
     const agentId = lineOrders[0]!.agentId;
     const date = toRemittanceCalendarDate(lineOrders[0]!.completedAt)!;
@@ -203,7 +203,7 @@ function aggregateLines(
   });
 }
 
-export async function fetchRemittanceLines(db: Database, organizationId: string): Promise<NumbatrakWalletRemittanceLine[]> {
+export async function fetchRemittanceLines(db: Database, organizationId: string): Promise<NumbatrakRemittanceLine[]> {
   const [orders, persisted] = await Promise.all([
     fetchSourceOrders(db, organizationId),
     fetchPersistedLines(db, organizationId),
@@ -216,12 +216,12 @@ async function findLine(
   organizationId: string,
   agentId: number,
   remittanceDate: string,
-): Promise<NumbatrakWalletRemittanceLine | null> {
+): Promise<NumbatrakRemittanceLine | null> {
   const lines = await fetchRemittanceLines(db, organizationId);
   return lines.find((l) => l.agentId === agentId && l.remittanceDate === remittanceDate) ?? null;
 }
 
-/** Sync per-order wallet status once a line is fully remitted. */
+/** Sync per-order remittance status once a line is fully remitted. */
 async function syncOrdersRemittanceStatus(
   db: Database,
   organizationId: string,
@@ -232,7 +232,7 @@ async function syncOrdersRemittanceStatus(
   await db
     .update(numbatrakCustomerOrders)
     .set({
-      walletStatus: "collected",
+      remittanceStatus: "collected",
       remittanceConfirmedAt: new Date(),
       remittanceConfirmedBy: userId,
     })
@@ -297,7 +297,7 @@ export async function recordRemittance(
   remittanceDate: string,
   actualAmount: number,
   userId: string,
-): Promise<NumbatrakWalletRemittanceLine> {
+): Promise<NumbatrakRemittanceLine> {
   if (actualAmount < 0) throw new Error("Actual amount cannot be negative.");
 
   const line = await findLine(db, organizationId, agentId, remittanceDate);
@@ -307,7 +307,7 @@ export async function recordRemittance(
   const now = new Date();
 
   await db
-    .insert(numbatrakWalletRemittanceLines)
+    .insert(numbatrakRemittanceLines)
     .values({
       organizationId,
       agentId,
@@ -323,9 +323,9 @@ export async function recordRemittance(
     })
     .onConflictDoUpdate({
       target: [
-        numbatrakWalletRemittanceLines.organizationId,
-        numbatrakWalletRemittanceLines.agentId,
-        numbatrakWalletRemittanceLines.remittanceDate,
+        numbatrakRemittanceLines.organizationId,
+        numbatrakRemittanceLines.agentId,
+        numbatrakRemittanceLines.remittanceDate,
       ],
       set: {
         totalDeliveredValue: String(line.totalDeliveredValue),

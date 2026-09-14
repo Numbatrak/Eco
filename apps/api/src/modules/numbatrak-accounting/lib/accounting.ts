@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { numbatrakCustomerOrders, numbatrakUnifiedExpenses, numbatrakWalletRemittanceLines, type Database } from "@platform/db";
+import { numbatrakCustomerOrders, numbatrakUnifiedExpenses, type Database } from "@platform/db";
 import { normalizeOrgExpenseCategory, isAdvertisingCategory } from "../../numbatrak-expenses/lib/category-normalization.js";
 import { DELIVERED_STATUSES } from "../../numbatrak-orders/lib/order-status.js";
 
@@ -69,7 +69,7 @@ export async function getAccountingReport(
       completedAt: numbatrakCustomerOrders.completedAt,
       createdAt: numbatrakCustomerOrders.createdAt,
       moneyReceivedBy: numbatrakCustomerOrders.moneyReceivedBy,
-      walletStatus: numbatrakCustomerOrders.walletStatus,
+      remittanceStatus: numbatrakCustomerOrders.remittanceStatus,
     })
     .from(numbatrakCustomerOrders)
     .where(and(...orderConditions));
@@ -96,7 +96,7 @@ export async function getAccountingReport(
     bySubBrand[brand] = (bySubBrand[brand] ?? 0) + revenue;
 
     if (row.moneyReceivedBy === "agent_collected") {
-      if (row.walletStatus === "collected" || row.walletStatus === "released") {
+      if (row.remittanceStatus === "collected" || row.remittanceStatus === "released") {
         totalCollected += revenue;
       }
     } else {

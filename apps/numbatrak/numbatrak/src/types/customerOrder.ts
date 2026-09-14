@@ -37,10 +37,10 @@ export interface CustomerOrder {
   funnel_name: string | null;
   /** Sub-brand tag copied from form or set on manual entry */
   sub_brand: string | null;
-  /** Who received payment — drives Wallet remittance (spec) */
+  /** Who received payment — drives Remittance (spec) */
   money_received_by: MoneyReceivedBy;
   payment_method?: "cod" | "online" | null;
-  wallet_status?: string | null;
+  remittance_status?: string | null;
 }
 
 export interface CustomerOrderItem {

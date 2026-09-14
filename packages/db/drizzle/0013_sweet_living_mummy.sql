@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "abandoned_at" timestamp with time zone;

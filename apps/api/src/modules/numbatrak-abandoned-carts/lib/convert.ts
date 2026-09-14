@@ -3,6 +3,8 @@ import { numbatrakCustomerOrderItems, numbatrakCustomerOrders, numbatrakForms, n
 import type { NumbatrakOrder } from "@platform/shared-types";
 import { attachRelations } from "../../numbatrak-orders/lib/orders.js";
 import { findCartForOrg, markCartConverted } from "./abandoned-carts.js";
+import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
+import { parseAttributionSource } from "../../numbatrak-crm/lib/attribution.js";
 
 interface CartLine {
   product_id: string;
@@ -84,18 +86,30 @@ export async function convertCartToOrder(db: Database, organizationId: string, c
   const deliveryFee = cart.deliveryFee != null ? Number(cart.deliveryFee) : 0;
   const profit = hasItems ? orderRevenue - orderCost - deliveryFee : cart.profit != null ? Number(cart.profit) : null;
 
+  const cartPhone = cart.phoneNumber || cart.whatsappNumber || null;
+  const customer = cartPhone
+    ? await findOrCreateCustomer(db, organizationId, {
+        name: cart.customerName || "Unknown Customer",
+        phone: cartPhone,
+        whatsapp: cart.whatsappNumber,
+        location: cart.state,
+        clickSource: parseAttributionSource(cart.pageUrl),
+      })
+    : null;
+
   const [order] = await db
     .insert(numbatrakCustomerOrders)
     .values({
       organizationId,
       csrId: null,
       agentId: null,
+      customerId: customer?.id ?? null,
       source: "converted_from_cart",
       formId: cart.formId,
       abandonedCartId: cart.id,
       status: "new",
       customerName: cart.customerName || "Unknown Customer",
-      phoneNumber: cart.phoneNumber || cart.whatsappNumber || null,
+      phoneNumber: cartPhone,
       state: cart.state ?? null,
       deliveryAddress: cart.deliveryAddress ?? null,
       orderRevenue: String(orderRevenue),

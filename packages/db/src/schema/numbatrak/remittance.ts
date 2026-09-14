@@ -1,6 +1,7 @@
-// Numbatrak domain: Wallet / agent remittance. Source `public.wallet_remittance_lines`
-// (migration 20260720150000) - one row per agent per calendar day of
-// agent-collected COD deliveries.
+// Numbatrak domain: agent remittance. Source `public.wallet_remittance_lines`
+// (migration 20260720150000, renamed from "wallet" to "remittance" per
+// product decision) - one row per agent per calendar day of agent-collected
+// COD deliveries.
 import { sql } from "drizzle-orm";
 import { check, date, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
@@ -8,8 +9,8 @@ import { organization, user } from "../../auth-schema.js";
 import { numbatrakAgents } from "./agents.js";
 import { numbatrakUnifiedExpenses } from "./expenses.js";
 
-export const numbatrakWalletRemittanceLines = pgTable(
-  "numbatrak_wallet_remittance_lines",
+export const numbatrakRemittanceLines = pgTable(
+  "numbatrak_remittance_lines",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: text("organization_id")
@@ -39,15 +40,15 @@ export const numbatrakWalletRemittanceLines = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("numbatrak_wallet_remittance_lines_org_date_idx").on(table.organizationId, table.remittanceDate),
-    index("numbatrak_wallet_remittance_lines_org_agent_idx").on(table.organizationId, table.agentId),
-    uniqueIndex("numbatrak_wallet_remittance_lines_org_agent_date_unique_idx").on(
+    index("numbatrak_remittance_lines_org_date_idx").on(table.organizationId, table.remittanceDate),
+    index("numbatrak_remittance_lines_org_agent_idx").on(table.organizationId, table.agentId),
+    uniqueIndex("numbatrak_remittance_lines_org_agent_date_unique_idx").on(
       table.organizationId,
       table.agentId,
       table.remittanceDate,
     ),
     check(
-      "numbatrak_wallet_remittance_lines_status_chk",
+      "numbatrak_remittance_lines_status_chk",
       sql`${table.status} IN ('standing', 'remitted', 'short', 'net_owed')`,
     ),
   ],

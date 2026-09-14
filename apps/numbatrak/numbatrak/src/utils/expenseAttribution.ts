@@ -4,7 +4,7 @@ export type ExpenseSourceType =
   | "manual"
   | "waybill_fee"
   | "failed_delivery"
-  | "wallet_net_off";
+  | "remittance_net_off";
 
 export const AD_PLATFORM_BY_SUBCATEGORY: Record<string, string> = {
   meta_ads: "Meta",

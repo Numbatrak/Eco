@@ -355,6 +355,12 @@ export const orders = pgTable(
     discountId: uuid("discount_id").references(() => discounts.id, { onDelete: "set null" }),
     discountCode: text("discount_code"),
     discountAmountCents: integer("discount_amount_cents").notNull().default(0),
+    // Set by the abandoned-checkout sweep when a pending online-payment order
+    // has sat unpaid past the threshold; cleared again in markOrderPaid /
+    // markOrderFailed once the order settles one way or the other. Never
+    // read by the payment state machine itself (transitionPendingOrder keys
+    // only off `status`), so this is purely a reporting/notification flag.
+    abandonedAt: timestamp("abandoned_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

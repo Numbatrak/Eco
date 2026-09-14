@@ -9,6 +9,9 @@ import {
 import type { PublicFormLineItem, SubmitPublicNumbatrakFormResult } from "@platform/shared-types";
 import { getNextAssignedUser } from "../../numbatrak-orders/lib/assignment.js";
 import { createCart } from "../../numbatrak-abandoned-carts/lib/abandoned-carts.js";
+import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
+import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
+import { parseAttributionSource } from "../../numbatrak-crm/lib/attribution.js";
 import { getDeliveryFeeForLocation } from "../../numbatrak-delivery-fees/lib/delivery-fees.js";
 import { validateSubmissionAgainstSchema } from "./validation.js";
 import { resolveLinePricing } from "./offer-pricing.js";
@@ -169,11 +172,20 @@ export async function submitFormOrder(
     const profit = orderRevenue - orderCost;
     const deliveryFee = await getDeliveryFeeForLocation(tx, form.organizationId, contact.state);
 
+    const customer = await findOrCreateCustomer(tx, form.organizationId, {
+      name: contact.customerName!,
+      phone: (contact.phone ?? contact.whatsapp)!,
+      whatsapp: contact.whatsapp,
+      location: contact.state,
+      clickSource: parseAttributionSource(input.pageUrl),
+    });
+
     const [order] = await tx
       .insert(numbatrakCustomerOrders)
       .values({
         organizationId: form.organizationId,
         csrId,
+        customerId: customer.id,
         source: "form",
         formId: form.id,
         status: "new",
@@ -197,6 +209,8 @@ export async function submitFormOrder(
 
     return { order, orderRevenue, orderCost, profit };
   });
+
+  await autoCreateFollowUpForOrder(db, form.organizationId, result.order.id);
 
   return {
     success: true,

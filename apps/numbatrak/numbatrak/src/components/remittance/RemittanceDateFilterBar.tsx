@@ -9,7 +9,7 @@ import {
 } from "../ui/select";
 import { DateFilter, DateFilterType } from "../../utils/dateRange";
 
-interface WalletDateFilterBarProps {
+interface RemittanceDateFilterBarProps {
   dateFilter: DateFilter;
   onDateFilterChange: (filter: DateFilter) => void;
 }
@@ -22,14 +22,14 @@ const PERIOD_OPTIONS: { value: DateFilterType; label: string }[] = [
   { value: "custom", label: "Custom range" },
 ];
 
-export function WalletDateFilterBar({
+export function RemittanceDateFilterBar({
   dateFilter,
   onDateFilterChange,
-}: WalletDateFilterBarProps) {
+}: RemittanceDateFilterBarProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-end gap-3 flex-wrap">
       <div className="space-y-1.5 min-w-[10rem]">
-        <Label htmlFor="wallet-period" className="text-xs text-muted-foreground">
+        <Label htmlFor="remittance-period" className="text-xs text-muted-foreground">
           Period
         </Label>
         <Select
@@ -42,7 +42,7 @@ export function WalletDateFilterBar({
             })
           }
         >
-          <SelectTrigger id="wallet-period" className="w-full sm:w-[11rem]">
+          <SelectTrigger id="remittance-period" className="w-full sm:w-[11rem]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -58,11 +58,11 @@ export function WalletDateFilterBar({
       {dateFilter.type === "custom" && (
         <>
           <div className="space-y-1.5">
-            <Label htmlFor="wallet-from" className="text-xs text-muted-foreground">
+            <Label htmlFor="remittance-from" className="text-xs text-muted-foreground">
               From
             </Label>
             <Input
-              id="wallet-from"
+              id="remittance-from"
               type="date"
               value={dateFilter.startDate ?? ""}
               onChange={(e) =>
@@ -75,11 +75,11 @@ export function WalletDateFilterBar({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wallet-to" className="text-xs text-muted-foreground">
+            <Label htmlFor="remittance-to" className="text-xs text-muted-foreground">
               To
             </Label>
             <Input
-              id="wallet-to"
+              id="remittance-to"
               type="date"
               value={dateFilter.endDate ?? ""}
               onChange={(e) =>

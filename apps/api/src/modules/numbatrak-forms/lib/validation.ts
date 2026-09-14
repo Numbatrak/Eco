@@ -14,7 +14,7 @@ interface FormSchemaPayload {
 
 const NG_PHONE_REGEX = /^(?:\+?234|0)?(70[1-9]|80[2-9]|81[0-9]|90[1-9]|91[0-9])\d{7}$/;
 
-function normalizePhoneInput(value: string): string {
+export function normalizePhoneInput(value: string): string {
   return value.replace(/[\s\-().]/g, "").trim();
 }
 

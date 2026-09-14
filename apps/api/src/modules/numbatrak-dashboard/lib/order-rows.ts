@@ -23,7 +23,7 @@ function num(v: string | null): number {
  * Server-side port of services/orderDataSource.ts's fetchMetricsOrderRows,
  * deliberately narrowed to numbatrak_customer_orders only - no
  * form_responses merge, the same scope-narrowing precedent already applied
- * in Orders/Wallet/Expenses (see those modules' own header comments). The
+ * in Orders/Remittance/Expenses (see those modules' own header comments). The
  * date range itself is NOT applied here - computeBusinessPerformanceMetrics/
  * computeLossMetrics bucket "generated" (by createdAt) and "delivered" (by
  * completedAt ?? createdAt) using two different anchors, so date filtering

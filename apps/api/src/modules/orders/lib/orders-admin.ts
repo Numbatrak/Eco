@@ -19,6 +19,7 @@ function serializeOrderSummary(row: OrderRow): OrderSummary {
     totalCents: row.totalCents,
     currency: row.currency,
     createdAt: row.createdAt.toISOString(),
+    abandonedAt: row.abandonedAt?.toISOString() ?? null,
   };
 }
 

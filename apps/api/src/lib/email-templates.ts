@@ -102,6 +102,26 @@ export function orderConfirmationEmail(params: {
   );
 }
 
+export function abandonedCheckoutEmail(params: {
+  customerName: string;
+  orderNumber: string;
+  amount: string;
+  currency: string;
+  resumeUrl: string;
+}): string {
+  return layout(
+    `<p>Hi ${params.customerName},</p>
+<p>You started an order with us but didn't finish paying - it's still waiting for you:</p>
+<table class="order-table">
+  <tr><td>Order Number</td><td>#${params.orderNumber}</td></tr>
+  <tr class="order-total"><td>Total</td><td>${params.currency} ${params.amount}</td></tr>
+</table>
+<p style="text-align:center"><a href="${params.resumeUrl}" class="btn">Complete Your Order</a></p>
+<p>If you've changed your mind, no action is needed.</p>`,
+    `Complete your order #${params.orderNumber}`,
+  );
+}
+
 export function verifyEmailEmail(verifyUrl: string): string {
   return layout(
     `<p>Hi there,</p>

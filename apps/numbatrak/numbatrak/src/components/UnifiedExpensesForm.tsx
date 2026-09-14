@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { TablePagination } from "./ui/TablePagination";
 import { useClientPagination } from "../hooks/useClientPagination";
-import { WalletDateFilterBar } from "./wallet/WalletDateFilterBar";
+import { RemittanceDateFilterBar } from "./remittance/RemittanceDateFilterBar";
 import { ExpenseSummaryCards } from "./expenses/ExpenseSummaryCards";
 import {
   UnifiedExpenseDialog,
@@ -292,7 +292,7 @@ export default function UnifiedExpensesForm() {
         )}
       </div>
 
-      <WalletDateFilterBar
+      <RemittanceDateFilterBar
         dateFilter={dateFilter}
         onDateFilterChange={setDateFilter}
       />

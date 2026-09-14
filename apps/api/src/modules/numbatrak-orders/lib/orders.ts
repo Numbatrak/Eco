@@ -19,6 +19,8 @@ import { getNextAssignedUser } from "./assignment.js";
 import { getNextStatus, isDeliveredStatus, statusFilterToDbValues } from "./order-status.js";
 import { mergeOrderNotesOnSave } from "./order-notes.js";
 import { createDeliveryMovement, productsAlreadyDelivered } from "./stock.js";
+import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
+import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
 
 export type OrderRow = typeof numbatrakCustomerOrders.$inferSelect;
 export type OrderItemRow = typeof numbatrakCustomerOrderItems.$inferSelect;
@@ -91,6 +93,7 @@ export async function attachRelations(
     id: row.id,
     csrId: row.csrId,
     agentId: row.agentId,
+    customerId: row.customerId,
     status: row.status as NumbatrakOrder["status"],
     source: row.source as NumbatrakOrder["source"],
     customerName: row.customerName,
@@ -214,12 +217,25 @@ export async function createManualOrder(
 
   const csrId = input.csrId ?? (await getNextAssignedUser(db, organizationId));
 
+  // No click context for a dashboard-entered order, and no customer link at
+  // all when there's no phone to dedupe on (numbatrak_customers.phone is
+  // required).
+  const customer = input.phoneNumber
+    ? await findOrCreateCustomer(db, organizationId, {
+        name: input.customerName,
+        phone: input.phoneNumber,
+        location: input.state ?? null,
+        clickSource: null,
+      })
+    : null;
+
   const [order] = await db
     .insert(numbatrakCustomerOrders)
     .values({
       organizationId,
       csrId,
       agentId: input.agentId ?? null,
+      customerId: customer?.id ?? null,
       source: "manual",
       status: "new",
       customerName: input.customerName,
@@ -252,6 +268,8 @@ export async function createManualOrder(
       profit: String(l.profit),
     })),
   );
+
+  await autoCreateFollowUpForOrder(db, organizationId, order.id);
 
   const [full] = await attachRelations(db, [order]);
   return full!;

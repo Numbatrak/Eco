@@ -1,5 +1,5 @@
 import { KPICard } from "../KPICard";
-import { WalletSummary } from "../../types/wallet";
+import { RemittanceSummary } from "../../types/remittance";
 import { formatNaira } from "../../utils/currency";
 import {
   Banknote,
@@ -10,15 +10,15 @@ import {
   Truck,
 } from "lucide-react";
 
-interface WalletSummaryCardsProps {
-  summary: WalletSummary;
+interface RemittanceSummaryCardsProps {
+  summary: RemittanceSummary;
   loading?: boolean;
 }
 
-export function WalletSummaryCards({
+export function RemittanceSummaryCards({
   summary,
   loading,
-}: WalletSummaryCardsProps) {
+}: RemittanceSummaryCardsProps) {
   const placeholder = loading ? "…" : formatNaira(0);
 
   return (

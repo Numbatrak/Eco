@@ -78,6 +78,34 @@
       "when": 1789240926993,
       "tag": "0010_gifted_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789349475422,
+      "tag": "0011_rename_wallet_to_remittance",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789408686068,
+      "tag": "0012_sad_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789409157904,
+      "tag": "0013_sweet_living_mummy",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789425836409,
+      "tag": "0014_robust_impossible_man",
+      "breakpoints": true
     }
   ]
 }

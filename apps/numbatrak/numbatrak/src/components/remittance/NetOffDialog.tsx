@@ -18,13 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { WalletRemittanceLine } from "../../types/wallet";
+import { RemittanceLine } from "../../types/remittance";
 import { formatNaira } from "../../utils/currency";
 import { sanitizeIntegerInput } from "../../utils/numericInput";
 import { AGENT_EXPENSE_SUBCATEGORIES } from "../../constants/expenseCategories";
 
 interface NetOffDialogProps {
-  line: WalletRemittanceLine | null;
+  line: RemittanceLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (amount: number, note: string, subcategory: string) => Promise<void>;

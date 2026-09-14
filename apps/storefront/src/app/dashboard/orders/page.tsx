@@ -56,7 +56,11 @@ function OrdersList(): React.ReactElement {
                   <td>{order.customerName}</td>
                   <td>{formatCents(order.totalCents, order.currency)}</td>
                   <td>
-                    <span className={`badge badge-${order.status}`}>{order.status}</span>
+                    {order.status === "pending" && order.abandonedAt ? (
+                      <span className="badge badge-abandoned">abandoned</span>
+                    ) : (
+                      <span className={`badge badge-${order.status}`}>{order.status}</span>
+                    )}
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                 </tr>

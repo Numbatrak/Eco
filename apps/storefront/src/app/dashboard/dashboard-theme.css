@@ -404,7 +404,8 @@
 }
 
 .badge-failed,
-.badge-cancelled {
+.badge-cancelled,
+.badge-abandoned {
   background: var(--danger-bg);
   color: var(--danger);
 }

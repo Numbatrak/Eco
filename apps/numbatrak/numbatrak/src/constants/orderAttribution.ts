@@ -1,5 +1,5 @@
 /**
- * Cross-cutting order attribution (spec §Orders, §Wallet, §Dashboard).
+ * Cross-cutting order attribution (spec §Orders, §Remittance, §Dashboard).
  * Funnel = how the customer arrived (typically the order form / funnel page).
  * Offer = the sellable package selected on that funnel.
  */
@@ -14,7 +14,7 @@ export const MONEY_RECEIVED_BY_OPTIONS: {
   {
     value: "agent_collected",
     label: "Agent collected (COD)",
-    description: "Delivery agent collected cash on your behalf — creates a Wallet remittance line when delivered.",
+    description: "Delivery agent collected cash on your behalf — creates a Remittance line when delivered.",
   },
   {
     value: "company_account",
@@ -28,8 +28,8 @@ export const MONEY_RECEIVED_BY_OPTIONS: {
   },
 ];
 
-/** Whether a delivered order should appear in Wallet remittance flow. */
-export function entersWalletRemittance(moneyReceivedBy: MoneyReceivedBy | null | undefined): boolean {
+/** Whether a delivered order should appear in the remittance flow. */
+export function entersRemittanceFlow(moneyReceivedBy: MoneyReceivedBy | null | undefined): boolean {
   return moneyReceivedBy === "agent_collected";
 }
 
@@ -43,7 +43,7 @@ export function inferMoneyReceivedBy(
   return "agent_collected";
 }
 
-/** Map spec money flag → legacy payment_method for existing wallet summaries. */
+/** Map spec money flag → legacy payment_method for existing remittance summaries. */
 export function moneyReceivedByToPaymentMethod(
   moneyReceivedBy: MoneyReceivedBy
 ): "cod" | "online" {

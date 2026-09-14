@@ -1,15 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
-import { recordNumbatrakWalletRemittanceRequestSchema } from "@platform/shared-types";
+import { recordNumbatrakRemittanceRequestSchema } from "@platform/shared-types";
 import { auth } from "../../../lib/auth.js";
-import { recordRemittance } from "../lib/wallet.js";
+import { recordRemittance } from "../lib/remittance.js";
 
 export default async function recordRemittanceRoutes(app: FastifyInstance): Promise<void> {
   app.post(
-    "/org/numbatrak/wallet/remittance-lines/record",
-    { preHandler: app.requireOrgPermission({ numbatrakWallet: ["manage"] }) },
+    "/org/numbatrak/remittance/lines/record",
+    { preHandler: app.requireOrgPermission({ numbatrakRemittance: ["manage"] }) },
     async (request, reply) => {
-      const body = recordNumbatrakWalletRemittanceRequestSchema.parse(request.body);
+      const body = recordNumbatrakRemittanceRequestSchema.parse(request.body);
       const db = app.getDb();
       const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
       if (!session) {

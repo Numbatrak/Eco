@@ -222,6 +222,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       discountId: null,
       discountCode: null,
       discountAmountCents: 0,
+      abandonedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -365,6 +366,7 @@ describe("POST /public/sites/:subdomain/checkout", () => {
       discountId: null,
       discountCode: null,
       discountAmountCents: 0,
+      abandonedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

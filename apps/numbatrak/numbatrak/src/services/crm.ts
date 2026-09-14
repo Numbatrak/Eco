@@ -26,6 +26,7 @@ interface CustomerDto {
   morePurchaseRevenue: number;
   orderCount: number;
   morePurchaseCount: number;
+  latestOrderStatus: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -155,6 +156,7 @@ export interface Customer {
   more_purchase_revenue: number;
   order_count: number;
   more_purchase_count: number;
+  latest_order_status: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -266,7 +268,7 @@ function feedbackSettingsFromDto(d: FeedbackSettingsDto): FeedbackSettings {
   return { id: d.id, call_window_days: d.callWindowDays, created_at: d.createdAt, updated_at: d.updatedAt };
 }
 function customerFromDto(d: CustomerDto): Customer {
-  return { id: d.id, name: d.name, phone: d.phone, email: d.email, whatsapp: d.whatsapp, location: d.location, first_click_source: d.firstClickSource, last_click_source: d.lastClickSource, notes: d.notes, ltv: d.ltv, order_revenue: d.orderRevenue, more_purchase_revenue: d.morePurchaseRevenue, order_count: d.orderCount, more_purchase_count: d.morePurchaseCount, created_at: d.createdAt, updated_at: d.updatedAt };
+  return { id: d.id, name: d.name, phone: d.phone, email: d.email, whatsapp: d.whatsapp, location: d.location, first_click_source: d.firstClickSource, last_click_source: d.lastClickSource, notes: d.notes, ltv: d.ltv, order_revenue: d.orderRevenue, more_purchase_revenue: d.morePurchaseRevenue, order_count: d.orderCount, more_purchase_count: d.morePurchaseCount, latest_order_status: d.latestOrderStatus, created_at: d.createdAt, updated_at: d.updatedAt };
 }
 function feedbackCallFromDto(d: FeedbackCallDto): FeedbackCall {
   return { id: d.id, customer_id: d.customerId, customer_name: d.customerName, customer_phone: d.customerPhone, order_id: d.orderId, assigned_to: d.assignedTo, assigned_to_name: d.assignedToName, scheduled_at: d.scheduledAt, disposition: d.disposition, satisfaction_score: d.satisfactionScore, reorder_likelihood: d.reorderLikelihood, callback_at: d.callbackAt, attempts: d.attempts, completed_at: d.completedAt, created_at: d.createdAt, updated_at: d.updatedAt };
@@ -299,8 +301,9 @@ export async function updateFeedbackSettings(callWindowDays: number): Promise<Fe
   return feedbackSettingsFromDto(dto);
 }
 
-export async function fetchCustomers(): Promise<Customer[]> {
-  const { customers } = await apiRequest<{ customers: CustomerDto[] }>("/org/numbatrak/crm/customers");
+export async function fetchCustomers(filters?: { status?: string }): Promise<Customer[]> {
+  const query = filters?.status ? `?status=${encodeURIComponent(filters.status)}` : "";
+  const { customers } = await apiRequest<{ customers: CustomerDto[] }>(`/org/numbatrak/crm/customers${query}`);
   return customers.map(customerFromDto);
 }
 

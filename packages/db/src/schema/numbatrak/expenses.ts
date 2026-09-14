@@ -57,7 +57,7 @@ export const numbatrakUnifiedExpenses = pgTable(
     uniqueIndex("numbatrak_unified_expenses_general_legacy_unique_idx")
       .on(table.legacyGeneralExpenseId)
       .where(sql`${table.legacyGeneralExpenseId} IS NOT NULL`),
-    // Idempotent auto-feed dedup key (waybill fee / failed delivery / wallet net-off).
+    // Idempotent auto-feed dedup key (waybill fee / failed delivery / remittance net-off).
     uniqueIndex("numbatrak_unified_expenses_source_dedup_unique_idx")
       .on(table.organizationId, table.sourceType, table.sourceId)
       .where(sql`${table.sourceId} IS NOT NULL AND ${table.sourceType} <> 'manual'`),

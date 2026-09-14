@@ -6,6 +6,7 @@ import { bigint, check, index, integer, pgTable, text, timestamp, uuid } from "d
 
 import { organization, user } from "../../auth-schema.js";
 import { numbatrakAbandonedCarts } from "./abandoned-carts.js";
+import { numbatrakCustomerOrders } from "./orders.js";
 
 export const numbatrakFollowUps = pgTable(
   "numbatrak_follow_ups",
@@ -14,14 +15,7 @@ export const numbatrakFollowUps = pgTable(
     // Nullable in source (backfilled by a BEFORE INSERT/UPDATE trigger from
     // order_id/abandoned_cart_id when omitted) - preserved as nullable.
     organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
-    // ANOMALY (flagged in migration report): source FK targets the legacy
-    // `orders` table (never repointed to customer_orders, unlike
-    // abandoned_carts.converted_order_id). That table is out of scope for
-    // this migration, so this column is carried over as a plain uuid with NO
-    // FK - a human must decide whether to repoint it at customer_orders,
-    // backfill from data, or drop it. src/services/followUps.ts still queries
-    // `orders` directly through this column (order:orders(...) embed) today.
-    orderId: uuid("order_id"),
+    orderId: uuid("order_id").references(() => numbatrakCustomerOrders.id, { onDelete: "set null" }),
     abandonedCartId: uuid("abandoned_cart_id").references(() => numbatrakAbandonedCarts.id, {
       onDelete: "set null",
     }),

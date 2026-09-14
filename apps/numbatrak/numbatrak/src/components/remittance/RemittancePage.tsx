@@ -5,9 +5,9 @@ import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
 import { useAuth } from "../../auth/AuthProvider";
 import { SuccessNotification } from "../agents/SuccessNotification";
-import { WalletDateFilterBar } from "./WalletDateFilterBar";
-import { WalletSummaryCards } from "./WalletSummaryCards";
-import { WalletRemittanceTable } from "./WalletRemittanceTable";
+import { RemittanceDateFilterBar } from "./RemittanceDateFilterBar";
+import { RemittanceSummaryCards } from "./RemittanceSummaryCards";
+import { RemittanceTable } from "./RemittanceTable";
 import { RecordRemittanceDialog } from "./RecordRemittanceDialog";
 import { NetOffDialog } from "./NetOffDialog";
 import { Input } from "../ui/input";
@@ -22,18 +22,18 @@ import { TablePagination } from "../ui/TablePagination";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { fetchAgents } from "../../services/agents";
 import {
-  fetchWalletRemittanceLines,
-  computeWalletSummary,
+  fetchRemittanceLines,
+  computeRemittanceSummary,
   filterRemittanceLines,
   recordRemittance,
   addNetOffToLine,
-  collectWalletSubBrands,
-} from "../../services/wallet";
+  collectRemittanceSubBrands,
+} from "../../services/remittance";
 import {
-  WalletRemittanceLine,
+  RemittanceLine,
   RemittanceStatusFilter,
-  WalletDateFilter,
-} from "../../types/wallet";
+  RemittanceDateFilter,
+} from "../../types/remittance";
 import type { Agent } from "../../services/agents";
 
 const STATUS_FILTER_OPTIONS: { value: RemittanceStatusFilter; label: string }[] =
@@ -45,7 +45,7 @@ const STATUS_FILTER_OPTIONS: { value: RemittanceStatusFilter; label: string }[] 
     { value: "net_owed", label: "Net owed to agent" },
   ];
 
-export function WalletPage() {
+export function RemittancePage() {
   const { currentOrganization } = useOrganization();
   const { hasAnyRole } = usePermissions();
   const { user } = useAuth();
@@ -55,12 +55,12 @@ export function WalletPage() {
   const canView = hasAnyRole(["Manager", "Admin", "Owner"]);
   const canManage = canView;
 
-  const [lines, setLines] = useState<WalletRemittanceLine[]>([]);
+  const [lines, setLines] = useState<RemittanceLine[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<WalletDateFilter>({
+  const [dateFilter, setDateFilter] = useState<RemittanceDateFilter>({
     type: "this_month",
   });
   const [statusFilter, setStatusFilter] =
@@ -69,8 +69,8 @@ export function WalletPage() {
   const [subBrandFilter, setSubBrandFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [actionKey, setActionKey] = useState<string | null>(null);
-  const [remitLine, setRemitLine] = useState<WalletRemittanceLine | null>(null);
-  const [netOffLine, setNetOffLine] = useState<WalletRemittanceLine | null>(null);
+  const [remitLine, setRemitLine] = useState<RemittanceLine | null>(null);
+  const [netOffLine, setNetOffLine] = useState<RemittanceLine | null>(null);
   const [dialogSaving, setDialogSaving] = useState(false);
 
   const loadLines = useCallback(async () => {
@@ -82,7 +82,7 @@ export function WalletPage() {
     setError(null);
     try {
       const [rows, agentList] = await Promise.all([
-        fetchWalletRemittanceLines(currentOrganization.id),
+        fetchRemittanceLines(currentOrganization.id),
         fetchAgents(currentOrganization.id, { activeOnly: true }),
       ]);
       setLines(rows);
@@ -90,7 +90,7 @@ export function WalletPage() {
     } catch (e) {
       console.error(e);
       setError(
-        "Could not load wallet data. Apply wallet migrations if tables or columns are missing."
+        "Could not load remittance data. Apply remittance migrations if tables or columns are missing."
       );
       setLines([]);
     } finally {
@@ -109,12 +109,12 @@ export function WalletPage() {
   }, [agentFromUrl]);
 
   const subBrandOptions = useMemo(
-    () => collectWalletSubBrands(lines),
+    () => collectRemittanceSubBrands(lines),
     [lines]
   );
 
   const summary = useMemo(
-    () => computeWalletSummary(lines, dateFilter),
+    () => computeRemittanceSummary(lines, dateFilter),
     [lines, dateFilter]
   );
 
@@ -203,7 +203,7 @@ export function WalletPage() {
       )}
 
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold text-foreground">Wallet</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Remittance</h1>
         <p className="text-muted-foreground text-sm max-w-3xl">
           Agent-per-day COD remittance: expected amount is delivered value minus
           delivery fees (agent keeps) minus net-offs. Only orders where the agent
@@ -211,12 +211,12 @@ export function WalletPage() {
         </p>
       </div>
 
-      <WalletDateFilterBar
+      <RemittanceDateFilterBar
         dateFilter={dateFilter}
         onDateFilterChange={setDateFilter}
       />
 
-      <WalletSummaryCards summary={summary} loading={loading} />
+      <RemittanceSummaryCards summary={summary} loading={loading} />
 
       <section className="space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
@@ -282,7 +282,7 @@ export function WalletPage() {
           </p>
         )}
 
-        <WalletRemittanceTable
+        <RemittanceTable
           lines={paginatedItems}
           loading={loading}
           canManage={canManage}

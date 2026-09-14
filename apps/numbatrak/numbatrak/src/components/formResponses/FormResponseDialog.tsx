@@ -429,7 +429,7 @@ export function FormResponseDialog({
                   </p>
                 )}
                 <p className="dialog-field-hint mt-1">
-                  Agent collected creates a Wallet remittance line when delivered.
+                  Agent collected creates a Remittance line when delivered.
                 </p>
               </div>
 

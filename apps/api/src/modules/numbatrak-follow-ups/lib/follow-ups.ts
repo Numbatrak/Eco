@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gte, ilike, inArray, lte, type SQL } from "drizzle-orm";
-import { numbatrakAbandonedCarts, numbatrakFollowUps, user, type Database } from "@platform/db";
+import { numbatrakAbandonedCarts, numbatrakCustomerOrders, numbatrakFollowUps, user, type Database } from "@platform/db";
 import type {
   CreateNumbatrakFollowUpRequest,
   ListNumbatrakFollowUpsQuery,
@@ -50,9 +50,17 @@ async function attachRelations(db: Database, rows: FollowUpRow[]): Promise<Numba
     for (const c of carts) cartMap.set(c.id, c);
   }
 
+  const orderIds = [...new Set(rows.map((r) => r.orderId).filter((id): id is string => id != null))];
+  const orderMap = new Map<string, typeof numbatrakCustomerOrders.$inferSelect>();
+  if (orderIds.length > 0) {
+    const ordersForFollowUps = await db.select().from(numbatrakCustomerOrders).where(inArray(numbatrakCustomerOrders.id, orderIds));
+    for (const o of ordersForFollowUps) orderMap.set(o.id, o);
+  }
+
   return rows.map((row) => {
     const assignee = row.assignedTo ? userMap.get(row.assignedTo) : null;
     const cart = row.abandonedCartId ? cartMap.get(row.abandonedCartId) : null;
+    const order = row.orderId ? orderMap.get(row.orderId) : null;
     return {
       id: row.id,
       orderId: row.orderId,
@@ -71,10 +79,10 @@ async function attachRelations(db: Database, rows: FollowUpRow[]): Promise<Numba
       notes: row.notes,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
-      // order:orders(...) embed dropped - the source `orders` table is out of
-      // scope for this migration (never repointed to customer_orders) and
-      // the order-linked creation path is unreachable in the live app
-      // (only reachable from dead legacy components) - see follow-ups port notes.
+      orderCustomerName: order?.customerName ?? null,
+      orderCustomerPhone: order?.phoneNumber ?? null,
+      orderCustomerState: order?.state ?? null,
+      orderCustomerAddress: order?.deliveryAddress ?? null,
       cartCustomerName: cart?.customerName ?? null,
       cartCustomerPhone: cart?.phoneNumber ?? null,
       cartCustomerWhatsapp: cart?.whatsappNumber ?? null,
@@ -152,16 +160,50 @@ export async function createFollowUp(
   return full!;
 }
 
-/** Order-linked anchor is unreachable in the live app (see attachRelations'
- * comment) - only the abandoned-cart anchor is implemented. */
+/**
+ * Auto-create a follow-up for a newly placed order, mirroring
+ * numbatrak-abandoned-carts/lib/abandoned-carts.ts's autoCreateFollowUp:
+ * picks the least-busy csr (a follow-up row is still inserted, unassigned,
+ * if no csr members exist), and never throws - a follow-up write failure
+ * shouldn't block order creation.
+ */
+export async function autoCreateFollowUpForOrder(db: Database, organizationId: string, orderId: string): Promise<void> {
+  try {
+    const assignedTo = await pickLeastBusyCsr(db, organizationId);
+    await db.insert(numbatrakFollowUps).values({
+      organizationId,
+      orderId,
+      assignedTo,
+      status: "awaiting",
+      priority: "medium",
+      notes: "Auto-created from order",
+    });
+  } catch (err) {
+    console.error("autoCreateFollowUpForOrder failed:", err);
+  }
+}
+
+/** The "landing" moment response time is measured from: when the cart was
+ * abandoned (or created, if that's unset) for cart-linked follow-ups, or when
+ * the order was placed for order-linked follow-ups. */
 async function getSourceAnchor(db: Database, followUp: FollowUpRow): Promise<Date | null> {
-  if (!followUp.abandonedCartId) return null;
-  const [cart] = await db
-    .select({ abandonedAt: numbatrakAbandonedCarts.abandonedAt, createdAt: numbatrakAbandonedCarts.createdAt })
-    .from(numbatrakAbandonedCarts)
-    .where(eq(numbatrakAbandonedCarts.id, followUp.abandonedCartId))
-    .limit(1);
-  return cart?.abandonedAt ?? cart?.createdAt ?? null;
+  if (followUp.abandonedCartId) {
+    const [cart] = await db
+      .select({ abandonedAt: numbatrakAbandonedCarts.abandonedAt, createdAt: numbatrakAbandonedCarts.createdAt })
+      .from(numbatrakAbandonedCarts)
+      .where(eq(numbatrakAbandonedCarts.id, followUp.abandonedCartId))
+      .limit(1);
+    return cart?.abandonedAt ?? cart?.createdAt ?? null;
+  }
+  if (followUp.orderId) {
+    const [order] = await db
+      .select({ createdAt: numbatrakCustomerOrders.createdAt })
+      .from(numbatrakCustomerOrders)
+      .where(eq(numbatrakCustomerOrders.id, followUp.orderId))
+      .limit(1);
+    return order?.createdAt ?? null;
+  }
+  return null;
 }
 
 export async function findFollowUpForOrg(db: Database, organizationId: string, id: number): Promise<FollowUpRow | null> {

@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { WalletRemittanceLine } from "../../types/wallet";
+import { RemittanceLine } from "../../types/remittance";
 import { formatNaira } from "../../utils/currency";
 import { LoadingState } from "../ui/LoadingState";
 
-const STATUS_LABELS: Record<WalletRemittanceLine["status"], string> = {
+const STATUS_LABELS: Record<RemittanceLine["status"], string> = {
   standing: "Standing",
   remitted: "Remitted",
   short: "Short",
@@ -11,10 +11,10 @@ const STATUS_LABELS: Record<WalletRemittanceLine["status"], string> = {
 };
 
 interface AgentRemittanceHistoryProps {
-  lines: WalletRemittanceLine[];
+  lines: RemittanceLine[];
   loading?: boolean;
   agentId: number;
-  canViewWallet?: boolean;
+  canViewRemittance?: boolean;
 }
 
 function formatDate(date: string): string {
@@ -29,7 +29,7 @@ export function AgentRemittanceHistory({
   lines,
   loading,
   agentId,
-  canViewWallet = true,
+  canViewRemittance = true,
 }: AgentRemittanceHistoryProps) {
   if (loading) {
     return (
@@ -45,12 +45,12 @@ export function AgentRemittanceHistory({
         <h2 className="text-lg font-semibold text-foreground">
           Remittance history
         </h2>
-        {canViewWallet && (
+        {canViewRemittance && (
           <Link
-            to={`/wallet?agent=${agentId}`}
+            to={`/remittance?agent=${agentId}`}
             className="text-sm font-medium text-primary hover:underline"
           >
-            Open in Wallet →
+            Open in Remittance →
           </Link>
         )}
       </div>

@@ -1,8 +1,8 @@
 import { useState, Fragment } from "react";
 import {
-  WalletRemittanceLine,
+  RemittanceLine,
   RemittanceLineStatus,
-} from "../../types/wallet";
+} from "../../types/remittance";
 import { formatNaira } from "../../utils/currency";
 import { Button } from "../ui/button";
 import { Check, MinusCircle, ChevronDown, ChevronRight } from "lucide-react";
@@ -22,12 +22,12 @@ const STATUS_CLASS: Record<RemittanceLineStatus, string> = {
   net_owed: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
 };
 
-interface WalletRemittanceTableProps {
-  lines: WalletRemittanceLine[];
+interface RemittanceTableProps {
+  lines: RemittanceLine[];
   loading?: boolean;
   canManage?: boolean;
-  onMarkRemitted?: (line: WalletRemittanceLine) => void;
-  onAddNetOff?: (line: WalletRemittanceLine) => void;
+  onMarkRemitted?: (line: RemittanceLine) => void;
+  onAddNetOff?: (line: RemittanceLine) => void;
   actionKey?: string | null;
 }
 
@@ -40,14 +40,14 @@ function formatDate(date: string): string {
   });
 }
 
-export function WalletRemittanceTable({
+export function RemittanceTable({
   lines,
   loading,
   canManage,
   onMarkRemitted,
   onAddNetOff,
   actionKey,
-}: WalletRemittanceTableProps) {
+}: RemittanceTableProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   if (loading) {

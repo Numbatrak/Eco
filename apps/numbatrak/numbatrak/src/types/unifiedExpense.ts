@@ -4,7 +4,7 @@ export type ExpenseSourceType =
   | "manual"
   | "waybill_fee"
   | "failed_delivery"
-  | "wallet_net_off";
+  | "remittance_net_off";
 
 export interface UnifiedExpense {
   id: string;

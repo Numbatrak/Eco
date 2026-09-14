@@ -204,10 +204,10 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     label: "Finance",
     items: [
       {
-        id: "wallet",
-        label: "Wallet",
+        id: "remittance",
+        label: "Remittance",
         icon: Wallet,
-        path: "/wallet",
+        path: "/remittance",
         requiredPermission: null,
         requiredRoles: ["Manager", "Admin", "Owner"],
       },

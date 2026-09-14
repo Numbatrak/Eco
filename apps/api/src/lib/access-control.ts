@@ -46,16 +46,16 @@ const statement = {
   // Deliveries/Waybills - CSR is fully read-only here (unlike numbatrakOrders,
   // which grants CSR create+update).
   numbatrakDeliveries: ["view", "create", "update", "delete"],
-  // Wallet has no view-only tier in the source app - CSR gets nothing at all
-  // (not even view), the one resource where that's true.
-  numbatrakWallet: ["view", "manage"],
+  // Remittance has no view-only tier in the source app - CSR gets nothing at
+  // all (not even view), the one resource where that's true.
+  numbatrakRemittance: ["view", "manage"],
   numbatrakExpenses: ["view", "create", "update", "delete"],
   // Source app reuses the "orders" resource for follow-ups - same shape here.
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   // Every role (including csr) can view the dashboard - csr just sees a
   // cut-down version (no money tiles) via client-side UI gating, mirroring
   // the source app's own role-based section visibility, not a resource-level
-  // access difference like numbatrakWallet has. "manage" gates writing the
+  // access difference like numbatrakRemittance has. "manage" gates writing the
   // org's alert-threshold config (owner/admin/manager only, like the other
   // settings-shaped resources below).
   numbatrakDashboard: ["view", "manage"],
@@ -106,7 +106,7 @@ export const OWNER_NUMBATRAK_GRANTS = {
   numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
   numbatrakDeliveries: ["view", "create", "update", "delete"],
-  numbatrakWallet: ["view", "manage"],
+  numbatrakRemittance: ["view", "manage"],
   numbatrakExpenses: ["view", "create", "update", "delete"],
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   numbatrakDashboard: ["view", "manage"],
@@ -131,7 +131,7 @@ export const MANAGER_NUMBATRAK_GRANTS = {
   numbatrakProducts: ["view", "create", "update", "delete"],
   numbatrakOrders: ["view", "create", "update", "delete"],
   numbatrakDeliveries: ["view", "create", "update", "delete"],
-  numbatrakWallet: ["view", "manage"],
+  numbatrakRemittance: ["view", "manage"],
   numbatrakExpenses: ["view", "create", "update", "delete"],
   numbatrakFollowUps: ["view", "create", "update", "delete"],
   numbatrakDashboard: ["view", "manage"],

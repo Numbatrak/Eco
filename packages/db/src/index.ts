@@ -69,7 +69,7 @@ export {
   numbatrakStockMovements,
   numbatrakInventoryLegacy,
   numbatrakDeliveries,
-  numbatrakWalletRemittanceLines,
+  numbatrakRemittanceLines,
   numbatrakUnifiedExpenses,
   numbatrakExpenseSubcategories,
   numbatrakAgentExpensesLegacy,

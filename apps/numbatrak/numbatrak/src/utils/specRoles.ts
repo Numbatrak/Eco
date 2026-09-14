@@ -54,7 +54,7 @@ export function orderDataScope(role: UserRole | null): DataScope {
   }
 }
 
-/** True when role may view wallet, accounting placeholders, and full dashboard money KPIs. */
+/** True when role may view remittance, accounting placeholders, and full dashboard money KPIs. */
 export function canViewOrgMoney(role: UserRole | null): boolean {
   return role === "Owner" || role === "Admin" || role === "Manager";
 }

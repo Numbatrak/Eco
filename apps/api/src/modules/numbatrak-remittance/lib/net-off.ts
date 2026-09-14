@@ -1,6 +1,6 @@
-import { numbatrakUnifiedExpenses, numbatrakWalletRemittanceLines, type Database } from "@platform/db";
-import type { NumbatrakWalletRemittanceLine } from "@platform/shared-types";
-import { computeExpectedRemittance, computeRemittanceLineStatus, fetchRemittanceLines } from "./wallet.js";
+import { numbatrakUnifiedExpenses, numbatrakRemittanceLines, type Database } from "@platform/db";
+import type { NumbatrakRemittanceLine } from "@platform/shared-types";
+import { computeExpectedRemittance, computeRemittanceLineStatus, fetchRemittanceLines } from "./remittance.js";
 
 export async function addNetOff(
   db: Database,
@@ -11,7 +11,7 @@ export async function addNetOff(
   userId: string,
   note: string | null | undefined,
   subcategory: string | undefined,
-): Promise<NumbatrakWalletRemittanceLine> {
+): Promise<NumbatrakRemittanceLine> {
   if (amount <= 0) throw new Error("Net-off amount must be positive.");
 
   const lines = await fetchRemittanceLines(db, organizationId);
@@ -37,7 +37,7 @@ export async function addNetOff(
       note: note?.trim() || `Net-off on remittance ${line.agentName} ${line.remittanceDate}`,
       occurredAt: remittanceDate,
       createdBy: userId,
-      sourceType: "wallet_net_off",
+      sourceType: "remittance_net_off",
       sourceId: `${line.id ?? line.lineKey}:${newNetOff}`,
     })
     .onConflictDoNothing()
@@ -47,7 +47,7 @@ export async function addNetOff(
   const now = new Date();
 
   await db
-    .insert(numbatrakWalletRemittanceLines)
+    .insert(numbatrakRemittanceLines)
     .values({
       organizationId,
       agentId,
@@ -63,9 +63,9 @@ export async function addNetOff(
     })
     .onConflictDoUpdate({
       target: [
-        numbatrakWalletRemittanceLines.organizationId,
-        numbatrakWalletRemittanceLines.agentId,
-        numbatrakWalletRemittanceLines.remittanceDate,
+        numbatrakRemittanceLines.organizationId,
+        numbatrakRemittanceLines.agentId,
+        numbatrakRemittanceLines.remittanceDate,
       ],
       set: {
         netOffAmount: String(newNetOff),

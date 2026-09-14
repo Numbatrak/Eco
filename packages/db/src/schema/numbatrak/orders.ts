@@ -35,6 +35,7 @@ import {
 
 import { organization, user } from "../../auth-schema.js";
 import { numbatrakAgents } from "./agents.js";
+import { numbatrakCustomers } from "./crm.js";
 import { numbatrakForms } from "./forms.js";
 import { numbatrakInventoryLots } from "./inventory.js";
 import { numbatrakProductOffers, numbatrakProducts, numbatrakProductVariants } from "./products.js";
@@ -86,9 +87,9 @@ export const numbatrakFormResponses = pgTable(
     // Preserved verbatim (uuid, no FK) pending a live-data check.
     agentId: uuid("agent_id"),
     csrId: text("csr_id").references(() => user.id, { onDelete: "set null" }),
-    // Wallet / remittance (migration 20260629150000)
+    // Remittance (migration 20260629150000, column renamed from wallet_status)
     paymentMethod: text("payment_method").notNull().default("cod"),
-    walletStatus: text("wallet_status"),
+    remittanceStatus: text("remittance_status"),
     remittanceConfirmedAt: timestamp("remittance_confirmed_at", { withTimezone: true }),
     remittanceConfirmedBy: text("remittance_confirmed_by").references(() => user.id, { onDelete: "set null" }),
     releasedAt: timestamp("released_at", { withTimezone: true }),
@@ -120,8 +121,8 @@ export const numbatrakFormResponses = pgTable(
     index("numbatrak_form_responses_response_type_idx").on(table.responseType),
     index("numbatrak_form_responses_status_idx").on(table.status),
     index("numbatrak_form_responses_submission_status_idx").on(table.submissionStatus),
-    index("numbatrak_form_responses_wallet_idx")
-      .on(table.organizationId, table.walletStatus)
+    index("numbatrak_form_responses_remittance_idx")
+      .on(table.organizationId, table.remittanceStatus)
       .where(sql`${table.status} = 'completed' AND ${table.responseType} = 'order'`),
     check(
       "numbatrak_form_responses_response_type_chk",
@@ -133,8 +134,8 @@ export const numbatrakFormResponses = pgTable(
     ),
     check("numbatrak_form_responses_payment_method_chk", sql`${table.paymentMethod} IN ('cod', 'online')`),
     check(
-      "numbatrak_form_responses_wallet_status_chk",
-      sql`${table.walletStatus} IS NULL OR ${table.walletStatus} IN ('pending_remittance', 'collected', 'released')`,
+      "numbatrak_form_responses_remittance_status_chk",
+      sql`${table.remittanceStatus} IS NULL OR ${table.remittanceStatus} IN ('pending_remittance', 'collected', 'released')`,
     ),
     check(
       "numbatrak_form_responses_money_received_by_chk",
@@ -199,6 +200,7 @@ export const numbatrakCustomerOrders = pgTable(
     formId: uuid("form_id").references(() => numbatrakForms.id, { onDelete: "set null" }),
     csrId: text("csr_id").references(() => user.id, { onDelete: "set null" }),
     agentId: integer("agent_id").references(() => numbatrakAgents.id, { onDelete: "set null" }),
+    customerId: uuid("customer_id").references(() => numbatrakCustomers.id, { onDelete: "set null" }),
     status: text("status").notNull().default("pending"),
     source: text("source").notNull().default("form"),
     customerName: text("customer_name"),
@@ -218,9 +220,9 @@ export const numbatrakCustomerOrders = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    // Wallet / remittance
+    // Remittance
     paymentMethod: text("payment_method").notNull().default("cod"),
-    walletStatus: text("wallet_status"),
+    remittanceStatus: text("remittance_status"),
     remittanceConfirmedAt: timestamp("remittance_confirmed_at", { withTimezone: true }),
     remittanceConfirmedBy: text("remittance_confirmed_by").references(() => user.id, { onDelete: "set null" }),
     releasedAt: timestamp("released_at", { withTimezone: true }),
@@ -235,6 +237,7 @@ export const numbatrakCustomerOrders = pgTable(
     index("numbatrak_customer_orders_agent_idx").on(table.agentId),
     index("numbatrak_customer_orders_created_idx").on(table.organizationId, table.createdAt),
     index("numbatrak_customer_orders_csr_idx").on(table.csrId),
+    index("numbatrak_customer_orders_customer_idx").on(table.customerId),
     index("numbatrak_customer_orders_form_idx").on(table.formId),
     index("numbatrak_customer_orders_form_response_idx").on(table.formResponseId),
     index("numbatrak_customer_orders_org_idx").on(table.organizationId),
@@ -255,8 +258,8 @@ export const numbatrakCustomerOrders = pgTable(
       .where(sql`${table.status} IN ('completed', 'delivered')`),
     // NOTE: unlike the index above, this one was never updated to the
     // is_order_delivered_status() predicate - still literal 'completed'.
-    index("numbatrak_customer_orders_wallet_idx")
-      .on(table.organizationId, table.walletStatus)
+    index("numbatrak_customer_orders_remittance_idx")
+      .on(table.organizationId, table.remittanceStatus)
       .where(sql`${table.status} = 'completed'`),
     check(
       "numbatrak_customer_orders_status_chk",
@@ -268,8 +271,8 @@ export const numbatrakCustomerOrders = pgTable(
     ),
     check("numbatrak_customer_orders_payment_method_chk", sql`${table.paymentMethod} IN ('cod', 'online')`),
     check(
-      "numbatrak_customer_orders_wallet_status_chk",
-      sql`${table.walletStatus} IS NULL OR ${table.walletStatus} IN ('pending_remittance', 'collected', 'released')`,
+      "numbatrak_customer_orders_remittance_status_chk",
+      sql`${table.remittanceStatus} IS NULL OR ${table.remittanceStatus} IN ('pending_remittance', 'collected', 'released')`,
     ),
     check(
       "numbatrak_customer_orders_money_received_by_chk",

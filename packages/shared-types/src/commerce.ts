@@ -397,6 +397,7 @@ export const orderSummarySchema = z.object({
   totalCents: z.number().int().nonnegative(),
   currency: z.string(),
   createdAt: z.string(),
+  abandonedAt: z.string().nullable(),
 });
 export type OrderSummary = z.infer<typeof orderSummarySchema>;
 

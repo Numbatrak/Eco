@@ -51,13 +51,13 @@ export default async function numbatrakCrmRoutes(app: FastifyInstance): Promise<
   );
 
   // --- Customers ---
-  app.get(
+  app.get<{ Querystring: { status?: string } }>(
     "/org/numbatrak/crm/customers",
     { preHandler: app.requireOrgPermission({ numbatrakCrm: ["view"] }) },
     async (request, reply) => {
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
-      return reply.send({ customers: await listCustomers(db, organizationId) });
+      return reply.send({ customers: await listCustomers(db, organizationId, { status: request.query.status }) });
     },
   );
 

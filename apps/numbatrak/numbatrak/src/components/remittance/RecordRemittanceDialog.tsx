@@ -10,12 +10,12 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { WalletRemittanceLine } from "../../types/wallet";
+import { RemittanceLine } from "../../types/remittance";
 import { formatNaira } from "../../utils/currency";
 import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 interface RecordRemittanceDialogProps {
-  line: WalletRemittanceLine | null;
+  line: RemittanceLine | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (actualAmount: number) => Promise<void>;

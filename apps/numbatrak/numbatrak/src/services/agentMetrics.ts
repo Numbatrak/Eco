@@ -3,8 +3,8 @@
 import { isDeliveredStatus } from "../constants/orderStatus";
 import { fetchAgentStockOnHand } from "./agentStock";
 import { fetchCustomerOrders } from "./customerOrders";
-import { fetchWalletRemittanceLines } from "./wallet";
-import type { WalletRemittanceLine } from "../types/wallet";
+import { fetchRemittanceLines } from "./remittance";
+import type { RemittanceLine } from "../types/remittance";
 
 export type AgentMetrics = {
   agent_id: number;
@@ -83,8 +83,8 @@ export async function fetchAgentMetrics(
 export async function fetchAgentRemittanceHistory(
   organizationId: string,
   agentId: number
-): Promise<WalletRemittanceLine[]> {
-  const lines = await fetchWalletRemittanceLines(organizationId);
+): Promise<RemittanceLine[]> {
+  const lines = await fetchRemittanceLines(organizationId);
   return lines.filter((line) => line.agent_id === agentId);
 }
 

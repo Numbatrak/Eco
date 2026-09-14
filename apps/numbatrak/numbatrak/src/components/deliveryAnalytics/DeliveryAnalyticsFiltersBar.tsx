@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { WalletDateFilterBar } from "../wallet/WalletDateFilterBar";
+import { RemittanceDateFilterBar } from "../remittance/RemittanceDateFilterBar";
 import { DateFilter } from "../../utils/dateRange";
 import {
   DeliveryAnalyticsFilters,
@@ -84,7 +84,7 @@ export function DeliveryAnalyticsFiltersBar({
         </p>
       </div>
 
-      <WalletDateFilterBar
+      <RemittanceDateFilterBar
         dateFilter={filters.dateFilter ?? { type: "this_month" }}
         onDateFilterChange={(dateFilter: DateFilter) => patch({ dateFilter })}
       />

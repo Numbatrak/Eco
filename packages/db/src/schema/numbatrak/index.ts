@@ -18,7 +18,7 @@ export * from "./forms.js";
 export * from "./orders.js";
 export * from "./inventory.js";
 export * from "./deliveries.js";
-export * from "./wallet.js";
+export * from "./remittance.js";
 export * from "./expenses.js";
 export * from "./abandoned-carts.js";
 export * from "./follow-ups.js";
@@ -55,7 +55,7 @@ import {
 } from "./orders.js";
 import { numbatrakInventoryLots, numbatrakStockMovements, numbatrakInventoryLegacy } from "./inventory.js";
 import { numbatrakDeliveries } from "./deliveries.js";
-import { numbatrakWalletRemittanceLines } from "./wallet.js";
+import { numbatrakRemittanceLines } from "./remittance.js";
 import {
   numbatrakUnifiedExpenses,
   numbatrakExpenseSubcategories,
@@ -117,7 +117,7 @@ export const numbatrakSchema = {
   numbatrakStockMovements,
   numbatrakInventoryLegacy,
   numbatrakDeliveries,
-  numbatrakWalletRemittanceLines,
+  numbatrakRemittanceLines,
   numbatrakUnifiedExpenses,
   numbatrakExpenseSubcategories,
   numbatrakAgentExpensesLegacy,

@@ -2,8 +2,8 @@ import type { MoneyReceivedBy } from "../constants/orderAttribution";
 
 export type PaymentMethod = "cod" | "online";
 
-/** Legacy per-order wallet status (synced when line is remitted). */
-export type WalletStatus = "pending_remittance" | "collected" | "released";
+/** Legacy per-order remittance status (synced when line is remitted). */
+export type RemittanceStatus = "pending_remittance" | "collected" | "released";
 
 export type RemittanceLineStatus =
   | "standing"
@@ -11,21 +11,21 @@ export type RemittanceLineStatus =
   | "short"
   | "net_owed";
 
-export type WalletDateFilterType =
+export type RemittanceDateFilterType =
   | "all"
   | "today"
   | "this_week"
   | "this_month"
   | "custom";
 
-export interface WalletDateFilter {
-  type: WalletDateFilterType;
+export interface RemittanceDateFilter {
+  type: RemittanceDateFilterType;
   startDate?: string;
   endDate?: string;
 }
 
 /** Source order included in an agent-per-day remittance line. */
-export interface WalletSourceOrder {
+export interface RemittanceSourceOrder {
   id: string;
   source: "customer_orders" | "form_responses";
   customer_name: string | null;
@@ -39,12 +39,12 @@ export interface WalletSourceOrder {
   sub_brand: string | null;
   payment_method: PaymentMethod;
   money_received_by: MoneyReceivedBy;
-  wallet_status: WalletStatus | null;
+  remittance_status: RemittanceStatus | null;
   completed_at: string | null;
 }
 
 /** Agent-per-day remittance line (spec unit). */
-export interface WalletRemittanceLine {
+export interface RemittanceLine {
   /** Stable client key: `${agentId}:${YYYY-MM-DD}` */
   lineKey: string;
   /** DB row id when persisted */
@@ -54,7 +54,7 @@ export interface WalletRemittanceLine {
   agent_name: string;
   remittance_date: string;
   order_count: number;
-  orders: WalletSourceOrder[];
+  orders: RemittanceSourceOrder[];
   sub_brands: string[];
   total_delivered_value: number;
   total_delivery_fees: number;
@@ -68,7 +68,7 @@ export interface WalletRemittanceLine {
   remitted_at: string | null;
 }
 
-export interface WalletSummary {
+export interface RemittanceSummary {
   lineCount: number;
   orderCount: number;
   totalDeliveredValue: number;

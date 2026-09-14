@@ -189,7 +189,7 @@ export async function issueStrikes(
 
     // "Issuing notifies the staff member through the shared notification
     // layer" (LOCKED RULE) - that layer doesn't exist yet, so email covers
-    // the "must not be missed" part in the meantime, same as Payroll/Wallet.
+    // the "must not be missed" part in the meantime, same as Payroll/Remittance.
     try {
       if (staffUser) {
         await sendEmail(logger, {

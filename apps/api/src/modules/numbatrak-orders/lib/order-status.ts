@@ -7,7 +7,7 @@ export const LEGACY_STATUSES = ["pending", "completed", "cancelled", "abandoned"
 
 export type OrderStatus = string;
 
-/** Statuses that count as delivered for profit, wallet, and inventory. */
+/** Statuses that count as delivered for profit, remittance, and inventory. */
 export const DELIVERED_STATUSES: readonly string[] = ["delivered", "completed"];
 
 const NEXT_STATUS: Partial<Record<string, string>> = {

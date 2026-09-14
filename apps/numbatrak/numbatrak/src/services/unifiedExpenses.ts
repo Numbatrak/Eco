@@ -141,7 +141,7 @@ export async function createUnifiedExpense(input: {
 /**
  * Idempotent insert for auto-feeds. The dedup itself now happens inside the
  * relevant backend module's own insert (Orders' failed-delivery write,
- * Deliveries' waybill-fee write, Wallet's net-off write) via
+ * Deliveries' waybill-fee write, Remittance's net-off write) via
  * onConflictDoNothing on the DB's source-dedup unique index - this
  * standalone client-side path is unused by the ported backend modules, but
  * kept for signature compatibility with any not-yet-repointed caller.

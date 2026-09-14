@@ -7,7 +7,7 @@ import { organization } from "../../auth-schema.js";
 // (delivery-fees.ts), which drives what a *customer* is charged for delivery
 // by location - this is what an *agent* earns per order they deliver, before
 // any per-agent override. Not yet consumed by the remittance calculation
-// (numbatrak-wallet/lib/wallet.ts still sums the order's own deliveryFee) -
+// (numbatrak-remittance/lib/remittance.ts still sums the order's own deliveryFee) -
 // wiring this in is a deliberate follow-up product decision, not done here.
 export const numbatrakDeliveryAgentSettings = pgTable(
   "numbatrak_delivery_agent_settings",

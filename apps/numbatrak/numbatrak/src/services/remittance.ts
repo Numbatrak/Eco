@@ -3,11 +3,11 @@
 import { apiRequest } from "../lib/apiClient";
 import { emptyWithoutOrg } from "./orgQuery";
 import {
-  WalletSourceOrder,
-  WalletRemittanceLine,
-  WalletSummary,
+  RemittanceSourceOrder,
+  RemittanceLine,
+  RemittanceSummary,
   RemittanceLineStatus,
-} from "../types/wallet";
+} from "../types/remittance";
 import { resolveDateRange, withinDateRange, DateFilter } from "../utils/dateRange";
 
 interface SourceOrderDto {
@@ -22,12 +22,12 @@ interface SourceOrderDto {
   deliveredValue: number;
   subBrand: string | null;
   paymentMethod: "cod" | "online";
-  moneyReceivedBy: WalletSourceOrder["money_received_by"];
-  walletStatus: WalletSourceOrder["wallet_status"];
+  moneyReceivedBy: RemittanceSourceOrder["money_received_by"];
+  remittanceStatus: RemittanceSourceOrder["remittance_status"];
   completedAt: string | null;
 }
 
-function sourceOrderFromDto(dto: SourceOrderDto): WalletSourceOrder {
+function sourceOrderFromDto(dto: SourceOrderDto): RemittanceSourceOrder {
   return {
     id: dto.id,
     source: "customer_orders",
@@ -42,7 +42,7 @@ function sourceOrderFromDto(dto: SourceOrderDto): WalletSourceOrder {
     sub_brand: dto.subBrand,
     payment_method: dto.paymentMethod,
     money_received_by: dto.moneyReceivedBy,
-    wallet_status: dto.walletStatus,
+    remittance_status: dto.remittanceStatus,
     completed_at: dto.completedAt,
   };
 }
@@ -68,7 +68,7 @@ interface RemittanceLineDto {
   remittedAt: string | null;
 }
 
-function lineFromDto(dto: RemittanceLineDto): WalletRemittanceLine {
+function lineFromDto(dto: RemittanceLineDto): RemittanceLine {
   return {
     lineKey: dto.lineKey,
     id: dto.id,
@@ -92,20 +92,20 @@ function lineFromDto(dto: RemittanceLineDto): WalletRemittanceLine {
   };
 }
 
-export async function fetchWalletRemittanceLines(
+export async function fetchRemittanceLines(
   organizationId: string | null
-): Promise<WalletRemittanceLine[]> {
-  const empty = emptyWithoutOrg<WalletRemittanceLine>(organizationId);
+): Promise<RemittanceLine[]> {
+  const empty = emptyWithoutOrg<RemittanceLine>(organizationId);
   if (empty) return empty;
 
-  const { lines } = await apiRequest<{ lines: RemittanceLineDto[] }>("/org/numbatrak/wallet/remittance-lines");
+  const { lines } = await apiRequest<{ lines: RemittanceLineDto[] }>("/org/numbatrak/remittance/lines");
   return lines.map((l) => ({ ...lineFromDto(l), organization_id: organizationId! }));
 }
 
-export function computeWalletSummary(
-  lines: WalletRemittanceLine[],
+export function computeRemittanceSummary(
+  lines: RemittanceLine[],
   dateFilter?: DateFilter
-): WalletSummary {
+): RemittanceSummary {
   const { startDate, endDate } = resolveDateRange(dateFilter);
   const inPeriod = lines.filter((line) =>
     withinDateRange(`${line.remittance_date}T12:00:00.000Z`, startDate, endDate)
@@ -162,7 +162,7 @@ export function computeWalletSummary(
 }
 
 export function filterRemittanceLines(
-  lines: WalletRemittanceLine[],
+  lines: RemittanceLine[],
   options: {
     dateFilter?: DateFilter;
     statusFilter?: "all" | RemittanceLineStatus;
@@ -170,7 +170,7 @@ export function filterRemittanceLines(
     subBrand?: string | null;
     search?: string;
   }
-): WalletRemittanceLine[] {
+): RemittanceLine[] {
   const { startDate, endDate } = resolveDateRange(options.dateFilter);
   const q = options.search?.trim().toLowerCase();
 
@@ -206,11 +206,11 @@ export function filterRemittanceLines(
 /** `userId` param kept for signature compatibility - the server resolves the
  * acting user from the session itself rather than trusting a client value. */
 export async function recordRemittance(
-  line: WalletRemittanceLine,
+  line: RemittanceLine,
   actualAmount: number,
   _userId: string
-): Promise<WalletRemittanceLine> {
-  const dto = await apiRequest<RemittanceLineDto>("/org/numbatrak/wallet/remittance-lines/record", {
+): Promise<RemittanceLine> {
+  const dto = await apiRequest<RemittanceLineDto>("/org/numbatrak/remittance/lines/record", {
     method: "POST",
     body: {
       agentId: line.agent_id,
@@ -223,13 +223,13 @@ export async function recordRemittance(
 
 /** `userId` param kept for signature compatibility - see recordRemittance. */
 export async function addNetOffToLine(
-  line: WalletRemittanceLine,
+  line: RemittanceLine,
   amount: number,
   _userId: string,
   note?: string,
   subcategory?: string
-): Promise<WalletRemittanceLine> {
-  const dto = await apiRequest<RemittanceLineDto>("/org/numbatrak/wallet/remittance-lines/net-off", {
+): Promise<RemittanceLine> {
+  const dto = await apiRequest<RemittanceLineDto>("/org/numbatrak/remittance/lines/net-off", {
     method: "POST",
     body: {
       agentId: line.agent_id,
@@ -242,8 +242,8 @@ export async function addNetOffToLine(
   return { ...lineFromDto(dto), organization_id: line.organization_id };
 }
 
-export function collectWalletSubBrands(
-  lines: WalletRemittanceLine[]
+export function collectRemittanceSubBrands(
+  lines: RemittanceLine[]
 ): string[] {
   const set = new Set<string>();
   for (const line of lines) {
@@ -251,4 +251,3 @@ export function collectWalletSubBrands(
   }
   return [...set].sort();
 }
-

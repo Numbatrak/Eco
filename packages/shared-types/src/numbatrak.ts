@@ -233,6 +233,7 @@ export const numbatrakOrderSchema = z.object({
   id: z.string().uuid(),
   csrId: z.string().nullable(),
   agentId: z.number().int().nullable(),
+  customerId: z.string().uuid().nullable(),
   status: numbatrakOrderStatusSchema,
   source: z.enum(["form", "manual", "converted_from_cart"]),
   customerName: z.string().nullable(),
@@ -437,12 +438,12 @@ export const updateNumbatrakAbandonedCartRequestSchema = z.object({
 });
 export type UpdateNumbatrakAbandonedCartRequest = z.infer<typeof updateNumbatrakAbandonedCartRequestSchema>;
 
-// ---------- wallet (agent remittance) ----------
+// ---------- remittance (agent remittance, formerly "wallet") ----------
 
 export const numbatrakRemittanceLineStatusSchema = z.enum(["standing", "remitted", "short", "net_owed"]);
 export type NumbatrakRemittanceLineStatus = z.infer<typeof numbatrakRemittanceLineStatusSchema>;
 
-export const numbatrakWalletSourceOrderSchema = z.object({
+export const numbatrakRemittanceSourceOrderSchema = z.object({
   id: z.string(),
   customerName: z.string().nullable(),
   phoneNumber: z.string().nullable(),
@@ -455,19 +456,19 @@ export const numbatrakWalletSourceOrderSchema = z.object({
   subBrand: z.string().nullable(),
   paymentMethod: z.enum(["cod", "online"]),
   moneyReceivedBy: numbatrakMoneyReceivedBySchema,
-  walletStatus: z.enum(["pending_remittance", "collected", "released"]).nullable(),
+  remittanceStatus: z.enum(["pending_remittance", "collected", "released"]).nullable(),
   completedAt: z.string().nullable(),
 });
-export type NumbatrakWalletSourceOrder = z.infer<typeof numbatrakWalletSourceOrderSchema>;
+export type NumbatrakRemittanceSourceOrder = z.infer<typeof numbatrakRemittanceSourceOrderSchema>;
 
-export const numbatrakWalletRemittanceLineSchema = z.object({
+export const numbatrakRemittanceLineSchema = z.object({
   lineKey: z.string(),
   id: z.string().uuid().nullable(),
   agentId: z.number().int(),
   agentName: z.string(),
   remittanceDate: z.string(),
   orderCount: z.number().int(),
-  orders: z.array(numbatrakWalletSourceOrderSchema),
+  orders: z.array(numbatrakRemittanceSourceOrderSchema),
   subBrands: z.array(z.string()),
   totalDeliveredValue: z.number(),
   totalDeliveryFees: z.number(),
@@ -480,16 +481,16 @@ export const numbatrakWalletRemittanceLineSchema = z.object({
   notes: z.string().nullable(),
   remittedAt: z.string().nullable(),
 });
-export type NumbatrakWalletRemittanceLine = z.infer<typeof numbatrakWalletRemittanceLineSchema>;
+export type NumbatrakRemittanceLine = z.infer<typeof numbatrakRemittanceLineSchema>;
 
-export const recordNumbatrakWalletRemittanceRequestSchema = z.object({
+export const recordNumbatrakRemittanceRequestSchema = z.object({
   agentId: z.number().int(),
   remittanceDate: z.string(),
   actualAmount: z.number().nonnegative(),
 });
-export type RecordNumbatrakWalletRemittanceRequest = z.infer<typeof recordNumbatrakWalletRemittanceRequestSchema>;
+export type RecordNumbatrakRemittanceRequest = z.infer<typeof recordNumbatrakRemittanceRequestSchema>;
 
-export const addNumbatrakWalletNetOffRequestSchema = z.object({
+export const addNumbatrakRemittanceNetOffRequestSchema = z.object({
   agentId: z.number().int(),
   remittanceDate: z.string(),
   amount: z.number().positive(),
@@ -500,7 +501,7 @@ export const addNumbatrakWalletNetOffRequestSchema = z.object({
   subcategory: z.string().trim().min(1).optional(),
   note: z.string().trim().nullable().optional(),
 });
-export type AddNumbatrakWalletNetOffRequest = z.infer<typeof addNumbatrakWalletNetOffRequestSchema>;
+export type AddNumbatrakRemittanceNetOffRequest = z.infer<typeof addNumbatrakRemittanceNetOffRequestSchema>;
 
 // ---------- deliveries / waybills ----------
 
@@ -642,7 +643,7 @@ export type NumbatrakWaybillByState = z.infer<typeof numbatrakWaybillByStateSche
 // stays a client-side concern (constants/expenseCategories.ts +
 // utils/expenseCategoryHelpers.ts aren't importable server-side) - the API
 // stores whatever canonical scope/category/subcategory it's given, matching
-// what the Orders/Deliveries/Wallet modules' own auto-feed writes already do.
+// what the Orders/Deliveries/Remittance modules' own auto-feed writes already do.
 
 export const numbatrakExpenseScopeSchema = z.enum(["org", "agent"]);
 export type NumbatrakExpenseScope = z.infer<typeof numbatrakExpenseScopeSchema>;
@@ -651,7 +652,7 @@ export const numbatrakExpenseSourceTypeSchema = z.enum([
   "manual",
   "waybill_fee",
   "failed_delivery",
-  "wallet_net_off",
+  "remittance_net_off",
   "stock_transfer_fee",
 ]);
 export type NumbatrakExpenseSourceType = z.infer<typeof numbatrakExpenseSourceTypeSchema>;
@@ -791,6 +792,10 @@ export const numbatrakFollowUpSchema = z.object({
   notes: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
+  orderCustomerName: z.string().nullable(),
+  orderCustomerPhone: z.string().nullable(),
+  orderCustomerState: z.string().nullable(),
+  orderCustomerAddress: z.string().nullable(),
   cartCustomerName: z.string().nullable(),
   cartCustomerPhone: z.string().nullable(),
   cartCustomerWhatsapp: z.string().nullable(),
@@ -848,7 +853,7 @@ export type ResolveNumbatrakFollowUpsForCartRequest = z.infer<typeof resolveNumb
 // Business-performance/loss-metrics computation (services/dashboardMetrics.ts's
 // pure computeBusinessPerformanceMetrics/computeLossMetrics) now runs
 // server-side over a numbatrak_customer_orders-only row scan - same
-// scope-narrowing precedent already applied to Orders/Wallet/Expenses (no
+// scope-narrowing precedent already applied to Orders/Remittance/Expenses (no
 // form_responses merge). See numbatrak-dashboard/lib/summary.ts.
 
 export const dashboardScopeQuerySchema = z.object({
@@ -2019,6 +2024,7 @@ export const numbatrakCustomerSchema = z.object({
   morePurchaseRevenue: z.number(),
   orderCount: z.number().int(),
   morePurchaseCount: z.number().int(),
+  latestOrderStatus: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });

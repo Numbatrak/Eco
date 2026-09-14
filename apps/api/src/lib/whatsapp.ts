@@ -119,3 +119,34 @@ export async function sendOrderConfirmationWhatsApp(
     ],
   });
 }
+
+/**
+ * Convenience: send the abandoned-checkout recovery template.
+ *
+ * The template "abandoned_checkout" must be pre-approved in Meta Business
+ * Manager (same requirement as "order_confirmation" above) with body
+ * parameters: {{1}} customer name, {{2}} order number, {{3}} amount - this
+ * won't send anything until that template exists and is approved.
+ */
+export async function sendAbandonedCheckoutWhatsApp(
+  db: Database,
+  tenantId: string,
+  logger: FastifyBaseLogger,
+  params: {
+    customerPhone: string;
+    customerName: string;
+    orderNumber: string;
+    amount: string;
+    currency: string;
+  },
+): Promise<void> {
+  await sendWhatsAppTemplate(db, tenantId, logger, {
+    to: params.customerPhone,
+    templateName: "abandoned_checkout",
+    bodyParameters: [
+      params.customerName,
+      params.orderNumber,
+      `${params.currency} ${params.amount}`,
+    ],
+  });
+}

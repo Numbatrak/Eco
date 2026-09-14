@@ -22,6 +22,10 @@ interface FollowUpDto {
   notes: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  orderCustomerName: string | null;
+  orderCustomerPhone: string | null;
+  orderCustomerState: string | null;
+  orderCustomerAddress: string | null;
   cartCustomerName: string | null;
   cartCustomerPhone: string | null;
   cartCustomerWhatsapp: string | null;
@@ -49,13 +53,9 @@ function fromDto(dto: FollowUpDto): FollowUpWithRelations {
     updated_at: dto.updatedAt,
     assigned_user_name: dto.assignedUserName,
     assigned_user_email: dto.assignedUserEmail,
-    // The `orders` table this used to embed is out of scope for this
-    // migration (never repointed to customer_orders) - order-linked
-    // follow-ups are unreachable in the live app anyway (only the dead
-    // legacy OrderTableRow.tsx ever created them). Always null.
-    order_customer_name: null,
-    order_customer_phone: null,
-    order_customer_location: null,
+    order_customer_name: dto.orderCustomerName,
+    order_customer_phone: dto.orderCustomerPhone,
+    order_customer_location: dto.orderCustomerState,
     cart_customer_name: dto.cartCustomerName,
     cart_customer_phone: dto.cartCustomerPhone,
     cart_customer_whatsapp: dto.cartCustomerWhatsapp,

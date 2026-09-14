@@ -1,6 +1,7 @@
 import { and, eq, desc, sql } from "drizzle-orm";
 import {
   numbatrakCustomers,
+  numbatrakCustomerOrders,
   numbatrakFeedbackSettings,
   numbatrakFeedbackCalls,
   numbatrakComplaints,
@@ -9,6 +10,7 @@ import {
   numbatrakCrmCredits,
   user,
   type Database,
+  type Queryable,
 } from "@platform/db";
 import type {
   NumbatrakCustomer,
@@ -21,6 +23,7 @@ import type {
   NumbatrakFeedbackDashboard,
   NumbatrakComplaintDashboard,
 } from "@platform/shared-types";
+import { normalizePhoneInput } from "../../numbatrak-forms/lib/validation.js";
 
 type CustomerRow = typeof numbatrakCustomers.$inferSelect;
 type FeedbackSettingsRow = typeof numbatrakFeedbackSettings.$inferSelect;
@@ -36,6 +39,7 @@ function serializeCustomer(
   morePurchaseRevenue: number,
   orderCount: number,
   morePurchaseCount: number,
+  latestOrderStatus: string | null = null,
 ): NumbatrakCustomer {
   return {
     id: row.id,
@@ -52,6 +56,7 @@ function serializeCustomer(
     morePurchaseRevenue,
     orderCount,
     morePurchaseCount,
+    latestOrderStatus,
     createdAt: row.createdAt?.toISOString() ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
   };
@@ -206,9 +211,36 @@ export async function updateFeedbackSettings(
 
 // --- Customers ---
 
+interface OrderStats {
+  revenue: number;
+  count: number;
+  latestStatus: string | null;
+}
+
+/** Real order revenue/count/latest-status per customer, replacing the hardcoded 0s this used to ship with (no customerId FK existed to join through). */
+async function getOrderStatsMap(db: Database, organizationId: string): Promise<Map<string, OrderStats>> {
+  const rows = await db
+    .select({
+      customerId: numbatrakCustomerOrders.customerId,
+      totalRevenue: sql<string>`COALESCE(SUM(${numbatrakCustomerOrders.orderRevenue}), 0)`,
+      totalCount: sql<number>`COUNT(*)::int`,
+      latestStatus: sql<string | null>`(array_agg(${numbatrakCustomerOrders.status} ORDER BY ${numbatrakCustomerOrders.createdAt} DESC))[1]`,
+    })
+    .from(numbatrakCustomerOrders)
+    .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), sql`${numbatrakCustomerOrders.customerId} IS NOT NULL`))
+    .groupBy(numbatrakCustomerOrders.customerId);
+
+  return new Map(
+    rows
+      .filter((r): r is typeof r & { customerId: string } => r.customerId != null)
+      .map((r) => [r.customerId, { revenue: Number(r.totalRevenue), count: r.totalCount, latestStatus: r.latestStatus }]),
+  );
+}
+
 export async function listCustomers(
   db: Database,
   organizationId: string,
+  filters: { status?: string } = {},
 ): Promise<NumbatrakCustomer[]> {
   const rows = await db
     .select()
@@ -216,25 +248,30 @@ export async function listCustomers(
     .where(eq(numbatrakCustomers.organizationId, organizationId))
     .orderBy(desc(numbatrakCustomers.createdAt));
 
-  const customerIds = rows.map((r) => r.id);
-  if (customerIds.length === 0) return [];
+  if (rows.length === 0) return [];
 
-  const morePurchaseStats = await db
-    .select({
-      customerId: numbatrakMorePurchases.customerId,
-      totalRevenue: sql<string>`COALESCE(SUM(${numbatrakMorePurchases.amount}), 0)`,
-      totalCount: sql<number>`COUNT(*)::int`,
-    })
-    .from(numbatrakMorePurchases)
-    .where(eq(numbatrakMorePurchases.organizationId, organizationId))
-    .groupBy(numbatrakMorePurchases.customerId);
+  const [morePurchaseStats, orderStats] = await Promise.all([
+    db
+      .select({
+        customerId: numbatrakMorePurchases.customerId,
+        totalRevenue: sql<string>`COALESCE(SUM(${numbatrakMorePurchases.amount}), 0)`,
+        totalCount: sql<number>`COUNT(*)::int`,
+      })
+      .from(numbatrakMorePurchases)
+      .where(eq(numbatrakMorePurchases.organizationId, organizationId))
+      .groupBy(numbatrakMorePurchases.customerId),
+    getOrderStatsMap(db, organizationId),
+  ]);
 
   const mpMap = new Map(morePurchaseStats.map((s) => [s.customerId, { revenue: Number(s.totalRevenue), count: s.totalCount }]));
 
-  return rows.map((row) => {
+  const customers = rows.map((row) => {
     const mp = mpMap.get(row.id) ?? { revenue: 0, count: 0 };
-    return serializeCustomer(row, 0, mp.revenue, 0, mp.count);
+    const order = orderStats.get(row.id) ?? { revenue: 0, count: 0, latestStatus: null };
+    return serializeCustomer(row, order.revenue, mp.revenue, order.count, mp.count, order.latestStatus);
   });
+
+  return filters.status ? customers.filter((c) => c.latestOrderStatus === filters.status) : customers;
 }
 
 export async function getCustomer(
@@ -257,7 +294,23 @@ export async function getCustomer(
     .from(numbatrakMorePurchases)
     .where(and(eq(numbatrakMorePurchases.organizationId, organizationId), eq(numbatrakMorePurchases.customerId, customerId)));
 
-  return serializeCustomer(row, 0, Number(mpStats?.totalRevenue ?? 0), 0, mpStats?.totalCount ?? 0);
+  const [orderStats] = await db
+    .select({
+      totalRevenue: sql<string>`COALESCE(SUM(${numbatrakCustomerOrders.orderRevenue}), 0)`,
+      totalCount: sql<number>`COUNT(*)::int`,
+      latestStatus: sql<string | null>`(array_agg(${numbatrakCustomerOrders.status} ORDER BY ${numbatrakCustomerOrders.createdAt} DESC))[1]`,
+    })
+    .from(numbatrakCustomerOrders)
+    .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), eq(numbatrakCustomerOrders.customerId, customerId)));
+
+  return serializeCustomer(
+    row,
+    Number(orderStats?.totalRevenue ?? 0),
+    Number(mpStats?.totalRevenue ?? 0),
+    orderStats?.totalCount ?? 0,
+    mpStats?.totalCount ?? 0,
+    orderStats?.latestStatus ?? null,
+  );
 }
 
 export async function createCustomer(
@@ -270,7 +323,7 @@ export async function createCustomer(
     .values({
       organizationId,
       name: body.name,
-      phone: body.phone,
+      phone: normalizePhoneInput(body.phone),
       email: body.email ?? null,
       whatsapp: body.whatsapp ?? null,
       location: body.location ?? null,
@@ -292,14 +345,74 @@ export async function updateCustomer(
   if (!existing) return null;
   const values: Record<string, unknown> = { updatedAt: new Date() };
   for (const key of ["name", "phone", "email", "whatsapp", "location", "firstClickSource", "lastClickSource", "notes"] as const) {
-    if (body[key] !== undefined) values[key] = body[key];
+    if (body[key] !== undefined) values[key] = key === "phone" && typeof body[key] === "string" ? normalizePhoneInput(body[key] as string) : body[key];
   }
   const [updated] = await db
     .update(numbatrakCustomers)
     .set(values)
     .where(and(eq(numbatrakCustomers.organizationId, organizationId), eq(numbatrakCustomers.id, customerId)))
     .returning();
-  return serializeCustomer(updated!, existing.orderRevenue, existing.morePurchaseRevenue, existing.orderCount, existing.morePurchaseCount);
+  return serializeCustomer(
+    updated!,
+    existing.orderRevenue,
+    existing.morePurchaseRevenue,
+    existing.orderCount,
+    existing.morePurchaseCount,
+    existing.latestOrderStatus,
+  );
+}
+
+export interface FindOrCreateCustomerInput {
+  name: string;
+  phone: string;
+  email?: string | null;
+  whatsapp?: string | null;
+  location?: string | null;
+  /** Null for order-creation paths with no click context (e.g. a manual dashboard order) - leaves both click-source columns untouched. */
+  clickSource: string | null;
+}
+
+/**
+ * Find-or-create a customer by (organizationId, phone) - the link point for
+ * "every order creates/updates a customer" (PHASE-NEXT-FEATURES.md's locked
+ * CRM rule). Single atomic upsert on the existing unique index, modeled on
+ * the storefront's own upsertCustomer (customers/lib/customers.ts). Click
+ * source is sticky on first-touch (COALESCE keeps whatever was already
+ * there) and always refreshed on last-touch (new value wins when present).
+ */
+export async function findOrCreateCustomer(
+  db: Queryable,
+  organizationId: string,
+  input: FindOrCreateCustomerInput,
+): Promise<CustomerRow> {
+  const phone = normalizePhoneInput(input.phone);
+  const [row] = await db
+    .insert(numbatrakCustomers)
+    .values({
+      organizationId,
+      name: input.name,
+      phone,
+      email: input.email ?? null,
+      whatsapp: input.whatsapp ?? null,
+      location: input.location ?? null,
+      firstClickSource: input.clickSource,
+      lastClickSource: input.clickSource,
+    })
+    .onConflictDoUpdate({
+      target: [numbatrakCustomers.organizationId, numbatrakCustomers.phone],
+      set: {
+        name: input.name,
+        email: sql`COALESCE(${input.email ?? null}, ${numbatrakCustomers.email})`,
+        whatsapp: sql`COALESCE(${input.whatsapp ?? null}, ${numbatrakCustomers.whatsapp})`,
+        location: sql`COALESCE(${input.location ?? null}, ${numbatrakCustomers.location})`,
+        firstClickSource: sql`COALESCE(${numbatrakCustomers.firstClickSource}, ${input.clickSource})`,
+        lastClickSource: sql`COALESCE(${input.clickSource}, ${numbatrakCustomers.lastClickSource})`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+  if (!row) throw new Error("Failed to find-or-create customer");
+  return row;
 }
 
 // --- Feedback Calls ---
