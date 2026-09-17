@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
+import { resolveNumbatrakComplaintRequestSchema } from "@platform/shared-types";
 import { auth } from "../../../lib/auth.js";
 import {
   getOrCreateFeedbackSettings,
@@ -179,10 +180,14 @@ export default async function numbatrakCrmRoutes(app: FastifyInstance): Promise<
       const { complaintId } = request.params as { complaintId: string };
       const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
       if (!session) return reply.status(401).send({ error: "Unauthorized" });
-      const body = request.body as any;
-      const result = await resolveComplaint(db, organizationId, complaintId, session.user.id, body);
-      if (!result) return reply.status(404).send({ error: "Complaint not found" });
-      return reply.send(result);
+      const body = resolveNumbatrakComplaintRequestSchema.parse(request.body);
+      try {
+        const result = await resolveComplaint(db, organizationId, complaintId, session.user.id, body);
+        if (!result) return reply.status(404).send({ error: "Complaint not found" });
+        return reply.send(result);
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to resolve complaint" });
+      }
     },
   );
 
@@ -253,7 +258,7 @@ export default async function numbatrakCrmRoutes(app: FastifyInstance): Promise<
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
       const { campaignId } = request.params as { campaignId: string };
-      const result = await sendCampaign(db, organizationId, campaignId);
+      const result = await sendCampaign(db, organizationId, campaignId, app.log);
       if (!result) return reply.status(400).send({ error: "Campaign cannot be sent (not draft or no credits)" });
       return reply.send(result);
     },

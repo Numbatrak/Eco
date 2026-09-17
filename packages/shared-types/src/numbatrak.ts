@@ -209,6 +209,7 @@ export const numbatrakOrderStatusSchema = z.enum([
   "pending",
   "completed",
   "cancelled",
+  "refunded",
 ]);
 export type NumbatrakOrderStatus = z.infer<typeof numbatrakOrderStatusSchema>;
 
@@ -2131,6 +2132,8 @@ export type CreateNumbatrakComplaintRequest = z.infer<typeof createNumbatrakComp
 export const resolveNumbatrakComplaintRequestSchema = z.object({
   resolution: z.string().trim().min(1),
   resolutionType: numbatrakComplaintResolutionTypeSchema,
+  /** Required when resolutionType is "replacement" - which order line is being replaced. */
+  productId: z.string().uuid().nullable().optional(),
 });
 export type ResolveNumbatrakComplaintRequest = z.infer<typeof resolveNumbatrakComplaintRequestSchema>;
 
@@ -2139,28 +2142,29 @@ export const numbatrakMorePurchaseSchema = z.object({
   customerId: z.string().uuid(),
   customerName: z.string().nullable(),
   feedbackCallId: z.string().uuid().nullable(),
-  productId: z.string().nullable(),
+  productId: z.string().uuid().nullable(),
   productName: z.string().nullable(),
   quantity: z.number().int(),
   amount: z.number(),
   cogs: z.number(),
   deliveryCost: z.number(),
   profit: z.number(),
-  agentId: z.string().nullable(),
+  agentId: z.number().int().nullable(),
   status: z.string(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
 export type NumbatrakMorePurchase = z.infer<typeof numbatrakMorePurchaseSchema>;
 
+/** cogs is intentionally absent - the server computes it from the linked product's cost price. */
 export const createNumbatrakMorePurchaseRequestSchema = z.object({
   customerId: z.string().uuid(),
   feedbackCallId: z.string().uuid().nullable().optional(),
-  productId: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
   productName: z.string().trim().nullable().optional(),
+  agentId: z.number().int().nullable().optional(),
   quantity: z.number().int().min(1).default(1),
   amount: z.number().nonnegative(),
-  cogs: z.number().nonnegative().default(0),
   deliveryCost: z.number().nonnegative().default(0),
 });
 export type CreateNumbatrakMorePurchaseRequest = z.infer<typeof createNumbatrakMorePurchaseRequestSchema>;
@@ -2220,6 +2224,8 @@ export const numbatrakComplaintDashboardSchema = z.object({
   resolutionRate: z.number(),
   refundCount: z.number().int(),
   replacementCount: z.number().int(),
+  /** Sum of replacement losses booked under the "chargeback" expense subcategory - refunds book no expense, so this reflects replacement cost only. */
+  chargebackCost: z.number(),
   byType: z.array(z.object({ type: z.string(), count: z.number().int() })),
 });
 export type NumbatrakComplaintDashboard = z.infer<typeof numbatrakComplaintDashboardSchema>;

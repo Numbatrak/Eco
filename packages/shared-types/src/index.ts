@@ -422,6 +422,8 @@ export {
   type NumbatrakFeedbackCall,
   numbatrakComplaintSchema,
   type NumbatrakComplaint,
+  resolveNumbatrakComplaintRequestSchema,
+  type ResolveNumbatrakComplaintRequest,
   numbatrakMorePurchaseSchema,
   type NumbatrakMorePurchase,
   numbatrakCampaignSchema,

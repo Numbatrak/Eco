@@ -6,6 +6,7 @@ import advanceOrderStatusRoutes from "./advance-status.js";
 import markOrderFailedRoutes from "./mark-failed.js";
 import addOrderUpsellRoutes from "./add-upsell.js";
 import deleteOrderRoutes from "./delete.js";
+import orderDetailRoutes from "./detail.js";
 
 export default async function numbatrakOrdersRoutes(app: FastifyInstance): Promise<void> {
   await app.register(listOrdersRoutes);
@@ -15,4 +16,5 @@ export default async function numbatrakOrdersRoutes(app: FastifyInstance): Promi
   await app.register(markOrderFailedRoutes);
   await app.register(addOrderUpsellRoutes);
   await app.register(deleteOrderRoutes);
+  await app.register(orderDetailRoutes);
 }

@@ -49,6 +49,30 @@ export async function getSubscriptionForOrg(db: Database, organizationId: string
   };
 }
 
+/**
+ * Tenant-facing plan change - takes effect immediately against the current
+ * billing period (no proration math here; Paystack's own subscription
+ * plan-change API is what would actually move the next charge amount, and
+ * this platform doesn't call it yet, so this only updates which plan's
+ * limits/features apply going forward).
+ */
+export async function changeSubscriptionPlan(
+  db: Database,
+  organizationId: string,
+  planId: string,
+  billingInterval: "monthly" | "annual",
+): Promise<boolean> {
+  const [plan] = await db.select({ id: platformPlans.id }).from(platformPlans).where(eq(platformPlans.id, planId));
+  if (!plan) return false;
+
+  const result = await db
+    .update(platformSubscriptions)
+    .set({ planId, billingInterval, updatedAt: new Date() })
+    .where(eq(platformSubscriptions.organizationId, organizationId))
+    .returning({ id: platformSubscriptions.id });
+  return result.length > 0;
+}
+
 export async function getAvailablePlans(db: Database) {
   const plans = await db
     .select()

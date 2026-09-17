@@ -135,6 +135,17 @@ export async function fetchCustomerOrders(
   return orders.map((o) => orderFromDto(o, organizationId!));
 }
 
+export async function fetchCustomerOrderById(
+  orderId: string,
+  organizationId: string | null
+): Promise<CustomerOrderWithRelations | null> {
+  const empty = emptyWithoutOrg<CustomerOrderWithRelations>(organizationId);
+  if (empty) return null;
+
+  const dto = await apiRequest<OrderDto>(`/org/numbatrak/orders/${orderId}`);
+  return orderFromDto(dto, organizationId!);
+}
+
 export async function updateCustomerOrder(
   orderId: string,
   updates: Partial<{

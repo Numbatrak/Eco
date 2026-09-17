@@ -39,6 +39,79 @@ export async function createDeliveryMovement(
   });
 }
 
+/**
+ * A free replacement item shipped out for a complaint - physically identical
+ * to a delivery (deducts stock the same way), just not counted as a new sale.
+ * Kept separate from createDeliveryMovement rather than parameterizing it,
+ * since that function's "deliver_to_customer" literal is load-bearing for
+ * productsAlreadyDelivered's idempotency check below.
+ */
+export async function createReplacementMovement(
+  db: Database,
+  input: {
+    organizationId: string;
+    fromAgentId: number;
+    productId: string;
+    quantity: number;
+    orderId: string;
+    cost: number;
+  },
+): Promise<void> {
+  if (input.quantity <= 0) {
+    throw new Error("Quantity must be positive.");
+  }
+  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId);
+  if (onHand < input.quantity) {
+    throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
+  }
+
+  await db.insert(numbatrakStockMovements).values({
+    organizationId: input.organizationId,
+    movementType: "replacement",
+    productId: input.productId,
+    quantity: input.quantity,
+    fromAgentId: input.fromAgentId,
+    orderId: input.orderId,
+    cost: String(input.cost),
+    fee: "0",
+  });
+}
+
+/**
+ * Stock deduction for the CRM "more purchase" flow (an existing customer
+ * buying again outside the standard orders pipeline) - physically identical
+ * to a delivery, kept as its own movement type since it isn't tied to an
+ * order id and shouldn't be counted by productsAlreadyDelivered.
+ */
+export async function createMorePurchaseMovement(
+  db: Database,
+  input: {
+    organizationId: string;
+    fromAgentId: number;
+    productId: string;
+    quantity: number;
+    cost: number;
+  },
+): Promise<void> {
+  if (input.quantity <= 0) {
+    throw new Error("Quantity must be positive.");
+  }
+  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId);
+  if (onHand < input.quantity) {
+    throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
+  }
+
+  await db.insert(numbatrakStockMovements).values({
+    organizationId: input.organizationId,
+    movementType: "more_purchase",
+    productId: input.productId,
+    quantity: input.quantity,
+    fromAgentId: input.fromAgentId,
+    cost: String(input.cost),
+    fee: "0",
+  });
+}
+
 /** Which product ids already have a deliver_to_customer movement for this order (idempotency check). */
 export async function productsAlreadyDelivered(
   db: Database,

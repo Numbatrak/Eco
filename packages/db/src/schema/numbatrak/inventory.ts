@@ -91,7 +91,7 @@ export const numbatrakStockMovements = pgTable(
       .where(sql`${table.legacyDeliveryId} IS NOT NULL`),
     check(
       "numbatrak_stock_movements_movement_type_chk",
-      sql`${table.movementType} IN ('waybill_to_agent', 'deliver_to_customer', 'return_to_lagos', 'transfer', 'adjust', 'damaged', 'missing')`,
+      sql`${table.movementType} IN ('waybill_to_agent', 'deliver_to_customer', 'return_to_lagos', 'transfer', 'adjust', 'damaged', 'missing', 'replacement', 'more_purchase')`,
     ),
     check(
       "numbatrak_stock_movements_agents_chk",
@@ -100,7 +100,7 @@ export const numbatrakStockMovements = pgTable(
         OR (${table.movementType} = 'return_to_lagos' AND ${table.fromAgentId} IS NOT NULL)
         OR (${table.movementType} = 'transfer' AND ${table.fromAgentId} IS NOT NULL AND ${table.toAgentId} IS NOT NULL)
         OR (${table.movementType} = 'adjust' AND (${table.fromAgentId} IS NOT NULL OR ${table.toAgentId} IS NOT NULL))
-        OR (${table.movementType} IN ('damaged', 'missing') AND ${table.fromAgentId} IS NOT NULL)`,
+        OR (${table.movementType} IN ('damaged', 'missing', 'replacement', 'more_purchase') AND ${table.fromAgentId} IS NOT NULL)`,
     ),
   ],
 );

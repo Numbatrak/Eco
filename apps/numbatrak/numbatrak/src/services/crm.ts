@@ -80,7 +80,7 @@ interface MorePurchaseDto {
   cogs: number;
   deliveryCost: number;
   profit: number;
-  agentId: string | null;
+  agentId: number | null;
   status: string;
   createdAt: string | null;
   updatedAt: string | null;
@@ -129,6 +129,7 @@ interface ComplaintDashboardDto {
   resolutionRate: number;
   refundCount: number;
   replacementCount: number;
+  chargebackCost: number;
   byType: { type: string; count: number }[];
 }
 
@@ -210,7 +211,7 @@ export interface MorePurchase {
   cogs: number;
   delivery_cost: number;
   profit: number;
-  agent_id: string | null;
+  agent_id: number | null;
   status: string;
   created_at: string | null;
   updated_at: string | null;
@@ -259,6 +260,7 @@ export interface ComplaintDashboard {
   resolution_rate: number;
   refund_count: number;
   replacement_count: number;
+  chargeback_cost: number;
   by_type: { type: string; count: number }[];
 }
 
@@ -286,7 +288,7 @@ function feedbackDashboardFromDto(d: FeedbackDashboardDto): FeedbackDashboard {
   return { total_calls: d.totalCalls, attempted: d.attempted, answer_rate: d.answerRate, avg_attempts_to_reach: d.avgAttemptsToReach, avg_satisfaction: d.avgSatisfaction, happy_rate: d.happyRate, unhappy_rate: d.unhappyRate, more_purchase_revenue: d.morePurchaseRevenue, more_purchase_profit: d.morePurchaseProfit, profit_per_call: d.profitPerCall };
 }
 function complaintDashboardFromDto(d: ComplaintDashboardDto): ComplaintDashboard {
-  return { total: d.total, open: d.open, escalated: d.escalated, resolved: d.resolved, resolution_rate: d.resolutionRate, refund_count: d.refundCount, replacement_count: d.replacementCount, by_type: d.byType };
+  return { total: d.total, open: d.open, escalated: d.escalated, resolved: d.resolved, resolution_rate: d.resolutionRate, refund_count: d.refundCount, replacement_count: d.replacementCount, chargeback_cost: d.chargebackCost, by_type: d.byType };
 }
 
 // --- API calls ---
@@ -347,7 +349,7 @@ export async function escalateComplaint(id: string): Promise<Complaint> {
   return complaintFromDto(dto);
 }
 
-export async function resolveComplaint(id: string, body: { resolution: string; resolutionType: string }): Promise<Complaint> {
+export async function resolveComplaint(id: string, body: { resolution: string; resolutionType: string; productId?: string | null }): Promise<Complaint> {
   const dto = await apiRequest<ComplaintDto>(`/org/numbatrak/crm/complaints/${id}/resolve`, { method: "POST", body });
   return complaintFromDto(dto);
 }

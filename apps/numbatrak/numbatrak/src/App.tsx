@@ -77,6 +77,9 @@ const DeliverySettingsPage = lazy(() =>
 const AnalyticsSettingsPage = lazy(() =>
   import("./pages/storefront/AnalyticsSettingsPage").then((m) => ({ default: m.AnalyticsSettingsPage })),
 );
+const IntegrationsSettingsPage = lazy(() =>
+  import("./pages/storefront/IntegrationsSettingsPage").then((m) => ({ default: m.IntegrationsSettingsPage })),
+);
 const StorefrontBuilderPage = lazy(() =>
   import("./pages/storefront/StorefrontBuilderPage").then((m) => ({ default: m.StorefrontBuilderPage })),
 );
@@ -503,10 +506,9 @@ function AppContent() {
                 <Route
                   path="/integrations"
                   element={
-                    <PlaceholderPage
-                      title="Integrations"
-                      description="Connect email, SMS, payment gateway, Meta Pixel, and Conversion API. Phase 1 placeholder."
-                    />
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <IntegrationsSettingsPage />
+                    </ProtectedRoute>
                   }
                 />
                 <Route path="/invoicing" element={<InvoicingPage />} />

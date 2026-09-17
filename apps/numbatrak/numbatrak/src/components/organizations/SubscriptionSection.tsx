@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchSubscription, fetchPlans, type Subscription, type Plan } from "../../services/subscription";
+import { fetchSubscription, fetchPlans, changeSubscriptionPlan, cancelSubscription, type Subscription, type Plan } from "../../services/subscription";
 import { CreditCard } from "lucide-react";
 
 function formatDate(d: string | null): string {
@@ -23,6 +23,8 @@ export function SubscriptionSection() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,6 +42,33 @@ export function SubscriptionSection() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function handleChangePlan(planId: string) {
+    setChangingPlanId(planId);
+    try {
+      await changeSubscriptionPlan(planId, subscription?.billing_interval === "annual" ? "annual" : "monthly");
+      await load();
+    } catch (e) {
+      console.error("Failed to change plan", e);
+      alert(e instanceof Error ? e.message : "Failed to change plan");
+    } finally {
+      setChangingPlanId(null);
+    }
+  }
+
+  async function handleCancel() {
+    if (!confirm("Cancel your subscription? You'll lose access once your current period ends.")) return;
+    setCancelling(true);
+    try {
+      await cancelSubscription();
+      await load();
+    } catch (e) {
+      console.error("Failed to cancel subscription", e);
+      alert(e instanceof Error ? e.message : "Failed to cancel subscription");
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -102,6 +131,48 @@ export function SubscriptionSection() {
             <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm">
               Your subscription is locked due to payment failure. Contact support to restore access.
             </div>
+          )}
+
+          {plans.length > 0 && subscription.status !== "cancelled" && (
+            <div>
+              <h3 className="text-sm font-medium mb-3">Change Plan</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {plans.map((plan) => {
+                  const isCurrent = plan.id === subscription.plan_id;
+                  return (
+                    <div key={plan.id} className={`p-4 border rounded-lg ${isCurrent ? "border-primary" : ""}`}>
+                      <h4 className="font-semibold">{plan.display_name}</h4>
+                      <p className="text-xl font-bold mt-2">
+                        {formatCurrency(plan.price_monthly_cents)}
+                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      </p>
+                      {plan.price_annually_cents > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          or {formatCurrency(plan.price_annually_cents)}/year
+                        </p>
+                      )}
+                      <button
+                        onClick={() => void handleChangePlan(plan.id)}
+                        disabled={isCurrent || changingPlanId !== null}
+                        className="mt-3 w-full px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        {isCurrent ? "Current Plan" : changingPlanId === plan.id ? "Switching..." : "Switch to this plan"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {subscription.status !== "cancelled" && (
+            <button
+              onClick={() => void handleCancel()}
+              disabled={cancelling}
+              className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 dark:bg-red-900 dark:text-red-200 disabled:opacity-50"
+            >
+              {cancelling ? "Cancelling..." : "Cancel Subscription"}
+            </button>
           )}
         </div>
       ) : (

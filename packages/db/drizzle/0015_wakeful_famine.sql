@@ -1,0 +1,11 @@
+ALTER TABLE "numbatrak_customer_orders" DROP CONSTRAINT "numbatrak_customer_orders_status_chk";--> statement-breakpoint
+ALTER TABLE "numbatrak_stock_movements" DROP CONSTRAINT "numbatrak_stock_movements_movement_type_chk";--> statement-breakpoint
+ALTER TABLE "numbatrak_stock_movements" DROP CONSTRAINT "numbatrak_stock_movements_agents_chk";--> statement-breakpoint
+ALTER TABLE "numbatrak_customer_orders" ADD CONSTRAINT "numbatrak_customer_orders_status_chk" CHECK ("numbatrak_customer_orders"."status" IN ('new', 'confirmed', 'packed', 'dispatched', 'delivered', 'failed', 'returned', 'lost', 'pending', 'completed', 'cancelled', 'refunded'));--> statement-breakpoint
+ALTER TABLE "numbatrak_stock_movements" ADD CONSTRAINT "numbatrak_stock_movements_movement_type_chk" CHECK ("numbatrak_stock_movements"."movement_type" IN ('waybill_to_agent', 'deliver_to_customer', 'return_to_lagos', 'transfer', 'adjust', 'damaged', 'missing', 'replacement'));--> statement-breakpoint
+ALTER TABLE "numbatrak_stock_movements" ADD CONSTRAINT "numbatrak_stock_movements_agents_chk" CHECK (("numbatrak_stock_movements"."movement_type" = 'waybill_to_agent' AND "numbatrak_stock_movements"."to_agent_id" IS NOT NULL)
+        OR ("numbatrak_stock_movements"."movement_type" = 'deliver_to_customer' AND "numbatrak_stock_movements"."from_agent_id" IS NOT NULL)
+        OR ("numbatrak_stock_movements"."movement_type" = 'return_to_lagos' AND "numbatrak_stock_movements"."from_agent_id" IS NOT NULL)
+        OR ("numbatrak_stock_movements"."movement_type" = 'transfer' AND "numbatrak_stock_movements"."from_agent_id" IS NOT NULL AND "numbatrak_stock_movements"."to_agent_id" IS NOT NULL)
+        OR ("numbatrak_stock_movements"."movement_type" = 'adjust' AND ("numbatrak_stock_movements"."from_agent_id" IS NOT NULL OR "numbatrak_stock_movements"."to_agent_id" IS NOT NULL))
+        OR ("numbatrak_stock_movements"."movement_type" IN ('damaged', 'missing', 'replacement') AND "numbatrak_stock_movements"."from_agent_id" IS NOT NULL));

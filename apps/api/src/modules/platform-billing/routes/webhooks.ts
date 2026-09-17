@@ -13,6 +13,7 @@ import {
 import { findPlatformPlan } from "../lib/platform-plans-store.js";
 import { recordPlatformTransaction } from "../lib/platform-transactions-store.js";
 import { subscriptionVatPortionCents } from "../lib/vat.js";
+import { notifyPaymentFailed } from "../lib/dunning.js";
 
 // Platform's own Paystack secret — distinct from tenant payment settings.
 // Never read PAYSTACK_SECRET_KEY here; that key belongs to tenant payment
@@ -132,6 +133,7 @@ async function handlePaymentFailed(
   }
 
   await markSubscriptionPastDue(db, orgId);
+  await notifyPaymentFailed(db, app.log, orgId);
 
   await recordPlatformTransaction(db, {
     organizationId: orgId,

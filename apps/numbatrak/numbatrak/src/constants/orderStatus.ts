@@ -53,6 +53,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   completed: "Delivered (legacy)",
   cancelled: "Cancelled",
   abandoned: "Abandoned cart",
+  refunded: "Refunded",
 };
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {

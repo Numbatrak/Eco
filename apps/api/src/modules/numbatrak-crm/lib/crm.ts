@@ -2,12 +2,16 @@ import { and, eq, desc, sql } from "drizzle-orm";
 import {
   numbatrakCustomers,
   numbatrakCustomerOrders,
+  numbatrakCustomerOrderItems,
+  numbatrakUnifiedExpenses,
+  numbatrakExpenseSubcategories,
   numbatrakFeedbackSettings,
   numbatrakFeedbackCalls,
   numbatrakComplaints,
   numbatrakMorePurchases,
   numbatrakCampaigns,
   numbatrakCrmCredits,
+  numbatrakProducts,
   user,
   type Database,
   type Queryable,
@@ -23,7 +27,11 @@ import type {
   NumbatrakFeedbackDashboard,
   NumbatrakComplaintDashboard,
 } from "@platform/shared-types";
+import type { FastifyBaseLogger } from "fastify";
 import { normalizePhoneInput } from "../../numbatrak-forms/lib/validation.js";
+import { createReplacementMovement, createMorePurchaseMovement } from "../../numbatrak-orders/lib/stock.js";
+import { sendEmail } from "../../auth/lib/email.js";
+import { sendWhatsAppTemplate } from "../../../lib/whatsapp.js";
 
 type CustomerRow = typeof numbatrakCustomers.$inferSelect;
 type FeedbackSettingsRow = typeof numbatrakFeedbackSettings.$inferSelect;
@@ -533,13 +541,116 @@ export async function escalateComplaint(
   return serializeComplaint(updated);
 }
 
+/**
+ * Refund reverses the sale - flip the order to "refunded" and stop there.
+ * Its profit disappears from accounting for free (getAccountingReport and
+ * every isDeliveredStatus check only match 'delivered'/'completed'), so no
+ * expense is booked - booking one here would double-count the loss.
+ *
+ * Replacement leaves the original sale alone (the customer keeps it) but the
+ * free replacement unit is a real cost: one unit's cost plus the order's
+ * delivery fee, booked into a "chargeback" operational expense, and the unit
+ * itself comes out of inventory exactly like a normal delivery.
+ */
+async function applyComplaintResolutionSideEffects(
+  db: Database,
+  organizationId: string,
+  complaintId: string,
+  complaint: { orderId: string | null },
+  body: { resolutionType: string; productId?: string | null },
+): Promise<void> {
+  if (body.resolutionType !== "refund" && body.resolutionType !== "replacement") return;
+
+  if (!complaint.orderId) {
+    throw new Error(`Resolving as ${body.resolutionType} requires the complaint to be linked to an order.`);
+  }
+  const [order] = await db
+    .select()
+    .from(numbatrakCustomerOrders)
+    .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), eq(numbatrakCustomerOrders.id, complaint.orderId)))
+    .limit(1);
+  if (!order) throw new Error("The order linked to this complaint was not found.");
+
+  if (body.resolutionType === "refund") {
+    await db
+      .update(numbatrakCustomerOrders)
+      .set({ status: "refunded", updatedAt: new Date() })
+      .where(eq(numbatrakCustomerOrders.id, order.id));
+    return;
+  }
+
+  // replacement
+  if (!body.productId) {
+    throw new Error("Resolving as a replacement requires selecting which product is being replaced.");
+  }
+  const [item] = await db
+    .select({ unitCostAtSubmission: numbatrakCustomerOrderItems.unitCostAtSubmission })
+    .from(numbatrakCustomerOrderItems)
+    .where(
+      and(
+        eq(numbatrakCustomerOrderItems.orderId, order.id),
+        eq(numbatrakCustomerOrderItems.productId, body.productId),
+      ),
+    )
+    .limit(1);
+  if (!item) throw new Error("That product is not part of the linked order.");
+
+  const unitCost = Number(item.unitCostAtSubmission);
+  const deliveryFee = Number(order.deliveryFee ?? 0);
+  const lossAmount = unitCost + deliveryFee;
+
+  if (order.agentId != null) {
+    await createReplacementMovement(db, {
+      organizationId,
+      fromAgentId: order.agentId,
+      productId: body.productId,
+      quantity: 1,
+      orderId: order.id,
+      cost: unitCost,
+    });
+  }
+
+  // Registers "chargeback" as a real, listable subcategory the first time an
+  // org books one, rather than leaving it as a string only ever visible on
+  // the expense row itself.
+  await db
+    .insert(numbatrakExpenseSubcategories)
+    .values({ organizationId, parentCategory: "operational", slug: "chargeback", label: "Chargeback" })
+    .onConflictDoNothing();
+
+  await db
+    .insert(numbatrakUnifiedExpenses)
+    .values({
+      organizationId,
+      scope: "org",
+      category: "operational",
+      subcategory: "chargeback",
+      amount: String(lossAmount),
+      orderId: order.id,
+      productId: body.productId,
+      note: `Replacement for complaint #${complaintId} — order #${order.id}`,
+      sourceType: "complaint_replacement",
+      sourceId: complaintId,
+    })
+    .onConflictDoNothing();
+}
+
 export async function resolveComplaint(
   db: Database,
   organizationId: string,
   complaintId: string,
   userId: string,
-  body: { resolution: string; resolutionType: string },
+  body: { resolution: string; resolutionType: string; productId?: string | null },
 ): Promise<NumbatrakComplaint | null> {
+  const [complaint] = await db
+    .select()
+    .from(numbatrakComplaints)
+    .where(and(eq(numbatrakComplaints.organizationId, organizationId), eq(numbatrakComplaints.id, complaintId)))
+    .limit(1);
+  if (!complaint) return null;
+
+  await applyComplaintResolutionSideEffects(db, organizationId, complaintId, complaint, body);
+
   const [updated] = await db
     .update(numbatrakComplaints)
     .set({
@@ -575,6 +686,12 @@ export async function listMorePurchases(
   return rows.map((r) => serializeMorePurchase({ ...r.purchase, customerName: r.customerName }));
 }
 
+/**
+ * An existing customer buying again, outside the standard orders pipeline.
+ * When linked to a real product, the cost of goods sold is computed from the
+ * product's cost price (not client-supplied) and the unit is deducted from
+ * the fulfilling agent's on-hand stock exactly like a normal delivery.
+ */
 export async function createMorePurchase(
   db: Database,
   organizationId: string,
@@ -583,12 +700,36 @@ export async function createMorePurchase(
     feedbackCallId?: string | null;
     productId?: string | null;
     productName?: string | null;
+    agentId?: number | null;
     quantity: number;
     amount: number;
-    cogs?: number;
     deliveryCost?: number;
   },
 ): Promise<NumbatrakMorePurchase> {
+  let cogs = 0;
+  let productName = body.productName ?? null;
+
+  if (body.productId) {
+    const [product] = await db
+      .select({ name: numbatrakProducts.name, costPrice: numbatrakProducts.costPrice })
+      .from(numbatrakProducts)
+      .where(and(eq(numbatrakProducts.organizationId, organizationId), eq(numbatrakProducts.id, body.productId)))
+      .limit(1);
+    if (!product) throw new Error("That product was not found for this organization.");
+    cogs = Number(product.costPrice) * body.quantity;
+    productName = productName ?? product.name;
+
+    if (body.agentId != null) {
+      await createMorePurchaseMovement(db, {
+        organizationId,
+        fromAgentId: body.agentId,
+        productId: body.productId,
+        quantity: body.quantity,
+        cost: Number(product.costPrice),
+      });
+    }
+  }
+
   const [created] = await db
     .insert(numbatrakMorePurchases)
     .values({
@@ -596,11 +737,12 @@ export async function createMorePurchase(
       customerId: body.customerId,
       feedbackCallId: body.feedbackCallId ?? null,
       productId: body.productId ?? null,
-      productName: body.productName ?? null,
+      productName,
       quantity: body.quantity,
       amount: String(body.amount),
-      cogs: String(body.cogs ?? 0),
+      cogs: String(cogs),
       deliveryCost: String(body.deliveryCost ?? 0),
+      agentId: body.agentId ?? null,
     })
     .returning();
   return serializeMorePurchase(created!);
@@ -656,10 +798,19 @@ export async function createCampaign(
   return serializeCampaign(created!);
 }
 
+/**
+ * Segments customers by their latest order status (campaign.segmentFilter),
+ * then actually dispatches through the shared email/WhatsApp senders -
+ * this used to be a stub that faked sentCount/recipientCount without
+ * sending anything. Sending stops the moment the channel's credit balance
+ * hits zero, per spec ("blocks sending when balances are depleted"), so a
+ * campaign can finish partially sent if it runs out mid-way.
+ */
 export async function sendCampaign(
   db: Database,
   organizationId: string,
   campaignId: string,
+  logger: FastifyBaseLogger,
 ): Promise<NumbatrakCampaign | null> {
   const [campaign] = await db
     .select()
@@ -675,16 +826,59 @@ export async function sendCampaign(
     .limit(1);
   if (!credit || credit.balance <= 0) return null;
 
+  const [orderStats, allCustomers] = await Promise.all([
+    getOrderStatsMap(db, organizationId),
+    db.select().from(numbatrakCustomers).where(eq(numbatrakCustomers.organizationId, organizationId)),
+  ]);
+
+  const segmented = campaign.segmentFilter
+    ? allCustomers.filter((c) => orderStats.get(c.id)?.latestStatus === campaign.segmentFilter)
+    : allCustomers;
+  const recipients = segmented.filter((c) => (campaign.channel === "email" ? !!c.email : !!c.whatsapp));
+
+  let balance = credit.balance;
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const customer of recipients) {
+    if (balance <= 0) break;
+    try {
+      if (campaign.channel === "email") {
+        await sendEmail(logger, { to: customer.email!, subject: campaign.subject ?? campaign.name, body: campaign.body });
+      } else {
+        await sendWhatsAppTemplate(db, organizationId, logger, {
+          to: customer.whatsapp!,
+          templateName: "marketing_campaign",
+          bodyParameters: [campaign.body],
+        });
+      }
+      sentCount += 1;
+      balance -= 1;
+    } catch (err) {
+      logger.error({ err, customerId: customer.id, campaignId }, "Campaign send failed for recipient");
+      failedCount += 1;
+    }
+  }
+
   const [updated] = await db
     .update(numbatrakCampaigns)
-    .set({ status: "sent", sentAt: new Date(), sentCount: 1, recipientCount: 1, updatedAt: new Date() })
+    .set({
+      status: sentCount > 0 ? "sent" : "failed",
+      sentAt: new Date(),
+      sentCount,
+      failedCount,
+      recipientCount: recipients.length,
+      updatedAt: new Date(),
+    })
     .where(eq(numbatrakCampaigns.id, campaignId))
     .returning();
 
-  await db
-    .update(numbatrakCrmCredits)
-    .set({ balance: sql`${numbatrakCrmCredits.balance} - 1`, updatedAt: new Date() })
-    .where(and(eq(numbatrakCrmCredits.organizationId, organizationId), eq(numbatrakCrmCredits.channel, campaign.channel)));
+  if (sentCount > 0) {
+    await db
+      .update(numbatrakCrmCredits)
+      .set({ balance: sql`${numbatrakCrmCredits.balance} - ${sentCount}`, updatedAt: new Date() })
+      .where(and(eq(numbatrakCrmCredits.organizationId, organizationId), eq(numbatrakCrmCredits.channel, campaign.channel)));
+  }
 
   return updated ? serializeCampaign(updated) : null;
 }
@@ -805,6 +999,20 @@ export async function getComplaintDashboard(
     .where(and(eq(numbatrakComplaints.organizationId, organizationId), sql`${numbatrakComplaints.complaintType} IS NOT NULL`))
     .groupBy(numbatrakComplaints.complaintType);
 
+  // Replacement losses are booked under the "chargeback" subcategory
+  // (see applyComplaintResolutionSideEffects); refunds book no expense at
+  // all, so this total only ever reflects replacement cost - by design.
+  const [chargeback] = await db
+    .select({ total: sql<string>`COALESCE(SUM(${numbatrakUnifiedExpenses.amount}), 0)` })
+    .from(numbatrakUnifiedExpenses)
+    .where(
+      and(
+        eq(numbatrakUnifiedExpenses.organizationId, organizationId),
+        eq(numbatrakUnifiedExpenses.subcategory, "chargeback"),
+        eq(numbatrakUnifiedExpenses.sourceType, "complaint_replacement"),
+      ),
+    );
+
   const total = stats?.total ?? 0;
   const open = stats?.open ?? 0;
   const escalated = stats?.escalated ?? 0;
@@ -820,6 +1028,7 @@ export async function getComplaintDashboard(
     resolutionRate: total > 0 ? resolved / total : 0,
     refundCount,
     replacementCount,
+    chargebackCost: Number(chargeback?.total ?? 0),
     byType: byType.map((r) => ({ type: r.type ?? "unknown", count: r.count })),
   };
 }

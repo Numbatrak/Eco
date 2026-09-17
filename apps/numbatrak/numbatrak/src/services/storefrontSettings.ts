@@ -68,6 +68,22 @@ export interface TenantSettingsResponse {
   showProductGrid: boolean;
 }
 
+export interface WhatsappSettingsResponse {
+  connected: boolean;
+  wabaId: string | null;
+  phoneNumberId: string | null;
+  phoneNumber: string | null;
+  displayName: string | null;
+  accountStatus: "pending" | "approved" | "rejected" | null;
+  enabled: boolean;
+}
+
+export interface WhatsappConnectRequest {
+  code: string;
+  wabaId: string;
+  phoneNumberId: string;
+}
+
 export const storefrontSettingsApi = {
   getPaymentSettings: () =>
     apiRequest<PaymentSettingsResponse>("/org/payment-settings", { method: "GET" }),
@@ -92,4 +108,13 @@ export const storefrontSettingsApi = {
 
   updateTenantSettings: (body: UpdateTenantRequest) =>
     apiRequest<void>("/org/site-settings", { method: "PATCH", body }),
+
+  getWhatsappSettings: () =>
+    apiRequest<WhatsappSettingsResponse>("/org/whatsapp-settings", { method: "GET" }),
+
+  connectWhatsapp: (body: WhatsappConnectRequest) =>
+    apiRequest<WhatsappSettingsResponse>("/org/whatsapp/connect", { method: "POST", body }),
+
+  disconnectWhatsapp: () =>
+    apiRequest<{ success: boolean }>("/org/whatsapp/disconnect", { method: "DELETE" }),
 };

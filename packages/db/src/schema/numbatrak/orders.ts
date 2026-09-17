@@ -263,7 +263,7 @@ export const numbatrakCustomerOrders = pgTable(
       .where(sql`${table.status} = 'completed'`),
     check(
       "numbatrak_customer_orders_status_chk",
-      sql`${table.status} IN ('new', 'confirmed', 'packed', 'dispatched', 'delivered', 'failed', 'returned', 'lost', 'pending', 'completed', 'cancelled')`,
+      sql`${table.status} IN ('new', 'confirmed', 'packed', 'dispatched', 'delivered', 'failed', 'returned', 'lost', 'pending', 'completed', 'cancelled', 'refunded')`,
     ),
     check(
       "numbatrak_customer_orders_source_chk",

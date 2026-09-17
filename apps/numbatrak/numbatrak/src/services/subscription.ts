@@ -87,3 +87,15 @@ export async function fetchPlans(): Promise<Plan[]> {
   const { plans } = await apiRequest<{ plans: PlanDto[] }>("/org/numbatrak/settings/plans");
   return plans.map(planFromDto);
 }
+
+export async function changeSubscriptionPlan(planId: string, billingInterval: "monthly" | "annual"): Promise<Subscription | null> {
+  const { subscription } = await apiRequest<{ subscription: SubscriptionDto | null }>(
+    "/org/numbatrak/settings/subscription/change-plan",
+    { method: "POST", body: { planId, billingInterval } },
+  );
+  return subscription ? subscriptionFromDto(subscription) : null;
+}
+
+export async function cancelSubscription(): Promise<void> {
+  await apiRequest<void>("/org/numbatrak/settings/subscription", { method: "DELETE" });
+}

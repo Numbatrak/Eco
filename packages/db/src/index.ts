@@ -72,6 +72,7 @@ export {
   numbatrakRemittanceLines,
   numbatrakUnifiedExpenses,
   numbatrakExpenseSubcategories,
+  numbatrakApiKeys,
   numbatrakAgentExpensesLegacy,
   numbatrakAbandonedCarts,
   numbatrakFollowUps,

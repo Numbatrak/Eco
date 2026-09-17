@@ -1,8 +1,10 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { organization, user } from "../../auth-schema.js";
 import { numbatrakStaff } from "./staff.js";
+import { numbatrakProducts } from "./products.js";
+import { numbatrakAgents } from "./agents.js";
 
 export const numbatrakCustomers = pgTable(
   "numbatrak_customers",
@@ -133,13 +135,13 @@ export const numbatrakMorePurchases = pgTable(
       .notNull()
       .references(() => numbatrakCustomers.id, { onDelete: "cascade" }),
     feedbackCallId: uuid("feedback_call_id").references(() => numbatrakFeedbackCalls.id, { onDelete: "set null" }),
-    productId: text("product_id"),
+    productId: uuid("product_id").references(() => numbatrakProducts.id, { onDelete: "set null" }),
     productName: text("product_name"),
     quantity: integer("quantity").notNull().default(1),
     amount: numeric("amount", { precision: 14, scale: 2 }).notNull().default("0"),
     cogs: numeric("cogs", { precision: 14, scale: 2 }).notNull().default("0"),
     deliveryCost: numeric("delivery_cost", { precision: 12, scale: 2 }).notNull().default("0"),
-    agentId: text("agent_id"),
+    agentId: bigint("agent_id", { mode: "number" }).references(() => numbatrakAgents.id, { onDelete: "set null" }),
     status: text("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

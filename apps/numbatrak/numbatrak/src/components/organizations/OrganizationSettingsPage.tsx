@@ -25,6 +25,8 @@ import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSett
 import { InventorySettings } from "./InventorySettings";
 import { DeliveryAgentSettings } from "./DeliveryAgentSettings";
 import { SubscriptionSection } from "./SubscriptionSection";
+import { DataExportSection } from "./DataExportSection";
+import { ApiKeysSection } from "./ApiKeysSection";
 import { Switch } from "../ui/switch";
 import { PageLayout } from "../layout/PageLayout";
 import { getDisplayName } from "../../utils/userDisplay";
@@ -749,6 +751,16 @@ export function OrganizationSettingsPage() {
         {/* Subscription & Billing */}
         {(isOwner || isAdmin) && (
           <SubscriptionSection />
+        )}
+
+        {/* Data Export */}
+        {(isOwner || isAdmin) && (
+          <DataExportSection />
+        )}
+
+        {/* API Keys */}
+        {(isOwner || isAdmin) && (
+          <ApiKeysSection />
         )}
       </div>
 

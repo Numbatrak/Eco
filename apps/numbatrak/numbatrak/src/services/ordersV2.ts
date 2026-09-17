@@ -4,6 +4,7 @@
  */
 export {
   fetchCustomerOrders,
+  fetchCustomerOrderById,
   updateCustomerOrder,
   deleteCustomerOrder,
   deleteCustomerOrderDeep,

@@ -20,7 +20,7 @@ import { getNextStatus, isDeliveredStatus, statusFilterToDbValues } from "./orde
 import { mergeOrderNotesOnSave } from "./order-notes.js";
 import { createDeliveryMovement, productsAlreadyDelivered } from "./stock.js";
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
-import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
+import { findOrCreateCustomer, createFeedbackCall, getOrCreateFeedbackSettings } from "../../numbatrak-crm/lib/crm.js";
 
 export type OrderRow = typeof numbatrakCustomerOrders.$inferSelect;
 export type OrderItemRow = typeof numbatrakCustomerOrderItems.$inferSelect;
@@ -321,6 +321,16 @@ export async function updateOrder(
         quantity: item.quantity,
         orderId,
         cost: Number(item.unitCostAtSubmission),
+      });
+    }
+
+    if (current.customerId) {
+      const feedbackSettings = await getOrCreateFeedbackSettings(db, organizationId);
+      const scheduledAt = new Date(Date.now() + feedbackSettings.callWindowDays * 24 * 60 * 60 * 1000);
+      await createFeedbackCall(db, organizationId, {
+        customerId: current.customerId,
+        orderId,
+        scheduledAt: scheduledAt.toISOString(),
       });
     }
   }
