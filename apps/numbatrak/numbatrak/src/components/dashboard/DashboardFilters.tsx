@@ -1,12 +1,14 @@
+import { useMemo, useState } from "react";
 import {
   CalendarDays,
   FileText,
   UserCircle2,
-  Filter,
+  SlidersHorizontal,
   GitBranch,
   Tag,
   Truck,
   Layers,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -15,6 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { Form } from "../../types/form";
 import { UserProfile } from "../../types/user";
 import { Agent } from "../../services/agents";
@@ -22,7 +27,7 @@ import { formatCsrSelectLabel } from "../../utils/userDisplay";
 import { CsrUserOption } from "../users/CsrUserOption";
 import type { DateFilter, DateFilterType } from "../../utils/dateRange";
 import type { DashboardViewMode } from "../../types/dashboardFilters";
-import { ORDER_STATUS_SELECT_OPTIONS } from "../../constants/orderStatus";
+import { ORDER_STATUS_SELECT_OPTIONS, orderStatusLabel } from "../../constants/orderStatus";
 
 const FILTER_OPTIONS: { label: string; value: DateFilterType }[] = [
   { label: "All Time", value: "all" },
@@ -91,6 +96,8 @@ export function DashboardFilters({
   showExtendedFilters = false,
   showViewToggle = false,
 }: DashboardFiltersProps) {
+  const [open, setOpen] = useState(false);
+
   const formSelectValue = values.formId ?? "all";
   const csrSelectValue = values.csrId ?? "all";
   const funnelSelectValue = values.funnelName ?? "all";
@@ -99,259 +106,331 @@ export function DashboardFilters({
     values.agentId != null ? String(values.agentId) : "all";
   const statusSelectValue = values.status ?? "all";
 
+  const selectedForm = forms.find((f) => f.id === values.formId);
+  const selectedCsr = csrUsers.find((u) => u.id === values.csrId);
+  const selectedAgent = agents.find((a) => a.id === values.agentId);
+
+  const chips = useMemo(() => {
+    const list: { key: string; label: string; onClear: () => void }[] = [];
+    if (values.dateFilter.type === "custom" && values.dateFilter.startDate && values.dateFilter.endDate) {
+      list.push({
+        key: "date",
+        label: `${values.dateFilter.startDate} → ${values.dateFilter.endDate}`,
+        onClear: () => onDateFilterChange("all"),
+      });
+    }
+    if (values.formId) {
+      list.push({ key: "form", label: selectedForm?.name ?? "Product", onClear: () => onFormChange(null) });
+    }
+    if (values.csrId) {
+      list.push({ key: "csr", label: selectedCsr ? formatCsrSelectLabel(selectedCsr) : "CSR", onClear: () => onCsrChange(null) });
+    }
+    if (values.funnelName) {
+      list.push({ key: "funnel", label: values.funnelName, onClear: () => onFunnelChange(null) });
+    }
+    if (values.subBrand) {
+      list.push({ key: "subBrand", label: values.subBrand, onClear: () => onSubBrandChange(null) });
+    }
+    if (values.agentId != null) {
+      list.push({ key: "agent", label: selectedAgent?.name ?? "Agent", onClear: () => onAgentChange(null) });
+    }
+    if (values.status) {
+      list.push({ key: "status", label: orderStatusLabel(values.status), onClear: () => onStatusChange(null) });
+    }
+    return list;
+  }, [
+    values.dateFilter,
+    values.formId,
+    values.csrId,
+    values.funnelName,
+    values.subBrand,
+    values.agentId,
+    values.status,
+    selectedForm,
+    selectedCsr,
+    selectedAgent,
+    onDateFilterChange,
+    onFormChange,
+    onCsrChange,
+    onFunnelChange,
+    onSubBrandChange,
+    onAgentChange,
+    onStatusChange,
+  ]);
+
+  function clearAll() {
+    onDateFilterChange("all");
+    onFormChange(null);
+    onCsrChange(null);
+    onFunnelChange(null);
+    onSubBrandChange(null);
+    onAgentChange(null);
+    onStatusChange(null);
+  }
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-4 shadow-sm">
-      <div className="flex flex-wrap gap-3 items-center">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mr-1">
-          <CalendarDays className="w-4 h-4" />
-          Filter by:
-        </span>
-
-        {FILTER_OPTIONS.map(({ label, value }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onDateFilterChange(value)}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer
-              ${
-                values.dateFilter.type === value
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-foreground border-border hover:bg-accent hover:text-accent-foreground"
-              }`}
-          >
-            {label}
-          </button>
-        ))}
-
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
-          <input
-            type="date"
-            value={customStartDate}
-            onChange={(e) => onCustomStartDateChange(e.target.value)}
-            aria-label="Start date"
-            title="Start date"
-            className="px-3 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
-          />
-          <span className="text-muted-foreground text-sm">to</span>
-          <input
-            type="date"
-            value={customEndDate}
-            onChange={(e) => onCustomEndDateChange(e.target.value)}
-            aria-label="End date"
-            title="End date"
-            className="px-3 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
-          />
-          <button
-            type="button"
-            onClick={onCustomDateApply}
-            disabled={!customStartDate || !customEndDate}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer
-              ${
-                customStartDate && customEndDate
-                  ? "bg-primary text-primary-foreground border-primary hover:opacity-90"
-                  : "bg-muted text-muted-foreground border-border opacity-50 cursor-not-allowed"
-              }`}
-          >
-            Apply
-          </button>
-        </div>
-      </div>
-
-      {showViewToggle && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground shrink-0">
-            <Layers className="w-4 h-4" />
-            View
-          </span>
-          <button
-            type="button"
-            onClick={() => onViewModeChange("funnel")}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer
-              ${
-                values.viewMode === "funnel"
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-foreground border-border hover:bg-accent"
-              }`}
-          >
-            Funnel (ads)
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewModeChange("business")}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer
-              ${
-                values.viewMode === "business"
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-foreground border-border hover:bg-accent"
-              }`}
-          >
-            Business (full ROI)
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-t border-border pt-3">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground shrink-0">
-          <FileText className="w-4 h-4" />
-          Product
-        </span>
-        <Select
-          value={formSelectValue}
-          onValueChange={(v) => onFormChange(v === "all" ? null : v)}
-        >
-          <SelectTrigger
-            className="w-full sm:max-w-md border-border bg-background"
-            aria-label="Filter by product"
-          >
-            <SelectValue placeholder="All products" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All products</SelectItem>
-            {forms.map((f) => (
-              <SelectItem key={f.id} value={f.id}>
-                {f.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {showCsrFilter && csrUsers.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-t border-border pt-3">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground shrink-0">
-            <UserCircle2 className="w-4 h-4" />
-            CSR
-          </span>
-          <Select
-            value={csrSelectValue}
-            onValueChange={(v) => onCsrChange(v === "all" ? null : v)}
-          >
-            <SelectTrigger
-              className="w-full sm:max-w-md border-border bg-background"
-              aria-label="Filter by CSR"
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
+          {FILTER_OPTIONS.map(({ label, value }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onDateFilterChange(value)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer
+                ${
+                  values.dateFilter.type === value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
             >
-              <SelectValue placeholder="All CSRs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All CSRs</SelectItem>
-              {csrUsers.map((u) => (
-                <SelectItem
-                  key={u.id}
-                  value={u.id}
-                  textValue={formatCsrSelectLabel(u)}
-                >
-                  <CsrUserOption full_name={u.full_name} email={u.email} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              {label}
+            </button>
+          ))}
         </div>
-      )}
 
-      {showExtendedFilters && (
-        <>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 border-t border-border pt-3">
-            <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground shrink-0">
-              <Filter className="w-4 h-4" />
-              More filters
-            </span>
-
-            {funnelNames.length > 0 && (
-              <Select
-                value={funnelSelectValue}
-                onValueChange={(v) =>
-                  onFunnelChange(v === "all" ? null : v)
-                }
-              >
-                <SelectTrigger
-                  className="w-full sm:w-48 border-border bg-background"
-                  aria-label="Filter by funnel"
-                >
-                  <GitBranch className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="All funnels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All funnels</SelectItem>
-                  {funnelNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {subBrands.length > 0 && (
-              <Select
-                value={subBrandSelectValue}
-                onValueChange={(v) =>
-                  onSubBrandChange(v === "all" ? null : v)
-                }
-              >
-                <SelectTrigger
-                  className="w-full sm:w-48 border-border bg-background"
-                  aria-label="Filter by sub-brand"
-                >
-                  <Tag className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="All sub-brands" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All sub-brands</SelectItem>
-                  {subBrands.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {agents.length > 0 && (
-              <Select
-                value={agentSelectValue}
-                onValueChange={(v) =>
-                  onAgentChange(v === "all" ? null : Number(v))
-                }
-              >
-                <SelectTrigger
-                  className="w-full sm:w-48 border-border bg-background"
-                  aria-label="Filter by agent"
-                >
-                  <Truck className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="All agents" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All agents</SelectItem>
-                  {agents.map((a) => (
-                    <SelectItem key={a.id} value={String(a.id)}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Select
-              value={statusSelectValue}
-              onValueChange={(v) => onStatusChange(v === "all" ? null : v)}
+        {showViewToggle && (
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => onViewModeChange("funnel")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer
+                ${
+                  values.viewMode === "funnel"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
             >
-              <SelectTrigger
-                className="w-full sm:w-48 border-border bg-background"
-                aria-label="Filter by status"
-              >
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {ORDER_STATUS_SELECT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Layers className="w-3.5 h-3.5" />
+              Funnel
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("business")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer
+                ${
+                  values.viewMode === "business"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              Business
+            </button>
           </div>
-        </>
+        )}
+
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {chips.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5">
+                  {chips.length}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="w-[min(92vw,24rem)] p-4 flex flex-col gap-4 max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Custom date range
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => onCustomStartDateChange(e.target.value)}
+                  aria-label="Start date"
+                  title="Start date"
+                  className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
+                />
+                <span className="text-muted-foreground text-sm">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => onCustomEndDateChange(e.target.value)}
+                  aria-label="End date"
+                  title="End date"
+                  className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={!customStartDate || !customEndDate}
+                onClick={onCustomDateApply}
+                className="self-start"
+              >
+                Apply date range
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <FileText className="w-3.5 h-3.5" />
+                Product
+              </span>
+              <Select
+                value={formSelectValue}
+                onValueChange={(v) => onFormChange(v === "all" ? null : v)}
+              >
+                <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by product">
+                  <SelectValue placeholder="All products" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All products</SelectItem>
+                  {forms.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {showCsrFilter && csrUsers.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <UserCircle2 className="w-3.5 h-3.5" />
+                  CSR
+                </span>
+                <Select
+                  value={csrSelectValue}
+                  onValueChange={(v) => onCsrChange(v === "all" ? null : v)}
+                >
+                  <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by CSR">
+                    <SelectValue placeholder="All CSRs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All CSRs</SelectItem>
+                    {csrUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id} textValue={formatCsrSelectLabel(u)}>
+                        <CsrUserOption full_name={u.full_name} email={u.email} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {showExtendedFilters && (
+              <>
+                {funnelNames.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <GitBranch className="w-3.5 h-3.5" />
+                      Funnel
+                    </span>
+                    <Select value={funnelSelectValue} onValueChange={(v) => onFunnelChange(v === "all" ? null : v)}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by funnel">
+                        <SelectValue placeholder="All funnels" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All funnels</SelectItem>
+                        {funnelNames.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {subBrands.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Tag className="w-3.5 h-3.5" />
+                      Sub-brand
+                    </span>
+                    <Select value={subBrandSelectValue} onValueChange={(v) => onSubBrandChange(v === "all" ? null : v)}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by sub-brand">
+                        <SelectValue placeholder="All sub-brands" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All sub-brands</SelectItem>
+                        {subBrands.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {agents.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Truck className="w-3.5 h-3.5" />
+                      Agent
+                    </span>
+                    <Select value={agentSelectValue} onValueChange={(v) => onAgentChange(v === "all" ? null : Number(v))}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by agent">
+                        <SelectValue placeholder="All agents" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All agents</SelectItem>
+                        {agents.map((a) => (
+                          <SelectItem key={a.id} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</span>
+                  <Select value={statusSelectValue} onValueChange={(v) => onStatusChange(v === "all" ? null : v)}>
+                    <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by status">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      {ORDER_STATUS_SELECT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {chips.length > 0 && (
+              <Button type="button" variant="ghost" size="sm" onClick={clearAll} className="self-start -ml-2 text-muted-foreground">
+                Clear all filters
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {chips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {chips.map((chip) => (
+            <Badge key={chip.key} variant="secondary" className="gap-1 pr-1 font-normal">
+              {chip.label}
+              <button
+                type="button"
+                onClick={chip.onClear}
+                aria-label={`Clear ${chip.label} filter`}
+                className="rounded-sm hover:bg-foreground/10 p-0.5 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
       )}
     </div>
   );

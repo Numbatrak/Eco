@@ -11,7 +11,13 @@ export function getDb(): ReturnType<typeof drizzle<typeof schema>> {
     if (!connectionString) {
       throw new Error("DATABASE_URL is not set. Copy .env.example to .env and configure it.");
     }
-    const client = postgres(connectionString);
+    // `prepare: false` is required against Neon's pooled connection string
+    // (the "-pooler" host) - it runs PgBouncer in transaction-pooling mode,
+    // which doesn't support session-level prepared statements. Without this,
+    // postgres-js's default prepared-statement usage causes intermittent
+    // "Failed query" errors on ordinary, unchanged queries under connection
+    // churn - not specific to any one table or query shape.
+    const client = postgres(connectionString, { prepare: false });
     _db = drizzle(client, { schema });
   }
   return _db;
