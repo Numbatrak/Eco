@@ -59,6 +59,12 @@ Parameters:
     NoEcho: true
     Default: ""
 
+  NumbatrakCronSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Shared secret for X-Cron-Secret header on /numbatrak/cron/* endpoints
+
 Globals:
   Function:
     Timeout: 30
@@ -112,6 +118,7 @@ Resources:
           STOREFRONT_BASE_URL_TEMPLATE: !Ref StorefrontBaseUrlTemplate
           META_APP_ID: !Ref MetaAppId
           META_APP_SECRET: !Ref MetaAppSecret
+          NUMBATRAK_CRON_SECRET: !Ref NumbatrakCronSecret
       Events:
         CatchAll:
           Type: HttpApi

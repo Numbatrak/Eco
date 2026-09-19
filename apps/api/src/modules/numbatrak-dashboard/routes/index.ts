@@ -5,6 +5,7 @@ import deliveryRateByLocationRoutes from "./delivery-rate-by-location.js";
 import deliveryAnalyticsHeadlineRoutes from "./delivery-analytics-headline.js";
 import deliveryBreakdownRoutes from "./delivery-breakdown.js";
 import dashboardAlertThresholdsRoutes from "./alert-thresholds.js";
+import dailySummaryCronRoutes from "./daily-summary-cron.js";
 
 export default async function numbatrakDashboardRoutes(app: FastifyInstance): Promise<void> {
   await app.register(dashboardSummaryRoutes);
@@ -13,4 +14,5 @@ export default async function numbatrakDashboardRoutes(app: FastifyInstance): Pr
   await app.register(deliveryAnalyticsHeadlineRoutes);
   await app.register(deliveryBreakdownRoutes);
   await app.register(dashboardAlertThresholdsRoutes);
+  await app.register(dailySummaryCronRoutes);
 }
