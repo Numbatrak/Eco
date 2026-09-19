@@ -188,7 +188,11 @@ export async function findPublishedSiteBySubdomain(
     .orderBy(collections.sortOrder);
 
   const [analyticsSettings] = await db
-    .select({ metaPixelId: tenantAnalyticsSettings.metaPixelId, enabled: tenantAnalyticsSettings.enabled })
+    .select({
+      metaPixelId: tenantAnalyticsSettings.metaPixelId,
+      tiktokPixelId: tenantAnalyticsSettings.tiktokPixelId,
+      enabled: tenantAnalyticsSettings.enabled,
+    })
     .from(tenantAnalyticsSettings)
     .where(eq(tenantAnalyticsSettings.tenantId, row.tenantId))
     .limit(1);
@@ -235,6 +239,7 @@ export async function findPublishedSiteBySubdomain(
       })),
       analytics: {
         metaPixelId: analyticsSettings?.enabled ? analyticsSettings.metaPixelId : null,
+        tiktokPixelId: analyticsSettings?.enabled ? analyticsSettings.tiktokPixelId : null,
       },
       // No row at all = never touched payments - same "cod" default checkout.ts
       // applies when settings are missing, so this stays consistent.

@@ -21,7 +21,7 @@ export default async function SiteLayout({
   return (
     <SiteProvider site={site} subdomain={subdomain}>
       <CartProvider subdomain={subdomain}>
-        <AnalyticsScripts metaPixelId={site.analytics.metaPixelId} />
+        <AnalyticsScripts metaPixelId={site.analytics.metaPixelId} tiktokPixelId={site.analytics.tiktokPixelId} />
         {children}
       </CartProvider>
     </SiteProvider>

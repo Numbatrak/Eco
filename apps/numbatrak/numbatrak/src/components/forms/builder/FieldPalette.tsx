@@ -1,4 +1,4 @@
-import { CheckSquare, FileText, Hash, List, Mail, Phone, Radio, Type } from "lucide-react";
+import { CheckSquare, FileText, Hash, List, Mail, MapPin, Phone, Radio, Type } from "lucide-react";
 import { FormField } from "../../../types/form";
 
 interface PaletteEntry {
@@ -14,6 +14,7 @@ const GENERAL_FIELDS: PaletteEntry[] = [
   { type: "number", label: "Number", icon: <Hash className="w-4 h-4" /> },
   { type: "textarea", label: "Textarea", icon: <FileText className="w-4 h-4" /> },
   { type: "select", label: "Select", icon: <List className="w-4 h-4" /> },
+  { type: "state", label: "State", icon: <MapPin className="w-4 h-4" /> },
 ];
 
 const ORDER_FIELDS: PaletteEntry[] = [

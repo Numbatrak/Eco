@@ -5,15 +5,17 @@ import {
   DeliveryAnalyticsFilters,
   DeliveryBreakdownRow,
   fetchDeliveryBreakdownByAgent,
+  fetchDeliveryBreakdownByCsr,
   fetchDeliveryBreakdownByLocation,
   fetchDeliveryBreakdownByProduct,
 } from "../../services/deliveryAnalytics";
 import { useOrganization } from "../../contexts/OrganizationContext";
 
-type BreakdownTab = "agent" | "location" | "product";
+type BreakdownTab = "agent" | "csr" | "location" | "product";
 
 const TAB_LABELS: Record<BreakdownTab, string> = {
   agent: "By agent",
+  csr: "By CRS",
   location: "By location",
   product: "By product",
 };
@@ -40,6 +42,7 @@ export function DeliveryBreakdownTable({ filters }: DeliveryBreakdownTableProps)
       try {
         const fetchers = {
           agent: fetchDeliveryBreakdownByAgent,
+          csr: fetchDeliveryBreakdownByCsr,
           location: fetchDeliveryBreakdownByLocation,
           product: fetchDeliveryBreakdownByProduct,
         };

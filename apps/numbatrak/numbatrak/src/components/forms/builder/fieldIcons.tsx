@@ -1,4 +1,4 @@
-import { CheckSquare, FileText, Hash, List, Mail, Phone, Radio, Type } from "lucide-react";
+import { CheckSquare, FileText, Hash, List, Mail, MapPin, Phone, Radio, Type } from "lucide-react";
 
 export function getFieldIcon(type: string): React.ReactElement {
   const iconClass = "w-4 h-4";
@@ -15,6 +15,8 @@ export function getFieldIcon(type: string): React.ReactElement {
       return <FileText className={iconClass} />;
     case "select":
       return <List className={iconClass} />;
+    case "state":
+      return <MapPin className={iconClass} />;
     case "radio-group":
       return <Radio className={iconClass} />;
     case "order-bump":

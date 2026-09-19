@@ -348,6 +348,10 @@ export type WhatsappSettingsResponse = z.infer<typeof whatsappSettingsResponseSc
 export const analyticsSettingsRequestSchema = z.object({
   metaPixelId: z.string().trim().min(1),
   metaCapiToken: z.string().trim().min(1),
+  // TikTok is an optional secondary channel (unlike Meta above, which the
+  // whole form currently requires) - blank just means "not configured".
+  tiktokPixelId: z.string().trim().optional().default(""),
+  tiktokCapiToken: z.string().trim().optional().default(""),
   enabled: z.boolean(),
 });
 export type AnalyticsSettingsRequest = z.infer<typeof analyticsSettingsRequestSchema>;
@@ -355,6 +359,8 @@ export type AnalyticsSettingsRequest = z.infer<typeof analyticsSettingsRequestSc
 export const analyticsSettingsResponseSchema = z.object({
   metaPixelId: z.string().nullable(),
   hasCapiToken: z.boolean(),
+  tiktokPixelId: z.string().nullable(),
+  hasTiktokCapiToken: z.boolean(),
   enabled: z.boolean(),
 });
 export type AnalyticsSettingsResponse = z.infer<typeof analyticsSettingsResponseSchema>;
@@ -462,9 +468,10 @@ export const publicSiteSchema = z.object({
   productsGridEnabled: z.boolean(),
   products: z.array(publicSiteProductSchema),
   collections: z.array(collectionSchema),
-  // Public-safe subset only - never the CAPI token, which stays server-side.
+  // Public-safe subset only - never the CAPI/Events API tokens, which stay server-side.
   analytics: z.object({
     metaPixelId: z.string().nullable(),
+    tiktokPixelId: z.string().nullable(),
   }),
   payment: z.object({
     collectionMethod: paymentCollectionMethodSchema,

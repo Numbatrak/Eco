@@ -12,6 +12,7 @@ export interface MetricsOrderRow {
   orderCost: number;
   deliveryFee: number;
   profit: number;
+  agentId: number | null;
 }
 
 function num(v: string | null): number {
@@ -32,13 +33,17 @@ function num(v: string | null): number {
 export async function fetchOrderRows(
   db: Database,
   organizationId: string,
-  scope: Pick<DashboardScopeQuery, "formId" | "csrId" | "funnelName" | "subBrand" | "agentId" | "status">,
+  scope: Pick<
+    DashboardScopeQuery,
+    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status"
+  >,
 ): Promise<MetricsOrderRow[]> {
   const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
   if (scope.formId) conditions.push(eq(numbatrakCustomerOrders.formId, scope.formId));
   if (scope.csrId) conditions.push(eq(numbatrakCustomerOrders.csrId, scope.csrId));
   if (scope.funnelName) conditions.push(eq(numbatrakCustomerOrders.funnelName, scope.funnelName));
   if (scope.subBrand) conditions.push(eq(numbatrakCustomerOrders.subBrand, scope.subBrand));
+  if (scope.offerName) conditions.push(eq(numbatrakCustomerOrders.offerName, scope.offerName));
   if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
 
   const rows = await db
@@ -51,6 +56,7 @@ export async function fetchOrderRows(
       orderCost: numbatrakCustomerOrders.orderCost,
       deliveryFee: numbatrakCustomerOrders.deliveryFee,
       profit: numbatrakCustomerOrders.profit,
+      agentId: numbatrakCustomerOrders.agentId,
     })
     .from(numbatrakCustomerOrders)
     .where(and(...conditions));
@@ -64,6 +70,7 @@ export async function fetchOrderRows(
     orderCost: num(r.orderCost),
     deliveryFee: num(r.deliveryFee),
     profit: num(r.profit),
+    agentId: r.agentId,
   }));
 
   if (!scope.status) return mapped;

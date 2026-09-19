@@ -334,6 +334,8 @@ export default function FormBuilderPage() {
       } as FormField;
     } else if (fieldType === "select") {
       newField = { ...baseField, type: "select", options: [], placeholder: "" } as FormField;
+    } else if (fieldType === "state") {
+      newField = { ...baseField, type: "state", placeholder: "Select a state" } as FormField;
     } else {
       newField = { ...baseField, type: fieldType, placeholder: "" } as FormField;
     }

@@ -23,6 +23,7 @@ export type DashboardMetricsScope = {
   csrId?: string | null;
   funnelName?: string | null;
   subBrand?: string | null;
+  offerName?: string | null;
   agentId?: number | null;
   status?: string | null;
 };
@@ -60,6 +61,20 @@ export type LossStatusBreakdown = {
   wouldBeSales: number;
 };
 
+export type LossLocationBreakdown = {
+  location: string;
+  label: string;
+  count: number;
+  wouldBeSales: number;
+};
+
+export type LossAgentBreakdown = {
+  agentId: number | null;
+  label: string;
+  count: number;
+  wouldBeSales: number;
+};
+
 export type LossMetrics = {
   undeliveredCount: number;
   wouldBeSales: number;
@@ -67,6 +82,8 @@ export type LossMetrics = {
   allocatedAdSpend: number;
   failedDeliveryCost: number;
   byStatus: LossStatusBreakdown[];
+  byLocation: LossLocationBreakdown[];
+  byAgent: LossAgentBreakdown[];
 };
 
 export const EMPTY_BUSINESS_METRICS: BusinessPerformanceMetrics = {
@@ -98,6 +115,8 @@ export const EMPTY_LOSS_METRICS: LossMetrics = {
   allocatedAdSpend: 0,
   failedDeliveryCost: 0,
   byStatus: [],
+  byLocation: [],
+  byAgent: [],
 };
 
 /** Client-side status filter (supports legacy alias groups). */
@@ -123,6 +142,7 @@ function buildScopeParams(scope: DashboardMetricsScope, dateFrom?: string, dateT
   if (scope.csrId) params.set("csrId", scope.csrId);
   if (scope.funnelName) params.set("funnelName", scope.funnelName);
   if (scope.subBrand) params.set("subBrand", scope.subBrand);
+  if (scope.offerName) params.set("offerName", scope.offerName);
   if (scope.agentId != null) params.set("agentId", String(scope.agentId));
   if (scope.status) params.set("status", scope.status);
   return params;
@@ -140,11 +160,13 @@ async function fetchSummary(
 
 export async function fetchDashboardFilterOptions(
   organizationId: string
-): Promise<{ funnelNames: string[]; subBrands: string[] }> {
+): Promise<{ funnelNames: string[]; subBrands: string[]; offerNames: string[] }> {
   if (!organizationId) {
-    return { funnelNames: [], subBrands: [] };
+    return { funnelNames: [], subBrands: [], offerNames: [] };
   }
-  return apiRequest<{ funnelNames: string[]; subBrands: string[] }>("/org/numbatrak/dashboard/filter-options");
+  return apiRequest<{ funnelNames: string[]; subBrands: string[]; offerNames: string[] }>(
+    "/org/numbatrak/dashboard/filter-options"
+  );
 }
 
 export async function fetchBusinessPerformanceMetrics(

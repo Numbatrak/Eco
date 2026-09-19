@@ -281,11 +281,11 @@ export function getDefaultRequiredFields(): FormField[] {
     },
     {
       id: `field_state_${ts}`,
-      type: "text",
+      type: "state",
       label: "State",
       name: "state",
       required: true,
-      placeholder: "e.g. Lagos, Abuja",
+      placeholder: "Select a state",
     },
     {
       id: `field_address_${ts}`,
@@ -361,11 +361,11 @@ export function ensureRequiredFields(schema: FormSchema): FormSchema {
   if (!hasState) {
     requiredFields.push({
       id: `field_state_${ts}`,
-      type: "text",
+      type: "state",
       label: "State",
       name: "state",
       required: true,
-      placeholder: "e.g. Lagos, Abuja",
+      placeholder: "Select a state",
     });
   }
   const hasAddress = existingFieldNames.some((n) => REQUIRED_FIELD_NAMES.address.includes(n));

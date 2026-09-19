@@ -4,6 +4,16 @@ import { numbatrakCustomerOrders, organization, type Database } from "@platform/
 import { fetchDashboardSummary } from "./summary.js";
 import { sendEmail } from "../../auth/lib/email.js";
 import { findOrgOwnerEmail } from "../../../lib/org-owner.js";
+import { getOrCreateNotificationSettings } from "./notification-settings.js";
+
+/** Comma-separated additional recipients -> a clean list of non-empty, trimmed addresses. */
+function parseAdditionalRecipients(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((email) => email.trim())
+    .filter((email) => email.length > 0);
+}
 
 const WAT_OFFSET_MS = 60 * 60 * 1000; // WAT is UTC+1, no DST
 
@@ -57,11 +67,13 @@ export interface DailySummaryResult {
 }
 
 /**
- * Sends every active organization's owner a summary of the previous WAT
- * calendar day's order/delivery/profit numbers. Always sends, even on a
+ * Sends every active organization's owner (plus any additional recipients
+ * configured in numbatrak_notification_settings) a summary of the previous
+ * WAT calendar day's order/delivery/profit numbers. Always sends, even on a
  * zero-order day - a quiet day is itself a signal worth surfacing, not
- * something to suppress. "Active" = has ever placed a numbatrak order;
- * orgs that never touched the feature don't get a report at all.
+ * something to suppress - unless the org has opted out via
+ * dailySummaryEnabled. "Active" = has ever placed a numbatrak order; orgs
+ * that never touched the feature don't get a report at all.
  */
 export async function runDailySummaryEmails(db: Database, log: FastifyBaseLogger): Promise<DailySummaryResult> {
   const { dateFrom, dateTo, label } = yesterdayWatRange(new Date());
@@ -75,17 +87,26 @@ export async function runDailySummaryEmails(db: Database, log: FastifyBaseLogger
 
   for (const { organizationId } of orgRows) {
     try {
+      const notificationSettings = await getOrCreateNotificationSettings(db, organizationId);
+      if (!notificationSettings.dailySummaryEnabled) {
+        skipped.push(organizationId);
+        continue;
+      }
+
       const email = await findOrgOwnerEmail(db, organizationId);
       if (!email) {
         log.warn({ organizationId }, "daily-summary: no owner email found, skipping");
         skipped.push(organizationId);
         continue;
       }
+      const recipients = [email, ...parseAdditionalRecipients(notificationSettings.additionalRecipients)];
 
       const [org] = await db.select({ name: organization.name }).from(organization).where(eq(organization.id, organizationId)).limit(1);
       const summary = await fetchDashboardSummary(db, organizationId, { dateFrom, dateTo });
       const body = buildEmailBody(org?.name ?? "Your business", label, summary);
-      await sendEmail(log, { to: email, subject: `Daily summary — ${label}`, body });
+      for (const recipient of recipients) {
+        await sendEmail(log, { to: recipient, subject: `Daily summary — ${label}`, body });
+      }
       sent.push(organizationId);
     } catch (err) {
       log.error({ err, organizationId }, "daily-summary: failed to send for org");

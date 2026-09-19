@@ -15,6 +15,12 @@ import { ApiError } from "../../../lib/apiClient";
 const formSchema = z.object({
   metaPixelId: z.string().trim().min(1, "Pixel ID is required"),
   metaCapiToken: z.string().trim().min(1, "CAPI access token is required"),
+  // TikTok is an optional secondary channel - unlike the Meta fields above,
+  // leaving these blank just means TikTok isn't configured for this tenant.
+  // (.default("") mirrors AnalyticsSettingsRequest's shape so FormValues
+  // lines up with what commerceApi.saveAnalyticsSettings expects.)
+  tiktokPixelId: z.string().trim().optional().default(""),
+  tiktokCapiToken: z.string().trim().optional().default(""),
   enabled: z.boolean(),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -33,7 +39,13 @@ function AnalyticsSettingsInner(): React.ReactElement {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { metaPixelId: "", metaCapiToken: "", enabled: false },
+    defaultValues: {
+      metaPixelId: "",
+      metaCapiToken: "",
+      tiktokPixelId: "",
+      tiktokCapiToken: "",
+      enabled: false,
+    },
   });
 
   useEffect(() => {
@@ -42,6 +54,7 @@ function AnalyticsSettingsInner(): React.ReactElement {
       .then((response) => {
         setSettings(response);
         setValue("metaPixelId", response.metaPixelId ?? "");
+        setValue("tiktokPixelId", response.tiktokPixelId ?? "");
         setValue("enabled", response.enabled);
       })
       .catch(() => setLoadError("Could not load analytics settings."));
@@ -80,6 +93,10 @@ function AnalyticsSettingsInner(): React.ReactElement {
             <span className="field-hint">CAPI access token</span>
             <span>{settings.hasCapiToken ? "•••••••• (saved)" : "Not set"}</span>
           </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+            <span className="field-hint">TikTok Events API access token</span>
+            <span>{settings.hasTiktokCapiToken ? "•••••••• (saved)" : "Not set"}</span>
+          </div>
         </div>
       ) : null}
 
@@ -104,6 +121,28 @@ function AnalyticsSettingsInner(): React.ReactElement {
           }
           error={errors.metaCapiToken?.message}
           {...register("metaCapiToken")}
+        />
+
+        <TextField
+          label="TikTok Pixel ID"
+          hint={
+            !errors.tiktokPixelId
+              ? "From TikTok Events Manager - fires the browser Pixel on your storefront. Optional."
+              : undefined
+          }
+          error={errors.tiktokPixelId?.message}
+          {...register("tiktokPixelId")}
+        />
+
+        <PasswordField
+          label="TikTok Events API access token"
+          hint={
+            !errors.tiktokCapiToken
+              ? "Only ever stored encrypted; never shown again after saving. Used for server-side CompletePayment events. Optional."
+              : undefined
+          }
+          error={errors.tiktokCapiToken?.message}
+          {...register("tiktokCapiToken")}
         />
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>

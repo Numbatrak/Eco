@@ -33,7 +33,7 @@ export interface FormConfirmation {
 
 export interface FormField {
   id: string;
-  type: 'text' | 'email' | 'phone' | 'number' | 'select' | 'textarea' | 'radio-group' | 'order-bump';
+  type: 'text' | 'email' | 'phone' | 'number' | 'select' | 'state' | 'textarea' | 'radio-group' | 'order-bump';
   label: string;
   name: string;
   required: boolean;

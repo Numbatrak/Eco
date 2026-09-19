@@ -7,7 +7,7 @@ import { useCart } from "../../../../../components/CartContext";
 import { StorefrontShell } from "../../../../../components/storefront/StorefrontShell";
 import { MiniCart } from "../../../../../components/MiniCart";
 import { formatCents } from "../../../../../lib/money";
-import { viewContent } from "../../../../../lib/analytics/pixelEvents";
+import { viewContent, tiktokViewContent } from "../../../../../lib/analytics/pixelEvents";
 
 export default function ProductDetailPage({
   params,
@@ -37,6 +37,7 @@ export default function ProductDetailPage({
 
   useEffect(() => {
     viewContent(activeProduct.id, activeProduct.priceCents, activeProduct.currency);
+    tiktokViewContent(activeProduct.id, activeProduct.priceCents, activeProduct.currency);
   }, [activeProduct.id, activeProduct.priceCents, activeProduct.currency]);
 
   async function handleAdd(): Promise<void> {

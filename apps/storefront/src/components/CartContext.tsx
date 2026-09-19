@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Cart } from "@platform/shared-types";
 import { cartApi } from "../lib/cartApi";
 import { ApiError } from "../lib/apiClient";
-import { addToCart as fireAddToCartEvent } from "../lib/analytics/pixelEvents";
+import { addToCart as fireAddToCartEvent, tiktokAddToCart as fireTiktokAddToCartEvent } from "../lib/analytics/pixelEvents";
 
 interface CartContextValue {
   cart: Cart | null;
@@ -24,6 +24,7 @@ function notifyAddToCart(cart: Cart, productId: string, variantId: string | unde
   );
   if (item && cart.currency) {
     fireAddToCartEvent(productId, item.unitPriceSnapshotCents, cart.currency);
+    fireTiktokAddToCartEvent(productId, item.unitPriceSnapshotCents, cart.currency);
   }
 }
 

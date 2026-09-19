@@ -10,7 +10,12 @@ import { cartApi } from "../../../../../lib/cartApi";
 import { ApiError } from "../../../../../lib/apiClient";
 import { formatCents } from "../../../../../lib/money";
 import { captureAttribution, captureLastTouch, getAttribution, getLastAttribution } from "../../../../../lib/attribution";
-import { viewContent, initiateCheckout } from "../../../../../lib/analytics/pixelEvents";
+import {
+  viewContent,
+  initiateCheckout,
+  tiktokViewContent,
+  tiktokInitiateCheckout,
+} from "../../../../../lib/analytics/pixelEvents";
 
 function getSection<K extends FunnelSection["kind"]>(
   sections: FunnelSection[],
@@ -58,6 +63,7 @@ export function FunnelPageClient({
     captureAttribution();
     captureLastTouch();
     viewContent(product.id, product.priceCents, product.currency);
+    tiktokViewContent(product.id, product.priceCents, product.currency);
   }, [product.id, product.priceCents, product.currency]);
 
   async function onSubmit(values: CheckoutRequest): Promise<void> {
@@ -69,6 +75,7 @@ export function FunnelPageClient({
     try {
       await funnelApi.addPackageToCart(subdomain, product.id, selectedPackage.id);
       initiateCheckout(selectedPackage.priceCents, product.currency, [product.id]);
+      tiktokInitiateCheckout(selectedPackage.priceCents, product.currency, [product.id]);
       const result = await cartApi.checkout(subdomain, {
         ...values,
         attribution: getAttribution(),

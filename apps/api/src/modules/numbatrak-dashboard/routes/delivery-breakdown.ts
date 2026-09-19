@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { numbatrakDeliveryBreakdownQuerySchema } from "@platform/shared-types";
 import {
   fetchDeliveryBreakdownByAgent,
+  fetchDeliveryBreakdownByCsr,
   fetchDeliveryBreakdownByLocation,
   fetchDeliveryBreakdownByProduct,
 } from "../lib/delivery-analytics.js";
@@ -19,7 +20,9 @@ export default async function deliveryBreakdownRoutes(app: FastifyInstance): Pro
           ? await fetchDeliveryBreakdownByAgent(db, organizationId, query)
           : query.groupBy === "product"
             ? await fetchDeliveryBreakdownByProduct(db, organizationId, query)
-            : await fetchDeliveryBreakdownByLocation(db, organizationId, query);
+            : query.groupBy === "csr"
+              ? await fetchDeliveryBreakdownByCsr(db, organizationId, query)
+              : await fetchDeliveryBreakdownByLocation(db, organizationId, query);
       return reply.send({ rows });
     },
   );

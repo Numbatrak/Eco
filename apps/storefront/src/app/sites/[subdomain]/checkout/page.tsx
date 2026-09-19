@@ -16,7 +16,7 @@ import { cartApi } from "../../../../lib/cartApi";
 import { ApiError } from "../../../../lib/apiClient";
 import { formatCents } from "../../../../lib/money";
 import { getAttribution, getLastAttribution } from "../../../../lib/attribution";
-import { initiateCheckout } from "../../../../lib/analytics/pixelEvents";
+import { initiateCheckout, tiktokInitiateCheckout } from "../../../../lib/analytics/pixelEvents";
 
 export default function CheckoutPage(): React.ReactElement {
   const { subdomain, site } = useSite();
@@ -61,6 +61,11 @@ export default function CheckoutPage(): React.ReactElement {
     if (!cart || cart.items.length === 0 || firedInitiateCheckout.current) return;
     firedInitiateCheckout.current = true;
     initiateCheckout(
+      cart.subtotalCents,
+      cart.currency ?? "NGN",
+      cart.items.map((item) => item.productId),
+    );
+    tiktokInitiateCheckout(
       cart.subtotalCents,
       cart.currency ?? "NGN",
       cart.items.map((item) => item.productId),

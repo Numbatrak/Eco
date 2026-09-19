@@ -88,7 +88,7 @@ export async function fetchDeliveryRateByLocationFiltered(
 
 async function fetchDeliveryBreakdown(
   organizationId: string | null,
-  groupBy: "agent" | "product" | "location",
+  groupBy: "agent" | "product" | "location" | "csr",
   filters?: DeliveryAnalyticsFilters
 ): Promise<DeliveryBreakdownRow[]> {
   if (!organizationId) return [];
@@ -119,6 +119,13 @@ export async function fetchDeliveryBreakdownByLocation(
   filters?: DeliveryAnalyticsFilters
 ): Promise<DeliveryBreakdownRow[]> {
   return fetchDeliveryBreakdown(organizationId, "location", filters);
+}
+
+export async function fetchDeliveryBreakdownByCsr(
+  organizationId: string | null,
+  filters?: DeliveryAnalyticsFilters
+): Promise<DeliveryBreakdownRow[]> {
+  return fetchDeliveryBreakdown(organizationId, "csr", filters);
 }
 
 export function toMonthlySummaryQueryOptions(

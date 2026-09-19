@@ -5,9 +5,17 @@ import { ErrorAlert } from "../agents/ErrorAlert";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { AbandonedCartWithRelations } from "../../types/abandonedCart";
 import { parseSelectedItems } from "../../utils/parseSelectedItems";
 import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
+import { nigeriaStates } from "../../constants/nigeriaStates";
 import { ShoppingCart } from "lucide-react";
 
 interface AbandonedCartDialogProps {
@@ -178,16 +186,20 @@ export function AbandonedCartDialog({
                 </div>
                 <div className="dialog-form-field space-y-2">
                   <Label htmlFor="state" className="dialog-field-label">
-                    State
+                    State *
                   </Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    className="w-full max-w-none"
-                  />
+                  <Select value={state} onValueChange={setState} name="state" required>
+                    <SelectTrigger id="state" className="w-full max-w-none">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nigeriaStates.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="dialog-form-field space-y-2">
                   <Label htmlFor="location" className="dialog-field-label">

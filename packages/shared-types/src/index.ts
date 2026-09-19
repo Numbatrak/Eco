@@ -446,6 +446,10 @@ export {
   type NumbatrakDeliveryAgentSettings,
   updateNumbatrakDeliveryAgentSettingsRequestSchema,
   type UpdateNumbatrakDeliveryAgentSettingsRequest,
+  numbatrakNotificationSettingsSchema,
+  type NumbatrakNotificationSettings,
+  updateNumbatrakNotificationSettingsRequestSchema,
+  type UpdateNumbatrakNotificationSettingsRequest,
 } from "./numbatrak.js";
 export {
   tenantStatusSchema,

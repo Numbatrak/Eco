@@ -864,6 +864,7 @@ export const dashboardScopeQuerySchema = z.object({
   csrId: z.string().optional(),
   funnelName: z.string().optional(),
   subBrand: z.string().optional(),
+  offerName: z.string().optional(),
   agentId: z.coerce.number().int().optional(),
   status: z.string().optional(),
 });
@@ -900,12 +901,30 @@ export const numbatrakLossStatusBreakdownSchema = z.object({
 });
 export type NumbatrakLossStatusBreakdown = z.infer<typeof numbatrakLossStatusBreakdownSchema>;
 
+export const numbatrakLossLocationBreakdownSchema = z.object({
+  location: z.string(),
+  label: z.string(),
+  count: z.number(),
+  wouldBeSales: z.number(),
+});
+export type NumbatrakLossLocationBreakdown = z.infer<typeof numbatrakLossLocationBreakdownSchema>;
+
+export const numbatrakLossAgentBreakdownSchema = z.object({
+  agentId: z.number().nullable(),
+  label: z.string(),
+  count: z.number(),
+  wouldBeSales: z.number(),
+});
+export type NumbatrakLossAgentBreakdown = z.infer<typeof numbatrakLossAgentBreakdownSchema>;
+
 export const numbatrakLossMetricsSchema = z.object({
   undeliveredCount: z.number(),
   wouldBeSales: z.number(),
   allocatedAdSpend: z.number(),
   failedDeliveryCost: z.number(),
   byStatus: z.array(numbatrakLossStatusBreakdownSchema),
+  byLocation: z.array(numbatrakLossLocationBreakdownSchema),
+  byAgent: z.array(numbatrakLossAgentBreakdownSchema),
 });
 export type NumbatrakLossMetrics = z.infer<typeof numbatrakLossMetricsSchema>;
 
@@ -918,6 +937,7 @@ export type NumbatrakDashboardSummary = z.infer<typeof numbatrakDashboardSummary
 export const numbatrakDashboardFilterOptionsSchema = z.object({
   funnelNames: z.array(z.string()),
   subBrands: z.array(z.string()),
+  offerNames: z.array(z.string()),
 });
 export type NumbatrakDashboardFilterOptions = z.infer<typeof numbatrakDashboardFilterOptionsSchema>;
 
@@ -946,7 +966,7 @@ export const numbatrakDeliveryAnalyticsQuerySchema = z.object({
 export type NumbatrakDeliveryAnalyticsQuery = z.infer<typeof numbatrakDeliveryAnalyticsQuerySchema>;
 
 export const numbatrakDeliveryBreakdownQuerySchema = numbatrakDeliveryAnalyticsQuerySchema.extend({
-  groupBy: z.enum(["agent", "product", "location"]),
+  groupBy: z.enum(["agent", "product", "location", "csr"]),
 });
 export type NumbatrakDeliveryBreakdownQuery = z.infer<typeof numbatrakDeliveryBreakdownQuerySchema>;
 
@@ -2023,6 +2043,7 @@ export const numbatrakCustomerSchema = z.object({
   ltv: z.number(),
   orderRevenue: z.number(),
   morePurchaseRevenue: z.number(),
+  upsellRevenue: z.number(),
   orderCount: z.number().int(),
   morePurchaseCount: z.number().int(),
   latestOrderStatus: z.string().nullable(),
@@ -2312,4 +2333,26 @@ export const updateNumbatrakDeliveryAgentSettingsRequestSchema = z.object({
 });
 export type UpdateNumbatrakDeliveryAgentSettingsRequest = z.infer<
   typeof updateNumbatrakDeliveryAgentSettingsRequestSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Notification settings (opt out of the daily summary email / add extra
+// recipients beyond the org owner)
+// ---------------------------------------------------------------------------
+
+export const numbatrakNotificationSettingsSchema = z.object({
+  id: z.string().uuid(),
+  dailySummaryEnabled: z.boolean(),
+  additionalRecipients: z.string().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakNotificationSettings = z.infer<typeof numbatrakNotificationSettingsSchema>;
+
+export const updateNumbatrakNotificationSettingsRequestSchema = z.object({
+  dailySummaryEnabled: z.boolean().optional(),
+  additionalRecipients: z.string().nullable().optional(),
+});
+export type UpdateNumbatrakNotificationSettingsRequest = z.infer<
+  typeof updateNumbatrakNotificationSettingsRequestSchema
 >;
