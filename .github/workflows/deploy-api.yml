@@ -72,7 +72,6 @@ jobs:
           P_STOREFRONT_BASE_URL_TEMPLATE: ${{ secrets.STOREFRONT_BASE_URL_TEMPLATE }}
           P_META_APP_ID: ${{ secrets.META_APP_ID }}
           P_META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
-          P_NUMBATRAK_CRON_SECRET: ${{ secrets.NUMBATRAK_CRON_SECRET }}
         run: |
           sam deploy \
             --no-fail-on-empty-changeset \
@@ -90,5 +89,4 @@ jobs:
               "BetterAuthUrl=${P_BETTER_AUTH_URL:-https://localhost:3001}" \
               "StorefrontBaseUrlTemplate=${P_STOREFRONT_BASE_URL_TEMPLATE:-https://{subdomain}.localhost}" \
               "MetaAppId=${P_META_APP_ID:-none}" \
-              "MetaAppSecret=${P_META_APP_SECRET:-none}" \
-              "NumbatrakCronSecret=${P_NUMBATRAK_CRON_SECRET:-none}"
+              "MetaAppSecret=${P_META_APP_SECRET:-none}"
