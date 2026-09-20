@@ -37,6 +37,7 @@ export * from "./delivery-fees.js";
 export * from "./dashboard-settings.js";
 export * from "./inventory-settings.js";
 export * from "./delivery-agent-settings.js";
+export * from "./notification-settings.js";
 export * from "./api-keys.js";
 
 import { numbatrakAgents, numbatrakCsrNameAliases } from "./agents.js";
@@ -52,6 +53,7 @@ import {
   numbatrakFormResponseItems,
   numbatrakCustomerOrders,
   numbatrakCustomerOrderItems,
+  numbatrakOrderStatusHistory,
   numbatrakOrderInventoryConsumption,
 } from "./orders.js";
 import { numbatrakInventoryLots, numbatrakStockMovements, numbatrakInventoryLegacy } from "./inventory.js";
@@ -96,6 +98,7 @@ import { numbatrakDeliveryFeeRules } from "./delivery-fees.js";
 import { numbatrakDashboardAlertThresholds } from "./dashboard-settings.js";
 import { numbatrakInventorySettings } from "./inventory-settings.js";
 import { numbatrakDeliveryAgentSettings } from "./delivery-agent-settings.js";
+import { numbatrakNotificationSettings } from "./notification-settings.js";
 import { numbatrakApiKeys } from "./api-keys.js";
 
 // Flat aggregate for merging into the main `schema` object in ../../schema.ts
@@ -114,6 +117,7 @@ export const numbatrakSchema = {
   numbatrakFormResponseItems,
   numbatrakCustomerOrders,
   numbatrakCustomerOrderItems,
+  numbatrakOrderStatusHistory,
   numbatrakOrderInventoryConsumption,
   numbatrakInventoryLots,
   numbatrakStockMovements,
@@ -164,5 +168,6 @@ export const numbatrakSchema = {
   numbatrakDashboardAlertThresholds,
   numbatrakInventorySettings,
   numbatrakDeliveryAgentSettings,
+  numbatrakNotificationSettings,
   numbatrakApiKeys,
 };

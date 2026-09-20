@@ -1,8 +1,10 @@
+import type { FastifyBaseLogger } from "fastify";
 import { and, desc, eq, gte, ilike, inArray, lt, or } from "drizzle-orm";
 import {
   numbatrakAgents,
   numbatrakCustomerOrderItems,
   numbatrakCustomerOrders,
+  numbatrakOrderStatusHistory,
   numbatrakProducts,
   numbatrakUnifiedExpenses,
   user,
@@ -21,6 +23,7 @@ import { mergeOrderNotesOnSave } from "./order-notes.js";
 import { createDeliveryMovement, productsAlreadyDelivered } from "./stock.js";
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
 import { findOrCreateCustomer, createFeedbackCall, getOrCreateFeedbackSettings } from "../../numbatrak-crm/lib/crm.js";
+import { sendOrderStatusUpdateWhatsApp } from "../../../lib/whatsapp.js";
 
 export type OrderRow = typeof numbatrakCustomerOrders.$inferSelect;
 export type OrderItemRow = typeof numbatrakCustomerOrderItems.$inferSelect;
@@ -293,6 +296,8 @@ export async function updateOrder(
   organizationId: string,
   orderId: string,
   patch: UpdateNumbatrakOrderRequest,
+  logger?: FastifyBaseLogger,
+  changedBy?: string | null,
 ): Promise<NumbatrakOrder | null> {
   const current = await findOrderForOrg(db, organizationId, orderId);
   if (!current) return null;
@@ -301,6 +306,8 @@ export async function updateOrder(
 
   const becomingDelivered =
     patch.status != null && isDeliveredStatus(patch.status) && !isDeliveredStatus(current.status);
+  const statusChanging = patch.status !== undefined && patch.status !== current.status;
+  const leavingFailedStatus = current.status === "failed" && statusChanging;
 
   if (becomingDelivered) {
     const agentId = patch.agentId ?? current.agentId;
@@ -351,6 +358,47 @@ export async function updateOrder(
     .returning();
   if (!updated) return null;
 
+  if (statusChanging) {
+    await db.insert(numbatrakOrderStatusHistory).values({
+      organizationId,
+      orderId,
+      fromStatus: current.status,
+      toStatus: updated.status,
+      changedBy: changedBy ?? null,
+    });
+  }
+
+  if (leavingFailedStatus) {
+    // The failed_delivery expense created by markOrderFailedDelivery is a
+    // point-in-time loss booking - if the status was corrected away from
+    // "failed" (e.g. re-dispatched and later delivered), that loss never
+    // happened, so remove it rather than leaving a phantom expense.
+    await db
+      .delete(numbatrakUnifiedExpenses)
+      .where(
+        and(
+          eq(numbatrakUnifiedExpenses.organizationId, organizationId),
+          eq(numbatrakUnifiedExpenses.sourceType, "failed_delivery"),
+          eq(numbatrakUnifiedExpenses.sourceId, orderId),
+        ),
+      );
+  }
+
+  if (statusChanging && updated.phoneNumber && logger) {
+    try {
+      await sendOrderStatusUpdateWhatsApp(db, organizationId, logger, {
+        customerPhone: updated.phoneNumber,
+        customerName: updated.customerName ?? "Customer",
+        orderNumber: orderId.slice(0, 8).toUpperCase(),
+        status: updated.status.charAt(0).toUpperCase() + updated.status.slice(1),
+      });
+    } catch (err) {
+      // Transactional WhatsApp send failing must never fail the order
+      // update itself - degrade gracefully, same as an unconnected channel.
+      logger.error({ err, orderId }, "Order status WhatsApp notification failed");
+    }
+  }
+
   const [full] = await attachRelations(db, [updated]);
   return full!;
 }
@@ -359,6 +407,8 @@ export async function advanceOrderStatus(
   db: Database,
   organizationId: string,
   orderId: string,
+  logger?: FastifyBaseLogger,
+  changedBy?: string | null,
 ): Promise<NumbatrakOrder | null> {
   const current = await findOrderForOrg(db, organizationId, orderId);
   if (!current) return null;
@@ -366,7 +416,14 @@ export async function advanceOrderStatus(
   if (!next) {
     throw new Error("No further status to advance.");
   }
-  return updateOrder(db, organizationId, orderId, { status: next as UpdateNumbatrakOrderRequest["status"] });
+  return updateOrder(
+    db,
+    organizationId,
+    orderId,
+    { status: next as UpdateNumbatrakOrderRequest["status"] },
+    logger,
+    changedBy,
+  );
 }
 
 export async function markOrderFailedDelivery(
@@ -374,6 +431,7 @@ export async function markOrderFailedDelivery(
   organizationId: string,
   orderId: string,
   options: { expenseAmount?: number; createdBy?: string | null },
+  logger?: FastifyBaseLogger,
 ): Promise<NumbatrakOrder | null> {
   const current = await findOrderForOrg(db, organizationId, orderId);
   if (!current) return null;
@@ -382,7 +440,14 @@ export async function markOrderFailedDelivery(
   }
 
   const amount = options.expenseAmount ?? (current.deliveryFee != null ? Number(current.deliveryFee) : 0);
-  const updated = await updateOrder(db, organizationId, orderId, { status: "failed" });
+  const updated = await updateOrder(
+    db,
+    organizationId,
+    orderId,
+    { status: "failed" },
+    logger,
+    options.createdBy ?? null,
+  );
 
   if (amount > 0) {
     const [firstItem] = await db

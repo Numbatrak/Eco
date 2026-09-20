@@ -16,7 +16,7 @@ import {
 } from "../../services/organizationInvitations";
 import { OrganizationMember } from "../../types/organization";
 import { OrganizationInvitation } from "../../types/organization";
-import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy, Check, Clock, Moon, Sun, Edit2, Save, Bell, UserCircle, CreditCard } from "lucide-react";
+import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy, Check, Clock, Moon, Sun, Edit2, Save, UserCircle, CreditCard } from "lucide-react";
 import { InvitationDialog } from "./InvitationDialog";
 import { OrderAssignmentSettings } from "./OrderAssignmentSettings";
 import { DeliveryFeeSettings } from "./DeliveryFeeSettings";
@@ -24,6 +24,9 @@ import { OrganizationBrandingSettings } from "./OrganizationBrandingSettings";
 import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSettings";
 import { InventorySettings } from "./InventorySettings";
 import { DeliveryAgentSettings } from "./DeliveryAgentSettings";
+import { NotificationSettings } from "./NotificationSettings";
+import { PayrollSettings } from "./PayrollSettings";
+import { DeleteOrganizationSection } from "./DeleteOrganizationSection";
 import { SubscriptionSection } from "./SubscriptionSection";
 import { DataExportSection } from "./DataExportSection";
 import { ApiKeysSection } from "./ApiKeysSection";
@@ -36,7 +39,7 @@ import { LoadingState } from "../ui/LoadingState";
 export function OrganizationSettingsPage() {
   const { currentOrganization, organizations, setCurrentOrganization, setDefaultOrganization, isDefaultOrganization, refreshOrganizations } = useOrganization();
   const { confirm } = useConfirm();
-  const { hasAnyRole } = usePermissions();
+  const { hasAnyRole, hasPermission } = usePermissions();
   const { theme, setTheme } = useTheme();
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +59,7 @@ export function OrganizationSettingsPage() {
 
   const canManageMembers = hasAnyRole(["Owner", "Admin"]);
   const canEditOrganization = hasAnyRole(["Owner", "Admin"]);
+  const canManagePayroll = hasPermission("payroll", "canUpdate");
 
   // Handle hydration mismatch
   useEffect(() => {
@@ -292,29 +296,6 @@ export function OrganizationSettingsPage() {
             ) : (
               <div className="w-8 h-4 bg-muted rounded-full" />
             )}
-          </div>
-
-          {/* Notification Preferences (Placeholder) */}
-          <div className="org-settings-theme-toggle">
-            <div className="org-settings-theme-info">
-              <div className="org-settings-theme-icon">
-                <Bell className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="org-settings-theme-label">Email Notifications</h3>
-                <p className="org-settings-theme-description">
-                  Receive email updates about important events
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={true}
-              onCheckedChange={() => {
-                // Placeholder - will be implemented later
-                setSuccess("Notification preferences will be saved soon!");
-                setTimeout(() => setSuccess(null), 2000);
-              }}
-            />
           </div>
         </div>
 
@@ -748,6 +729,14 @@ export function OrganizationSettingsPage() {
           <DeliveryAgentSettings organizationId={currentOrganization.id} />
         )}
 
+        {canManagePayroll && (
+          <PayrollSettings organizationId={currentOrganization.id} />
+        )}
+
+        {canEditOrganization && (
+          <NotificationSettings organizationId={currentOrganization.id} />
+        )}
+
         {/* Subscription & Billing */}
         {(isOwner || isAdmin) && (
           <SubscriptionSection />
@@ -761,6 +750,14 @@ export function OrganizationSettingsPage() {
         {/* API Keys */}
         {(isOwner || isAdmin) && (
           <ApiKeysSection />
+        )}
+
+        {/* Danger Zone */}
+        {isOwner && (
+          <DeleteOrganizationSection
+            organizationId={currentOrganization.id}
+            organizationName={currentOrganization.name}
+          />
         )}
       </div>
 

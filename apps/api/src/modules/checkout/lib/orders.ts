@@ -8,6 +8,7 @@ import { isUniqueViolation } from "../../../lib/db-errors.js";
 import { incrementCustomerStats } from "../../customers/lib/customers.js";
 import { findAnalyticsSettings } from "../../analytics/lib/analytics-settings-store.js";
 import { sendPurchaseCapiEvent } from "../../../lib/analytics/meta-capi.js";
+import { sendPurchaseTiktokEventsApiEvent } from "../../../lib/analytics/tiktok-events.js";
 import { sendOrderConfirmationWhatsApp } from "../../../lib/whatsapp.js";
 
 export type OrderRow = typeof orders.$inferSelect;
@@ -269,6 +270,33 @@ export async function markOrderPaid(
     }
   } catch (err) {
     logger.warn({ err, orderId: order.id }, "Meta CAPI Purchase event failed");
+  }
+
+  // Best-effort, independent of the Meta dispatch above - same "must never
+  // block the payment from settling" rule applies here.
+  try {
+    const analyticsSettings = await findAnalyticsSettings(db, order.tenantId);
+    if (
+      analyticsSettings?.enabled &&
+      analyticsSettings.tiktokPixelId &&
+      analyticsSettings.tiktokCapiTokenEncrypted
+    ) {
+      await sendPurchaseTiktokEventsApiEvent(
+        {
+          id: order.id,
+          totalCents: order.totalCents,
+          currency: order.currency,
+          customerEmail: order.customerEmail,
+          customerPhone: order.customerPhone,
+        },
+        {
+          tiktokPixelId: analyticsSettings.tiktokPixelId,
+          tiktokCapiTokenEncrypted: analyticsSettings.tiktokCapiTokenEncrypted,
+        },
+      );
+    }
+  } catch (err) {
+    logger.warn({ err, orderId: order.id }, "TikTok Events API CompletePayment event failed");
   }
 
   return true;

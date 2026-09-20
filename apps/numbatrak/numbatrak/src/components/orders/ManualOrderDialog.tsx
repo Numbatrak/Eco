@@ -172,6 +172,10 @@ export function ManualOrderDialog({
       setLocalError("Customer name is required.");
       return;
     }
+    if (!state.trim()) {
+      setLocalError("State is required.");
+      return;
+    }
     if (!items.length) {
       setLocalError("Select at least one product with a valid quantity.");
       return;
@@ -240,17 +244,16 @@ export function ManualOrderDialog({
               </div>
               <div className="dialog-form-field space-y-2">
                 <Label htmlFor="manual-state" className="dialog-field-label">
-                  State
+                  State *
                 </Label>
                 <Select
-                  value={state || "none"}
-                  onValueChange={(v) => setState(v === "none" ? "" : v)}
+                  value={state}
+                  onValueChange={(v) => setState(v)}
                 >
                   <SelectTrigger id="manual-state">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No state</SelectItem>
                     {nigeriaStates.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}

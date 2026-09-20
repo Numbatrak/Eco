@@ -287,7 +287,7 @@ export function CrmPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-border text-muted-foreground">
-                    <th className="py-2 px-2 w-6"></th><th className="text-left py-2 px-2">Name</th><th className="text-left py-2 px-2">Phone</th><th className="text-left py-2 px-2">Location</th><th className="text-left py-2 px-2">Status</th><th className="text-left py-2 px-2">First Click</th><th className="text-left py-2 px-2">Last Click</th><th className="text-right py-2 px-2">Order Revenue</th><th className="text-right py-2 px-2">More Purchase Revenue</th><th className="text-right py-2 px-2">LTV</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">More Purchases</th>
+                    <th className="py-2 px-2 w-6"></th><th className="text-left py-2 px-2">Name</th><th className="text-left py-2 px-2">Phone</th><th className="text-left py-2 px-2">Location</th><th className="text-left py-2 px-2">Status</th><th className="text-left py-2 px-2">First Click</th><th className="text-left py-2 px-2">Last Click</th><th className="text-right py-2 px-2">Order Revenue</th><th className="text-right py-2 px-2">More Purchase Revenue</th><th className="text-right py-2 px-2">Upsell Revenue</th><th className="text-right py-2 px-2">LTV</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">More Purchases</th>
                   </tr></thead>
                   <tbody>
                     {customers.map((c) => {
@@ -305,13 +305,14 @@ export function CrmPage() {
                             <td className="py-2 px-2 text-muted-foreground">{c.last_click_source ?? "—"}</td>
                             <td className="py-2 px-2 text-right text-foreground">{c.order_revenue.toLocaleString()}</td>
                             <td className="py-2 px-2 text-right text-foreground">{c.more_purchase_revenue.toLocaleString()}</td>
+                            <td className="py-2 px-2 text-right text-foreground">{c.upsell_revenue.toLocaleString()}</td>
                             <td className="py-2 px-2 text-right text-foreground font-medium">{c.ltv.toLocaleString()}</td>
                             <td className="py-2 px-2 text-right text-foreground">{c.order_count}</td>
                             <td className="py-2 px-2 text-right text-foreground">{c.more_purchase_count}</td>
                           </tr>
                           {isOpen && (
                             <tr className="border-b border-border/50 bg-muted/30">
-                              <td colSpan={12} className="py-3 px-4">
+                              <td colSpan={13} className="py-3 px-4">
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                                     <ShoppingBag size={14} /> More Purchases — {c.name}

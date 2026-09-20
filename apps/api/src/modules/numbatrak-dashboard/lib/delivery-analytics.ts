@@ -12,6 +12,7 @@ type DeliveryRow = {
   cost: number;
   agentId: number | null;
   productId: string | null;
+  csr: string | null;
 };
 
 function num(v: unknown): number {
@@ -45,6 +46,7 @@ async function fetchFilteredRows(
       cost: numbatrakDeliveries.cost,
       agentId: numbatrakDeliveries.agentId,
       productId: numbatrakDeliveries.productUuid,
+      csr: numbatrakDeliveries.csr,
     })
     .from(numbatrakDeliveries)
     .where(and(...conditions));
@@ -55,6 +57,7 @@ async function fetchFilteredRows(
     cost: num(r.cost),
     agentId: r.agentId,
     productId: r.productId,
+    csr: r.csr,
   }));
 
   const location = filters.location ?? "all";
@@ -198,6 +201,23 @@ export async function fetchDeliveryBreakdownByProduct(
     for (const p of products) labels.set(p.id, p.name);
   }
   return bucketRows(rows, (r) => r.productId ?? "unknown", labels);
+}
+
+/**
+ * Groups by the delivery's CRS (sales rep), a request from the 2026-09-10
+ * requirements review: "Performance tracking must shift to focus on specific
+ * CRS rather than generic agents." Distinct from fetchDeliveryBreakdownByAgent
+ * (agent = delivery partner) - `csr` is the free-text sales-rep name already
+ * resolved at import time (see deliveries.ts schema comment).
+ */
+export async function fetchDeliveryBreakdownByCsr(
+  db: Database,
+  organizationId: string,
+  filters: NumbatrakDeliveryAnalyticsQuery,
+): Promise<NumbatrakDeliveryBreakdownRow[]> {
+  const rows = await fetchFilteredRows(db, organizationId, filters);
+  const labels = new Map<string, string>([["unassigned", "Unassigned"]]);
+  return bucketRows(rows, (r) => r.csr?.trim() || "unassigned", labels);
 }
 
 export async function fetchDeliveryBreakdownByLocation(

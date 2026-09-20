@@ -253,6 +253,35 @@ export async function addOrderUpsellLine(
   });
 }
 
+export interface OrderStatusHistoryEntry {
+  id: string;
+  from_status: string | null;
+  to_status: string;
+  changed_by_name: string | null;
+  created_at: string | null;
+}
+
+interface StatusHistoryDto {
+  id: string;
+  fromStatus: string | null;
+  toStatus: string;
+  changedByName: string | null;
+  createdAt: string | null;
+}
+
+export async function fetchOrderStatusHistory(orderId: string): Promise<OrderStatusHistoryEntry[]> {
+  const { history } = await apiRequest<{ history: StatusHistoryDto[] }>(
+    `/org/numbatrak/orders/${orderId}/status-history`
+  );
+  return history.map((h) => ({
+    id: h.id,
+    from_status: h.fromStatus,
+    to_status: h.toStatus,
+    changed_by_name: h.changedByName,
+    created_at: h.createdAt,
+  }));
+}
+
 export async function advanceOrderStatusApi(orderId: string): Promise<void> {
   await apiRequest<OrderDto>(`/org/numbatrak/orders/${orderId}/advance-status`, { method: "POST" });
 }

@@ -90,14 +90,26 @@ export function computeBusinessPerformanceMetrics(input: {
   };
 }
 
+// Same "attribute an agent to their first listed location, else group under
+// Unspecified" convention as delivery-rate.ts's fetchDeliveryRateByLocation -
+// kept in sync intentionally, this file just can't import that one (see
+// module header comment re: byte-for-byte pure-function port).
+const UNSPECIFIED_LOCATION = "Unspecified";
+const UNASSIGNED_AGENT_LABEL = "Unassigned";
+
 export function computeLossMetrics(input: {
   orders: MetricsOrderRow[];
   adSpend: number;
   failedDeliveryCost: number;
   startDate?: string;
   endDate?: string;
+  /** Agent id -> name/locations lookup, fetched by the caller (see
+   * summary.ts) for whichever agentIds appear on `orders`. Optional/defaults
+   * to empty so existing callers/tests that don't care about location or
+   * agent breakdowns keep working. */
+  agents?: Array<{ id: number; name: string; locations: string | null }>;
 }): NumbatrakLossMetrics {
-  const { orders, adSpend, failedDeliveryCost, startDate, endDate } = input;
+  const { orders, adSpend, failedDeliveryCost, startDate, endDate, agents = [] } = input;
 
   const generated = orders.filter((o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate));
   const undelivered = generated.filter((o) => !isDeliveredOrder(o));
@@ -120,5 +132,45 @@ export function computeLossMetrics(input: {
 
   const byStatus = [...statusMap.values()].sort((a, b) => b.count - a.count);
 
-  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus };
+  const agentInfoById = new Map<number, { name: string; location: string }>();
+  for (const a of agents) {
+    const locs = a.locations
+      ? a.locations
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean)
+      : [];
+    agentInfoById.set(a.id, { name: a.name, location: locs[0] || UNSPECIFIED_LOCATION });
+  }
+
+  const locationMap = new Map<string, { location: string; label: string; count: number; wouldBeSales: number }>();
+  const agentMap = new Map<string, { agentId: number | null; label: string; count: number; wouldBeSales: number }>();
+  for (const row of undelivered) {
+    const info = row.agentId != null ? agentInfoById.get(row.agentId) : undefined;
+
+    const location = info?.location ?? UNSPECIFIED_LOCATION;
+    const existingLocation = locationMap.get(location);
+    if (existingLocation) {
+      existingLocation.count += 1;
+      existingLocation.wouldBeSales += row.orderRevenue;
+    } else {
+      locationMap.set(location, { location, label: location, count: 1, wouldBeSales: row.orderRevenue });
+    }
+
+    const agentKey = row.agentId != null ? String(row.agentId) : "unassigned";
+    const agentLabel =
+      row.agentId != null ? (info?.name ?? `Agent #${row.agentId}`) : UNASSIGNED_AGENT_LABEL;
+    const existingAgent = agentMap.get(agentKey);
+    if (existingAgent) {
+      existingAgent.count += 1;
+      existingAgent.wouldBeSales += row.orderRevenue;
+    } else {
+      agentMap.set(agentKey, { agentId: row.agentId, label: agentLabel, count: 1, wouldBeSales: row.orderRevenue });
+    }
+  }
+
+  const byLocation = [...locationMap.values()].sort((a, b) => b.count - a.count);
+  const byAgent = [...agentMap.values()].sort((a, b) => b.count - a.count);
+
+  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus, byLocation, byAgent };
 }

@@ -319,6 +319,9 @@ export default function UnifiedExpensesForm() {
           .concat(["agent"])
           .map((tabId) => (
             <TabsContent key={tabId} value={tabId} className="space-y-4">
+              {tabId === "advertising" && tabId === activeTab && (
+                <AdSpendByOffer rows={tabRows} />
+              )}
               <ExpensesTable
                 rows={tabId === activeTab ? tabRows : []}
                 loading={loading && tabId === activeTab}
@@ -362,6 +365,44 @@ export default function UnifiedExpensesForm() {
         onSubmit={handleSave}
       />
     </PageLayout>
+  );
+}
+
+/** Ad spend can't be sliced by offer anywhere else in reporting today, even
+ * though every advertising expense already requires an offer_name at
+ * creation (UnifiedExpenseDialog.tsx) - this is a client-side rollup of
+ * exactly that captured data, no new backend query needed. */
+function AdSpendByOffer({ rows }: { rows: UnifiedExpenseWithRelations[] }) {
+  const byOffer = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const r of rows) {
+      const key = r.offer_name?.trim() || "No offer tagged";
+      totals.set(key, (totals.get(key) ?? 0) + r.amount);
+    }
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  if (byOffer.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <h3 className="text-sm font-semibold text-foreground mb-3">
+        Ad spend by offer
+      </h3>
+      <div className="space-y-1.5">
+        {byOffer.map(([offer, amount]) => (
+          <div
+            key={offer}
+            className="flex items-center justify-between text-sm border-b border-border/60 last:border-b-0 pb-1.5 last:pb-0"
+          >
+            <span className="text-foreground">{offer}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {amount.toLocaleString("en-NG", { style: "currency", currency: "NGN" })}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

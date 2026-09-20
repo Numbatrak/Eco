@@ -147,6 +147,17 @@ export const authApi = {
       body: { organizationId, data },
     }),
 
+  /** Better Auth's built-in organization deletion endpoint - gated server-side to
+   * the `organization: ["delete"]` permission (Owner only, see
+   * apps/api/src/lib/access-control.ts's ownerRole). Every numbatrak table's
+   * organizationId column cascades on delete, so this cleans up the org's
+   * entire dataset at the DB level with no custom cleanup code needed. */
+  deleteOrganization: (organizationId: string) =>
+    apiRequest<OrgRecord>("/api/auth/organization/delete", {
+      method: "POST",
+      body: { organizationId },
+    }),
+
   inviteMember: (body: { email: string; role: OrgRole; organizationId: string; resend?: boolean }) =>
     apiRequest<Invitation>("/api/auth/organization/invite-member", { method: "POST", body }),
 

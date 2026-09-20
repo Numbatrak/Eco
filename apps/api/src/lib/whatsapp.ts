@@ -121,6 +121,33 @@ export async function sendOrderConfirmationWhatsApp(
 }
 
 /**
+ * Convenience: send an order-status-update template to the customer.
+ *
+ * The template "order_status_update" must be pre-approved in Meta Business
+ * Manager with body parameters: {{1}} customer name, {{2}} order number,
+ * {{3}} new status (e.g. "Dispatched", "Delivered") - won't send anything
+ * until that template exists and is approved. Transactional, so it's called
+ * directly rather than through the CRM campaign/credit system.
+ */
+export async function sendOrderStatusUpdateWhatsApp(
+  db: Database,
+  tenantId: string,
+  logger: FastifyBaseLogger,
+  params: {
+    customerPhone: string;
+    customerName: string;
+    orderNumber: string;
+    status: string;
+  },
+): Promise<void> {
+  await sendWhatsAppTemplate(db, tenantId, logger, {
+    to: params.customerPhone,
+    templateName: "order_status_update",
+    bodyParameters: [params.customerName, params.orderNumber, params.status],
+  });
+}
+
+/**
  * Convenience: send the abandoned-checkout recovery template.
  *
  * The template "abandoned_checkout" must be pre-approved in Meta Business

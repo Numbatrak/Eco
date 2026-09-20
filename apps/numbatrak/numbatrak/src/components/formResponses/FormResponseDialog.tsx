@@ -17,6 +17,7 @@ import { FormResponseWithItems } from "../../types/formResponse";
 import { Agent } from "../../types/agent";
 import { agentsForAssignment } from "../../utils/agentFilters";
 import { FormFieldRenderer } from "./FormFieldRenderer";
+import { OrderStatusHistory } from "./OrderStatusHistory";
 import {
   orderProfit,
   potentialOrderProfit,
@@ -520,6 +521,8 @@ export function FormResponseDialog({
                 )}
               </div>
             </div>
+
+            <OrderStatusHistory orderId={(response as { _customerOrderId?: string })._customerOrderId ?? response.id} />
 
             {/* Products Section */}
             {response.items.length > 0 && (

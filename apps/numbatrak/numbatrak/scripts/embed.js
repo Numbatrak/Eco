@@ -33,6 +33,17 @@
     DEBUG: true,
   };
 
+  // Canonical Nigerian states list for "state" fields - keep in sync with
+  // apps/numbatrak/numbatrak/src/constants/nigeriaStates.ts
+  const NIGERIA_STATES = [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
+    "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu",
+    "Federal Capital Territory", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano",
+    "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun",
+    "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe",
+    "Zamfara",
+  ];
+
   // Log SDK version on load
   console.log(
     "%c[CRM Form SDK]",
@@ -662,6 +673,40 @@
               input.appendChild(optionEl);
             });
           }
+          input.addEventListener("change", (e) => {
+            this.state.updateField(field.name, e.target.value);
+            this.onFieldChange();
+          });
+          break;
+
+        case "state":
+          input = createElement("select", {
+            id: field.id,
+            name: field.name,
+            required: field.required,
+            className: "crm-form-input",
+            style: {
+              width: "100%",
+              padding: "0.75rem",
+              border: "2px solid #e5e7eb",
+              borderRadius: "0.5rem",
+              fontSize: "1rem",
+            },
+          });
+          input.appendChild(
+            createElement("option", {
+              value: "",
+              textContent: field.placeholder || "Select a state",
+            }),
+          );
+          NIGERIA_STATES.forEach((stateName) => {
+            input.appendChild(
+              createElement("option", {
+                value: stateName,
+                textContent: stateName,
+              }),
+            );
+          });
           input.addEventListener("change", (e) => {
             this.state.updateField(field.name, e.target.value);
             this.onFieldChange();

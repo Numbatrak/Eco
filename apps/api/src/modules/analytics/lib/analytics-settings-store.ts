@@ -17,14 +17,16 @@ export async function findAnalyticsSettings(
   return row ?? null;
 }
 
-/** Never includes the decrypted CAPI token - only whether one is configured. */
+/** Never includes the decrypted CAPI/Events API token - only whether one is configured. */
 export function serializeAnalyticsSettings(row: AnalyticsSettingsRow | null): AnalyticsSettingsResponse {
   if (!row) {
-    return { metaPixelId: null, hasCapiToken: false, enabled: false };
+    return { metaPixelId: null, hasCapiToken: false, tiktokPixelId: null, hasTiktokCapiToken: false, enabled: false };
   }
   return {
     metaPixelId: row.metaPixelId,
     hasCapiToken: Boolean(row.metaCapiTokenEncrypted),
+    tiktokPixelId: row.tiktokPixelId,
+    hasTiktokCapiToken: Boolean(row.tiktokCapiTokenEncrypted),
     enabled: row.enabled,
   };
 }
@@ -35,12 +37,20 @@ export async function upsertAnalyticsSettings(
   input: AnalyticsSettingsRequest,
 ): Promise<void> {
   const metaCapiTokenEncrypted = encryptSecret(input.metaCapiToken);
+  // TikTok fields are optional (see analyticsSettingsRequestSchema) - blank
+  // clears them rather than requiring a value on every save like Meta's do.
+  const tiktokPixelId = input.tiktokPixelId?.trim() ? input.tiktokPixelId.trim() : null;
+  const tiktokCapiTokenEncrypted = input.tiktokCapiToken?.trim()
+    ? encryptSecret(input.tiktokCapiToken.trim())
+    : null;
   await db
     .insert(tenantAnalyticsSettings)
     .values({
       tenantId,
       metaPixelId: input.metaPixelId,
       metaCapiTokenEncrypted,
+      tiktokPixelId,
+      tiktokCapiTokenEncrypted,
       enabled: input.enabled,
     })
     .onConflictDoUpdate({
@@ -48,6 +58,8 @@ export async function upsertAnalyticsSettings(
       set: {
         metaPixelId: input.metaPixelId,
         metaCapiTokenEncrypted,
+        tiktokPixelId,
+        tiktokCapiTokenEncrypted,
         enabled: input.enabled,
         updatedAt: new Date(),
       },

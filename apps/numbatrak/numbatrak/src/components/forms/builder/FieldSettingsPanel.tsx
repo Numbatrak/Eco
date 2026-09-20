@@ -176,6 +176,7 @@ export function FieldSettingsPanel({
           <option value="number">Number</option>
           <option value="textarea">Textarea</option>
           <option value="select">Select</option>
+          <option value="state">State</option>
           <option value="radio-group">Radio Group</option>
           <option value="order-bump">Order Bump</option>
         </select>
@@ -222,7 +223,7 @@ export function FieldSettingsPanel({
         />
       </div>
 
-      {field.type !== "radio-group" && field.type !== "order-bump" && field.type !== "select" && (
+      {field.type !== "radio-group" && field.type !== "order-bump" && field.type !== "select" && field.type !== "state" && (
         <div>
           <label className="form-label text-xs">Placeholder</label>
           <input

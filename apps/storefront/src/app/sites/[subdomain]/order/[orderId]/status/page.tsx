@@ -7,7 +7,7 @@ import { useSite } from "../../../../../../components/SiteProvider";
 import { cartApi } from "../../../../../../lib/cartApi";
 import { ApiError } from "../../../../../../lib/apiClient";
 import { formatCents } from "../../../../../../lib/money";
-import { purchase } from "../../../../../../lib/analytics/pixelEvents";
+import { purchase, tiktokPurchase } from "../../../../../../lib/analytics/pixelEvents";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -51,6 +51,7 @@ export default function OrderStatusPage(): React.ReactElement {
     if (status?.status === "paid" && !firedPurchase.current) {
       firedPurchase.current = true;
       purchase(status.orderId, status.totalCents, status.currency);
+      tiktokPurchase(status.orderId, status.totalCents, status.currency);
     }
   }, [status]);
 

@@ -111,6 +111,58 @@ export function LossPanel({
             </div>
           </div>
         )}
+
+        {m.byLocation.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-2">
+              By location
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {m.byLocation.map((row) => (
+                <span
+                  key={row.location}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-border bg-background"
+                >
+                  <span className="font-medium text-foreground">
+                    {row.label}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{row.count}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-amber-600 dark:text-amber-400">
+                    {formatCurrency(row.wouldBeSales)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {m.byAgent.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-2">
+              By agent
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {m.byAgent.map((row) => (
+                <span
+                  key={row.agentId ?? "unassigned"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-border bg-background"
+                >
+                  <span className="font-medium text-foreground">
+                    {row.label}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{row.count}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-amber-600 dark:text-amber-400">
+                    {formatCurrency(row.wouldBeSales)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

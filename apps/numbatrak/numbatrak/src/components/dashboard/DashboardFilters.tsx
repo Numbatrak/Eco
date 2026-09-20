@@ -42,6 +42,7 @@ export type DashboardFilterValues = {
   csrId: string | null;
   funnelName: string | null;
   subBrand: string | null;
+  offerName: string | null;
   agentId: number | null;
   status: string | null;
   viewMode: DashboardViewMode;
@@ -59,6 +60,7 @@ interface DashboardFiltersProps {
   onCsrChange: (csrId: string | null) => void;
   onFunnelChange: (funnel: string | null) => void;
   onSubBrandChange: (subBrand: string | null) => void;
+  onOfferChange: (offer: string | null) => void;
   onAgentChange: (agentId: number | null) => void;
   onStatusChange: (status: string | null) => void;
   onViewModeChange: (mode: DashboardViewMode) => void;
@@ -67,6 +69,7 @@ interface DashboardFiltersProps {
   agents: Agent[];
   funnelNames: string[];
   subBrands: string[];
+  offerNames: string[];
   showCsrFilter?: boolean;
   showExtendedFilters?: boolean;
   showViewToggle?: boolean;
@@ -84,6 +87,7 @@ export function DashboardFilters({
   onCsrChange,
   onFunnelChange,
   onSubBrandChange,
+  onOfferChange,
   onAgentChange,
   onStatusChange,
   onViewModeChange,
@@ -92,6 +96,7 @@ export function DashboardFilters({
   agents,
   funnelNames,
   subBrands,
+  offerNames,
   showCsrFilter = true,
   showExtendedFilters = false,
   showViewToggle = false,
@@ -102,6 +107,7 @@ export function DashboardFilters({
   const csrSelectValue = values.csrId ?? "all";
   const funnelSelectValue = values.funnelName ?? "all";
   const subBrandSelectValue = values.subBrand ?? "all";
+  const offerSelectValue = values.offerName ?? "all";
   const agentSelectValue =
     values.agentId != null ? String(values.agentId) : "all";
   const statusSelectValue = values.status ?? "all";
@@ -131,6 +137,9 @@ export function DashboardFilters({
     if (values.subBrand) {
       list.push({ key: "subBrand", label: values.subBrand, onClear: () => onSubBrandChange(null) });
     }
+    if (values.offerName) {
+      list.push({ key: "offer", label: values.offerName, onClear: () => onOfferChange(null) });
+    }
     if (values.agentId != null) {
       list.push({ key: "agent", label: selectedAgent?.name ?? "Agent", onClear: () => onAgentChange(null) });
     }
@@ -144,6 +153,7 @@ export function DashboardFilters({
     values.csrId,
     values.funnelName,
     values.subBrand,
+    values.offerName,
     values.agentId,
     values.status,
     selectedForm,
@@ -154,6 +164,7 @@ export function DashboardFilters({
     onCsrChange,
     onFunnelChange,
     onSubBrandChange,
+    onOfferChange,
     onAgentChange,
     onStatusChange,
   ]);
@@ -164,6 +175,7 @@ export function DashboardFilters({
     onCsrChange(null);
     onFunnelChange(null);
     onSubBrandChange(null);
+    onOfferChange(null);
     onAgentChange(null);
     onStatusChange(null);
   }
@@ -356,6 +368,28 @@ export function DashboardFilters({
                       <SelectContent>
                         <SelectItem value="all">All sub-brands</SelectItem>
                         {subBrands.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {offerNames.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Tag className="w-3.5 h-3.5" />
+                      Offer
+                    </span>
+                    <Select value={offerSelectValue} onValueChange={(v) => onOfferChange(v === "all" ? null : v)}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by offer">
+                        <SelectValue placeholder="All offers" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All offers</SelectItem>
+                        {offerNames.map((name) => (
                           <SelectItem key={name} value={name}>
                             {name}
                           </SelectItem>

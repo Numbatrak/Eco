@@ -322,6 +322,32 @@ export const numbatrakCustomerOrderItems = pgTable(
 // order_inventory_consumption - FIFO lot consumption ledger for an order
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// order_status_history - audit trail for order status transitions (the
+// stock-movement ledger already has one; orders had none before this table)
+// ---------------------------------------------------------------------------
+
+export const numbatrakOrderStatusHistory = pgTable(
+  "numbatrak_order_status_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => numbatrakCustomerOrders.id, { onDelete: "cascade" }),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status").notNull(),
+    changedBy: text("changed_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index("numbatrak_order_status_history_order_idx").on(table.orderId, table.createdAt),
+    index("numbatrak_order_status_history_org_idx").on(table.organizationId),
+  ],
+);
+
 export const numbatrakOrderInventoryConsumption = pgTable(
   "numbatrak_order_inventory_consumption",
   {

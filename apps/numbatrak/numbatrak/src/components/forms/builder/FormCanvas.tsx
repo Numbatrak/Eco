@@ -3,6 +3,7 @@ import { GripVertical, Package, Sparkles, Trash2 } from "lucide-react";
 import { FormField } from "../../../types/form";
 import { isRequiredField } from "../../../utils/formValidation";
 import { getFieldIcon } from "./fieldIcons";
+import { nigeriaStates } from "../../../constants/nigeriaStates";
 
 interface FormCanvasProps {
   fields: FormField[];
@@ -80,6 +81,17 @@ function FieldPreviewControl({ field }: { field: FormField }) {
         <option>{field.placeholder || "Select an option..."}</option>
         {(field.options ?? []).map((opt) => (
           <option key={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    );
+  }
+
+  if (field.type === "state") {
+    return (
+      <select disabled className="form-input">
+        <option>{field.placeholder || "Select a state"}</option>
+        {nigeriaStates.map((s) => (
+          <option key={s}>{s}</option>
         ))}
       </select>
     );

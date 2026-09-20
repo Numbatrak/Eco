@@ -48,6 +48,7 @@ function serializeCustomer(
   orderCount: number,
   morePurchaseCount: number,
   latestOrderStatus: string | null = null,
+  upsellRevenue: number = 0,
 ): NumbatrakCustomer {
   return {
     id: row.id,
@@ -59,9 +60,13 @@ function serializeCustomer(
     firstClickSource: row.firstClickSource,
     lastClickSource: row.lastClickSource,
     notes: row.notes,
+    // upsellRevenue is a subset of orderRevenue (upsell lines are folded into
+    // the order's own orderRevenue by refreshOrderTotals), so it is not added
+    // again here - it is purely a reporting breakdown.
     ltv: orderRevenue + morePurchaseRevenue,
     orderRevenue,
     morePurchaseRevenue,
+    upsellRevenue,
     orderCount,
     morePurchaseCount,
     latestOrderStatus,
@@ -245,6 +250,38 @@ async function getOrderStatsMap(db: Database, organizationId: string): Promise<M
   );
 }
 
+/**
+ * Upsell revenue per customer: sum of totalPrice across order line items
+ * added after the order's original creation (addedByUserId IS NOT NULL is
+ * the existing signal for "this is an upsell line" - see
+ * numbatrakCustomerOrderItems.addedByUserId), joined through to the order's
+ * customerId. This is a breakdown of orderRevenue (upsell lines are folded
+ * into the order total by refreshOrderTotals), not additional revenue.
+ */
+async function getUpsellStatsMap(db: Database, organizationId: string): Promise<Map<string, number>> {
+  const rows = await db
+    .select({
+      customerId: numbatrakCustomerOrders.customerId,
+      totalRevenue: sql<string>`COALESCE(SUM(${numbatrakCustomerOrderItems.totalPrice}), 0)`,
+    })
+    .from(numbatrakCustomerOrderItems)
+    .innerJoin(numbatrakCustomerOrders, eq(numbatrakCustomerOrderItems.orderId, numbatrakCustomerOrders.id))
+    .where(
+      and(
+        eq(numbatrakCustomerOrders.organizationId, organizationId),
+        sql`${numbatrakCustomerOrders.customerId} IS NOT NULL`,
+        sql`${numbatrakCustomerOrderItems.addedByUserId} IS NOT NULL`,
+      ),
+    )
+    .groupBy(numbatrakCustomerOrders.customerId);
+
+  return new Map(
+    rows
+      .filter((r): r is typeof r & { customerId: string } => r.customerId != null)
+      .map((r) => [r.customerId, Number(r.totalRevenue)]),
+  );
+}
+
 export async function listCustomers(
   db: Database,
   organizationId: string,
@@ -258,7 +295,7 @@ export async function listCustomers(
 
   if (rows.length === 0) return [];
 
-  const [morePurchaseStats, orderStats] = await Promise.all([
+  const [morePurchaseStats, orderStats, upsellStats] = await Promise.all([
     db
       .select({
         customerId: numbatrakMorePurchases.customerId,
@@ -269,6 +306,7 @@ export async function listCustomers(
       .where(eq(numbatrakMorePurchases.organizationId, organizationId))
       .groupBy(numbatrakMorePurchases.customerId),
     getOrderStatsMap(db, organizationId),
+    getUpsellStatsMap(db, organizationId),
   ]);
 
   const mpMap = new Map(morePurchaseStats.map((s) => [s.customerId, { revenue: Number(s.totalRevenue), count: s.totalCount }]));
@@ -276,7 +314,8 @@ export async function listCustomers(
   const customers = rows.map((row) => {
     const mp = mpMap.get(row.id) ?? { revenue: 0, count: 0 };
     const order = orderStats.get(row.id) ?? { revenue: 0, count: 0, latestStatus: null };
-    return serializeCustomer(row, order.revenue, mp.revenue, order.count, mp.count, order.latestStatus);
+    const upsellRevenue = upsellStats.get(row.id) ?? 0;
+    return serializeCustomer(row, order.revenue, mp.revenue, order.count, mp.count, order.latestStatus, upsellRevenue);
   });
 
   return filters.status ? customers.filter((c) => c.latestOrderStatus === filters.status) : customers;
@@ -311,6 +350,20 @@ export async function getCustomer(
     .from(numbatrakCustomerOrders)
     .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), eq(numbatrakCustomerOrders.customerId, customerId)));
 
+  const [upsellStats] = await db
+    .select({
+      totalRevenue: sql<string>`COALESCE(SUM(${numbatrakCustomerOrderItems.totalPrice}), 0)`,
+    })
+    .from(numbatrakCustomerOrderItems)
+    .innerJoin(numbatrakCustomerOrders, eq(numbatrakCustomerOrderItems.orderId, numbatrakCustomerOrders.id))
+    .where(
+      and(
+        eq(numbatrakCustomerOrders.organizationId, organizationId),
+        eq(numbatrakCustomerOrders.customerId, customerId),
+        sql`${numbatrakCustomerOrderItems.addedByUserId} IS NOT NULL`,
+      ),
+    );
+
   return serializeCustomer(
     row,
     Number(orderStats?.totalRevenue ?? 0),
@@ -318,6 +371,7 @@ export async function getCustomer(
     orderStats?.totalCount ?? 0,
     mpStats?.totalCount ?? 0,
     orderStats?.latestStatus ?? null,
+    Number(upsellStats?.totalRevenue ?? 0),
   );
 }
 
@@ -340,7 +394,7 @@ export async function createCustomer(
       notes: body.notes ?? null,
     })
     .returning();
-  return serializeCustomer(created!, 0, 0, 0, 0);
+  return serializeCustomer(created!, 0, 0, 0, 0, null, 0);
 }
 
 export async function updateCustomer(
@@ -367,6 +421,7 @@ export async function updateCustomer(
     existing.orderCount,
     existing.morePurchaseCount,
     existing.latestOrderStatus,
+    existing.upsellRevenue,
   );
 }
 

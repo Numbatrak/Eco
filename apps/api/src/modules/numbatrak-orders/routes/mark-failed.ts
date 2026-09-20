@@ -15,10 +15,16 @@ export default async function markOrderFailedRoutes(app: FastifyInstance): Promi
 
       let order;
       try {
-        order = await markOrderFailedDelivery(db, request.activeOrganizationId!, request.params.orderId, {
-          expenseAmount: body.expenseAmount,
-          createdBy: session?.user.id ?? null,
-        });
+        order = await markOrderFailedDelivery(
+          db,
+          request.activeOrganizationId!,
+          request.params.orderId,
+          {
+            expenseAmount: body.expenseAmount,
+            createdBy: session?.user.id ?? null,
+          },
+          request.log,
+        );
       } catch (err) {
         return reply.code(400).send({ error: err instanceof Error ? err.message : "Mark-failed failed" });
       }

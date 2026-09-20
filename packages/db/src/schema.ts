@@ -499,6 +499,8 @@ export const tenantAnalyticsSettings = pgTable("tenant_analytics_settings", {
     .references(() => organization.id, { onDelete: "cascade" }),
   metaPixelId: text("meta_pixel_id"),
   metaCapiTokenEncrypted: text("meta_capi_token_encrypted"),
+  tiktokPixelId: text("tiktok_pixel_id"),
+  tiktokCapiTokenEncrypted: text("tiktok_capi_token_encrypted"),
   enabled: boolean("enabled").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

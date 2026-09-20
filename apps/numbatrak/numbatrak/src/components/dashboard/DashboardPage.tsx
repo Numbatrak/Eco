@@ -64,6 +64,7 @@ export function DashboardPage() {
     csrId: null,
     funnelName: null,
     subBrand: null,
+    offerName: null,
     agentId: null,
     status: null,
     viewMode: "business",
@@ -75,6 +76,7 @@ export function DashboardPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [funnelNames, setFunnelNames] = useState<string[]>([]);
   const [subBrands, setSubBrands] = useState<string[]>([]);
+  const [offerNames, setOfferNames] = useState<string[]>([]);
   const [lossMetrics, setLossMetrics] = useState<LossMetrics | null>(null);
   const [lossLoading, setLossLoading] = useState(false);
   const [dashboardAlerts, setDashboardAlerts] = useState<DashboardAlert[]>([]);
@@ -89,6 +91,7 @@ export function DashboardPage() {
       csrId: effectiveCsrId,
       funnelName: filterValues.funnelName,
       subBrand: filterValues.subBrand,
+      offerName: filterValues.offerName,
       agentId: filterValues.agentId,
       status: filterValues.status,
     }),
@@ -97,6 +100,7 @@ export function DashboardPage() {
       effectiveCsrId,
       filterValues.funnelName,
       filterValues.subBrand,
+      filterValues.offerName,
       filterValues.agentId,
       filterValues.status,
     ]
@@ -109,6 +113,7 @@ export function DashboardPage() {
       csrId: null,
       funnelName: null,
       subBrand: null,
+      offerName: null,
       agentId: null,
       status: null,
     }));
@@ -117,6 +122,7 @@ export function DashboardPage() {
       setAgents([]);
       setFunnelNames([]);
       setSubBrands([]);
+      setOfferNames([]);
       return;
     }
     let cancelled = false;
@@ -143,6 +149,7 @@ export function DashboardPage() {
           setAgents(agentList);
           setFunnelNames(attrOptions.funnelNames);
           setSubBrands(attrOptions.subBrands);
+          setOfferNames(attrOptions.offerNames);
         }
       } catch (e) {
         console.error("Error loading dashboard filter data:", e);
@@ -150,6 +157,7 @@ export function DashboardPage() {
           setAgents([]);
           setFunnelNames([]);
           setSubBrands([]);
+          setOfferNames([]);
         }
       }
     })();
@@ -327,6 +335,9 @@ export function DashboardPage() {
         onSubBrandChange={(subBrand) =>
           setFilterValues((prev) => ({ ...prev, subBrand }))
         }
+        onOfferChange={(offerName) =>
+          setFilterValues((prev) => ({ ...prev, offerName }))
+        }
         onAgentChange={(agentId) =>
           setFilterValues((prev) => ({ ...prev, agentId }))
         }
@@ -341,6 +352,7 @@ export function DashboardPage() {
         agents={agents}
         funnelNames={funnelNames}
         subBrands={subBrands}
+        offerNames={offerNames}
         showCsrFilter={!scopedCsrId}
         showExtendedFilters={canViewAnalytics}
         showViewToggle={canViewAnalytics}
