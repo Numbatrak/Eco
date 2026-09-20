@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' tsc -p tsconfig.json",
     "build:lambda": "node build.mjs",
     "dev": "tsx watch --env-file=.env src/index.ts",
     "start": "node dist/index.js",
