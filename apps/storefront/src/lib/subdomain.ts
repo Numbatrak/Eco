@@ -42,3 +42,19 @@ export function resolveSubdomain(host: string | null | undefined, baseDomain: st
   }
   return subdomain;
 }
+
+/**
+ * Builds a same-origin path for `window.location.href`-style full-page
+ * navigation within a tenant site. On a real tenant subdomain (e.g.
+ * acme.numbatrak.com), middleware.ts already rewrites every path onto
+ * /sites/acme/*, so the bare path must be used or the rewrite doubles up
+ * (/sites/acme/sites/acme/... -> 404). On the base domain (e.g. the
+ * dashboard's own storefront preview, hit directly with no subdomain), no
+ * rewrite happens, so the /sites/{subdomain} prefix must be added explicitly.
+ */
+export function siteRelativePath(subdomain: string, path: string): string {
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost:3000";
+  const onTenantSubdomain =
+    typeof window !== "undefined" && resolveSubdomain(window.location.host, baseDomain) !== null;
+  return onTenantSubdomain ? path : `/sites/${subdomain}${path}`;
+}

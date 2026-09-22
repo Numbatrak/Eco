@@ -9,6 +9,7 @@ import { funnelApi } from "../../../../../lib/funnelApi";
 import { cartApi } from "../../../../../lib/cartApi";
 import { ApiError } from "../../../../../lib/apiClient";
 import { formatCents } from "../../../../../lib/money";
+import { siteRelativePath } from "../../../../../lib/subdomain";
 import { captureAttribution, captureLastTouch, getAttribution, getLastAttribution } from "../../../../../lib/attribution";
 import {
   viewContent,
@@ -86,7 +87,7 @@ export function FunnelPageClient({
       setRedirecting(true);
       if (result.checkoutUrl === null) {
         setPlacedDirectly(true);
-        window.location.href = `/sites/${subdomain}/order/${result.orderId}/status`;
+        window.location.href = siteRelativePath(subdomain, `/order/${result.orderId}/status`);
       } else {
         window.location.href = result.checkoutUrl;
       }

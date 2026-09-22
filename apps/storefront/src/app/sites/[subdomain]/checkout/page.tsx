@@ -17,6 +17,7 @@ import { ApiError } from "../../../../lib/apiClient";
 import { formatCents } from "../../../../lib/money";
 import { getAttribution, getLastAttribution } from "../../../../lib/attribution";
 import { initiateCheckout, tiktokInitiateCheckout } from "../../../../lib/analytics/pixelEvents";
+import { siteRelativePath } from "../../../../lib/subdomain";
 
 export default function CheckoutPage(): React.ReactElement {
   const { subdomain, site } = useSite();
@@ -113,7 +114,7 @@ export default function CheckoutPage(): React.ReactElement {
       // online, so go straight to the order status page instead.
       if (result.checkoutUrl === null) {
         setPlacedDirectly(true);
-        window.location.href = `/sites/${subdomain}/order/${result.orderId}/status`;
+        window.location.href = siteRelativePath(subdomain, `/order/${result.orderId}/status`);
       } else {
         window.location.href = result.checkoutUrl;
       }
