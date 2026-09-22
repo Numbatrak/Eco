@@ -25,6 +25,20 @@ function isAuthExemptPath(pathname: string): boolean {
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
+  // --- Force HTTPS ---
+  // The cart-token cookie is Secure in production (cart-cookie.ts), so a
+  // storefront page loaded over plain HTTP can never actually store it -
+  // every subsequent add-to-cart call then 404s with cart_not_found. Cloudflare
+  // isn't set to redirect HTTP->HTTPS for tenant subdomains, so enforce it
+  // here instead. Once the page itself loads over HTTPS, same-origin fetches
+  // it makes (including /api/*, which this middleware doesn't otherwise run
+  // on - see matcher below) inherit that scheme automatically.
+  if (request.headers.get("x-forwarded-proto") === "http") {
+    const httpsUrl = request.nextUrl.clone();
+    httpsUrl.protocol = "https:";
+    return NextResponse.redirect(httpsUrl, 308);
+  }
+
   // --- Dashboard auth guard (cookie-level, fast first pass) ---
   if (isDashboardPath(pathname)) {
     const hasSession = request.cookies.has(SESSION_COOKIE);
