@@ -225,16 +225,22 @@ export async function markOrderPaid(
     await incrementCustomerStats(db, order.customerId, order.totalCents);
   }
   const amount = (order.totalCents / 100).toFixed(2);
-  await sendEmail(logger, {
-    to: order.customerEmail,
-    subject: `Order ${order.orderNumber} confirmed`,
-    body: orderConfirmationEmail({
-      customerName: order.customerName,
-      orderNumber: order.orderNumber,
-      amount,
-      currency: order.currency,
-    }),
-  });
+  // Best-effort - a failed send (e.g. SES rejecting an unverified recipient)
+  // must never block the payment from settling, same as WhatsApp/Meta/TikTok below.
+  try {
+    await sendEmail(logger, {
+      to: order.customerEmail,
+      subject: `Order ${order.orderNumber} confirmed`,
+      body: orderConfirmationEmail({
+        customerName: order.customerName,
+        orderNumber: order.orderNumber,
+        amount,
+        currency: order.currency,
+      }),
+    });
+  } catch (err) {
+    logger.warn({ err, orderId: order.id }, "Order confirmation email failed");
+  }
   if (order.customerPhone) {
     try {
       await sendOrderConfirmationWhatsApp(db, order.tenantId, logger, {
