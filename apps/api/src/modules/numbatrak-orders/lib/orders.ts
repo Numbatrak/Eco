@@ -198,10 +198,11 @@ async function refreshOrderTotals(db: Database, orderId: string): Promise<void> 
     .where(eq(numbatrakCustomerOrders.id, orderId));
 }
 
-export async function createManualOrder(
+async function insertOrder(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakOrderRequest,
+  source: "manual" | "storefront",
 ): Promise<NumbatrakOrder> {
   const lineTotals = input.items.map((line) => {
     const totalPrice = line.unitPriceAtSubmission * line.quantity;
@@ -239,7 +240,7 @@ export async function createManualOrder(
       csrId,
       agentId: input.agentId ?? null,
       customerId: customer?.id ?? null,
-      source: "manual",
+      source,
       status: "new",
       customerName: input.customerName,
       phoneNumber: input.phoneNumber ?? null,
@@ -276,6 +277,66 @@ export async function createManualOrder(
 
   const [full] = await attachRelations(db, [order]);
   return full!;
+}
+
+export async function createManualOrder(
+  db: Database,
+  organizationId: string,
+  input: CreateNumbatrakOrderRequest,
+): Promise<NumbatrakOrder> {
+  return insertOrder(db, organizationId, input, "manual");
+}
+
+/**
+ * Bridges a storefront checkout (apps/api/src/modules/checkout) into a real
+ * Numbatrak order once it settles paid, so it shows up in the Orders tab and
+ * flows through the same CSR/agent/remittance pipeline as any other order -
+ * the storefront and Numbatrak are meant to be one order system, not two.
+ * Items whose product has no numbatrakProductId mirror (see the products
+ * table's sync-from-Numbatrak comment) are dropped rather than failing the
+ * whole order, since there's no valid Numbatrak product to book them against;
+ * if that empties the order entirely, nothing is created (logged, not thrown -
+ * this must never block the actual payment from settling).
+ */
+export async function createOrderFromStorefront(
+  db: Database,
+  organizationId: string,
+  input: {
+    customerName: string;
+    phoneNumber: string | null;
+    state: string | null;
+    deliveryAddress: string | null;
+    deliveryFeeCents: number;
+    totalCents: number;
+    paymentMethod: "cod" | "online";
+    source: "store" | "funnel";
+    orderNumber: string;
+    items: Array<{ numbatrakProductId: string; quantity: number; unitPriceCents: number; unitCostCents: number }>;
+  },
+): Promise<NumbatrakOrder | null> {
+  if (input.items.length === 0) return null;
+
+  return insertOrder(
+    db,
+    organizationId,
+    {
+      customerName: input.customerName,
+      phoneNumber: input.phoneNumber,
+      state: input.state,
+      deliveryAddress: input.deliveryAddress,
+      deliveryFee: input.deliveryFeeCents / 100,
+      amountPaid: input.totalCents / 100,
+      moneyReceivedBy: input.paymentMethod === "online" ? "prepaid" : "agent_collected",
+      notes: `Storefront ${input.source} order ${input.orderNumber}`,
+      items: input.items.map((item) => ({
+        productId: item.numbatrakProductId,
+        quantity: item.quantity,
+        unitPriceAtSubmission: item.unitPriceCents / 100,
+        unitCostAtSubmission: item.unitCostCents / 100,
+      })),
+    },
+    "storefront",
+  );
 }
 
 export async function findOrderForOrg(

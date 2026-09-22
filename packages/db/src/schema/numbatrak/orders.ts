@@ -267,7 +267,7 @@ export const numbatrakCustomerOrders = pgTable(
     ),
     check(
       "numbatrak_customer_orders_source_chk",
-      sql`${table.source} IN ('form', 'manual', 'converted_from_cart')`,
+      sql`${table.source} IN ('form', 'manual', 'converted_from_cart', 'storefront')`,
     ),
     check("numbatrak_customer_orders_payment_method_chk", sql`${table.paymentMethod} IN ('cod', 'online')`),
     check(

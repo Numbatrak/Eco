@@ -1,0 +1,2 @@
+ALTER TABLE "numbatrak_customer_orders" DROP CONSTRAINT "numbatrak_customer_orders_source_chk";--> statement-breakpoint
+ALTER TABLE "numbatrak_customer_orders" ADD CONSTRAINT "numbatrak_customer_orders_source_chk" CHECK ("numbatrak_customer_orders"."source" IN ('form', 'manual', 'converted_from_cart', 'storefront'));

@@ -134,6 +134,13 @@
       "when": 1789854541024,
       "tag": "0018_heavy_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790038701007,
+      "tag": "0019_burly_ser_duncan",
+      "breakpoints": true
     }
   ]
 }

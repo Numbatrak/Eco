@@ -36,7 +36,7 @@ export function customerOrderToFormResponse(
     form_id: o.form_id,
     response_type: "order",
     status: o.status,
-    source: o.source === "form" ? "wordpress" : "manual",
+    source: o.source === "form" ? "wordpress" : o.source === "storefront" ? "storefront" : "manual",
     page_url: null,
     field_values: {} as FormResponseFieldValues,
     selected_products: items.map((i) => ({

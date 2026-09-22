@@ -236,7 +236,7 @@ export const numbatrakOrderSchema = z.object({
   agentId: z.number().int().nullable(),
   customerId: z.string().uuid().nullable(),
   status: numbatrakOrderStatusSchema,
-  source: z.enum(["form", "manual", "converted_from_cart"]),
+  source: z.enum(["form", "manual", "converted_from_cart", "storefront"]),
   customerName: z.string().nullable(),
   phoneNumber: z.string().nullable(),
   state: z.string().nullable(),

@@ -1,6 +1,6 @@
 import { and, eq, isNull, lt } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { orders, orderItems, type Database } from "@platform/db";
+import { orders, orderItems, products, numbatrakProducts, type Database } from "@platform/db";
 import { sendEmail } from "../../auth/lib/email.js";
 import { orderConfirmationEmail } from "../../../lib/email-templates.js";
 import { generateOrderNumber } from "./order-number.js";
@@ -10,6 +10,7 @@ import { findAnalyticsSettings } from "../../analytics/lib/analytics-settings-st
 import { sendPurchaseCapiEvent } from "../../../lib/analytics/meta-capi.js";
 import { sendPurchaseTiktokEventsApiEvent } from "../../../lib/analytics/tiktok-events.js";
 import { sendOrderConfirmationWhatsApp } from "../../../lib/whatsapp.js";
+import { createOrderFromStorefront } from "../../numbatrak-orders/lib/orders.js";
 
 export type OrderRow = typeof orders.$inferSelect;
 
@@ -303,6 +304,57 @@ export async function markOrderPaid(
     }
   } catch (err) {
     logger.warn({ err, orderId: order.id }, "TikTok Events API CompletePayment event failed");
+  }
+
+  // Best-effort, same rule as above - the storefront and Numbatrak are meant
+  // to be one order system, so mirror this into a real Numbatrak order once
+  // it's paid. Must never block the payment from settling if it fails.
+  try {
+    const rows = await db
+      .select({
+        quantity: orderItems.quantity,
+        unitPriceSnapshotCents: orderItems.unitPriceSnapshotCents,
+        numbatrakProductId: products.numbatrakProductId,
+        costPrice: numbatrakProducts.costPrice,
+      })
+      .from(orderItems)
+      .innerJoin(products, eq(products.id, orderItems.productId))
+      .innerJoin(numbatrakProducts, eq(numbatrakProducts.id, products.numbatrakProductId))
+      .where(eq(orderItems.orderId, order.id));
+
+    const items = rows
+      .filter((r): r is typeof r & { numbatrakProductId: string } => r.numbatrakProductId != null)
+      .map((r) => ({
+        numbatrakProductId: r.numbatrakProductId,
+        quantity: r.quantity,
+        unitPriceCents: r.unitPriceSnapshotCents,
+        unitCostCents: Math.round(Number(r.costPrice) * 100),
+      }));
+
+    if (items.length < rows.length) {
+      logger.warn(
+        { orderId: order.id, dropped: rows.length - items.length },
+        "Some storefront order items have no Numbatrak product mirror - dropped from the synced Numbatrak order",
+      );
+    }
+
+    const synced = await createOrderFromStorefront(db, order.tenantId, {
+      customerName: order.customerName,
+      phoneNumber: order.customerPhone ?? null,
+      state: order.deliveryState,
+      deliveryAddress: order.deliveryAddress,
+      deliveryFeeCents: order.deliveryFeeCents,
+      totalCents: order.totalCents,
+      paymentMethod: order.paymentMethod,
+      source: order.source,
+      orderNumber: order.orderNumber,
+      items,
+    });
+    if (!synced) {
+      logger.warn({ orderId: order.id }, "Storefront order had no Numbatrak-mirrored products - not synced to Numbatrak");
+    }
+  } catch (err) {
+    logger.warn({ err, orderId: order.id }, "Syncing storefront order into Numbatrak failed");
   }
 
   return true;

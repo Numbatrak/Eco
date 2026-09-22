@@ -6,7 +6,7 @@ import type { OrderStatus } from "../constants/orderStatus";
  * Greenfield order model (table: customer_orders)
  */
 export type CustomerOrderStatus = OrderStatus;
-export type CustomerOrderSource = "form" | "manual" | "converted_from_cart";
+export type CustomerOrderSource = "form" | "manual" | "converted_from_cart" | "storefront";
 
 export interface CustomerOrder {
   id: string;
