@@ -84,6 +84,17 @@ export interface WhatsappConnectRequest {
   phoneNumberId: string;
 }
 
+/**
+ * The storefront/commerce product (packages/db's `products` table, id space
+ * used by tenant_site_config.funnelProductId and product_funnel_config) -
+ * distinct from this app's own inventory Product type in types/product.ts,
+ * which is a different table (numbatrak_products) with different ids.
+ */
+export interface StorefrontProduct {
+  id: string;
+  name: string;
+}
+
 export const storefrontSettingsApi = {
   getPaymentSettings: () =>
     apiRequest<PaymentSettingsResponse>("/org/payment-settings", { method: "GET" }),
@@ -117,4 +128,7 @@ export const storefrontSettingsApi = {
 
   disconnectWhatsapp: () =>
     apiRequest<{ success: boolean }>("/org/whatsapp/disconnect", { method: "DELETE" }),
+
+  listStorefrontProducts: () =>
+    apiRequest<{ products: StorefrontProduct[] }>("/org/products", { method: "GET" }),
 };

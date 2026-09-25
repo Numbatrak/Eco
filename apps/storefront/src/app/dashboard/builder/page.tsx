@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "../../../components/dashboard/AuthContext";
 import { siteConfigApi } from "../../../lib/siteConfigApi";
 import { commerceApi } from "../../../lib/commerceApi";
 import type {
   SiteConfig,
+  StoreType,
   TemplateId,
   SitePalette,
   SiteTypography,
@@ -15,6 +17,7 @@ import type {
   SiteSocialLinks,
   SiteFooter,
   TrustBadgeItem,
+  Product,
 } from "@platform/shared-types";
 import { TEMPLATE_PRESETS, FONT_PAIRINGS, SECTION_CATALOG, defaultSiteConfig } from "@platform/shared-types";
 import { StorefrontPreview } from "../../../components/storefront/StorefrontPreview";
@@ -115,6 +118,7 @@ export default function BuilderPage(): React.ReactElement {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const saveConfig = useCallback(
     async (configToSave: SiteConfig) => {
@@ -150,6 +154,10 @@ export default function BuilderPage(): React.ReactElement {
       .getTenantSettings()
       .then((s) => setIsPublished(s.published))
       .catch(() => {});
+    commerceApi
+      .listProducts()
+      .then(({ products: list }) => setProducts(list))
+      .catch(() => {});
   }, []);
 
   const updateDraft = (newDraft: SiteConfig) => {
@@ -184,6 +192,16 @@ export default function BuilderPage(): React.ReactElement {
   const setTypography = (typography: SiteTypography) => {
     if (!draft) return;
     updateDraft({ ...draft, theme: { ...draft.theme, typography } });
+  };
+
+  const setStoreType = (storeType: StoreType) => {
+    if (!draft) return;
+    updateDraft({ ...draft, storeType });
+  };
+
+  const setFunnelProductId = (funnelProductId: string | null) => {
+    if (!draft) return;
+    updateDraft({ ...draft, funnelProductId });
   };
 
   const moveSection = (index: number, direction: "up" | "down") => {
@@ -352,6 +370,65 @@ export default function BuilderPage(): React.ReactElement {
         )}
       </div>
 
+      {/* Store Type */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-line bg-panel px-4 py-2.5 z-10">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Store type</span>
+        <div className="flex overflow-hidden rounded-[9px] border border-line">
+          <button
+            className={`px-2.5 py-1.5 text-[12.5px] font-medium ${
+              draft.storeType === "catalog" ? "bg-ink text-paper" : "bg-panel text-muted"
+            }`}
+            onClick={() => setStoreType("catalog")}
+          >
+            Catalog
+          </button>
+          <button
+            className={`px-2.5 py-1.5 text-[12.5px] font-medium ${
+              draft.storeType === "funnel" ? "bg-ink text-paper" : "bg-panel text-muted"
+            }`}
+            onClick={() => setStoreType("funnel")}
+          >
+            Funnel Store
+          </button>
+        </div>
+
+        {draft.storeType === "funnel" && (
+          <>
+            <select
+              className="rounded-[7px] border border-line bg-paper px-2 py-1.5 text-[12.5px] text-ink outline-none focus:border-ink"
+              value={draft.funnelProductId ?? ""}
+              onChange={(e) => setFunnelProductId(e.target.value || null)}
+            >
+              <option value="">Pick a product&hellip;</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {draft.funnelProductId && (
+              <>
+                <Link
+                  href={`/dashboard/products/${draft.funnelProductId}/funnel`}
+                  className="text-[12.5px] font-medium text-accent hover:underline"
+                >
+                  Edit funnel content &rarr;
+                </Link>
+                <a
+                  href={`${siteUrl}/funnel/${draft.funnelProductId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12.5px] font-medium text-ink hover:underline"
+                >
+                  Preview funnel page &nearr;
+                </a>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Workspace */}
       <div className="relative flex flex-1 min-h-0">
         {/* Left Rail */}
@@ -463,7 +540,20 @@ export default function BuilderPage(): React.ReactElement {
         </aside>
 
         {/* Center Stage */}
-        <main className="flex flex-1 items-start justify-center overflow-auto bg-[#EFEAE0] p-6 pb-16">
+        <main className="flex flex-1 flex-col items-center gap-3 overflow-auto bg-[#EFEAE0] p-6 pb-16">
+          {draft.storeType === "funnel" && (
+            <div className="w-full max-w-[900px] rounded-[10px] border border-line bg-panel px-4 py-2.5 text-[12.5px] text-muted">
+              Visitors will see your{" "}
+              {draft.funnelProductId ? (
+                <a href={`${siteUrl}/funnel/${draft.funnelProductId}`} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+                  funnel page
+                </a>
+              ) : (
+                "funnel page"
+              )}{" "}
+              instead of the catalog preview below - pick a product above to set it up.
+            </div>
+          )}
           <div
             className={`w-full overflow-hidden rounded-[14px] bg-panel shadow-[0_1px_2px_rgba(20,16,8,0.06),_0_18px_40px_-18px_rgba(20,16,8,0.28)] transition-all duration-250 ease-out ${
               device === "mobile" ? "max-w-[390px]" : "max-w-[900px]"

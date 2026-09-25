@@ -14,16 +14,38 @@ import {
   siteConfigSchema,
   type PublicSite,
   type SiteConfig,
+  type StoreType,
 } from "@platform/shared-types";
+import { findPublishedFunnel } from "./funnel-store.js";
 
 /**
  * Fresh tenants (or rows written before the typed schema landed) may have
  * empty `{}` / `[]` JSONB. Parse-with-fallback so the builder always renders
  * a working default rather than crashing on a legacy row.
  */
-function parseStoredSiteConfig(theme: unknown, sections: unknown): SiteConfig {
-  const parsed = siteConfigSchema.safeParse({ theme, sections });
+function parseStoredSiteConfig(row: {
+  theme: unknown;
+  sections: unknown;
+  storeType: StoreType;
+  funnelProductId: string | null;
+}): SiteConfig {
+  const parsed = siteConfigSchema.safeParse(row);
   return parsed.success ? parsed.data : defaultSiteConfig("market");
+}
+
+/** Used by the site-config route to reject a funnelProductId the tenant
+ * doesn't actually own before it's saved. */
+export async function productBelongsToTenant(
+  db: Database,
+  tenantId: string,
+  productId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)))
+    .limit(1);
+  return Boolean(row);
 }
 
 /**
@@ -138,6 +160,8 @@ export async function findPublishedSiteBySubdomain(
       theme: tenantSiteConfig.theme,
       sections: tenantSiteConfig.sections,
       productsGridEnabled: tenantSiteConfig.productsGridEnabled,
+      storeType: tenantSiteConfig.storeType,
+      funnelProductId: tenantSiteConfig.funnelProductId,
       publishedAt: tenantSiteConfig.publishedAt,
     })
     .from(organization)
@@ -203,15 +227,29 @@ export async function findPublishedSiteBySubdomain(
     .where(eq(tenantPaymentSettings.tenantId, row.tenantId))
     .limit(1);
 
-  const config = parseStoredSiteConfig(row.theme, row.sections);
+  const config = parseStoredSiteConfig({
+    theme: row.theme,
+    sections: row.sections,
+    storeType: row.storeType,
+    funnelProductId: row.funnelProductId,
+  });
+
+  const tenantSummary = { id: row.tenantId, name: row.tenantName, subdomain: row.subdomain as string };
+  const funnel =
+    config.storeType === "funnel" && config.funnelProductId
+      ? await findPublishedFunnel(db, tenantSummary, config.funnelProductId)
+      : null;
 
   return {
     kind: "ok",
     site: {
-      tenant: { id: row.tenantId, name: row.tenantName, subdomain: row.subdomain as string },
+      tenant: tenantSummary,
       theme: config.theme,
       sections: config.sections,
       productsGridEnabled: row.productsGridEnabled,
+      storeType: config.storeType,
+      funnelProductId: config.funnelProductId,
+      funnel,
       products: publishedProducts.map((product) => ({
         ...product,
         variants: (variantsByProductId.get(product.id) ?? []).map((variant) => ({
@@ -258,6 +296,8 @@ export async function findSiteConfigByTenant(
     .select({
       theme: tenantSiteConfig.theme,
       sections: tenantSiteConfig.sections,
+      storeType: tenantSiteConfig.storeType,
+      funnelProductId: tenantSiteConfig.funnelProductId,
     })
     .from(tenantSiteConfig)
     .where(eq(tenantSiteConfig.tenantId, tenantId))
@@ -265,7 +305,7 @@ export async function findSiteConfigByTenant(
   if (!row) {
     return defaultSiteConfig("market");
   }
-  return parseStoredSiteConfig(row.theme, row.sections);
+  return parseStoredSiteConfig(row);
 }
 
 export async function saveSiteConfig(
@@ -285,6 +325,8 @@ export async function saveSiteConfig(
       theme: config.theme,
       sections: config.sections,
       productsGridEnabled,
+      storeType: config.storeType,
+      funnelProductId: config.funnelProductId,
       updatedAt: new Date(),
     })
     .where(eq(tenantSiteConfig.tenantId, tenantId));

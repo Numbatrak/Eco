@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { siteConfigApi } from "../../services/siteConfig";
-import { storefrontSettingsApi } from "../../services/storefrontSettings";
+import { storefrontSettingsApi, type StorefrontProduct } from "../../services/storefrontSettings";
 import type {
   SiteConfig,
+  StoreType,
   TemplateId,
   SitePalette,
   SiteTypography,
@@ -19,6 +20,10 @@ import { StorefrontPreview } from "../../components/storefront/StorefrontPreview
 import { sanitizeIntegerInput } from "../../utils/numericInput";
 
 const STOREFRONT_BASE_DOMAIN = import.meta.env.VITE_STOREFRONT_BASE_DOMAIN ?? "numbatrak.com";
+// The storefront app's own Next.js dashboard hosts the funnel-content editor
+// (product-by-product section editor) - this app only picks which product
+// and links out to it rather than reimplementing that editor.
+const STOREFRONT_APP_URL = import.meta.env.VITE_STOREFRONT_APP_URL ?? "http://localhost:3000";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function useDebounce<T extends (...args: any[]) => any>(
@@ -112,6 +117,7 @@ export function StorefrontBuilderPage(): React.ReactElement {
   const [isPublished, setIsPublished] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [products, setProducts] = useState<StorefrontProduct[]>([]);
 
   const saveConfig = useCallback(
     async (configToSave: SiteConfig) => {
@@ -150,6 +156,10 @@ export function StorefrontBuilderPage(): React.ReactElement {
         setSubdomain(s.subdomain);
       })
       .catch(() => {});
+    storefrontSettingsApi
+      .listStorefrontProducts()
+      .then(({ products: list }) => setProducts(list))
+      .catch(() => {});
   }, []);
 
   const updateDraft = (newDraft: SiteConfig) => {
@@ -184,6 +194,16 @@ export function StorefrontBuilderPage(): React.ReactElement {
   const setTypography = (typography: SiteTypography) => {
     if (!draft) return;
     updateDraft({ ...draft, theme: { ...draft.theme, typography } });
+  };
+
+  const setStoreType = (storeType: StoreType) => {
+    if (!draft) return;
+    updateDraft({ ...draft, storeType });
+  };
+
+  const setFunnelProductId = (funnelProductId: string | null) => {
+    if (!draft) return;
+    updateDraft({ ...draft, funnelProductId });
   };
 
   const moveSection = (index: number, direction: "up" | "down") => {
@@ -346,6 +366,67 @@ export function StorefrontBuilderPage(): React.ReactElement {
         )}
       </div>
 
+      {/* Store Type */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-2.5 z-10">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Store type</span>
+        <div className="flex overflow-hidden rounded-[9px] border border-border">
+          <button
+            className={`px-2.5 py-1.5 text-[12.5px] font-medium ${
+              draft.storeType === "catalog" ? "bg-foreground text-background" : "bg-card text-muted-foreground"
+            }`}
+            onClick={() => setStoreType("catalog")}
+          >
+            Catalog
+          </button>
+          <button
+            className={`px-2.5 py-1.5 text-[12.5px] font-medium ${
+              draft.storeType === "funnel" ? "bg-foreground text-background" : "bg-card text-muted-foreground"
+            }`}
+            onClick={() => setStoreType("funnel")}
+          >
+            Funnel Store
+          </button>
+        </div>
+
+        {draft.storeType === "funnel" && (
+          <>
+            <select
+              className="rounded-[7px] border border-border bg-background px-2 py-1.5 text-[12.5px] text-foreground outline-none focus:border-foreground"
+              value={draft.funnelProductId ?? ""}
+              onChange={(e) => setFunnelProductId(e.target.value || null)}
+            >
+              <option value="">Pick a product&hellip;</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {draft.funnelProductId && (
+              <>
+                <a
+                  href={`${STOREFRONT_APP_URL}/dashboard/products/${draft.funnelProductId}/funnel`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12.5px] font-medium text-primary hover:underline"
+                >
+                  Edit funnel content &rarr;
+                </a>
+                <a
+                  href={`${siteUrl}/funnel/${draft.funnelProductId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12.5px] font-medium text-foreground hover:underline"
+                >
+                  Preview funnel page &nearr;
+                </a>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Workspace */}
       <div className="relative flex flex-1 min-h-0">
         {/* Left Rail */}
@@ -457,7 +538,20 @@ export function StorefrontBuilderPage(): React.ReactElement {
         </aside>
 
         {/* Center Stage */}
-        <main className="flex flex-1 items-start justify-center overflow-auto bg-muted p-6 pb-16">
+        <main className="flex flex-1 flex-col items-center gap-3 overflow-auto bg-muted p-6 pb-16">
+          {draft.storeType === "funnel" && (
+            <div className="w-full max-w-[900px] rounded-[10px] border border-border bg-card px-4 py-2.5 text-[12.5px] text-muted-foreground">
+              Visitors will see your{" "}
+              {draft.funnelProductId ? (
+                <a href={`${siteUrl}/funnel/${draft.funnelProductId}`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+                  funnel page
+                </a>
+              ) : (
+                "funnel page"
+              )}{" "}
+              instead of the catalog preview below - pick a product above to set it up.
+            </div>
+          )}
           <div
             className={`w-full overflow-hidden rounded-[14px] bg-card shadow-[0_1px_2px_rgba(20,16,8,0.06),_0_18px_40px_-18px_rgba(20,16,8,0.28)] transition-all duration-250 ease-out ${
               device === "mobile" ? "max-w-[390px]" : "max-w-[900px]"

@@ -72,6 +72,12 @@ export const orderPaymentMethodEnum = pgEnum("order_payment_method", ["cod", "on
 // or a product's standalone Funnel Mode landing page.
 export const orderSourceEnum = pgEnum("order_source", ["store", "funnel"]);
 
+// Whole-site variant: "catalog" is the normal multi-product storefront,
+// "funnel" makes the site's root URL render a single product's Funnel Mode
+// landing page (see funnelProductId on tenant_site_config) instead of the
+// catalog homepage.
+export const storeTypeEnum = pgEnum("store_type", ["catalog", "funnel"]);
+
 // ---------- security_events ----------
 
 export const securityEvents = pgTable(
@@ -106,6 +112,12 @@ export const tenantSiteConfig = pgTable("tenant_site_config", {
   theme: jsonb("theme").notNull().default({}),
   sections: jsonb("sections").notNull().default([]),
   productsGridEnabled: boolean("products_grid_enabled").notNull().default(false),
+  storeType: storeTypeEnum("store_type").notNull().default("catalog"),
+  // Which product's Funnel Mode page renders at the site root when
+  // storeType is "funnel". Nullable: set null if that product is deleted,
+  // which findPublishedSiteBySubdomain treats the same as "not picked yet"
+  // (falls back to the catalog homepage rather than a broken store).
+  funnelProductId: uuid("funnel_product_id").references(() => products.id, { onDelete: "set null" }),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

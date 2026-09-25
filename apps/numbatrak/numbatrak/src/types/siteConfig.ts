@@ -12,6 +12,11 @@ import { z } from "zod";
 export const templateIdSchema = z.enum(["market", "studio", "corner"]);
 export type TemplateId = z.infer<typeof templateIdSchema>;
 
+// ---------- Store type ----------
+// Mirrors @platform/shared-types's storeTypeSchema by hand (see file header).
+export const storeTypeSchema = z.enum(["catalog", "funnel"]);
+export type StoreType = z.infer<typeof storeTypeSchema>;
+
 // ---------- Theme ----------
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected #rrggbb");
 export const fontChoiceSchema = z.enum([
@@ -167,6 +172,8 @@ export const siteConfigSchema = z.object({
   sections: z.array(siteSectionSchema),
   social: siteSocialLinksSchema.optional(),
   footer: siteFooterSchema.optional(),
+  storeType: storeTypeSchema.default("catalog"),
+  funnelProductId: z.string().uuid().nullable().default(null),
 });
 export type SiteConfig = z.infer<typeof siteConfigSchema>;
 
@@ -191,6 +198,8 @@ export function defaultSiteConfig(templateId: TemplateId = "market"): SiteConfig
       typography: TEMPLATE_TYPOGRAPHY[templateId],
       logoUrl: null,
     },
+    storeType: "catalog",
+    funnelProductId: null,
     sections: [
       {
         id: "announcement",

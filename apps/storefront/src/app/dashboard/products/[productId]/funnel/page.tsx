@@ -49,6 +49,8 @@ function newFunnelSection(kind: FunnelSectionKind): FunnelSection {
       return { id, kind, visible: true, title: "Frequently asked questions", items: [{ question: "How long does delivery take?", answer: "Describe your delivery timeline." }] };
     case "funnel-order":
       return { id, kind, visible: true, title: "Order now", ctaLabel: "Place order" };
+    case "funnel-countdown":
+      return { id, kind, visible: true, headline: "Offer ends when the timer hits zero", durationMinutes: 240 };
   }
 }
 
@@ -552,6 +554,25 @@ export default function ProductFunnelPage({
                   <FieldInput label="Button label" value={selectedSection.ctaLabel} onChange={(v) => updateSectionField(selectedSectionIndex, "ctaLabel", v)} />
                   <p className="text-[11.5px] text-muted">
                     The order form itself (contact details, delivery, payment) is fixed and always appears here.
+                  </p>
+                </>
+              )}
+
+              {selectedSection.kind === "funnel-countdown" && (
+                <>
+                  <FieldInput label="Headline" value={selectedSection.headline} onChange={(v) => updateSectionField(selectedSectionIndex, "headline", v)} />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11.5px] text-muted">Duration (minutes)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-full rounded-[7px] border border-line bg-paper px-2 py-2 text-[13px] text-ink outline-none focus:border-ink"
+                      value={selectedSection.durationMinutes}
+                      onChange={(e) => updateSectionField(selectedSectionIndex, "durationMinutes", Math.max(1, parseInt(e.target.value) || 1))}
+                    />
+                  </div>
+                  <p className="text-[11.5px] text-muted">
+                    Counts down per visitor - each new visitor sees the full duration, it doesn&apos;t count down to a fixed date.
                   </p>
                 </>
               )}

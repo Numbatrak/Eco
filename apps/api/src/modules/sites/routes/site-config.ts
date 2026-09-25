@@ -1,6 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { siteConfigSchema } from "@platform/shared-types";
-import { ensureTenantSiteConfig, findSiteConfigByTenant, publishSite, saveSiteConfig } from "../lib/site-store.js";
+import {
+  ensureTenantSiteConfig,
+  findSiteConfigByTenant,
+  productBelongsToTenant,
+  publishSite,
+  saveSiteConfig,
+} from "../lib/site-store.js";
 
 export default async function siteConfigRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -22,6 +28,14 @@ export default async function siteConfigRoutes(app: FastifyInstance): Promise<vo
       const body = siteConfigSchema.parse(request.body);
       const db = app.getDb();
       const tenantId = request.activeOrganizationId!;
+
+      if (body.storeType === "funnel" && body.funnelProductId) {
+        const owned = await productBelongsToTenant(db, tenantId, body.funnelProductId);
+        if (!owned) {
+          return reply.code(400).send({ error: "invalid_funnel_product" });
+        }
+      }
+
       await ensureTenantSiteConfig(db, tenantId);
       await saveSiteConfig(db, tenantId, body);
       return reply.code(204).send();

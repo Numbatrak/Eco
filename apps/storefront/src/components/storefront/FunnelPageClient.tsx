@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutRequestSchema, type CheckoutRequest, type PublicFunnel, type FunnelSection, NIGERIA_STATES } from "@platform/shared-types";
-import { useSite } from "../../../../../components/SiteProvider";
-import { funnelApi } from "../../../../../lib/funnelApi";
-import { cartApi } from "../../../../../lib/cartApi";
-import { ApiError } from "../../../../../lib/apiClient";
-import { formatCents } from "../../../../../lib/money";
-import { siteRelativePath } from "../../../../../lib/subdomain";
-import { captureAttribution, captureLastTouch, getAttribution, getLastAttribution } from "../../../../../lib/attribution";
+import { useSite } from "../SiteProvider";
+import { funnelApi } from "../../lib/funnelApi";
+import { cartApi } from "../../lib/cartApi";
+import { ApiError } from "../../lib/apiClient";
+import { formatCents } from "../../lib/money";
+import { siteRelativePath } from "../../lib/subdomain";
+import { captureAttribution, captureLastTouch, getAttribution, getLastAttribution } from "../../lib/attribution";
 import {
   viewContent,
   initiateCheckout,
   tiktokViewContent,
   tiktokInitiateCheckout,
-} from "../../../../../lib/analytics/pixelEvents";
+} from "../../lib/analytics/pixelEvents";
 
 function getSection<K extends FunnelSection["kind"]>(
   sections: FunnelSection[],
@@ -24,6 +24,70 @@ function getSection<K extends FunnelSection["kind"]>(
 ): Extract<FunnelSection, { kind: K }> | undefined {
   const section = sections.find((s) => s.kind === kind && s.visible);
   return section as Extract<FunnelSection, { kind: K }> | undefined;
+}
+
+function formatCountdown(remainingMs: number): { hours: string; minutes: string; seconds: string } {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return { hours: pad(hours), minutes: pad(minutes), seconds: pad(seconds) };
+}
+
+/**
+ * Urgency timer, not a real deadline - the countdown restarts for every new
+ * browser session (sessionStorage, not a stored end date), matching the
+ * "resets per visitor" pattern of the direct-response pages this is modeled
+ * on rather than counting down to a fixed moment in time.
+ */
+function CountdownTimer({ headline, durationMinutes, storageKey }: { headline: string; durationMinutes: number; storageKey: string }): React.ReactElement {
+  const deadlineRef = useRef<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    let deadline: number | null = null;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored) {
+      const parsed = Number(stored);
+      if (Number.isFinite(parsed) && parsed > Date.now()) {
+        deadline = parsed;
+      }
+    }
+    if (deadline === null) {
+      deadline = Date.now() + durationMinutes * 60_000;
+      sessionStorage.setItem(storageKey, String(deadline));
+    }
+    deadlineRef.current = deadline;
+    setRemainingMs(deadline - Date.now());
+
+    const interval = setInterval(() => {
+      setRemainingMs(Math.max(0, (deadlineRef.current ?? 0) - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [storageKey, durationMinutes]);
+
+  if (remainingMs === null) {
+    return <section className="flex flex-col items-center gap-3 text-center" aria-hidden="true" />;
+  }
+
+  const { hours, minutes, seconds } = formatCountdown(remainingMs);
+
+  return (
+    <section className="flex flex-col items-center gap-3 text-center">
+      <div className="flex items-center gap-2">
+        {[hours, minutes, seconds].map((value, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-accent text-lg font-bold text-accent-ink">
+              {value}
+            </div>
+            {i < 2 ? <span className="text-lg font-bold text-ink">:</span> : null}
+          </div>
+        ))}
+      </div>
+      <p className="text-sm font-semibold text-danger">{headline}</p>
+    </section>
+  );
 }
 
 export function FunnelPageClient({
@@ -97,6 +161,7 @@ export function FunnelPageClient({
   }
 
   const hero = getSection(sections, "funnel-hero");
+  const countdown = getSection(sections, "funnel-countdown");
   const story = getSection(sections, "funnel-story");
   const solution = getSection(sections, "funnel-solution");
   const howItWorks = getSection(sections, "funnel-how-it-works");
@@ -114,6 +179,14 @@ export function FunnelPageClient({
           <h1 className="font-heading text-3xl text-ink">{hero.headline}</h1>
           <p className="max-w-md text-sm text-muted">{hero.sub}</p>
         </section>
+      )}
+
+      {countdown && (
+        <CountdownTimer
+          headline={countdown.headline}
+          durationMinutes={countdown.durationMinutes}
+          storageKey={`funnel-countdown:${product.id}:${countdown.id}`}
+        />
       )}
 
       {story && (

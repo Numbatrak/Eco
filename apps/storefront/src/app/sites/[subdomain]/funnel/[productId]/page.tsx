@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { fetchFunnel } from "../../../../../lib/funnelApi";
-import { FunnelPageClient } from "./FunnelPageClient";
+import { FunnelPageClient } from "../../../../../components/storefront/FunnelPageClient";
 
 export default async function FunnelPage({
   params,

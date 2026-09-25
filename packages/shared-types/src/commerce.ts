@@ -39,17 +39,8 @@ export type UpdateCollectionRequest = z.infer<typeof updateCollectionRequestSche
 
 // ---------- product variants ----------
 
-export const productVariantSchema = z.object({
-  id: z.string().uuid(),
-  productId: z.string().uuid(),
-  size: z.string(),
-  color: z.string(),
-  stockCount: z.number().int().nonnegative(),
-  isAvailable: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-export type ProductVariant = z.infer<typeof productVariantSchema>;
+export { productVariantSchema, type ProductVariant } from "./public-product.js";
+import { productVariantSchema } from "./public-product.js";
 
 export const createVariantRequestSchema = z.object({
   size: z.string().trim().min(1).max(50),
@@ -442,20 +433,10 @@ export type TenantSettingsResponse = z.infer<typeof tenantSettingsResponseSchema
 
 // ---------- public site (storefront) ----------
 
-export const publicSiteProductSchema = z.object({
-  id: z.string().uuid(),
-  collectionId: z.string().uuid().nullable(),
-  name: z.string(),
-  description: z.string().nullable(),
-  priceCents: z.number().int().nonnegative(),
-  compareAtPriceCents: z.number().int().nonnegative().nullable(),
-  currency: z.string(),
-  imageUrl: z.string().nullable(),
-  variants: z.array(productVariantSchema),
-});
-export type PublicSiteProduct = z.infer<typeof publicSiteProductSchema>;
-
-import { siteThemeSchema, siteSectionSchema } from "./site-config.js";
+export { publicSiteProductSchema, type PublicSiteProduct } from "./public-product.js";
+import { publicSiteProductSchema } from "./public-product.js";
+import { siteThemeSchema, siteSectionSchema, storeTypeSchema } from "./site-config.js";
+import { publicFunnelSchema } from "./funnel-config.js";
 
 export const publicSiteSchema = z.object({
   tenant: z.object({
@@ -466,6 +447,13 @@ export const publicSiteSchema = z.object({
   theme: siteThemeSchema,
   sections: z.array(siteSectionSchema),
   productsGridEnabled: z.boolean(),
+  storeType: storeTypeSchema,
+  funnelProductId: z.string().uuid().nullable(),
+  // Populated only when storeType is "funnel" and the picked product's
+  // Funnel Mode page is published - null otherwise (unpicked product,
+  // unpublished product, or unpublished funnel), in which case the
+  // storefront falls back to rendering the catalog homepage.
+  funnel: publicFunnelSchema.nullable(),
   products: z.array(publicSiteProductSchema),
   collections: z.array(collectionSchema),
   // Public-safe subset only - never the CAPI/Events API tokens, which stay server-side.

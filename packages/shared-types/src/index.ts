@@ -647,6 +647,8 @@ export {
 export {
   templateIdSchema,
   type TemplateId,
+  storeTypeSchema,
+  type StoreType,
   fontChoiceSchema,
   type FontChoice,
   sitePaletteSchema,
@@ -713,6 +715,8 @@ export {
   type FunnelFaqSection,
   funnelOrderSectionSchema,
   type FunnelOrderSection,
+  funnelCountdownSectionSchema,
+  type FunnelCountdownSection,
   funnelSectionSchema,
   type FunnelSection,
   type FunnelSectionKind,

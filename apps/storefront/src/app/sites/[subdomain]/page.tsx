@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSite } from "../../../components/SiteProvider";
 import { useCart } from "../../../components/CartContext";
 import { StorefrontPreview } from "../../../components/storefront/StorefrontPreview";
+import { FunnelPageClient } from "../../../components/storefront/FunnelPageClient";
 import { MiniCart } from "../../../components/MiniCart";
 
 export default function ShopPage(): React.ReactElement {
@@ -23,6 +24,14 @@ export default function ShopPage(): React.ReactElement {
     } finally {
       setAddingId(null);
     }
+  }
+
+  // A "Funnel Store" renders its picked product's Funnel Mode page at the
+  // site root instead of the catalog homepage. Falls back to the catalog
+  // view below when the funnel isn't ready yet (no product picked, product
+  // unpublished, or funnel content unpublished) - see findPublishedSiteBySubdomain.
+  if (site.storeType === "funnel" && site.funnel) {
+    return <FunnelPageClient funnel={site.funnel} subdomain={site.tenant.subdomain} />;
   }
 
   return (

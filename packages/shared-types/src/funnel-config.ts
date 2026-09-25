@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicSiteProductSchema } from "./commerce.js";
+import { publicSiteProductSchema } from "./public-product.js";
 
 /**
  * Funnel Mode: a standalone, single-product landing page a merchant turns
@@ -121,6 +121,19 @@ export const funnelOrderSectionSchema = funnelSectionBaseSchema.extend({
 });
 export type FunnelOrderSection = z.infer<typeof funnelOrderSectionSchema>;
 
+/**
+ * An urgency timer (code-rendered) - counts down from durationMinutes,
+ * restarting per browser session rather than a fixed real deadline (matches
+ * the "resets for every new visitor" pattern of the direct-response funnel
+ * pages this section is modeled on). See CountdownTimer in FunnelPageClient.
+ */
+export const funnelCountdownSectionSchema = funnelSectionBaseSchema.extend({
+  kind: z.literal("funnel-countdown"),
+  headline: z.string().max(200),
+  durationMinutes: z.number().int().min(1).max(10080),
+});
+export type FunnelCountdownSection = z.infer<typeof funnelCountdownSectionSchema>;
+
 export const funnelSectionSchema = z.discriminatedUnion("kind", [
   funnelHeroSectionSchema,
   funnelStorySectionSchema,
@@ -132,6 +145,7 @@ export const funnelSectionSchema = z.discriminatedUnion("kind", [
   funnelGuaranteeSectionSchema,
   funnelFaqSectionSchema,
   funnelOrderSectionSchema,
+  funnelCountdownSectionSchema,
 ]);
 export type FunnelSection = z.infer<typeof funnelSectionSchema>;
 export type FunnelSectionKind = FunnelSection["kind"];
@@ -164,6 +178,7 @@ export const FUNNEL_SECTION_CATALOG: Array<{
   { kind: "funnel-guarantee", label: "Guarantee", description: "Trust and risk-reversal copy" },
   { kind: "funnel-faq", label: "FAQ", description: "Common questions" },
   { kind: "funnel-order", label: "Order Form", description: "Where the inline order form appears" },
+  { kind: "funnel-countdown", label: "Countdown Timer", description: "Urgency timer that counts down per visitor" },
 ];
 
 export function defaultFunnelSections(): FunnelSection[] {
