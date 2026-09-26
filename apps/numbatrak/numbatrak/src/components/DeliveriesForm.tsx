@@ -20,6 +20,7 @@ import { invalidateStoreCache, deliveriesStore } from "../stores/dataStore";
 import { PageLayout } from "./layout/PageLayout";
 import { useClientPagination } from "../hooks/useClientPagination";
 import { agentsForAssignment, filterStockHolders } from "../utils/agentFilters";
+import { ProductWithDetails } from "../types/product";
 
 export default function DeliveriesForm() {
   const { hasPermission } = usePermissions();
@@ -36,6 +37,11 @@ export default function DeliveriesForm() {
   
   const loading = deliveriesLoading || agentsLoading || productsLoading;
   const error = deliveriesError;
+
+  // useCachedProducts hits the same /details endpoint as fetchProductsWithDetails
+  // and narrows the result to the base Product type - the runtime objects still
+  // carry `variants` (see InventoryForm.tsx's identical cast).
+  const productsWithDetails = products as ProductWithDetails[];
   
   const [open, setOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
@@ -266,7 +272,7 @@ export default function DeliveriesForm() {
           onOpenChange={setWaybillOpen}
           organizationId={currentOrganization.id}
           agents={waybillAgents}
-          products={products}
+          products={productsWithDetails}
           onSuccess={async () => {
             if (currentOrganization) {
               invalidateStoreCache(
