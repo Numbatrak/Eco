@@ -33,10 +33,6 @@ export interface RolePermissions {
   users: Permission;
   staff: Permission;
   payroll: Permission;
-  attendance: Permission;
-  strikes: Permission;
-  stars: Permission;
-  leave: Permission;
   orderAssignment: Permission;
   mediaBuyers: Permission;
   trackingLinks: Permission;

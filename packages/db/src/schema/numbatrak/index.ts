@@ -27,10 +27,6 @@ export * from "./order-assignment.js";
 export * from "./activities.js";
 export * from "./staff.js";
 export * from "./payroll.js";
-export * from "./attendance.js";
-export * from "./strikes.js";
-export * from "./stars.js";
-export * from "./leave.js";
 export * from "./media-buyers.js";
 export * from "./crm.js";
 export * from "./invoices.js";
@@ -72,10 +68,6 @@ import { numbatrakOrderAssignmentSettings, numbatrakOrderAssignmentWeights } fro
 import { numbatrakActivities } from "./activities.js";
 import { numbatrakStaff, numbatrakStaffSubBrands } from "./staff.js";
 import { numbatrakPayStructures, numbatrakPayrollRuns, numbatrakPayrollLines } from "./payroll.js";
-import { numbatrakAttendanceSettings, numbatrakAttendanceEvents, numbatrakAttendanceRecords } from "./attendance.js";
-import { numbatrakStrikeSettings, numbatrakStrikes } from "./strikes.js";
-import { numbatrakStarSettings, numbatrakStarTiers, numbatrakStars } from "./stars.js";
-import { numbatrakLeaveSettings, numbatrakLeaveBalances, numbatrakLeaveRequests } from "./leave.js";
 import {
   numbatrakMediaBuyerSettings,
   numbatrakContractors,
@@ -140,17 +132,6 @@ export const numbatrakSchema = {
   numbatrakPayStructures,
   numbatrakPayrollRuns,
   numbatrakPayrollLines,
-  numbatrakAttendanceSettings,
-  numbatrakAttendanceEvents,
-  numbatrakAttendanceRecords,
-  numbatrakStrikeSettings,
-  numbatrakStrikes,
-  numbatrakStarSettings,
-  numbatrakStarTiers,
-  numbatrakStars,
-  numbatrakLeaveSettings,
-  numbatrakLeaveBalances,
-  numbatrakLeaveRequests,
   numbatrakMediaBuyerSettings,
   numbatrakContractors,
   numbatrakProductionBatches,

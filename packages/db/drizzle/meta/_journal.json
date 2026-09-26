@@ -155,6 +155,13 @@
       "when": 1790395957337,
       "tag": "0021_white_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790431755583,
+      "tag": "0022_brave_the_professor",
+      "breakpoints": true
     }
   ]
 }

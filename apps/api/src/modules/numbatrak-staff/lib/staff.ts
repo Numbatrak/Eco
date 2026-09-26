@@ -89,10 +89,9 @@ export type CallerStaffScope =
   | { all: false; memberRole: string | null; ownStaffId: string | null; staffIds: string[] };
 
 /**
- * Shared "who can this caller see/act on" resolution for Staff/Strikes/Leave
- * (and anywhere else the spec's "admin all, manager team, self own" rule
- * applies) - one source of truth for the reporting-hierarchy lookup so the
- * three modules can't drift out of sync on how "team" is computed.
+ * Shared "who can this caller see/act on" resolution for Staff (and anywhere
+ * else the spec's "admin all, manager team, self own" rule applies) - one
+ * source of truth for the reporting-hierarchy lookup.
  */
 export async function resolveCallerStaffScope(db: Queryable, organizationId: string, userId: string): Promise<CallerStaffScope> {
   const [membership] = await db

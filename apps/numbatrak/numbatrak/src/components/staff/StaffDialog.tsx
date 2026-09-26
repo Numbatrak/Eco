@@ -228,7 +228,7 @@ export function StaffDialog({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Drives &quot;managers see their team&quot; scoping for Staff, Strikes, and Leave.
+              Drives &quot;managers see their team&quot; scoping for Staff.
             </p>
           </div>
 
