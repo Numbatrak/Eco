@@ -151,6 +151,7 @@ export async function updateCustomerOrder(
   updates: Partial<{
     status: CustomerOrderStatus;
     notes: string | null;
+    state: string | null;
     delivery_fee: number | null;
     amount_paid: number | null;
     agent_id: number | null;
@@ -162,6 +163,7 @@ export async function updateCustomerOrder(
     body: {
       status: updates.status,
       notes: updates.notes,
+      state: updates.state,
       deliveryFee: updates.delivery_fee,
       amountPaid: updates.amount_paid,
       agentId: updates.agent_id,

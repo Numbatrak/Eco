@@ -48,6 +48,8 @@ export interface FormResponse {
 
   // EXTRACTED CONSTANTS (for easy querying and display)
   phone_number: string | null;
+  state: string | null;
+  delivery_address: string | null;
   package_name: string | null;
   offer_name?: string | null;
   funnel_name?: string | null;

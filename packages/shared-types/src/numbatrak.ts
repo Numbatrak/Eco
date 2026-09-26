@@ -304,6 +304,7 @@ export type CreateNumbatrakOrderRequest = z.infer<typeof createNumbatrakOrderReq
 export const updateNumbatrakOrderRequestSchema = z.object({
   status: numbatrakOrderStatusSchema.optional(),
   notes: z.string().nullable().optional(),
+  state: z.string().trim().nullable().optional(),
   deliveryFee: z.number().nonnegative().nullable().optional(),
   amountPaid: z.number().nonnegative().nullable().optional(),
   agentId: z.number().int().nullable().optional(),

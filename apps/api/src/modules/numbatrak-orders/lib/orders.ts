@@ -406,6 +406,7 @@ export async function updateOrder(
   const values: Partial<typeof numbatrakCustomerOrders.$inferInsert> = { updatedAt: new Date() };
   if (patch.status !== undefined) values.status = patch.status;
   if (stampedNotes !== undefined) values.notes = stampedNotes;
+  if (patch.state !== undefined) values.state = patch.state;
   if (patch.deliveryFee !== undefined) values.deliveryFee = patch.deliveryFee == null ? null : String(patch.deliveryFee);
   if (patch.amountPaid !== undefined) values.amountPaid = patch.amountPaid == null ? null : String(patch.amountPaid);
   if (patch.agentId !== undefined) values.agentId = patch.agentId;

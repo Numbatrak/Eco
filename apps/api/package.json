@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "create-admin-account": "tsx --env-file=.env src/cli/create-admin-account.ts",
-    "seed-admin": "tsx --env-file=.env src/cli/seed-admin-account.ts"
+    "seed-admin": "tsx --env-file=.env src/cli/seed-admin-account.ts",
+    "backfill-form-state": "tsx --env-file=.env src/cli/backfill-form-state-field.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1100.0",

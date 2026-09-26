@@ -15,6 +15,7 @@ import {
 } from "../ui/select";
 import { FormResponseWithItems } from "../../types/formResponse";
 import { Agent } from "../../types/agent";
+import { nigeriaStates } from "../../constants/nigeriaStates";
 import { agentsForAssignment } from "../../utils/agentFilters";
 import { FormFieldRenderer } from "./FormFieldRenderer";
 import { OrderStatusHistory } from "./OrderStatusHistory";
@@ -50,6 +51,7 @@ interface FormResponseDialogProps {
   onSave?: (updates: {
     status?: string;
     notes?: string;
+    state?: string | null;
     delivery_fee?: number | null;
     amount_paid?: number | null;
     agent_id?: number | null;
@@ -87,6 +89,7 @@ export function FormResponseDialog({
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<string>("new");
   const [notes, setNotes] = useState<string>("");
+  const [state, setState] = useState<string>("");
   const [deliveryFee, setDeliveryFee] = useState<string>("");
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [agentId, setAgentId] = useState<string>("");
@@ -100,6 +103,7 @@ export function FormResponseDialog({
     if (response) {
       setStatus(response.status);
       setNotes(response.notes || "");
+      setState(response.state || "");
       setDeliveryFee(
         response.delivery_fee != null && response.delivery_fee !== 0
           ? String(response.delivery_fee)
@@ -170,9 +174,13 @@ export function FormResponseDialog({
       );
 
     try {
+      const newState = state.trim() === "" ? null : state;
+      const stateChanged = newState !== (response.state ?? null);
+
       await onSave({
         status: status !== response.status ? status : undefined,
         notes: notes !== (response.notes || "") ? notes : undefined,
+        ...(stateChanged ? { state: newState } : {}),
         ...(deliveryFeeChanged ? { delivery_fee: deliveryFeeNum } : {}),
         ...(amountPaidChanged ? { amount_paid: amountPaidNum } : {}),
         ...(agentIdChanged ? { agent_id: newAgentId } : {}),
@@ -363,6 +371,42 @@ export function FormResponseDialog({
                   )}
                 </div>
               )}
+
+              <div className="dialog-form-field">
+                <Label htmlFor="order-state" className="dialog-field-label">
+                  State
+                </Label>
+                {mode === "edit" ? (
+                  <Select
+                    value={state || "none"}
+                    onValueChange={(v) => setState(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger id="order-state" className="mt-1 w-full max-w-none">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">No state set</span>
+                      </SelectItem>
+                      {nigeriaStates.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="mt-1 text-sm text-foreground">
+                    {response.state || "N/A"}
+                  </p>
+                )}
+                {!response.state && (
+                  <p className="dialog-field-hint mt-1">
+                    This order has no state/location on record — set one so
+                    delivery fees and location reporting work correctly.
+                  </p>
+                )}
+              </div>
 
               <div className="dialog-form-field">
                 <Label

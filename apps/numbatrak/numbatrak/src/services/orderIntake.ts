@@ -44,6 +44,7 @@ export type OrderIntakeListResult = {
 export type OrderIntakeUpdate = {
   status?: string;
   notes?: string;
+  state?: string | null;
   delivery_fee?: number | null;
   amount_paid?: number | null;
   agent_id?: number | null;
@@ -74,6 +75,7 @@ export async function updateOrderIntake(order: FormResponseWithItems, updates: O
   await updateCustomerOrder(orderId, {
     status: updates.status as never,
     notes: updates.notes,
+    state: updates.state,
     delivery_fee: updates.delivery_fee,
     amount_paid: updates.amount_paid,
     agent_id: updates.agent_id,

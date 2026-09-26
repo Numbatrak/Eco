@@ -178,7 +178,11 @@ export function FormResponseTableRow({
     response.phone_number || extractPhoneNumber(response.field_values) || null;
   const displayPackageName =
     response.package_name || extractPackageName(response.field_values) || null;
-  const displayLocation = extractLocation(response.field_values);
+  const displayLocation = extractLocation({
+    ...response.field_values,
+    state: response.field_values?.state ?? response.state ?? undefined,
+    delivery_address: response.field_values?.delivery_address ?? response.delivery_address ?? undefined,
+  });
 
   const netProfit = isCompletedOrder
     ? (response.profit ?? 0)

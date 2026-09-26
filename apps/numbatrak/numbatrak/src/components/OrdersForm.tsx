@@ -220,6 +220,7 @@ export default function OrdersForm() {
   const handleSave = async (updates: {
     status?: string;
     notes?: string;
+    state?: string | null;
     delivery_fee?: number | null;
     amount_paid?: number | null;
     agent_id?: number | null;
