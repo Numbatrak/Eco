@@ -7,6 +7,7 @@ import { createDelivery } from "./deliveries";
 export type WaybillIntakeLine = {
   agent_id: number;
   product_id: string;
+  variant_id?: string | null;
   quantity: number;
   cost: number;
   waybilling_fee?: number;
@@ -64,6 +65,7 @@ export async function intakeWaybill(input: {
   date: string;
   agent_id: number;
   product_id: string;
+  variant_id?: string | null;
   quantity: number;
   cost: number;
   waybilling_fee?: number;
@@ -88,6 +90,7 @@ export async function intakeWaybill(input: {
         {
           agentId: input.agent_id,
           productId: input.product_id,
+          variantId: input.variant_id ?? null,
           quantity: input.quantity,
           cost: input.cost,
           waybillingFee: input.waybilling_fee ?? 0,
@@ -124,6 +127,7 @@ export async function intakeWaybillBatch(input: {
       lines: input.lines.map((line) => ({
         agentId: line.agent_id,
         productId: line.product_id,
+        variantId: line.variant_id ?? null,
         quantity: line.quantity,
         cost: line.cost,
         waybillingFee: line.waybilling_fee ?? 0,

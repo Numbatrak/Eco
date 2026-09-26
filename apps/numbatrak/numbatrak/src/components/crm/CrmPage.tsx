@@ -160,7 +160,7 @@ export function CrmPage() {
   const [expandedCustomerId, setExpandedCustomerId] = useState<string | null>(null);
   const [mpProductId, setMpProductId] = useState("");
   const [mpAgentId, setMpAgentId] = useState("");
-  const [mpQuantity, setMpQuantity] = useState(1);
+  const [mpQuantity, setMpQuantity] = useState(0);
   const [mpAmount, setMpAmount] = useState(0);
   const [mpDeliveryCost, setMpDeliveryCost] = useState(0);
   const [mpSubmitting, setMpSubmitting] = useState(false);
@@ -169,7 +169,7 @@ export function CrmPage() {
     setExpandedCustomerId((cur) => (cur === customerId ? null : customerId));
     setMpProductId("");
     setMpAgentId("");
-    setMpQuantity(1);
+    setMpQuantity(0);
     setMpAmount(0);
     setMpDeliveryCost(0);
   }
@@ -188,7 +188,7 @@ export function CrmPage() {
       });
       setMpProductId("");
       setMpAgentId("");
-      setMpQuantity(1);
+      setMpQuantity(0);
       setMpAmount(0);
       setMpDeliveryCost(0);
       void load();
@@ -355,7 +355,7 @@ export function CrmPage() {
                                       </label>
                                       <label className="text-xs text-muted-foreground">
                                         Qty
-                                        <input type="text" inputMode="numeric" value={mpQuantity} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setMpQuantity(v === "" ? 1 : Number(v)); }} className="ml-2 w-14 px-2 py-1 text-sm border border-border rounded bg-background text-foreground" />
+                                        <input type="text" inputMode="numeric" value={mpQuantity || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setMpQuantity(v === "" ? 0 : Number(v)); }} className="ml-2 w-14 px-2 py-1 text-sm border border-border rounded bg-background text-foreground" />
                                       </label>
                                       <label className="text-xs text-muted-foreground">
                                         Amount

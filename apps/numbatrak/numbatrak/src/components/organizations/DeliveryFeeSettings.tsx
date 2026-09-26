@@ -15,16 +15,17 @@ interface DeliveryFeeSettingsProps {
 export function DeliveryFeeSettings({ organizationId }: DeliveryFeeSettingsProps) {
   const [rules, setRules] = useState<DeliveryFeeRule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [defaultFee, setDefaultFee] = useState("0");
+  const [defaultFee, setDefaultFee] = useState("");
   const [newState, setNewState] = useState("");
-  const [newFee, setNewFee] = useState("0");
+  const [newFee, setNewFee] = useState("");
 
   const load = async () => {
     setLoading(true);
     try {
       const data = await fetchDeliveryFeeRules();
       setRules(data);
-      setDefaultFee(String(data.find((r) => r.state === null)?.fee ?? 0));
+      const defaultRule = data.find((r) => r.state === null);
+      setDefaultFee(defaultRule ? String(defaultRule.fee) : "");
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ export function DeliveryFeeSettings({ organizationId }: DeliveryFeeSettingsProps
     if (!newState.trim()) return;
     await upsertDeliveryFeeRule(newState.trim(), Number(newFee) || 0);
     setNewState("");
-    setNewFee("0");
+    setNewFee("");
     void load();
   };
 

@@ -57,6 +57,12 @@ export const numbatrakStockMovements = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => numbatrakProducts.id, { onDelete: "restrict" }),
+    // Optional variant scoping, mirroring numbatrak_inventory_lots.variant_id
+    // above - null means "not tracked by variant" (product has none, or this
+    // movement predates variant-aware tracking), a specific variant means
+    // this movement's quantity is scoped to that variant's own pool, distinct
+    // from the product's other variants.
+    variantId: uuid("variant_id").references(() => numbatrakProductVariants.id, { onDelete: "set null" }),
     quantity: integer("quantity").notNull(),
     fromAgentId: bigint("from_agent_id", { mode: "number" }).references(() => numbatrakAgents.id, {
       onDelete: "set null",
@@ -85,6 +91,9 @@ export const numbatrakStockMovements = pgTable(
     index("numbatrak_stock_movements_from_idx").on(table.fromAgentId),
     index("numbatrak_stock_movements_org_idx").on(table.organizationId),
     index("numbatrak_stock_movements_product_idx").on(table.organizationId, table.productId, table.occurredAt),
+    index("numbatrak_stock_movements_variant_idx")
+      .on(table.organizationId, table.productId, table.variantId)
+      .where(sql`${table.variantId} IS NOT NULL`),
     index("numbatrak_stock_movements_to_idx").on(table.toAgentId),
     uniqueIndex("numbatrak_stock_movements_legacy_delivery_unique_idx")
       .on(table.legacyDeliveryId)

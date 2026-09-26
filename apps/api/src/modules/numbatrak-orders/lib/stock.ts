@@ -14,6 +14,7 @@ export async function createDeliveryMovement(
     organizationId: string;
     fromAgentId: number;
     productId: string;
+    variantId?: string | null;
     quantity: number;
     orderId: string;
     cost: number;
@@ -22,7 +23,7 @@ export async function createDeliveryMovement(
   if (input.quantity <= 0) {
     throw new Error("Quantity must be positive.");
   }
-  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId);
+  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId, input.variantId ?? null);
   if (onHand < input.quantity) {
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
@@ -31,6 +32,7 @@ export async function createDeliveryMovement(
     organizationId: input.organizationId,
     movementType: "deliver_to_customer",
     productId: input.productId,
+    variantId: input.variantId ?? null,
     quantity: input.quantity,
     fromAgentId: input.fromAgentId,
     orderId: input.orderId,
@@ -52,6 +54,7 @@ export async function createReplacementMovement(
     organizationId: string;
     fromAgentId: number;
     productId: string;
+    variantId?: string | null;
     quantity: number;
     orderId: string;
     cost: number;
@@ -60,7 +63,7 @@ export async function createReplacementMovement(
   if (input.quantity <= 0) {
     throw new Error("Quantity must be positive.");
   }
-  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId);
+  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId, input.variantId ?? null);
   if (onHand < input.quantity) {
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
@@ -69,6 +72,7 @@ export async function createReplacementMovement(
     organizationId: input.organizationId,
     movementType: "replacement",
     productId: input.productId,
+    variantId: input.variantId ?? null,
     quantity: input.quantity,
     fromAgentId: input.fromAgentId,
     orderId: input.orderId,
@@ -89,6 +93,7 @@ export async function createMorePurchaseMovement(
     organizationId: string;
     fromAgentId: number;
     productId: string;
+    variantId?: string | null;
     quantity: number;
     cost: number;
   },
@@ -96,7 +101,7 @@ export async function createMorePurchaseMovement(
   if (input.quantity <= 0) {
     throw new Error("Quantity must be positive.");
   }
-  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId);
+  const onHand = await getAgentProductOnHand(db, input.organizationId, input.fromAgentId, input.productId, input.variantId ?? null);
   if (onHand < input.quantity) {
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
@@ -105,6 +110,7 @@ export async function createMorePurchaseMovement(
     organizationId: input.organizationId,
     movementType: "more_purchase",
     productId: input.productId,
+    variantId: input.variantId ?? null,
     quantity: input.quantity,
     fromAgentId: input.fromAgentId,
     cost: String(input.cost),

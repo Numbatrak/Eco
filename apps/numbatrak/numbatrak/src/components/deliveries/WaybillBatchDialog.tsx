@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
-import { Product } from "../../types/product";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ProductWithDetails } from "../../types/product";
 import { Agent } from "../../types/agent";
 import { intakeWaybillBatch } from "../../services/waybillIntake";
+import { fetchStockGrid, buildOnHandMap, onHandKey } from "../../services/agentStock";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { BrandedDialogHero } from "../brand/BrandedDialogHero";
 import { Label } from "../ui/label";
@@ -20,6 +21,7 @@ import { Package, Plus } from "lucide-react";
 type Line = {
   to_agent_id: string;
   product_id: string;
+  variant_id: string;
   quantity: string;
   cost: string;
   fee: string;
@@ -28,9 +30,10 @@ type Line = {
 const emptyLine = (): Line => ({
   to_agent_id: "",
   product_id: "",
-  quantity: "1",
-  cost: "0",
-  fee: "0",
+  variant_id: "",
+  quantity: "",
+  cost: "",
+  fee: "",
 });
 
 interface WaybillBatchDialogProps {
@@ -38,7 +41,7 @@ interface WaybillBatchDialogProps {
   onOpenChange: (open: boolean) => void;
   organizationId: string;
   agents: Agent[];
-  products: Product[];
+  products: ProductWithDetails[];
   onSuccess?: () => void;
 }
 
@@ -57,6 +60,9 @@ export function WaybillBatchDialog({
   const [lines, setLines] = useState<Line[]>([emptyLine(), emptyLine()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hqOnHand, setHqOnHand] = useState<Map<number, Map<string, number>>>(new Map());
+
+  const warehouseAgent = useMemo(() => agents.find((a) => a.is_warehouse) ?? null, [agents]);
 
   useEffect(() => {
     if (open) {
@@ -64,13 +70,29 @@ export function WaybillBatchDialog({
       setLines([emptyLine(), emptyLine()]);
       setError(null);
       setSaving(false);
+      fetchStockGrid(organizationId)
+        .then(({ rows }) => setHqOnHand(buildOnHandMap(rows)))
+        .catch(() => setHqOnHand(new Map()));
     }
-  }, [open]);
+  }, [open, organizationId]);
 
   const addLine = () => setLines((x) => [...x, emptyLine()]);
 
   const updateLine = (i: number, patch: Partial<Line>) => {
     setLines((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  };
+
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+
+  const variantsForLine = (line: Line) => {
+    const product = productById.get(line.product_id);
+    if (!product?.allows_variants) return [];
+    return (product.variants ?? []).filter((v) => v.active !== false);
+  };
+
+  const hqOnHandForLine = (line: Line): number | null => {
+    if (!warehouseAgent || !line.product_id) return null;
+    return hqOnHand.get(warehouseAgent.id)?.get(onHandKey(line.product_id, line.variant_id || null)) ?? 0;
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -79,6 +101,7 @@ export function WaybillBatchDialog({
     const parsed: {
       to_agent_id: number;
       product_id: string;
+      variant_id: string | null;
       quantity: number;
       cost: number;
       fee: number;
@@ -90,9 +113,21 @@ export function WaybillBatchDialog({
         setError("Each line needs a valid quantity.");
         return;
       }
+      if (variantsForLine(l).length > 0 && !l.variant_id) {
+        setError(`Select a variant for ${productById.get(l.product_id)?.name ?? "a product"}.`);
+        return;
+      }
+      const onHand = hqOnHandForLine(l);
+      if (onHand != null && q > onHand) {
+        setError(
+          `Insufficient HQ warehouse stock for ${productById.get(l.product_id)?.name ?? "product"}: on hand ${onHand}, requested ${q}.`
+        );
+        return;
+      }
       parsed.push({
         to_agent_id: parseInt(l.to_agent_id, 10),
         product_id: l.product_id,
+        variant_id: l.variant_id || null,
         quantity: q,
         cost: parseFloat(l.cost) || 0,
         fee: parseFloat(l.fee) || 0,
@@ -110,6 +145,7 @@ export function WaybillBatchDialog({
         lines: parsed.map((l) => ({
           agent_id: l.to_agent_id,
           product_id: l.product_id,
+          variant_id: l.variant_id,
           quantity: l.quantity,
           cost: l.cost,
           waybilling_fee: l.fee,
@@ -204,7 +240,7 @@ export function WaybillBatchDialog({
                       <Select
                         value={line.product_id || undefined}
                         onValueChange={(value) =>
-                          updateLine(i, { product_id: value })
+                          updateLine(i, { product_id: value, variant_id: "" })
                         }
                       >
                         <SelectTrigger className="w-full max-w-none">
@@ -218,7 +254,39 @@ export function WaybillBatchDialog({
                           ))}
                         </SelectContent>
                       </Select>
+                      {(() => {
+                        const onHand = hqOnHandForLine(line);
+                        return onHand != null && (variantsForLine(line).length === 0 || line.variant_id) ? (
+                          <p className="text-xs text-muted-foreground">
+                            On hand at HQ:{" "}
+                            <span className="font-semibold text-foreground">{onHand}</span>
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
+
+                    {variantsForLine(line).length > 0 && (
+                      <div className="dialog-form-field space-y-2">
+                        <Label className="dialog-field-label">Variant *</Label>
+                        <Select
+                          value={line.variant_id || undefined}
+                          onValueChange={(value) =>
+                            updateLine(i, { variant_id: value })
+                          }
+                        >
+                          <SelectTrigger className="w-full max-w-none">
+                            <SelectValue placeholder="Select variant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {variantsForLine(line).map((v) => (
+                              <SelectItem key={v.id} value={v.id}>
+                                {v.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     <div className="dialog-form-field space-y-2">
                       <Label className="dialog-field-label">Quantity *</Label>

@@ -14,6 +14,8 @@ export interface StockMovement {
   organization_id: string;
   movement_type: StockMovementType;
   product_id: string;
+  variant_id: string | null;
+  variant_name: string | null;
   quantity: number;
   from_agent_id: number | null;
   to_agent_id: number | null;
@@ -45,9 +47,11 @@ export interface AgentStockOnHandRow {
   organization_id: string;
   agent_id: number;
   product_id: string;
+  variant_id: string | null;
   quantity_on_hand: number;
   agent_name?: string;
   product_name?: string;
+  variant_name?: string | null;
   is_warehouse?: boolean;
 }
 

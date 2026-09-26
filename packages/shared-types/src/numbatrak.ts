@@ -539,6 +539,7 @@ export type NumbatrakDelivery = z.infer<typeof numbatrakDeliverySchema>;
 const numbatrakDeliveryLineInputSchema = z.object({
   agentId: z.number().int().nullable().optional(),
   productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable().optional(),
   quantity: z.number().int().positive(),
   cost: z.number().nonnegative(),
   waybillingFee: z.number().nonnegative().optional(),
@@ -1202,6 +1203,8 @@ export const numbatrakStockMovementSchema = z.object({
   movementType: numbatrakStockMovementTypeSchema,
   productId: z.string().uuid(),
   productName: z.string().nullable(),
+  variantId: z.string().uuid().nullable(),
+  variantName: z.string().nullable(),
   quantity: z.number().int(),
   fromAgentId: z.number().int().nullable(),
   fromAgentName: z.string().nullable(),
@@ -1223,6 +1226,7 @@ export const createNumbatrakTransferMovementRequestSchema = z.object({
   fromAgentId: z.number().int(),
   toAgentId: z.number().int(),
   productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable().optional(),
   quantity: z.number().int().positive(),
   notes: z.string().trim().min(1),
   fee: z.number().nonnegative().optional(),
@@ -1233,6 +1237,7 @@ export const createNumbatrakShrinkageMovementRequestSchema = z.object({
   movementType: numbatrakShrinkageMovementTypeSchema,
   fromAgentId: z.number().int(),
   productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable().optional(),
   quantity: z.number().int().positive(),
   notes: z.string().trim().min(1),
 });
@@ -1244,6 +1249,8 @@ export const numbatrakAgentStockOnHandRowSchema = z.object({
   isWarehouse: z.boolean(),
   productId: z.string().uuid(),
   productName: z.string(),
+  variantId: z.string().uuid().nullable(),
+  variantName: z.string().nullable(),
   quantityOnHand: z.number(),
 });
 export type NumbatrakAgentStockOnHandRow = z.infer<typeof numbatrakAgentStockOnHandRowSchema>;

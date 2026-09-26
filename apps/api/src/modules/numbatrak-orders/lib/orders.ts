@@ -396,6 +396,7 @@ export async function updateOrder(
         organizationId,
         fromAgentId: agentId,
         productId: item.productId,
+        variantId: item.variantId,
         quantity: item.quantity,
         orderId,
         cost: Number(item.unitCostAtSubmission),

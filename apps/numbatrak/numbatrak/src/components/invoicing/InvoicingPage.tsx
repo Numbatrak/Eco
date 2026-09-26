@@ -42,7 +42,7 @@ export function InvoicingPage() {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState<{ name: string; quantity: number; unitPrice: number }[]>([
-    { name: "", quantity: 1, unitPrice: 0 },
+    { name: "", quantity: 0, unitPrice: 0 },
   ]);
 
   const load = useCallback(async () => {
@@ -78,7 +78,7 @@ export function InvoicingPage() {
       setCustomerAddress("");
       setDeliveryFee(0);
       setNotes("");
-      setLineItems([{ name: "", quantity: 1, unitPrice: 0 }]);
+      setLineItems([{ name: "", quantity: 0, unitPrice: 0 }]);
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed to create invoice");
@@ -121,7 +121,7 @@ export function InvoicingPage() {
   }
 
   function addLineItem() {
-    setLineItems([...lineItems, { name: "", quantity: 1, unitPrice: 0 }]);
+    setLineItems([...lineItems, { name: "", quantity: 0, unitPrice: 0 }]);
   }
 
   function updateLineItem(idx: number, field: string, value: string | number) {
@@ -160,8 +160,8 @@ export function InvoicingPage() {
               {lineItems.map((item, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <input placeholder="Item name" value={item.name} onChange={(e) => updateLineItem(idx, "name", e.target.value)} className="border rounded px-2 py-1 text-sm flex-1 bg-background" />
-                  <input type="text" inputMode="numeric" placeholder="Qty" value={item.quantity} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "quantity", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-20 bg-background" />
-                  <input type="text" inputMode="numeric" placeholder="Price" value={item.unitPrice} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "unitPrice", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-28 bg-background" />
+                  <input type="text" inputMode="numeric" placeholder="Qty" value={item.quantity || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "quantity", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-20 bg-background" />
+                  <input type="text" inputMode="numeric" placeholder="Price" value={item.unitPrice || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); updateLineItem(idx, "unitPrice", v === "" ? 0 : Number(v)); }} className="border rounded px-2 py-1 text-sm w-28 bg-background" />
                   {lineItems.length > 1 && (
                     <button onClick={() => removeLineItem(idx)} className="text-red-500 text-sm">Remove</button>
                   )}
@@ -171,7 +171,7 @@ export function InvoicingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input type="text" inputMode="numeric" placeholder="Delivery Fee" value={deliveryFee} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setDeliveryFee(v === "" ? 0 : Number(v)); }} className="border rounded px-3 py-2 text-sm bg-background" />
+              <input type="text" inputMode="numeric" placeholder="Delivery Fee" value={deliveryFee || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setDeliveryFee(v === "" ? 0 : Number(v)); }} className="border rounded px-3 py-2 text-sm bg-background" />
               <input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="border rounded px-3 py-2 text-sm bg-background" />
             </div>
 

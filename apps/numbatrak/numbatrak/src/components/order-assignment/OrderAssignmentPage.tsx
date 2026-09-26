@@ -56,7 +56,7 @@ export function OrderAssignmentPage() {
   };
 
   const handleAddWeight = async () => {
-    if (!addUserId) return;
+    if (!addUserId || addPercentage <= 0) return;
     await upsertOrderAssignmentWeight(addUserId, addPercentage);
     setAddUserId("");
     setAddPercentage(0);
@@ -199,7 +199,7 @@ export function OrderAssignmentPage() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={addPercentage}
+                      value={addPercentage || ""}
                       onChange={(e) => {
                         const v = sanitizeIntegerInput(e.target.value);
                         setAddPercentage(v === "" ? 0 : Number(v));

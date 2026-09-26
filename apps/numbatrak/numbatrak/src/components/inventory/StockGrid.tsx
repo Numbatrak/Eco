@@ -1,14 +1,23 @@
 import { useMemo } from "react";
 import { AgentStockOnHandRow } from "../../types/stockMovement";
 import { Agent } from "../../types/agent";
-import { Product } from "../../types/product";
-import { buildOnHandMap } from "../../services/agentStock";
+import { ProductWithDetails } from "../../types/product";
+import { buildOnHandMap, onHandKey } from "../../services/agentStock";
 import { LoadingState } from "../ui/LoadingState";
+
+interface GridRow {
+  productId: string;
+  productName: string;
+  variantId: string | null;
+  variantName: string | null;
+  lowStockThreshold: number | null | undefined;
+  subBrand: string | null | undefined;
+}
 
 interface StockGridProps {
   onHandRows: AgentStockOnHandRow[];
   agents: Agent[];
-  products: Product[];
+  products: ProductWithDetails[];
   loading?: boolean;
   filterAgentId?: number | null;
   filterProductId?: string | null;
@@ -48,14 +57,47 @@ export function StockGrid({
     return list;
   }, [agents, filterAgentId, filterLocation]);
 
-  const gridProducts = useMemo(() => {
-    const list = products
+  // One row per (product, variant) - a product with variants gets one row
+  // per active variant instead of a single generalized row, so each
+  // variant's on-hand is tracked and shown independently.
+  const gridRows = useMemo(() => {
+    const filteredProducts = products
       .filter((p) => p.active !== false)
-      .filter((p) => !filterSubBrand || p.sub_brand === filterSubBrand);
-    if (filterProductId) {
-      return list.filter((p) => p.id === filterProductId);
+      .filter((p) => !filterSubBrand || p.sub_brand === filterSubBrand)
+      .filter((p) => !filterProductId || p.id === filterProductId);
+
+    const rows: GridRow[] = [];
+    for (const product of filteredProducts) {
+      const variants = product.allows_variants
+        ? (product.variants ?? []).filter((v) => v.active !== false)
+        : [];
+      if (variants.length > 0) {
+        for (const variant of variants) {
+          rows.push({
+            productId: product.id,
+            productName: product.name,
+            variantId: variant.id,
+            variantName: variant.name,
+            lowStockThreshold: product.low_stock_threshold,
+            subBrand: product.sub_brand,
+          });
+        }
+      } else {
+        rows.push({
+          productId: product.id,
+          productName: product.name,
+          variantId: null,
+          variantName: null,
+          lowStockThreshold: product.low_stock_threshold,
+          subBrand: product.sub_brand,
+        });
+      }
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name));
+    return rows.sort((a, b) => {
+      const byProduct = a.productName.localeCompare(b.productName);
+      if (byProduct !== 0) return byProduct;
+      return (a.variantName ?? "").localeCompare(b.variantName ?? "");
+    });
   }, [products, filterProductId, filterSubBrand]);
 
   const onHandMap = useMemo(() => buildOnHandMap(onHandRows), [onHandRows]);
@@ -79,7 +121,7 @@ export function StockGrid({
     );
   }
 
-  if (!holderAgents.length || !gridProducts.length) {
+  if (!holderAgents.length || !gridRows.length) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-muted-foreground text-sm">
         Add agents and products, then record waybills or movements to populate the
@@ -88,14 +130,13 @@ export function StockGrid({
     );
   }
 
-  const getQty = (agentId: number, productId: string) =>
-    onHandMap.get(agentId)?.get(productId) ?? 0;
+  const getQty = (agentId: number, productId: string, variantId: string | null) =>
+    onHandMap.get(agentId)?.get(onHandKey(productId, variantId)) ?? 0;
 
-  const isLowStock = (agentId: number, productId: string, qty: number) => {
-    const productThreshold = products.find((p) => p.id === productId)?.low_stock_threshold;
-    const threshold = productThreshold ?? defaultLowStockThreshold;
-    if (threshold == null || threshold <= 0) return false;
-    return qty <= threshold;
+  const isLowStock = (threshold: number | null | undefined, qty: number) => {
+    const effectiveThreshold = threshold ?? defaultLowStockThreshold;
+    if (effectiveThreshold == null || effectiveThreshold <= 0) return false;
+    return qty <= effectiveThreshold;
   };
 
   return (
@@ -126,17 +167,22 @@ export function StockGrid({
             </tr>
           </thead>
           <tbody>
-            {gridProducts.map((product) => (
+            {gridRows.map((row) => (
               <tr
-                key={product.id}
+                key={`${row.productId}:${row.variantId ?? ""}`}
                 className="border-b border-border/80 hover:bg-muted/20"
               >
                 <td className="p-3 font-medium text-foreground sticky left-0 bg-card z-[1]">
-                  {product.name}
+                  {row.productName}
+                  {row.variantName && (
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {row.variantName}
+                    </span>
+                  )}
                 </td>
                 {holderAgents.map((agent) => {
-                  const qty = getQty(agent.id, product.id);
-                  const low = isLowStock(agent.id, product.id, qty);
+                  const qty = getQty(agent.id, row.productId, row.variantId);
+                  const low = isLowStock(row.lowStockThreshold, qty);
                   return (
                     <td
                       key={agent.id}
@@ -147,11 +193,7 @@ export function StockGrid({
                             ? "text-foreground font-medium"
                             : "text-muted-foreground"
                       }`}
-                      title={
-                        low
-                          ? `Low stock (threshold: ${product.low_stock_threshold})`
-                          : undefined
-                      }
+                      title={low ? `Low stock (threshold: ${row.lowStockThreshold})` : undefined}
                     >
                       {qty > 0 ? qty : "—"}
                     </td>

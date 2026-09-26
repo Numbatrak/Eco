@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import {
   numbatrakAgents,
   numbatrakProducts,
+  numbatrakProductVariants,
   numbatrakStockMovements,
   numbatrakUnifiedExpenses,
   user,
@@ -56,11 +57,23 @@ async function attachNames(db: Database, rows: StockMovementRow[]): Promise<Numb
     for (const u of users) userNames.set(u.id, u.name);
   }
 
+  const variantIds = [...new Set(rows.map((r) => r.variantId).filter((id): id is string => id != null))];
+  const variantNames = new Map<string, string>();
+  if (variantIds.length > 0) {
+    const variants = await db
+      .select({ id: numbatrakProductVariants.id, name: numbatrakProductVariants.name })
+      .from(numbatrakProductVariants)
+      .where(inArray(numbatrakProductVariants.id, variantIds));
+    for (const v of variants) variantNames.set(v.id, v.name);
+  }
+
   return rows.map((row) => ({
     id: row.id,
     movementType: row.movementType as NumbatrakStockMovement["movementType"],
     productId: row.productId,
     productName: productNames.get(row.productId) ?? null,
+    variantId: row.variantId,
+    variantName: row.variantId != null ? (variantNames.get(row.variantId) ?? null) : null,
     quantity: row.quantity,
     fromAgentId: row.fromAgentId,
     fromAgentName: row.fromAgentId != null ? (agentNames.get(row.fromAgentId) ?? null) : null,
@@ -101,8 +114,9 @@ export async function getStockGrid(
 
   const agentIds = [...new Set(cells.map((c) => c.agentId))];
   const productIds = [...new Set(cells.map((c) => c.productId))];
+  const variantIds = [...new Set(cells.map((c) => c.variantId).filter((id): id is string => id != null))];
 
-  const [agents, products] = await Promise.all([
+  const [agents, products, variants] = await Promise.all([
     db
       .select({
         id: numbatrakAgents.id,
@@ -121,10 +135,17 @@ export async function getStockGrid(
       })
       .from(numbatrakProducts)
       .where(and(eq(numbatrakProducts.organizationId, organizationId), inArray(numbatrakProducts.id, productIds))),
+    variantIds.length > 0
+      ? db
+          .select({ id: numbatrakProductVariants.id, name: numbatrakProductVariants.name })
+          .from(numbatrakProductVariants)
+          .where(inArray(numbatrakProductVariants.id, variantIds))
+      : Promise.resolve([]),
   ]);
 
   const agentById = new Map(agents.map((a) => [a.id, a]));
   const productById = new Map(products.map((p) => [p.id, p]));
+  const variantById = new Map(variants.map((v) => [v.id, v]));
 
   // Cost-of-inventory is summed across every agent's holdings regardless of
   // the grid's own product/agent/subBrand/location filters - it's a whole-org
@@ -154,6 +175,8 @@ export async function getStockGrid(
       isWarehouse: agentById.get(c.agentId)!.isWarehouse,
       productId: c.productId,
       productName: productById.get(c.productId)!.name,
+      variantId: c.variantId,
+      variantName: c.variantId != null ? (variantById.get(c.variantId)?.name ?? null) : null,
       quantityOnHand: c.quantityOnHand,
     })),
     costOfInventory: costOfInventory.toFixed(2),
@@ -219,7 +242,7 @@ export async function createTransfer(
   if (input.fromAgentId === input.toAgentId) {
     throw new Error("Source and destination agents must differ.");
   }
-  const onHand = await getAgentProductOnHand(db, organizationId, input.fromAgentId, input.productId);
+  const onHand = await getAgentProductOnHand(db, organizationId, input.fromAgentId, input.productId, input.variantId ?? null);
   if (onHand < input.quantity) {
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
@@ -231,6 +254,7 @@ export async function createTransfer(
       organizationId,
       movementType: "transfer",
       productId: input.productId,
+      variantId: input.variantId ?? null,
       quantity: input.quantity,
       fromAgentId: input.fromAgentId,
       toAgentId: input.toAgentId,
@@ -270,7 +294,7 @@ export async function createShrinkage(
   input: CreateNumbatrakShrinkageMovementRequest,
   recordedByUserId: string | null,
 ): Promise<NumbatrakStockMovement> {
-  const onHand = await getAgentProductOnHand(db, organizationId, input.fromAgentId, input.productId);
+  const onHand = await getAgentProductOnHand(db, organizationId, input.fromAgentId, input.productId, input.variantId ?? null);
   if (onHand < input.quantity) {
     throw new Error(`Insufficient stock. On hand: ${onHand}, requested: ${input.quantity}`);
   }
@@ -281,6 +305,7 @@ export async function createShrinkage(
       organizationId,
       movementType: input.movementType,
       productId: input.productId,
+      variantId: input.variantId ?? null,
       quantity: input.quantity,
       fromAgentId: input.fromAgentId,
       notes: input.notes,

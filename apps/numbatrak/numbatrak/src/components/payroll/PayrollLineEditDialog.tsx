@@ -33,7 +33,7 @@ interface PayrollLineEditDialogProps {
 export function PayrollLineEditDialog({ open, onOpenChange, line, saving, error, onSubmit }: PayrollLineEditDialogProps) {
   const [overrideBase, setOverrideBase] = useState("");
   const [overrideCommission, setOverrideCommission] = useState("");
-  const [adjustment, setAdjustment] = useState("0");
+  const [adjustment, setAdjustment] = useState("");
   const [adjustmentNote, setAdjustmentNote] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export function PayrollLineEditDialog({ open, onOpenChange, line, saving, error,
     setLocalError(null);
     setOverrideBase(line.override_base_salary != null ? String(line.override_base_salary) : "");
     setOverrideCommission(line.override_commission != null ? String(line.override_commission) : "");
-    setAdjustment(String(line.manual_adjustment ?? 0));
+    setAdjustment(line.manual_adjustment ? String(line.manual_adjustment) : "");
     setAdjustmentNote(line.manual_adjustment_note ?? "");
   }, [open, line]);
 

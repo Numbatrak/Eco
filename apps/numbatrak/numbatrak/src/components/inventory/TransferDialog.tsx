@@ -14,15 +14,17 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Agent } from "../../types/agent";
-import { Product } from "../../types/product";
+import { ProductWithDetails } from "../../types/product";
 import { ArrowRightLeft, X, Check } from "lucide-react";
 import { filterStockHolders } from "../../utils/agentFilters";
 import { sanitizeDecimalInput, sanitizeIntegerInput } from "../../utils/numericInput";
+import { onHandKey } from "../../services/agentStock";
 
 export type TransferFormValues = {
   from_agent_id: number;
   to_agent_id: number;
   product_id: string;
+  variant_id: string | null;
   quantity: number;
   notes: string;
   fee: number;
@@ -32,7 +34,7 @@ interface TransferDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agents: Agent[];
-  products: Product[];
+  products: ProductWithDetails[];
   onHandByAgentProduct: Map<number, Map<string, number>>;
   error: string | null;
   saving: boolean;
@@ -53,17 +55,23 @@ export function TransferDialog({
   const [fromAgentId, setFromAgentId] = useState("");
   const [toAgentId, setToAgentId] = useState("");
   const [productId, setProductId] = useState("");
-  const [quantity, setQuantity] = useState("1");
+  const [variantId, setVariantId] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const [fee, setFee] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const holders = useMemo(() => filterStockHolders(agents), [agents]);
   const activeProducts = useMemo(() => products.filter((p) => p.active !== false), [products]);
+  const selectedProduct = useMemo(() => activeProducts.find((p) => p.id === productId) ?? null, [activeProducts, productId]);
+  const variants = useMemo(
+    () => (selectedProduct?.allows_variants ? (selectedProduct.variants ?? []).filter((v) => v.active !== false) : []),
+    [selectedProduct]
+  );
 
   const availableQuantity =
     fromAgentId && productId
-      ? onHandByAgentProduct.get(Number(fromAgentId))?.get(productId) ?? 0
+      ? onHandByAgentProduct.get(Number(fromAgentId))?.get(onHandKey(productId, variantId || null)) ?? 0
       : 0;
 
   useEffect(() => {
@@ -71,11 +79,16 @@ export function TransferDialog({
     setFromAgentId("");
     setToAgentId("");
     setProductId(activeProducts[0]?.id ?? "");
-    setQuantity("1");
+    setVariantId("");
+    setQuantity("");
     setNotes("");
     setFee("");
     setLocalError(null);
   }, [open, activeProducts]);
+
+  useEffect(() => {
+    setVariantId("");
+  }, [productId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,6 +101,10 @@ export function TransferDialog({
     }
     if (fromAgentId === toAgentId) {
       setLocalError("Source and destination must differ.");
+      return;
+    }
+    if (variants.length > 0 && !variantId) {
+      setLocalError("Select a variant.");
       return;
     }
     if (!Number.isFinite(qty) || qty <= 0) {
@@ -108,6 +125,7 @@ export function TransferDialog({
         from_agent_id: Number(fromAgentId),
         to_agent_id: Number(toAgentId),
         product_id: productId,
+        variant_id: variantId || null,
         quantity: qty,
         notes: notes.trim(),
         fee: parseFloat(fee) || 0,
@@ -200,12 +218,34 @@ export function TransferDialog({
               </Select>
             </div>
 
+            {variants.length > 0 && (
+              <div className="dialog-form-field space-y-2">
+                <Label className="dialog-field-label">Variant *</Label>
+                <Select
+                  value={variantId || "none"}
+                  onValueChange={(v) => setVariantId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select variant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Select variant</SelectItem>
+                    {variants.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="dialog-form-field space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="transfer-qty" className="dialog-field-label">
                   Quantity *
                 </Label>
-                {fromAgentId && productId && (
+                {fromAgentId && productId && (variants.length === 0 || variantId) && (
                   <span className="text-xs text-muted-foreground">
                     On hand:{" "}
                     <span className="font-semibold text-primary">

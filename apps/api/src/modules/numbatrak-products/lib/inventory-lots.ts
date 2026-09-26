@@ -30,6 +30,7 @@ export async function receiveStock(
     organizationId,
     movementType: "adjust",
     productId,
+    variantId: input.variantId ?? null,
     quantity: input.quantityRemaining,
     toAgentId: warehouse.id,
     cost: String(input.unitCost * input.quantityRemaining),

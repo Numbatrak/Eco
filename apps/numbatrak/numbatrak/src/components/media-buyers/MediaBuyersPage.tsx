@@ -97,7 +97,7 @@ export function MediaBuyersPage() {
 
   // --- Add batch form state ---
   const [batchType, setBatchType] = useState("voiceover");
-  const [batchCount, setBatchCount] = useState(1);
+  const [batchCount, setBatchCount] = useState(0);
   const [batchBrand, setBatchBrand] = useState("");
 
   // --- Add spend form state ---
@@ -182,10 +182,11 @@ export function MediaBuyersPage() {
                     <option value="sound">Sound</option>
                     <option value="other">Other</option>
                   </select>
-                  <input type="text" inputMode="numeric" placeholder="Videos" value={batchCount} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setBatchCount(v === "" ? 0 : Number(v)); }} className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
+                  <input type="text" inputMode="numeric" placeholder="Videos" value={batchCount || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setBatchCount(v === "" ? 0 : Number(v)); }} className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" placeholder="Brand" value={batchBrand} onChange={(e) => setBatchBrand(e.target.value)} className="w-32 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <button
                     onClick={async () => {
+                      if (batchCount < 1) return;
                       await createBatch({ creativeType: batchType, videoCount: batchCount, brand: batchBrand || null });
                       void load();
                     }}

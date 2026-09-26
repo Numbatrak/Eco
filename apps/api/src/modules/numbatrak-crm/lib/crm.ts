@@ -639,7 +639,7 @@ async function applyComplaintResolutionSideEffects(
     throw new Error("Resolving as a replacement requires selecting which product is being replaced.");
   }
   const [item] = await db
-    .select({ unitCostAtSubmission: numbatrakCustomerOrderItems.unitCostAtSubmission })
+    .select({ unitCostAtSubmission: numbatrakCustomerOrderItems.unitCostAtSubmission, variantId: numbatrakCustomerOrderItems.variantId })
     .from(numbatrakCustomerOrderItems)
     .where(
       and(
@@ -659,6 +659,7 @@ async function applyComplaintResolutionSideEffects(
       organizationId,
       fromAgentId: order.agentId,
       productId: body.productId,
+      variantId: item.variantId,
       quantity: 1,
       orderId: order.id,
       cost: unitCost,

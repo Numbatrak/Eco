@@ -5,18 +5,20 @@
 // (waybill_to_agent / transfer / adjust / damaged / missing writers) - kept
 // here rather than forked into either module.
 import { sql } from "drizzle-orm";
-import { numbatrakStockMovements, type Database } from "@platform/db";
+import { numbatrakStockMovements, type Database, type Queryable } from "@platform/db";
 
 export async function getAgentProductOnHand(
-  db: Database,
+  db: Queryable,
   organizationId: string,
   agentId: number,
   productId: string,
+  variantId: string | null = null,
 ): Promise<number> {
   const rows = await db.execute<{ on_hand: string | null }>(sql`
     SELECT COALESCE(SUM(
       CASE
         WHEN movement_type = 'waybill_to_agent' AND to_agent_id = ${agentId} THEN quantity
+        WHEN movement_type = 'waybill_to_agent' AND from_agent_id = ${agentId} THEN -quantity
         WHEN movement_type = 'deliver_to_customer' AND from_agent_id = ${agentId} THEN -quantity
         WHEN movement_type = 'return_to_lagos' AND from_agent_id = ${agentId} THEN -quantity
         WHEN movement_type = 'transfer' AND to_agent_id = ${agentId} THEN quantity
@@ -30,6 +32,7 @@ export async function getAgentProductOnHand(
     FROM ${numbatrakStockMovements}
     WHERE organization_id = ${organizationId}
       AND product_id = ${productId}
+      AND variant_id IS NOT DISTINCT FROM ${variantId}
       AND (from_agent_id = ${agentId} OR to_agent_id = ${agentId})
   `);
   const row = (rows as unknown as { on_hand: string | null }[])[0];
@@ -47,17 +50,17 @@ export async function getAgentProductOnHand(
 export async function getOrgStockGrid(
   db: Database,
   organizationId: string,
-): Promise<{ agentId: number; productId: string; quantityOnHand: number }[]> {
+): Promise<{ agentId: number; productId: string; variantId: string | null; quantityOnHand: number }[]> {
   // agent_id/product_id are raw driver values here (no Drizzle bigint-mode
   // coercion applies to db.execute results the way it does for .select()) -
   // to_agent_id/from_agent_id are `bigint(mode: "number")` columns, so the
   // driver returns them as strings; must Number()-convert or callers that
   // Map-key against Drizzle-selected (already-numeric) agent ids will never
   // match.
-  const rows = await db.execute<{ agent_id: string; product_id: string; on_hand: string | null }>(sql`
-    SELECT agent_id, product_id, SUM(delta) AS on_hand
+  const rows = await db.execute<{ agent_id: string; product_id: string; variant_id: string | null; on_hand: string | null }>(sql`
+    SELECT agent_id, product_id, variant_id, SUM(delta) AS on_hand
     FROM (
-      SELECT to_agent_id AS agent_id, product_id,
+      SELECT to_agent_id AS agent_id, product_id, variant_id,
         CASE
           WHEN movement_type IN ('waybill_to_agent', 'transfer', 'adjust') THEN quantity
           ELSE 0
@@ -67,9 +70,9 @@ export async function getOrgStockGrid(
 
       UNION ALL
 
-      SELECT from_agent_id AS agent_id, product_id,
+      SELECT from_agent_id AS agent_id, product_id, variant_id,
         CASE
-          WHEN movement_type IN ('deliver_to_customer', 'return_to_lagos', 'transfer', 'damaged', 'missing') THEN -quantity
+          WHEN movement_type IN ('waybill_to_agent', 'deliver_to_customer', 'return_to_lagos', 'transfer', 'damaged', 'missing') THEN -quantity
           WHEN movement_type = 'adjust' AND to_agent_id IS NULL THEN -quantity
           WHEN movement_type = 'adjust' THEN quantity
           ELSE 0
@@ -77,11 +80,14 @@ export async function getOrgStockGrid(
       FROM ${numbatrakStockMovements}
       WHERE organization_id = ${organizationId} AND from_agent_id IS NOT NULL
     ) AS contributions
-    GROUP BY agent_id, product_id
+    GROUP BY agent_id, product_id, variant_id
   `);
-  return (rows as unknown as { agent_id: string; product_id: string; on_hand: string | null }[]).map((r) => ({
+  return (
+    rows as unknown as { agent_id: string; product_id: string; variant_id: string | null; on_hand: string | null }[]
+  ).map((r) => ({
     agentId: Number(r.agent_id),
     productId: r.product_id,
+    variantId: r.variant_id,
     quantityOnHand: Number(r.on_hand ?? 0),
   }));
 }

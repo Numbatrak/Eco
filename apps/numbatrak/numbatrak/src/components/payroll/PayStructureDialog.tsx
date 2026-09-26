@@ -51,25 +51,25 @@ export function PayStructureDialog({
   const [staffId, setStaffId] = useState("");
 
   const [baseSalaryEnabled, setBaseSalaryEnabled] = useState(false);
-  const [baseSalaryAmount, setBaseSalaryAmount] = useState("0");
+  const [baseSalaryAmount, setBaseSalaryAmount] = useState("");
 
   const [commissionEnabled, setCommissionEnabled] = useState(false);
   const [commissionBasis, setCommissionBasis] = useState<"flat_per_order" | "percentage_of_sale">("flat_per_order");
-  const [commissionRate, setCommissionRate] = useState("0");
+  const [commissionRate, setCommissionRate] = useState("");
   const [commissionGateEnabled, setCommissionGateEnabled] = useState(false);
-  const [commissionGateThresholdPercent, setCommissionGateThresholdPercent] = useState("0");
+  const [commissionGateThresholdPercent, setCommissionGateThresholdPercent] = useState("");
 
   const [upsellBonusEnabled, setUpsellBonusEnabled] = useState(false);
-  const [upsellBonusAmount, setUpsellBonusAmount] = useState("0");
+  const [upsellBonusAmount, setUpsellBonusAmount] = useState("");
 
   const [sotmBonusEnabled, setSotmBonusEnabled] = useState(false);
-  const [sotmBonusAmount, setSotmBonusAmount] = useState("0");
+  const [sotmBonusAmount, setSotmBonusAmount] = useState("");
 
   const [managerBonusEnabled, setManagerBonusEnabled] = useState(false);
-  const [managerBonusAmount, setManagerBonusAmount] = useState("0");
+  const [managerBonusAmount, setManagerBonusAmount] = useState("");
   const [managerGateEnabled, setManagerGateEnabled] = useState(false);
-  const [managerGateTeamRatioPercent, setManagerGateTeamRatioPercent] = useState("50");
-  const [managerGateKpiThresholdPercent, setManagerGateKpiThresholdPercent] = useState("0");
+  const [managerGateTeamRatioPercent, setManagerGateTeamRatioPercent] = useState("");
+  const [managerGateKpiThresholdPercent, setManagerGateKpiThresholdPercent] = useState("");
 
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -101,21 +101,21 @@ export function PayStructureDialog({
       setRole("CRS");
       setStaffId("");
       setBaseSalaryEnabled(false);
-      setBaseSalaryAmount("0");
+      setBaseSalaryAmount("");
       setCommissionEnabled(false);
       setCommissionBasis("flat_per_order");
-      setCommissionRate("0");
+      setCommissionRate("");
       setCommissionGateEnabled(false);
-      setCommissionGateThresholdPercent("0");
+      setCommissionGateThresholdPercent("");
       setUpsellBonusEnabled(false);
-      setUpsellBonusAmount("0");
+      setUpsellBonusAmount("");
       setSotmBonusEnabled(false);
-      setSotmBonusAmount("0");
+      setSotmBonusAmount("");
       setManagerBonusEnabled(false);
-      setManagerBonusAmount("0");
+      setManagerBonusAmount("");
       setManagerGateEnabled(false);
-      setManagerGateTeamRatioPercent("50");
-      setManagerGateKpiThresholdPercent("0");
+      setManagerGateTeamRatioPercent("");
+      setManagerGateKpiThresholdPercent("");
     }
   }, [open, structure]);
 

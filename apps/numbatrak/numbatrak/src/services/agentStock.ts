@@ -9,7 +9,19 @@ interface StockGridCellDto {
   isWarehouse: boolean;
   productId: string;
   productName: string;
+  variantId: string | null;
+  variantName: string | null;
   quantityOnHand: number;
+}
+
+/**
+ * Composite key for the (productId, variantId) dimension of the on-hand
+ * map below - a plain productId when the product has no variant, otherwise
+ * `productId:variantId`. Keeps every consumer's Map<number, Map<string, number>>
+ * shape unchanged while still tracking each variant's stock independently.
+ */
+export function onHandKey(productId: string, variantId?: string | null): string {
+  return variantId ? `${productId}:${variantId}` : productId;
 }
 
 export interface StockGridFilters {
@@ -45,9 +57,11 @@ export async function fetchStockGrid(
       organization_id: organizationId,
       agent_id: c.agentId,
       product_id: c.productId,
+      variant_id: c.variantId,
       quantity_on_hand: c.quantityOnHand,
       agent_name: c.agentName,
       product_name: c.productName,
+      variant_name: c.variantName,
       is_warehouse: c.isWarehouse,
     })),
     costOfInventory: Number(costOfInventory),
@@ -65,19 +79,22 @@ export async function fetchAgentStockOnHand(
 export async function getAgentProductOnHand(
   organizationId: string,
   agentId: number,
-  productId: string
+  productId: string,
+  variantId?: string | null
 ): Promise<number> {
   const rows = await fetchAgentStockOnHand(organizationId);
-  const row = rows.find((r) => r.agent_id === agentId && r.product_id === productId);
+  const row = rows.find(
+    (r) => r.agent_id === agentId && r.product_id === productId && (r.variant_id ?? null) === (variantId ?? null)
+  );
   return row?.quantity_on_hand ?? 0;
 }
 
-/** Map agent_id → product_id → on-hand qty */
+/** Map agent_id → (productId[:variantId]) → on-hand qty - see onHandKey. */
 export function buildOnHandMap(rows: AgentStockOnHandRow[]) {
   const map = new Map<number, Map<string, number>>();
   for (const r of rows) {
     if (!map.has(r.agent_id)) map.set(r.agent_id, new Map());
-    map.get(r.agent_id)!.set(r.product_id, r.quantity_on_hand);
+    map.get(r.agent_id)!.set(onHandKey(r.product_id, r.variant_id), r.quantity_on_hand);
   }
   return map;
 }

@@ -13,6 +13,8 @@ interface StockMovementDto {
   movementType: StockMovementType;
   productId: string;
   productName: string | null;
+  variantId: string | null;
+  variantName: string | null;
   quantity: number;
   fromAgentId: number | null;
   fromAgentName: string | null;
@@ -35,6 +37,8 @@ function dtoToMovement(dto: StockMovementDto, organizationId: string): StockMove
     organization_id: organizationId,
     movement_type: dto.movementType,
     product_id: dto.productId,
+    variant_id: dto.variantId,
+    variant_name: dto.variantName,
     quantity: dto.quantity,
     from_agent_id: dto.fromAgentId,
     to_agent_id: dto.toAgentId,
@@ -80,6 +84,7 @@ export async function createTransferMovement(input: {
   from_agent_id: number;
   to_agent_id: number;
   product_id: string;
+  variant_id?: string | null;
   quantity: number;
   notes: string;
   fee?: number;
@@ -91,6 +96,7 @@ export async function createTransferMovement(input: {
       fromAgentId: input.from_agent_id,
       toAgentId: input.to_agent_id,
       productId: input.product_id,
+      variantId: input.variant_id ?? null,
       quantity: input.quantity,
       notes: input.notes.trim(),
       fee: input.fee ?? 0,
@@ -126,6 +132,7 @@ export async function createShrinkageMovement(input: {
   movement_type: ShrinkageMovementType;
   from_agent_id: number;
   product_id: string;
+  variant_id?: string | null;
   quantity: number;
   notes: string;
   occurred_at?: string;
@@ -136,6 +143,7 @@ export async function createShrinkageMovement(input: {
       movementType: input.movement_type,
       fromAgentId: input.from_agent_id,
       productId: input.product_id,
+      variantId: input.variant_id ?? null,
       quantity: input.quantity,
       notes: input.notes.trim(),
     },

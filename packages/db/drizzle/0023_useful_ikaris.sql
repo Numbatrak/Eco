@@ -1,0 +1,3 @@
+ALTER TABLE "numbatrak_stock_movements" ADD COLUMN "variant_id" uuid;--> statement-breakpoint
+ALTER TABLE "numbatrak_stock_movements" ADD CONSTRAINT "numbatrak_stock_movements_variant_id_numbatrak_product_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."numbatrak_product_variants"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "numbatrak_stock_movements_variant_idx" ON "numbatrak_stock_movements" USING btree ("organization_id","product_id","variant_id") WHERE "numbatrak_stock_movements"."variant_id" IS NOT NULL;

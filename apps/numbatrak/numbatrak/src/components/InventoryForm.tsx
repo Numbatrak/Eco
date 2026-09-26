@@ -24,6 +24,7 @@ import {
 import { ensureWarehouseAgent } from "../services/warehouse";
 import { loadInventorySettings, DEFAULT_INVENTORY_SETTINGS } from "../services/inventorySettings";
 import { AgentStockOnHandRow } from "../types/stockMovement";
+import { ProductWithDetails } from "../types/product";
 import { StockMovement } from "../types/stockMovement";
 import { StockGrid } from "./inventory/StockGrid";
 import { PageLayout } from "./layout/PageLayout";
@@ -73,7 +74,12 @@ export default function InventoryForm() {
   }, [currentOrganization?.id]);
 
   const activeProducts = useMemo(
-    () => products.filter((product) => product.active !== false),
+    // useCachedProducts hits the same /details endpoint as
+    // fetchProductsWithDetails and narrows the result to the base Product
+    // type - the runtime objects still carry `variants` (see
+    // services/products.ts's fetchProducts comment), so this cast just
+    // restores visibility of a field that was always there.
+    () => products.filter((product) => product.active !== false) as ProductWithDetails[],
     [products]
   );
 
@@ -136,6 +142,7 @@ export default function InventoryForm() {
         from_agent_id: values.from_agent_id,
         to_agent_id: values.to_agent_id,
         product_id: values.product_id,
+        variant_id: values.variant_id,
         quantity: values.quantity,
         notes: values.notes,
         fee: values.fee,
@@ -167,6 +174,7 @@ export default function InventoryForm() {
         movement_type: values.movement_type,
         from_agent_id: values.agent_id,
         product_id: values.product_id,
+        variant_id: values.variant_id,
         quantity: values.quantity,
         notes: values.notes,
       });

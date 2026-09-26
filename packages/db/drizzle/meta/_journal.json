@@ -162,6 +162,13 @@
       "when": 1790431755583,
       "tag": "0022_brave_the_professor",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790435544788,
+      "tag": "0023_useful_ikaris",
+      "breakpoints": true
     }
   ]
 }

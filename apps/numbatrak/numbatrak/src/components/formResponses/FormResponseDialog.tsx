@@ -99,7 +99,7 @@ export function FormResponseDialog({
   const [agentId, setAgentId] = useState<string>("");
   const [moneyReceivedBy, setMoneyReceivedBy] = useState<MoneyReceivedBy>("agent_collected");
   const [upsellProductId, setUpsellProductId] = useState("");
-  const [upsellQty, setUpsellQty] = useState("1");
+  const [upsellQty, setUpsellQty] = useState("");
   const [upsellSaving, setUpsellSaving] = useState(false);
   const [actionSaving, setActionSaving] = useState<string | null>(null);
 
@@ -746,7 +746,7 @@ export function FormResponseDialog({
                             unit_cost_at_submission: product.cost_price ?? 0,
                           });
                           setUpsellProductId("");
-                          setUpsellQty("1");
+                          setUpsellQty("");
                         } finally {
                           setUpsellSaving(false);
                         }
