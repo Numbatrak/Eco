@@ -1,3 +1,4 @@
+import type { FastifyBaseLogger } from "fastify";
 import { eq, inArray } from "drizzle-orm";
 import {
   numbatrakCustomerOrderItems,
@@ -79,6 +80,7 @@ export async function submitFormOrder(
   db: Database,
   form: FormRow,
   input: SubmitFormOrderInput,
+  logger?: FastifyBaseLogger,
 ): Promise<SubmitPublicNumbatrakFormResult> {
   const contact = deriveContactFields(input.fieldValues);
   const hasContact = !!contact.customerName && (!!contact.phone || !!contact.whatsapp);
@@ -177,9 +179,25 @@ export async function submitFormOrder(
     // no attribution, never a failed submission - this is best-effort
     // marketing data, not a required field.
     const trackingLinkCode = extractTrackingLinkCode(input.pageUrl);
-    const trackingLink = trackingLinkCode
+    const resolvedTrackingLink = trackingLinkCode
       ? await findActiveTrackingLinkByCode(tx, form.organizationId, trackingLinkCode)
       : null;
+    // A link's code is org-scoped, not form-scoped, so a copy-pasted URL
+    // from a different form's tracking link would otherwise still resolve -
+    // skip attribution (don't fail the submission) rather than mis-tagging
+    // the order with the wrong funnel.
+    if (resolvedTrackingLink && resolvedTrackingLink.formId !== form.id) {
+      logger?.warn(
+        {
+          formId: form.id,
+          trackingLinkId: resolvedTrackingLink.id,
+          trackingLinkFormId: resolvedTrackingLink.formId,
+        },
+        "Tracking link code resolved to a different form than the one submitted through - skipping attribution",
+      );
+    }
+    const trackingLink =
+      resolvedTrackingLink && resolvedTrackingLink.formId === form.id ? resolvedTrackingLink : null;
 
     const customer = await findOrCreateCustomer(tx, form.organizationId, {
       name: contact.customerName!,

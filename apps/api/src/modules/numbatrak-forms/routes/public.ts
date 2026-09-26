@@ -119,14 +119,19 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
       }
 
       try {
-        const result = await submitFormOrder(db, form, {
-          fieldValues: body.fieldValues,
-          items: body.items,
-          source: body.source,
-          pageUrl: body.pageUrl,
-          offerName: body.offerName,
-          packageName: body.packageName,
-        });
+        const result = await submitFormOrder(
+          db,
+          form,
+          {
+            fieldValues: body.fieldValues,
+            items: body.items,
+            source: body.source,
+            pageUrl: body.pageUrl,
+            offerName: body.offerName,
+            packageName: body.packageName,
+          },
+          request.log,
+        );
         return reply.send(result);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Submission failed";

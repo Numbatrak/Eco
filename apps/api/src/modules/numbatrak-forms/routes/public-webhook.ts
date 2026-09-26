@@ -58,12 +58,17 @@ export default async function publicNumbatrakFormWebhookRoutes(app: FastifyInsta
       const items = resolveItems(flat, mapping, form.schema);
 
       try {
-        const result = await submitFormOrder(db, form, {
-          fieldValues,
-          items,
-          source: "elementor",
-          pageUrl: null,
-        });
+        const result = await submitFormOrder(
+          db,
+          form,
+          {
+            fieldValues,
+            items,
+            source: "elementor",
+            pageUrl: null,
+          },
+          request.log,
+        );
         return reply.send(result);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Submission failed";
