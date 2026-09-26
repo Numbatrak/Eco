@@ -11,7 +11,8 @@ import { getNextAssignedUser } from "../../numbatrak-orders/lib/assignment.js";
 import { createCart } from "../../numbatrak-abandoned-carts/lib/abandoned-carts.js";
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
 import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
-import { parseAttributionSource } from "../../numbatrak-crm/lib/attribution.js";
+import { parseAttributionSource, extractTrackingLinkCode } from "../../numbatrak-crm/lib/attribution.js";
+import { findActiveTrackingLinkByCode } from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { getDeliveryFeeForLocation } from "../../numbatrak-delivery-fees/lib/delivery-fees.js";
 import { validateSubmissionAgainstSchema } from "./validation.js";
 import { resolveLinePricing } from "./offer-pricing.js";
@@ -172,6 +173,14 @@ export async function submitFormOrder(
     const profit = orderRevenue - orderCost;
     const deliveryFee = await getDeliveryFeeForLocation(tx, form.organizationId, contact.state);
 
+    // Tracking-link attribution: a bad/missing/inactive `tl` code just means
+    // no attribution, never a failed submission - this is best-effort
+    // marketing data, not a required field.
+    const trackingLinkCode = extractTrackingLinkCode(input.pageUrl);
+    const trackingLink = trackingLinkCode
+      ? await findActiveTrackingLinkByCode(tx, form.organizationId, trackingLinkCode)
+      : null;
+
     const customer = await findOrCreateCustomer(tx, form.organizationId, {
       name: contact.customerName!,
       phone: (contact.phone ?? contact.whatsapp)!,
@@ -201,6 +210,9 @@ export async function submitFormOrder(
         funnelName: form.funnelName ?? form.name,
         offerName: input.offerName ?? input.packageName ?? null,
         subBrand: form.subBrand ?? null,
+        trackingLinkId: trackingLink?.id ?? null,
+        platform: trackingLink?.platform ?? null,
+        mediaBuyerName: trackingLink?.mediaBuyerName ?? null,
       })
       .returning();
     if (!order) throw new Error("Failed to create order");

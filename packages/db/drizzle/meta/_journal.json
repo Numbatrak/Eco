@@ -148,6 +148,13 @@
       "when": 1790358205395,
       "tag": "0020_curly_sharon_ventura",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790395957337,
+      "tag": "0021_white_firestar",
+      "breakpoints": true
     }
   ]
 }

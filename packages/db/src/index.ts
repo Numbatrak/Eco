@@ -60,6 +60,7 @@ export {
   numbatrakProductPriceHistory,
   numbatrakForms,
   numbatrakFormProducts,
+  numbatrakTrackingLinks,
   numbatrakFormResponses,
   numbatrakFormResponseItems,
   numbatrakCustomerOrders,

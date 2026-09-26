@@ -39,5 +39,6 @@ export interface RolePermissions {
   leave: Permission;
   orderAssignment: Permission;
   mediaBuyers: Permission;
+  trackingLinks: Permission;
   crm: Permission;
 }

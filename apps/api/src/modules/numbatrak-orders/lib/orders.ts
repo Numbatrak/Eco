@@ -23,6 +23,7 @@ import { mergeOrderNotesOnSave } from "./order-notes.js";
 import { createDeliveryMovement, productsAlreadyDelivered } from "./stock.js";
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
 import { findOrCreateCustomer, createFeedbackCall, getOrCreateFeedbackSettings } from "../../numbatrak-crm/lib/crm.js";
+import { findTrackingLinkById } from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { sendOrderStatusUpdateWhatsApp } from "../../../lib/whatsapp.js";
 
 export type OrderRow = typeof numbatrakCustomerOrders.$inferSelect;
@@ -115,6 +116,9 @@ export async function attachRelations(
     offerName: row.offerName,
     funnelName: row.funnelName,
     subBrand: row.subBrand,
+    trackingLinkId: row.trackingLinkId,
+    platform: row.platform,
+    mediaBuyerName: row.mediaBuyerName,
     abandonedCartId: row.abandonedCartId,
     moneyReceivedBy: (row.moneyReceivedBy ?? "agent_collected") as NumbatrakOrder["moneyReceivedBy"],
     items: itemsByOrder.get(row.id) ?? [],
@@ -150,6 +154,7 @@ export async function listOrdersForOrg(
   if (filters.subBrand) conditions.push(eq(numbatrakCustomerOrders.subBrand, filters.subBrand));
   if (filters.funnelName) conditions.push(eq(numbatrakCustomerOrders.funnelName, filters.funnelName));
   if (filters.offerName) conditions.push(eq(numbatrakCustomerOrders.offerName, filters.offerName));
+  if (filters.trackingLinkId) conditions.push(eq(numbatrakCustomerOrders.trackingLinkId, filters.trackingLinkId));
   if (filters.search) {
     const term = `%${filters.search}%`;
     conditions.push(
@@ -233,6 +238,8 @@ async function insertOrder(
       })
     : null;
 
+  const trackingLink = input.trackingLinkId ? await findTrackingLinkById(db, organizationId, input.trackingLinkId) : null;
+
   const [order] = await db
     .insert(numbatrakCustomerOrders)
     .values({
@@ -256,6 +263,9 @@ async function insertOrder(
       offerName: input.offerName ?? null,
       subBrand: input.subBrand ?? null,
       moneyReceivedBy,
+      trackingLinkId: trackingLink?.id ?? null,
+      platform: trackingLink?.platform ?? null,
+      mediaBuyerName: trackingLink?.mediaBuyerName ?? null,
     })
     .returning();
   if (!order) throw new Error("Failed to create order");
@@ -411,6 +421,12 @@ export async function updateOrder(
   if (patch.amountPaid !== undefined) values.amountPaid = patch.amountPaid == null ? null : String(patch.amountPaid);
   if (patch.agentId !== undefined) values.agentId = patch.agentId;
   if (patch.moneyReceivedBy !== undefined) values.moneyReceivedBy = patch.moneyReceivedBy;
+  if (patch.trackingLinkId !== undefined) {
+    const trackingLink = patch.trackingLinkId ? await findTrackingLinkById(db, organizationId, patch.trackingLinkId) : null;
+    values.trackingLinkId = trackingLink?.id ?? null;
+    values.platform = trackingLink?.platform ?? null;
+    values.mediaBuyerName = trackingLink?.mediaBuyerName ?? null;
+  }
   if (becomingDelivered) values.completedAt = new Date();
 
   const [updated] = await db

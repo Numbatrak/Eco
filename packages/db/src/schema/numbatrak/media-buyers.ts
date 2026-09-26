@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, check, date, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { organization, user } from "../../auth-schema.js";
+import { numbatrakTrackingLinks } from "./tracking-links.js";
 
 export const numbatrakMediaBuyerSettings = pgTable(
   "numbatrak_media_buyer_settings",
@@ -136,6 +137,11 @@ export const numbatrakAdSpend = pgTable(
     productId: text("product_id"),
     offerId: text("offer_id"),
     platform: text("platform"),
+    // Optional: ties this spend row to a specific tracking link (media
+    // buyer + platform + funnel/offer), for real ROI per link. Spend not
+    // tied to a link keeps using the loose buyerId/platform/brand/productId/
+    // offerId columns above as before.
+    trackingLinkId: uuid("tracking_link_id").references(() => numbatrakTrackingLinks.id, { onDelete: "set null" }),
     spend: numeric("spend", { precision: 14, scale: 2 }).notNull().default("0"),
     orders: integer("orders").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -145,6 +151,9 @@ export const numbatrakAdSpend = pgTable(
     index("numbatrak_ad_spend_org_idx").on(table.organizationId),
     index("numbatrak_ad_spend_date_idx").on(table.spendDate),
     index("numbatrak_ad_spend_buyer_idx").on(table.buyerId),
+    index("numbatrak_ad_spend_tracking_link_idx")
+      .on(table.trackingLinkId)
+      .where(sql`${table.trackingLinkId} IS NOT NULL`),
   ],
 );
 

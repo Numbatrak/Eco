@@ -33,6 +33,7 @@ import {
   type WeeklyReview,
   type PerformanceAnalytics,
 } from "../../services/mediaBuyers";
+import { trackingLinksApi, TrackingLink } from "../../services/trackingLinks";
 import { Trash2, Plus, Check, TrendingUp, Film, DollarSign, Target, FileText, BarChart3 } from "lucide-react";
 
 type Tab = "production" | "contractors" | "payments" | "ads" | "spend" | "targets" | "reviews" | "analytics";
@@ -58,7 +59,7 @@ export function MediaBuyersPage() {
     if (!currentOrganization) return;
     setLoading(true);
     try {
-      const [s, c, b, p, a, sp, t, r, an] = await Promise.all([
+      const [s, c, b, p, a, sp, t, r, an, tl] = await Promise.all([
         fetchMediaBuyerSettings(),
         fetchContractors(),
         fetchBatches(),
@@ -68,6 +69,7 @@ export function MediaBuyersPage() {
         fetchTargets(),
         fetchReviews(),
         fetchAnalytics(),
+        trackingLinksApi.list(),
       ]);
       setSettings(s);
       setContractors(c);
@@ -78,6 +80,7 @@ export function MediaBuyersPage() {
       setTargets(t);
       setReviews(r);
       setAnalytics(an);
+      setTrackingLinks(tl.trackingLinks);
     } catch (err) {
       console.error("Failed to load media buyers data", err);
     } finally {
@@ -102,6 +105,8 @@ export function MediaBuyersPage() {
   const [spendAmount, setSpendAmount] = useState(0);
   const [spendOrders, setSpendOrders] = useState(0);
   const [spendPlatform, setSpendPlatform] = useState("");
+  const [spendTrackingLinkId, setSpendTrackingLinkId] = useState("");
+  const [trackingLinks, setTrackingLinks] = useState<TrackingLink[]>([]);
 
   // --- Add target form state ---
   const [targetCpa, setTargetCpa] = useState(0);
@@ -321,8 +326,20 @@ export function MediaBuyersPage() {
                   <input type="text" inputMode="decimal" placeholder="Spend" value={spendAmount || ""} onChange={(e) => { const v = sanitizeDecimalInput(e.target.value); setSpendAmount(v === "" ? 0 : Number(v)); }} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" inputMode="numeric" placeholder="Orders" value={spendOrders || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setSpendOrders(v === "" ? 0 : Number(v)); }} className="w-24 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" placeholder="Platform" value={spendPlatform} onChange={(e) => setSpendPlatform(e.target.value)} className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
+                  <select
+                    value={spendTrackingLinkId}
+                    onChange={(e) => setSpendTrackingLinkId(e.target.value)}
+                    className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  >
+                    <option value="">No tracking link</option>
+                    {trackingLinks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {[t.mediaBuyerName, t.platform, t.label ?? t.formName].filter(Boolean).join(" · ")}
+                      </option>
+                    ))}
+                  </select>
                   <button
-                    onClick={async () => { if (!spendDate) return; await createSpend({ spendDate, spend: spendAmount, orders: spendOrders, platform: spendPlatform || null }); setSpendDate(""); setSpendAmount(0); setSpendOrders(0); setSpendPlatform(""); void load(); }}
+                    onClick={async () => { if (!spendDate) return; await createSpend({ spendDate, spend: spendAmount, orders: spendOrders, platform: spendPlatform || null, trackingLinkId: spendTrackingLinkId || null }); setSpendDate(""); setSpendAmount(0); setSpendOrders(0); setSpendPlatform(""); setSpendTrackingLinkId(""); void load(); }}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
                   >
                     <Plus size={14} /> Add

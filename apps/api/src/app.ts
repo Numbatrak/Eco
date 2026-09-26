@@ -32,6 +32,7 @@ import numbatrakStarsRoutes from "./modules/numbatrak-stars/routes/index.js";
 import numbatrakLeaveRoutes from "./modules/numbatrak-leave/routes/index.js";
 import numbatrakOrderAssignmentRoutes from "./modules/numbatrak-order-assignment/routes/index.js";
 import numbatrakMediaBuyersRoutes from "./modules/numbatrak-media-buyers/routes/index.js";
+import numbatrakTrackingLinksRoutes from "./modules/numbatrak-tracking-links/routes/index.js";
 import numbatrakCrmRoutes from "./modules/numbatrak-crm/routes/index.js";
 import numbatrakAccountingRoutes from "./modules/numbatrak-accounting/routes/index.js";
 import numbatrakInvoicingRoutes from "./modules/numbatrak-invoicing/routes/index.js";
@@ -89,6 +90,7 @@ export async function buildApp() {
   await app.register(numbatrakLeaveRoutes);
   await app.register(numbatrakOrderAssignmentRoutes);
   await app.register(numbatrakMediaBuyersRoutes);
+  await app.register(numbatrakTrackingLinksRoutes);
   await app.register(numbatrakCrmRoutes);
   await app.register(numbatrakAccountingRoutes);
   await app.register(numbatrakInvoicingRoutes);

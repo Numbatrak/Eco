@@ -49,3 +49,15 @@ export function parseAttributionSource(pageUrl?: string | null, referrer?: strin
 
   return "Direct";
 }
+
+/**
+ * Same source (pageUrl's query string) as parseAttributionSource above, but
+ * pulls the `tl` tracking-link code instead - used by submitFormOrder to
+ * resolve which numbatrak_tracking_links row (media buyer + platform +
+ * funnel/offer) this order should be attributed to.
+ */
+export function extractTrackingLinkCode(pageUrl?: string | null): string | null {
+  const queryString = extractQueryString(pageUrl);
+  if (!queryString) return null;
+  return new URLSearchParams(queryString).get("tl");
+}

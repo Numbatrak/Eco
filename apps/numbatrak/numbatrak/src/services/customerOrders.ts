@@ -46,6 +46,9 @@ interface OrderDto {
   offerName: string | null;
   funnelName: string | null;
   subBrand: string | null;
+  trackingLinkId: string | null;
+  platform: string | null;
+  mediaBuyerName: string | null;
   moneyReceivedBy: MoneyReceivedBy;
   items: OrderItemDto[];
   csr: { id: string; fullName: string | null; email: string | null } | null;
@@ -97,6 +100,9 @@ function orderFromDto(dto: OrderDto, organizationId: string): CustomerOrderWithR
     offer_name: dto.offerName,
     funnel_name: dto.funnelName,
     sub_brand: dto.subBrand,
+    tracking_link_id: dto.trackingLinkId,
+    platform: dto.platform,
+    media_buyer_name: dto.mediaBuyerName,
     money_received_by: dto.moneyReceivedBy,
     items: dto.items.map(itemFromDto),
     csr: dto.csr ? { id: dto.csr.id, full_name: dto.csr.fullName, email: dto.csr.email } : null,
@@ -117,6 +123,7 @@ function buildQuery(filters: CustomerOrderFilters): string {
   if (filters.sub_brand) params.set("subBrand", filters.sub_brand);
   if (filters.funnel_name) params.set("funnelName", filters.funnel_name);
   if (filters.offer_name) params.set("offerName", filters.offer_name);
+  if (filters.tracking_link_id) params.set("trackingLinkId", filters.tracking_link_id);
   if (filters.search) params.set("search", filters.search);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
@@ -156,6 +163,7 @@ export async function updateCustomerOrder(
     amount_paid: number | null;
     agent_id: number | null;
     money_received_by: MoneyReceivedBy;
+    tracking_link_id: string | null;
   }>
 ): Promise<void> {
   await apiRequest<OrderDto>(`/org/numbatrak/orders/${orderId}`, {
@@ -168,6 +176,7 @@ export async function updateCustomerOrder(
       amountPaid: updates.amount_paid,
       agentId: updates.agent_id,
       moneyReceivedBy: updates.money_received_by,
+      trackingLinkId: updates.tracking_link_id,
     },
   });
 }
@@ -197,6 +206,7 @@ export async function createManualCustomerOrder(input: {
   funnel_name?: string | null;
   offer_name?: string | null;
   sub_brand?: string | null;
+  tracking_link_id?: string | null;
   items: Array<{
     product_id: string;
     quantity: number;
@@ -224,6 +234,7 @@ export async function createManualCustomerOrder(input: {
       funnelName: input.funnel_name ?? null,
       offerName: input.offer_name ?? null,
       subBrand: input.sub_brand ?? null,
+      trackingLinkId: input.tracking_link_id ?? null,
       items: input.items.map((line) => ({
         productId: line.product_id,
         quantity: line.quantity,

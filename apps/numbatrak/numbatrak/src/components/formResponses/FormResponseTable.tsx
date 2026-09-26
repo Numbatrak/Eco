@@ -43,6 +43,7 @@ interface FormResponseTableProps {
     date_to?: string;
     sub_brand?: string;
     funnel_name?: string;
+    tracking_link_id?: string;
   };
   onFilterChange?: (filters: {
     status?: string;
@@ -53,6 +54,7 @@ interface FormResponseTableProps {
     date_to?: string;
     sub_brand?: string;
     funnel_name?: string;
+    tracking_link_id?: string;
   }) => void;
   /** When provided, a form dropdown is shown and filter tags use these names */
   formOptions?: { id: string; name: string }[];
@@ -73,6 +75,7 @@ interface FormResponseTableProps {
   agentOptions?: { id: number; name: string }[];
   funnelOptions?: string[];
   subBrandOptions?: string[];
+  trackingLinkOptions?: { id: string; label: string }[];
 }
 
 const TABLE_COLUMN_COUNT = 13;
@@ -103,6 +106,7 @@ export function FormResponseTable({
   agentOptions = [],
   funnelOptions = [],
   subBrandOptions = [],
+  trackingLinkOptions = [],
 }: FormResponseTableProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
@@ -356,6 +360,29 @@ export function FormResponseTable({
                 {subBrandOptions.map((b) => (
                   <SelectItem key={b} value={b}>
                     {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {trackingLinkOptions.length > 0 && onFilterChange && (
+            <Select
+              value={filters.tracking_link_id ?? "all"}
+              onValueChange={(v) =>
+                onFilterChange({
+                  ...filters,
+                  tracking_link_id: v === "all" ? undefined : v,
+                })
+              }
+            >
+              <SelectTrigger className="w-[160px] border-border bg-background shrink-0">
+                <SelectValue placeholder="All tracking links" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tracking links</SelectItem>
+                {trackingLinkOptions.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}
                   </SelectItem>
                 ))}
               </SelectContent>

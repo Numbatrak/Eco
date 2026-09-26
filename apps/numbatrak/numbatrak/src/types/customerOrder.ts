@@ -37,6 +37,10 @@ export interface CustomerOrder {
   funnel_name: string | null;
   /** Sub-brand tag copied from form or set on manual entry */
   sub_brand: string | null;
+  /** Tracking-link attribution (media buyer + platform + funnel/offer) */
+  tracking_link_id: string | null;
+  platform: string | null;
+  media_buyer_name: string | null;
   /** Who received payment — drives Remittance (spec) */
   money_received_by: MoneyReceivedBy;
   payment_method?: "cod" | "online" | null;
@@ -75,4 +79,5 @@ export interface CustomerOrderFilters {
   sub_brand?: string;
   funnel_name?: string;
   offer_name?: string;
+  tracking_link_id?: string;
 }

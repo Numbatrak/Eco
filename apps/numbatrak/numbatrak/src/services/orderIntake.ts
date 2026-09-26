@@ -49,6 +49,7 @@ export type OrderIntakeUpdate = {
   amount_paid?: number | null;
   agent_id?: number | null;
   money_received_by?: MoneyReceivedBy;
+  tracking_link_id?: string | null;
 };
 
 export async function listOrderIntake(params: OrderIntakeListParams): Promise<OrderIntakeListResult> {
@@ -63,6 +64,7 @@ export async function listOrderIntake(params: OrderIntakeListParams): Promise<Or
     sub_brand: filters.sub_brand,
     funnel_name: filters.funnel_name,
     offer_name: filters.offer_name,
+    tracking_link_id: filters.tracking_link_id,
     search: searchQuery?.trim() || undefined,
   });
 
@@ -80,6 +82,7 @@ export async function updateOrderIntake(order: FormResponseWithItems, updates: O
     amount_paid: updates.amount_paid,
     agent_id: updates.agent_id,
     money_received_by: updates.money_received_by,
+    tracking_link_id: updates.tracking_link_id,
   });
 }
 

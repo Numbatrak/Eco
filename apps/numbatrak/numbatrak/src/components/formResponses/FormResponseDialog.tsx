@@ -56,6 +56,7 @@ interface FormResponseDialogProps {
     amount_paid?: number | null;
     agent_id?: number | null;
     money_received_by?: MoneyReceivedBy;
+    tracking_link_id?: string | null;
   }) => Promise<void>;
   onMarkDelivered?: () => Promise<void>;
   onAdvanceStatus?: () => Promise<void>;
@@ -68,6 +69,7 @@ interface FormResponseDialogProps {
   }) => Promise<void>;
   products?: Product[];
   quickActions?: boolean;
+  trackingLinkOptions?: { id: string; label: string }[];
 }
 
 export function FormResponseDialog({
@@ -85,11 +87,13 @@ export function FormResponseDialog({
   onAddUpsell,
   products = [],
   quickActions = false,
+  trackingLinkOptions = [],
 }: FormResponseDialogProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<string>("new");
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<string>("");
+  const [trackingLinkId, setTrackingLinkId] = useState<string>("");
   const [deliveryFee, setDeliveryFee] = useState<string>("");
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [agentId, setAgentId] = useState<string>("");
@@ -104,6 +108,7 @@ export function FormResponseDialog({
       setStatus(response.status);
       setNotes(response.notes || "");
       setState(response.state || "");
+      setTrackingLinkId(response.tracking_link_id || "");
       setDeliveryFee(
         response.delivery_fee != null && response.delivery_fee !== 0
           ? String(response.delivery_fee)
@@ -176,11 +181,14 @@ export function FormResponseDialog({
     try {
       const newState = state.trim() === "" ? null : state;
       const stateChanged = newState !== (response.state ?? null);
+      const newTrackingLinkId = trackingLinkId.trim() === "" ? null : trackingLinkId;
+      const trackingLinkChanged = newTrackingLinkId !== (response.tracking_link_id ?? null);
 
       await onSave({
         status: status !== response.status ? status : undefined,
         notes: notes !== (response.notes || "") ? notes : undefined,
         ...(stateChanged ? { state: newState } : {}),
+        ...(trackingLinkChanged ? { tracking_link_id: newTrackingLinkId } : {}),
         ...(deliveryFeeChanged ? { delivery_fee: deliveryFeeNum } : {}),
         ...(amountPaidChanged ? { amount_paid: amountPaidNum } : {}),
         ...(agentIdChanged ? { agent_id: newAgentId } : {}),
@@ -407,6 +415,41 @@ export function FormResponseDialog({
                   </p>
                 )}
               </div>
+
+              {trackingLinkOptions.length > 0 && (
+                <div className="dialog-form-field">
+                  <Label htmlFor="order-tracking-link" className="dialog-field-label">
+                    Tracking link
+                  </Label>
+                  {mode === "edit" ? (
+                    <Select
+                      value={trackingLinkId || "none"}
+                      onValueChange={(v) => setTrackingLinkId(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger id="order-tracking-link" className="mt-1 w-full max-w-none">
+                        <SelectValue placeholder="Select tracking link" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          <span className="text-muted-foreground">No tracking link</span>
+                        </SelectItem>
+                        {trackingLinkOptions.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="mt-1 text-sm text-foreground">
+                      {trackingLinkOptions.find((t) => t.id === response.tracking_link_id)?.label ?? "N/A"}
+                    </p>
+                  )}
+                  <p className="dialog-field-hint mt-1">
+                    Which media buyer/platform/funnel this order came from.
+                  </p>
+                </div>
+              )}
 
               <div className="dialog-form-field">
                 <Label

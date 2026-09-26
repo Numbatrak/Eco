@@ -22,6 +22,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    trackingLinks: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   Admin: {
@@ -42,6 +43,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    trackingLinks: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   Manager: {
@@ -62,6 +64,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     leave: { canView: true, canCreate: true, canUpdate: true, canDelete: false },
     orderAssignment: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     mediaBuyers: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
+    trackingLinks: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
     crm: { canView: true, canCreate: true, canUpdate: true, canDelete: true },
   },
   "Customer Relations": {
@@ -82,6 +85,7 @@ const rolePermissions: Record<UserRole, RolePermissions> = {
     leave: { canView: true, canCreate: true, canUpdate: false, canDelete: false },
     orderAssignment: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
     mediaBuyers: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
+    trackingLinks: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
     crm: { canView: true, canCreate: false, canUpdate: false, canDelete: false },
   },
 };

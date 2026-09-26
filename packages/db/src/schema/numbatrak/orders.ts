@@ -37,6 +37,7 @@ import { organization, user } from "../../auth-schema.js";
 import { numbatrakAgents } from "./agents.js";
 import { numbatrakCustomers } from "./crm.js";
 import { numbatrakForms } from "./forms.js";
+import { numbatrakTrackingLinks } from "./tracking-links.js";
 import { numbatrakInventoryLots } from "./inventory.js";
 import { numbatrakProductOffers, numbatrakProducts, numbatrakProductVariants } from "./products.js";
 
@@ -232,6 +233,14 @@ export const numbatrakCustomerOrders = pgTable(
     funnelName: text("funnel_name"),
     subBrand: text("sub_brand"),
     moneyReceivedBy: text("money_received_by").default("agent_collected"),
+    // Tracking link attribution (media buyer + platform + funnel/offer). FK
+    // to the link that was actually used, plus a denormalized snapshot of
+    // its buyer/platform at order time - same historical-accuracy rationale
+    // as funnelName/subBrand above: editing a tracking link later shouldn't
+    // retroactively rewrite what already-placed orders show.
+    trackingLinkId: uuid("tracking_link_id").references(() => numbatrakTrackingLinks.id, { onDelete: "set null" }),
+    platform: text("platform"),
+    mediaBuyerName: text("media_buyer_name"),
   },
   (table) => [
     index("numbatrak_customer_orders_agent_idx").on(table.agentId),
@@ -251,6 +260,15 @@ export const numbatrakCustomerOrders = pgTable(
     index("numbatrak_customer_orders_offer_idx")
       .on(table.organizationId, table.offerName)
       .where(sql`${table.offerName} IS NOT NULL`),
+    index("numbatrak_customer_orders_tracking_link_idx")
+      .on(table.organizationId, table.trackingLinkId)
+      .where(sql`${table.trackingLinkId} IS NOT NULL`),
+    index("numbatrak_customer_orders_platform_idx")
+      .on(table.organizationId, table.platform)
+      .where(sql`${table.platform} IS NOT NULL`),
+    index("numbatrak_customer_orders_media_buyer_idx")
+      .on(table.organizationId, table.mediaBuyerName)
+      .where(sql`${table.mediaBuyerName} IS NOT NULL`),
     // Predicate mirrors is_order_delivered_status(status) - kept in sync by
     // the source migration that dropped+recreated this specific index.
     index("numbatrak_customer_orders_money_received_idx")

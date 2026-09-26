@@ -41,6 +41,7 @@ const StarsPage = lazy(() => import("./components/stars/StarsPage").then((m) => 
 const LeavePage = lazy(() => import("./components/leave/LeavePage").then((m) => ({ default: m.LeavePage })));
 const OrderAssignmentPage = lazy(() => import("./components/order-assignment/OrderAssignmentPage").then((m) => ({ default: m.OrderAssignmentPage })));
 const MediaBuyersPage = lazy(() => import("./components/media-buyers/MediaBuyersPage").then((m) => ({ default: m.MediaBuyersPage })));
+const TrackingLinksPage = lazy(() => import("./components/trackingLinks/TrackingLinksPage").then((m) => ({ default: m.TrackingLinksPage })));
 const CrmPage = lazy(() => import("./components/crm/CrmPage").then((m) => ({ default: m.CrmPage })));
 const AccountingPage = lazy(() => import("./components/accounting/AccountingPage").then((m) => ({ default: m.AccountingPage })));
 const InvoicingPage = lazy(() => import("./components/invoicing/InvoicingPage").then((m) => ({ default: m.InvoicingPage })));
@@ -502,6 +503,7 @@ function AppContent() {
                 <Route path="/leave" element={<LeavePage />} />
                 <Route path="/order-assignment" element={<OrderAssignmentPage />} />
                 <Route path="/media-buyers" element={<MediaBuyersPage />} />
+                <Route path="/tracking-links" element={<TrackingLinksPage />} />
                 <Route path="/crm" element={<CrmPage />} />
                 <Route
                   path="/integrations"

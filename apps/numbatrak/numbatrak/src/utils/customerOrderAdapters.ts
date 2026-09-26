@@ -41,6 +41,9 @@ export function customerOrderToFormResponse(
     field_values: {} as FormResponseFieldValues,
     state: o.state,
     delivery_address: o.delivery_address,
+    tracking_link_id: o.tracking_link_id,
+    platform: o.platform,
+    media_buyer_name: o.media_buyer_name,
     selected_products: items.map((i) => ({
       product_id: i.product_id,
       quantity: i.quantity,

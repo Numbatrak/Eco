@@ -15,6 +15,7 @@
 export * from "./agents.js";
 export * from "./products.js";
 export * from "./forms.js";
+export * from "./tracking-links.js";
 export * from "./orders.js";
 export * from "./inventory.js";
 export * from "./deliveries.js";
@@ -48,6 +49,7 @@ import {
   numbatrakProductPriceHistory,
 } from "./products.js";
 import { numbatrakForms, numbatrakFormProducts } from "./forms.js";
+import { numbatrakTrackingLinks } from "./tracking-links.js";
 import {
   numbatrakFormResponses,
   numbatrakFormResponseItems,
@@ -113,6 +115,7 @@ export const numbatrakSchema = {
   numbatrakProductPriceHistory,
   numbatrakForms,
   numbatrakFormProducts,
+  numbatrakTrackingLinks,
   numbatrakFormResponses,
   numbatrakFormResponseItems,
   numbatrakCustomerOrders,

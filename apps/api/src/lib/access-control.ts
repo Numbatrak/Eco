@@ -79,6 +79,10 @@ const statement = {
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
+  // Tracking links (media buyer + platform + funnel/offer attribution) -
+  // same view/manage shape as numbatrakMediaBuyers, which they're closely
+  // related to (ad spend can reference a tracking link).
+  numbatrakTrackingLinks: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
   // Per-location delivery-fee rules Order Forms reads from (spec §15's
   // "location can drive the delivery fee, tying to the delivery configuration").
@@ -120,6 +124,7 @@ export const OWNER_NUMBATRAK_GRANTS = {
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakTrackingLinks: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
   numbatrakDeliveryFees: ["view", "manage"],
 } as const;
@@ -145,6 +150,7 @@ export const MANAGER_NUMBATRAK_GRANTS = {
   numbatrakLeave: ["view", "manage"],
   numbatrakOrderAssignment: ["view", "manage"],
   numbatrakMediaBuyers: ["view", "manage"],
+  numbatrakTrackingLinks: ["view", "manage"],
   numbatrakCrm: ["view", "manage"],
   numbatrakDeliveryFees: ["view", "manage"],
 } as const;
@@ -167,6 +173,7 @@ export const CSR_NUMBATRAK_GRANTS = {
   numbatrakLeave: ["view"],
   numbatrakOrderAssignment: ["view"],
   numbatrakMediaBuyers: ["view"],
+  numbatrakTrackingLinks: ["view"],
   numbatrakCrm: ["view"],
   numbatrakDeliveryFees: ["view"],
 } as const;

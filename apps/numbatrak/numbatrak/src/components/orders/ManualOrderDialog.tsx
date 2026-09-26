@@ -46,6 +46,7 @@ export type ManualOrderFormValues = {
   funnel_name: string;
   offer_name: string;
   sub_brand: string;
+  tracking_link_id: string | null;
   notes: string;
   items: ManualOrderLine[];
 };
@@ -58,6 +59,7 @@ interface ManualOrderDialogProps {
   error: string | null;
   saving: boolean;
   onSubmit: (values: ManualOrderFormValues) => Promise<void>;
+  trackingLinkOptions?: { id: string; label: string }[];
 };
 
 type LineDraft = {
@@ -85,11 +87,13 @@ export function ManualOrderDialog({
   error,
   saving,
   onSubmit,
+  trackingLinkOptions = [],
 }: ManualOrderDialogProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [state, setState] = useState("");
+  const [trackingLinkId, setTrackingLinkId] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [agentId, setAgentId] = useState("");
   const [deliveryFee, setDeliveryFee] = useState("");
@@ -118,6 +122,7 @@ export function ManualOrderDialog({
     setCustomerName("");
     setPhoneNumber("");
     setState("");
+    setTrackingLinkId("");
     setDeliveryAddress("");
     setAgentId("");
     setDeliveryFee("");
@@ -194,6 +199,7 @@ export function ManualOrderDialog({
         funnel_name: funnelName.trim(),
         offer_name: offerName.trim(),
         sub_brand: subBrand.trim(),
+        tracking_link_id: trackingLinkId.trim() === "" ? null : trackingLinkId,
         notes: notes.trim(),
         items,
       });
@@ -272,6 +278,31 @@ export function ManualOrderDialog({
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                 />
               </div>
+              {trackingLinkOptions.length > 0 && (
+                <div className="dialog-form-field space-y-2">
+                  <Label htmlFor="manual-tracking-link" className="dialog-field-label">
+                    Tracking link
+                  </Label>
+                  <Select
+                    value={trackingLinkId || "none"}
+                    onValueChange={(v) => setTrackingLinkId(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger id="manual-tracking-link">
+                      <SelectValue placeholder="Select tracking link (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">No tracking link</span>
+                      </SelectItem>
+                      {trackingLinkOptions.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

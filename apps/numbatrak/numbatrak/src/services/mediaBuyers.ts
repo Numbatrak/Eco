@@ -80,6 +80,7 @@ interface SpendDto {
   productId: string | null;
   offerId: string | null;
   platform: string | null;
+  trackingLinkId: string | null;
   spend: number;
   orders: number;
   cpa: number;
@@ -207,6 +208,7 @@ export interface AdSpendEntry {
   product_id: string | null;
   offer_id: string | null;
   platform: string | null;
+  tracking_link_id: string | null;
   spend: number;
   orders: number;
   cpa: number;
@@ -274,7 +276,7 @@ function adFromDto(d: AdDto): AdCatalogEntry {
   return { id: d.id, batch_id: d.batchId, name: d.name, hook_type: d.hookType, creative_type: d.creativeType, brand: d.brand, product_id: d.productId, offer_id: d.offerId, drive_link: d.driveLink, editor_name: d.editorName, created_at: d.createdAt, updated_at: d.updatedAt };
 }
 function spendFromDto(d: SpendDto): AdSpendEntry {
-  return { id: d.id, buyer_id: d.buyerId, buyer_name: d.buyerName, spend_date: d.spendDate, brand: d.brand, product_id: d.productId, offer_id: d.offerId, platform: d.platform, spend: d.spend, orders: d.orders, cpa: d.cpa, created_at: d.createdAt, updated_at: d.updatedAt };
+  return { id: d.id, buyer_id: d.buyerId, buyer_name: d.buyerName, spend_date: d.spendDate, brand: d.brand, product_id: d.productId, offer_id: d.offerId, platform: d.platform, tracking_link_id: d.trackingLinkId, spend: d.spend, orders: d.orders, cpa: d.cpa, created_at: d.createdAt, updated_at: d.updatedAt };
 }
 function targetFromDto(d: TargetDto): CpaTarget {
   return { id: d.id, buyer_id: d.buyerId, buyer_name: d.buyerName, brand: d.brand, product_id: d.productId, offer_id: d.offerId, cpa_target: d.cpaTarget, weekly_budget: d.weeklyBudget, created_at: d.createdAt, updated_at: d.updatedAt };

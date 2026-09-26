@@ -15,6 +15,7 @@ import { fetchProducts } from "../services/numbatrakProducts";
 import { Form } from "../types/form";
 import { Product } from "../types/product";
 import { fetchCustomerRelationsUsers } from "../services/customerRelations";
+import { trackingLinksApi, TrackingLink } from "../services/trackingLinks";
 import {
   listOrderIntake,
   updateOrderIntake,
@@ -127,6 +128,31 @@ export default function OrdersForm() {
     return [...set].sort();
   }, [responses]);
 
+  const [trackingLinks, setTrackingLinks] = useState<TrackingLink[]>([]);
+  useEffect(() => {
+    if (!currentOrganization) {
+      setTrackingLinks([]);
+      return;
+    }
+    (async () => {
+      try {
+        const { trackingLinks: links } = await trackingLinksApi.list();
+        setTrackingLinks(links);
+      } catch {
+        setTrackingLinks([]);
+      }
+    })();
+  }, [currentOrganization?.id]);
+
+  const trackingLinkOptions = useMemo(
+    () =>
+      trackingLinks.map((t) => ({
+        id: t.id,
+        label: [t.mediaBuyerName, t.platform, t.label ?? t.formName].filter(Boolean).join(" · "),
+      })),
+    [trackingLinks]
+  );
+
   // Forms aren't ported yet (see orderIntake.ts's header) - manual orders
   // never have a form_id in this slice, so the "filter by form" dropdown
   // just stays empty rather than fetching from Supabase.
@@ -225,6 +251,7 @@ export default function OrdersForm() {
     amount_paid?: number | null;
     agent_id?: number | null;
     money_received_by?: MoneyReceivedBy;
+    tracking_link_id?: string | null;
   }) => {
     if (!editingResponse) return;
 
@@ -342,6 +369,7 @@ export default function OrdersForm() {
         funnel_name: values.funnel_name || null,
         offer_name: values.offer_name || null,
         sub_brand: values.sub_brand || null,
+        tracking_link_id: values.tracking_link_id,
         items: values.items,
       });
       setSuccess("Manual order created.");
@@ -504,6 +532,7 @@ export default function OrdersForm() {
         onAdvanceStatus={canUpdate ? handleQuickAdvance : undefined}
         onMarkFailed={canUpdate ? handleQuickFailed : undefined}
         onAddUpsell={canUpdate ? handleAddUpsell : undefined}
+        trackingLinkOptions={trackingLinkOptions}
       />
 
       <ManualOrderDialog
@@ -514,6 +543,7 @@ export default function OrdersForm() {
         error={localError}
         saving={manualSaving}
         onSubmit={handleManualCreate}
+        trackingLinkOptions={trackingLinkOptions}
       />
 
       <PageLayout>
@@ -597,6 +627,7 @@ export default function OrdersForm() {
           agentOptions={agentOptions}
           funnelOptions={funnelOptions}
           subBrandOptions={subBrandOptions}
+          trackingLinkOptions={trackingLinkOptions}
           groupByMonth
           currentPage={currentPage}
           onPageChange={setCurrentPage}

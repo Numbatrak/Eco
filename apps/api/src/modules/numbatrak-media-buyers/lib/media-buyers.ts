@@ -131,6 +131,7 @@ function serializeSpend(row: SpendRow, buyerName: string | null): NumbatrakAdSpe
     productId: row.productId,
     offerId: row.offerId,
     platform: row.platform,
+    trackingLinkId: row.trackingLinkId,
     spend,
     orders: row.orders,
     cpa: row.orders > 0 ? spend / row.orders : 0,
@@ -441,6 +442,7 @@ export async function createSpend(
     productId?: string | null;
     offerId?: string | null;
     platform?: string | null;
+    trackingLinkId?: string | null;
     spend: number;
     orders: number;
   },
@@ -455,6 +457,7 @@ export async function createSpend(
       productId: input.productId ?? null,
       offerId: input.offerId ?? null,
       platform: input.platform ?? null,
+      trackingLinkId: input.trackingLinkId ?? null,
       spend: String(input.spend),
       orders: input.orders,
     })

@@ -253,6 +253,9 @@ export const numbatrakOrderSchema = z.object({
   offerName: z.string().nullable(),
   funnelName: z.string().nullable(),
   subBrand: z.string().nullable(),
+  trackingLinkId: z.string().uuid().nullable(),
+  platform: z.string().nullable(),
+  mediaBuyerName: z.string().nullable(),
   abandonedCartId: z.string().nullable(),
   moneyReceivedBy: numbatrakMoneyReceivedBySchema,
   items: z.array(numbatrakOrderItemSchema),
@@ -279,6 +282,7 @@ export const listNumbatrakOrdersQuerySchema = z.object({
   subBrand: z.string().optional(),
   funnelName: z.string().optional(),
   offerName: z.string().optional(),
+  trackingLinkId: z.string().uuid().optional(),
   search: z.string().optional(),
 });
 export type ListNumbatrakOrdersQuery = z.infer<typeof listNumbatrakOrdersQuerySchema>;
@@ -297,6 +301,7 @@ export const createNumbatrakOrderRequestSchema = z.object({
   funnelName: z.string().trim().nullable().optional(),
   offerName: z.string().trim().nullable().optional(),
   subBrand: z.string().trim().nullable().optional(),
+  trackingLinkId: z.string().uuid().nullable().optional(),
   items: z.array(numbatrakOrderLineInputSchema).min(1),
 });
 export type CreateNumbatrakOrderRequest = z.infer<typeof createNumbatrakOrderRequestSchema>;
@@ -309,6 +314,7 @@ export const updateNumbatrakOrderRequestSchema = z.object({
   amountPaid: z.number().nonnegative().nullable().optional(),
   agentId: z.number().int().nullable().optional(),
   moneyReceivedBy: numbatrakMoneyReceivedBySchema.optional(),
+  trackingLinkId: z.string().uuid().nullable().optional(),
 });
 export type UpdateNumbatrakOrderRequest = z.infer<typeof updateNumbatrakOrderRequestSchema>;
 
@@ -1069,6 +1075,55 @@ export const numbatrakFormWebhookSecretSchema = z.object({
   secret: z.string(),
 });
 export type NumbatrakFormWebhookSecret = z.infer<typeof numbatrakFormWebhookSecretSchema>;
+
+// ---------- tracking links (media buyer + platform + funnel/offer) ----------
+// A merchant-generated link used to attribute orders back to the specific
+// ad/media-buyer/platform that drove them. The public form URL
+// (numbatrak_forms.site_url) gets a `?tl=<code>` param appended; submitting
+// through that URL stamps trackingLinkId/platform/mediaBuyerName onto the
+// resulting order (see submitFormOrder in numbatrak-forms/lib/intake.ts).
+
+export const numbatrakTrackingLinkSchema = z.object({
+  id: z.string().uuid(),
+  formId: z.string().uuid(),
+  formName: z.string().nullable(),
+  offerId: z.string().nullable(),
+  offerLabel: z.string().nullable(),
+  mediaBuyerName: z.string(),
+  platform: z.string(),
+  label: z.string().nullable(),
+  code: z.string(),
+  url: z.string().nullable(),
+  active: z.boolean(),
+  orderCount: z.number().int(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakTrackingLink = z.infer<typeof numbatrakTrackingLinkSchema>;
+
+export const createNumbatrakTrackingLinkRequestSchema = z.object({
+  formId: z.string().uuid(),
+  offerId: z.string().trim().nullable().optional(),
+  offerLabel: z.string().trim().nullable().optional(),
+  mediaBuyerName: z.string().trim().min(1),
+  platform: z.string().trim().min(1),
+  label: z.string().trim().nullable().optional(),
+});
+export type CreateNumbatrakTrackingLinkRequest = z.infer<typeof createNumbatrakTrackingLinkRequestSchema>;
+
+export const updateNumbatrakTrackingLinkRequestSchema = z.object({
+  mediaBuyerName: z.string().trim().min(1).optional(),
+  platform: z.string().trim().min(1).optional(),
+  label: z.string().trim().nullable().optional(),
+  active: z.boolean().optional(),
+});
+export type UpdateNumbatrakTrackingLinkRequest = z.infer<typeof updateNumbatrakTrackingLinkRequestSchema>;
+
+export const listNumbatrakTrackingLinksQuerySchema = z.object({
+  formId: z.string().uuid().optional(),
+  active: z.coerce.boolean().optional(),
+});
+export type ListNumbatrakTrackingLinksQuery = z.infer<typeof listNumbatrakTrackingLinksQuerySchema>;
 
 // ---------- public form intake (WordPress embed) ----------
 // The one genuinely unauthenticated surface in the whole Numbatrak port - no
@@ -1938,6 +1993,7 @@ export const numbatrakAdSpendEntrySchema = z.object({
   productId: z.string().nullable(),
   offerId: z.string().nullable(),
   platform: z.string().nullable(),
+  trackingLinkId: z.string().uuid().nullable(),
   spend: z.number(),
   orders: z.number().int(),
   cpa: z.number(),
@@ -1952,6 +2008,7 @@ export const createNumbatrakAdSpendRequestSchema = z.object({
   productId: z.string().nullable().optional(),
   offerId: z.string().nullable().optional(),
   platform: z.string().trim().nullable().optional(),
+  trackingLinkId: z.string().uuid().nullable().optional(),
   spend: z.number().nonnegative(),
   orders: z.number().int().nonnegative(),
 });

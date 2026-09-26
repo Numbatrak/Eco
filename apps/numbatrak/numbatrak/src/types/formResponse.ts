@@ -54,6 +54,9 @@ export interface FormResponse {
   offer_name?: string | null;
   funnel_name?: string | null;
   sub_brand?: string | null;
+  tracking_link_id?: string | null;
+  platform?: string | null;
+  media_buyer_name?: string | null;
   money_received_by?: MoneyReceivedBy | null;
   payment_method?: "cod" | "online" | null;
   customer_name: string | null;
@@ -127,4 +130,5 @@ export interface FormResponseFilters {
   sub_brand?: string;
   funnel_name?: string;
   offer_name?: string;
+  tracking_link_id?: string;
 }
