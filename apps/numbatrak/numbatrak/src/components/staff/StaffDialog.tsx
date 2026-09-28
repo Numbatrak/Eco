@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import type { EligibleMember, Staff } from "../../types/staff";
+import type { EligibleMember, EmploymentStatus, Staff } from "../../types/staff";
 import { SpecRole, SPEC_TO_APP_ROLES } from "../../utils/specRoles";
 import { mapOrgRoleToUserRole } from "../../utils/roleMapping";
 import type { OrgRole } from "../../lib/authApi";
@@ -34,6 +35,10 @@ export interface StaffFormValues {
   bank_account_number: string;
   bank_account_name: string;
   manager_id: string | null;
+  employment_status: EmploymentStatus;
+  deactivation_reason: string;
+  on_probation: boolean;
+  probation_ends_at: string;
 }
 
 interface StaffDialogProps {
@@ -262,6 +267,59 @@ export function StaffDialog({
               />
             </div>
           </div>
+
+          {mode === "edit" && (
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <div className="space-y-2">
+                <Label>Employment status</Label>
+                <Select
+                  value={values.employment_status}
+                  onValueChange={(v) => onChange({ ...values, employment_status: v as EmploymentStatus })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_leave">On leave</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(values.employment_status === "inactive" || values.employment_status === "suspended") && (
+                <div className="space-y-2">
+                  <Label>Reason</Label>
+                  <Textarea
+                    value={values.deactivation_reason}
+                    onChange={(e) => onChange({ ...values, deactivation_reason: e.target.value })}
+                    rows={2}
+                    placeholder="Why is this person being marked inactive/suspended?"
+                  />
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={values.on_probation}
+                  onCheckedChange={(checked) => onChange({ ...values, on_probation: checked === true })}
+                />
+                On probation
+              </label>
+
+              {values.on_probation && (
+                <div className="space-y-2">
+                  <Label>Probation ends</Label>
+                  <Input
+                    type="date"
+                    value={values.probation_ends_at}
+                    onChange={(e) => onChange({ ...values, probation_ends_at: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

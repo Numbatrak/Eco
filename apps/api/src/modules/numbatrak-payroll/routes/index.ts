@@ -14,6 +14,8 @@ import {
   markPaid,
   getMyEarnings,
   getPayrollLineTrace,
+  closePeriod,
+  reopenPeriod,
   type PayrollScope,
 } from "../lib/payroll.js";
 
@@ -88,7 +90,39 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
       const db = app.getDb();
       const organizationId = request.activeOrganizationId!;
       const { month } = request.body as { month: string };
-      const run = await runPayroll(db, organizationId, month);
+      try {
+        const run = await runPayroll(db, organizationId, month);
+        return reply.send(run);
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to run payroll" });
+      }
+    },
+  );
+
+  app.post(
+    "/org/numbatrak/payroll/run/:month/close",
+    { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
+    async (request, reply) => {
+      const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
+      const { month } = request.params as { month: string };
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+      if (!session) return reply.status(401).send({ error: "Unauthorized" });
+      const run = await closePeriod(db, organizationId, month, session.user.id);
+      if (!run) return reply.status(404).send({ error: "No payroll run found for this month" });
+      return reply.send(run);
+    },
+  );
+
+  app.post(
+    "/org/numbatrak/payroll/run/:month/reopen",
+    { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
+    async (request, reply) => {
+      const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
+      const { month } = request.params as { month: string };
+      const run = await reopenPeriod(db, organizationId, month);
+      if (!run) return reply.status(404).send({ error: "No payroll run found for this month" });
       return reply.send(run);
     },
   );
@@ -98,11 +132,16 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
     { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
     async (request, reply) => {
       const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
       const { lineId } = request.params as { lineId: string };
       const body = request.body as { overrideBaseSalary?: number | null; overrideCommission?: number | null };
-      const row = await overrideLine(db, lineId, body);
-      if (!row) return reply.status(404).send({ error: "Line not found" });
-      return reply.send({ ok: true });
+      try {
+        const row = await overrideLine(db, organizationId, lineId, body);
+        if (!row) return reply.status(404).send({ error: "Line not found" });
+        return reply.send({ ok: true });
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to override line" });
+      }
     },
   );
 
@@ -111,11 +150,16 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
     { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
     async (request, reply) => {
       const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
       const { lineId } = request.params as { lineId: string };
       const body = request.body as { manualAdjustment: number; manualAdjustmentNote?: string | null };
-      const row = await setManualAdjustment(db, lineId, body);
-      if (!row) return reply.status(404).send({ error: "Line not found" });
-      return reply.send({ ok: true });
+      try {
+        const row = await setManualAdjustment(db, organizationId, lineId, body);
+        if (!row) return reply.status(404).send({ error: "Line not found" });
+        return reply.send({ ok: true });
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to set adjustment" });
+      }
     },
   );
 
@@ -124,11 +168,16 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
     { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
     async (request, reply) => {
       const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
       const { lineId } = request.params as { lineId: string };
       const { sotmAwarded } = request.body as { sotmAwarded: boolean };
-      const row = await awardSotm(db, lineId, sotmAwarded);
-      if (!row) return reply.status(404).send({ error: "Line not found" });
-      return reply.send({ ok: true });
+      try {
+        const row = await awardSotm(db, organizationId, lineId, sotmAwarded);
+        if (!row) return reply.status(404).send({ error: "Line not found" });
+        return reply.send({ ok: true });
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to award SOTM" });
+      }
     },
   );
 
@@ -137,11 +186,18 @@ export default async function numbatrakPayrollRoutes(app: FastifyInstance): Prom
     { preHandler: app.requireOrgPermission({ numbatrakPayroll: ["manage"] }) },
     async (request, reply) => {
       const db = app.getDb();
+      const organizationId = request.activeOrganizationId!;
       const { lineId } = request.params as { lineId: string };
-      const { paid } = request.body as { paid: boolean };
-      const row = await markPaid(db, request.log, lineId, paid);
-      if (!row) return reply.status(404).send({ error: "Line not found" });
-      return reply.send({ ok: true });
+      const { paid, paidNotes } = request.body as { paid: boolean; paidNotes?: string | null };
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+      if (!session) return reply.status(401).send({ error: "Unauthorized" });
+      try {
+        const row = await markPaid(db, request.log, organizationId, lineId, paid, session.user.id, paidNotes);
+        if (!row) return reply.status(404).send({ error: "Line not found" });
+        return reply.send({ ok: true });
+      } catch (err) {
+        return reply.status(400).send({ error: err instanceof Error ? err.message : "Failed to mark paid" });
+      }
     },
   );
 

@@ -14,6 +14,7 @@ import {
   type NumbatrakEligibleMember,
   type NumbatrakStaff,
   type UpdateNumbatrakStaffRequest,
+  type UpdateNumbatrakStaffBankDetailsRequest,
 } from "@platform/shared-types";
 
 export type StaffRow = typeof numbatrakStaff.$inferSelect;
@@ -48,6 +49,7 @@ function serializeStaff(
   memberRole: string | null,
   subBrands: string[],
   managerName: string | null,
+  deactivatedByName: string | null = null,
 ): NumbatrakStaff {
   return {
     id: row.id,
@@ -63,6 +65,12 @@ function serializeStaff(
     bankAccountNumber: row.bankAccountNumber,
     bankAccountName: row.bankAccountName,
     active: row.active,
+    employmentStatus: row.employmentStatus as NumbatrakStaff["employmentStatus"],
+    onProbation: row.onProbation,
+    probationEndsAt: row.probationEndsAt?.toISOString() ?? null,
+    deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
+    deactivatedByName,
+    deactivationReason: row.deactivationReason,
     managerId: row.managerId,
     managerName,
     createdAt: row.createdAt?.toISOString() ?? null,
@@ -72,6 +80,7 @@ function serializeStaff(
 
 const managerStaff = alias(numbatrakStaff, "manager_staff");
 const managerUser = alias(user, "manager_user");
+const deactivatedByUser = alias(user, "deactivated_by_user");
 
 /** Every staff id this manager's staff record can reach as a direct report - one level, no transitive chains. */
 export async function getDirectReportStaffIds(db: Queryable, organizationId: string, managerStaffId: string): Promise<string[]> {
@@ -138,19 +147,28 @@ export async function listStaffForOrg(
       userEmail: user.email,
       memberRole: member.role,
       managerName: managerUser.name,
+      deactivatedByName: deactivatedByUser.name,
     })
     .from(numbatrakStaff)
     .innerJoin(user, eq(numbatrakStaff.userId, user.id))
     .leftJoin(member, and(eq(member.organizationId, organizationId), eq(member.userId, numbatrakStaff.userId)))
     .leftJoin(managerStaff, eq(numbatrakStaff.managerId, managerStaff.id))
     .leftJoin(managerUser, eq(managerStaff.userId, managerUser.id))
+    .leftJoin(deactivatedByUser, eq(numbatrakStaff.deactivatedBy, deactivatedByUser.id))
     .where(and(...conditions));
 
   const result: NumbatrakStaff[] = [];
   for (const row of rows) {
     const subBrands = await getSubBrands(db, row.staff.id);
     result.push(
-      serializeStaff(row.staff, { name: row.userName, email: row.userEmail }, row.memberRole ?? null, subBrands, row.managerName ?? null),
+      serializeStaff(
+        row.staff,
+        { name: row.userName, email: row.userEmail },
+        row.memberRole ?? null,
+        subBrands,
+        row.managerName ?? null,
+        row.deactivatedByName ?? null,
+      ),
     );
   }
   return result;
@@ -262,11 +280,18 @@ async function getManagerName(db: Queryable, managerId: string | null): Promise<
   return row?.name ?? null;
 }
 
+async function getUserNameById(db: Queryable, userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+  return row?.name ?? null;
+}
+
 export async function updateStaff(
   db: Database,
   organizationId: string,
   staffId: string,
   input: UpdateNumbatrakStaffRequest,
+  actingUserId: string | null = null,
 ): Promise<NumbatrakStaff | null> {
   return db.transaction(async (tx) => {
     const [existing] = await tx
@@ -294,8 +319,31 @@ export async function updateStaff(
     if (input.bankAccountNumber !== undefined) values.bankAccountNumber = input.bankAccountNumber;
     if (input.bankAccountName !== undefined) values.bankAccountName = input.bankAccountName;
     if (input.active !== undefined) values.active = input.active;
+    if (input.onProbation !== undefined) values.onProbation = input.onProbation;
+    if (input.probationEndsAt !== undefined) {
+      values.probationEndsAt = input.probationEndsAt ? new Date(input.probationEndsAt) : null;
+    }
     if (input.managerId !== undefined) {
       values.managerId = await resolveManagerId(tx, organizationId, input.managerId, staffId);
+    }
+    // employmentStatus is the finer-grained HR field; `active` (the one real
+    // gate everything else checks) is auto-derived from it here rather than
+    // requiring the caller to set both consistently. deactivatedAt/By/Reason
+    // form a lightweight audit trail of the most recent status change, only
+    // touched when employmentStatus is actually part of this update.
+    if (input.employmentStatus !== undefined) {
+      values.employmentStatus = input.employmentStatus;
+      const goingInactive = input.employmentStatus === "inactive" || input.employmentStatus === "suspended";
+      values.active = input.employmentStatus === "active" || input.employmentStatus === "on_leave";
+      if (goingInactive) {
+        values.deactivatedAt = new Date();
+        values.deactivatedBy = actingUserId ?? null;
+        values.deactivationReason = input.deactivationReason ?? null;
+      } else {
+        values.deactivatedAt = null;
+        values.deactivatedBy = null;
+        values.deactivationReason = null;
+      }
     }
 
     const [row] = await tx
@@ -317,6 +365,38 @@ export async function updateStaff(
     const [userInfo] = await tx.select({ name: user.name, email: user.email }).from(user).where(eq(user.id, row.userId)).limit(1);
     const subBrands = await getSubBrands(tx, staffId);
     const managerName = await getManagerName(tx, row.managerId);
-    return serializeStaff(row, userInfo ?? null, membership?.role ?? null, subBrands, managerName);
+    const deactivatedByName = await getUserNameById(tx, row.deactivatedBy);
+    return serializeStaff(row, userInfo ?? null, membership?.role ?? null, subBrands, managerName, deactivatedByName);
   });
+}
+
+/** Self-service: a staff member updates only their own bank details - no
+ * "manage" permission required, just proof the caller owns this row. */
+export async function updateOwnBankDetails(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  input: UpdateNumbatrakStaffBankDetailsRequest,
+): Promise<NumbatrakStaff | null> {
+  const values: Partial<typeof numbatrakStaff.$inferInsert> = { updatedAt: new Date() };
+  if (input.bankName !== undefined) values.bankName = input.bankName;
+  if (input.bankAccountNumber !== undefined) values.bankAccountNumber = input.bankAccountNumber;
+  if (input.bankAccountName !== undefined) values.bankAccountName = input.bankAccountName;
+
+  const [row] = await db
+    .update(numbatrakStaff)
+    .set(values)
+    .where(and(eq(numbatrakStaff.organizationId, organizationId), eq(numbatrakStaff.userId, userId)))
+    .returning();
+  if (!row) return null;
+
+  const [membership] = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId)))
+    .limit(1);
+  const [userInfo] = await db.select({ name: user.name, email: user.email }).from(user).where(eq(user.id, userId)).limit(1);
+  const subBrands = await getSubBrands(db, row.id);
+  const managerName = await getManagerName(db, row.managerId);
+  return serializeStaff(row, userInfo ?? null, membership?.role ?? null, subBrands, managerName);
 }

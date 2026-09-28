@@ -1301,6 +1301,9 @@ export const NUMBATRAK_SPEC_ROLE_COMPATIBLE_MEMBER_ROLES: Record<NumbatrakSpecRo
   Accountant: ["admin", "owner"],
 };
 
+export const numbatrakEmploymentStatusSchema = z.enum(["active", "inactive", "suspended", "on_leave"]);
+export type NumbatrakEmploymentStatus = z.infer<typeof numbatrakEmploymentStatusSchema>;
+
 export const numbatrakStaffSchema = z.object({
   id: z.string().uuid(),
   userId: z.string(),
@@ -1315,6 +1318,12 @@ export const numbatrakStaffSchema = z.object({
   bankAccountNumber: z.string().nullable(),
   bankAccountName: z.string().nullable(),
   active: z.boolean(),
+  employmentStatus: numbatrakEmploymentStatusSchema,
+  onProbation: z.boolean(),
+  probationEndsAt: z.string().nullable(),
+  deactivatedAt: z.string().nullable(),
+  deactivatedByName: z.string().nullable(),
+  deactivationReason: z.string().nullable(),
   managerId: z.string().uuid().nullable(),
   managerName: z.string().nullable(),
   createdAt: z.string().nullable(),
@@ -1332,6 +1341,8 @@ const numbatrakStaffRequestBaseSchema = z.object({
   bankAccountNumber: z.string().trim().max(50).nullable().optional(),
   bankAccountName: z.string().trim().max(200).nullable().optional(),
   managerId: z.string().uuid().nullable().optional(),
+  onProbation: z.boolean().optional(),
+  probationEndsAt: z.string().nullable().optional(),
 });
 
 export const createNumbatrakStaffRequestSchema = numbatrakStaffRequestBaseSchema;
@@ -1339,8 +1350,20 @@ export type CreateNumbatrakStaffRequest = z.infer<typeof createNumbatrakStaffReq
 
 export const updateNumbatrakStaffRequestSchema = numbatrakStaffRequestBaseSchema.partial().extend({
   active: z.boolean().optional(),
+  // Setting 'inactive'/'suspended' auto-clears `active` to false server-side;
+  // 'active'/'on_leave' auto-sets it true. deactivationReason is only kept
+  // when the new status isn't 'active' (cleared on reactivation).
+  employmentStatus: numbatrakEmploymentStatusSchema.optional(),
+  deactivationReason: z.string().trim().max(500).nullable().optional(),
 });
 export type UpdateNumbatrakStaffRequest = z.infer<typeof updateNumbatrakStaffRequestSchema>;
+
+export const updateNumbatrakStaffBankDetailsRequestSchema = z.object({
+  bankName: z.string().trim().max(200).nullable().optional(),
+  bankAccountNumber: z.string().trim().max(50).nullable().optional(),
+  bankAccountName: z.string().trim().max(200).nullable().optional(),
+});
+export type UpdateNumbatrakStaffBankDetailsRequest = z.infer<typeof updateNumbatrakStaffBankDetailsRequestSchema>;
 
 export const numbatrakEligibleMemberSchema = z.object({
   userId: z.string(),
@@ -1438,15 +1461,24 @@ export const numbatrakPayrollLineSchema = z.object({
   sotmAwarded: z.boolean(),
   paid: z.boolean(),
   paidAt: z.string().nullable(),
+  paidAmount: z.number().nullable(),
+  paidByName: z.string().nullable(),
+  paidNotes: z.string().nullable(),
   totalPay: z.number(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
 export type NumbatrakPayrollLine = z.infer<typeof numbatrakPayrollLineSchema>;
 
+export const numbatrakPayrollPeriodStatusSchema = z.enum(["open", "closed"]);
+export type NumbatrakPayrollPeriodStatus = z.infer<typeof numbatrakPayrollPeriodStatusSchema>;
+
 export const numbatrakPayrollRunSchema = z.object({
   id: z.string().uuid(),
   month: z.string(),
+  status: numbatrakPayrollPeriodStatusSchema,
+  closedAt: z.string().nullable(),
+  closedByName: z.string().nullable(),
   lines: z.array(numbatrakPayrollLineSchema),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
@@ -1479,6 +1511,7 @@ export type AwardNumbatrakSotmRequest = z.infer<typeof awardNumbatrakSotmRequest
 
 export const markNumbatrakPayrollLinePaidRequestSchema = z.object({
   paid: z.boolean(),
+  paidNotes: z.string().trim().nullable().optional(),
 });
 export type MarkNumbatrakPayrollLinePaidRequest = z.infer<typeof markNumbatrakPayrollLinePaidRequestSchema>;
 

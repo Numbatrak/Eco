@@ -22,6 +22,10 @@ const EMPTY_VALUES: StaffFormValues = {
   bank_account_number: "",
   bank_account_name: "",
   manager_id: null,
+  employment_status: "active",
+  deactivation_reason: "",
+  on_probation: false,
+  probation_ends_at: "",
 };
 
 function staffToValues(staff: Staff): StaffFormValues {
@@ -35,6 +39,10 @@ function staffToValues(staff: Staff): StaffFormValues {
     bank_account_number: staff.bank_account_number ?? "",
     bank_account_name: staff.bank_account_name ?? "",
     manager_id: staff.manager_id,
+    employment_status: staff.employment_status,
+    deactivation_reason: staff.deactivation_reason ?? "",
+    on_probation: staff.on_probation,
+    probation_ends_at: staff.probation_ends_at ? staff.probation_ends_at.slice(0, 10) : "",
   };
 }
 
@@ -93,6 +101,10 @@ export default function StaffForm() {
           bank_account_number: formValues.bank_account_number || null,
           bank_account_name: formValues.bank_account_name || null,
           manager_id: formValues.manager_id,
+          employment_status: formValues.employment_status,
+          deactivation_reason: formValues.deactivation_reason || null,
+          on_probation: formValues.on_probation,
+          probation_ends_at: formValues.probation_ends_at || null,
         });
         updateItem(updated);
         setSuccess("Staff record updated.");
@@ -225,7 +237,12 @@ export default function StaffForm() {
                     <td className="px-4 py-2">{record.extra_roles.join(", ") || "—"}</td>
                     <td className="px-4 py-2">{record.sub_brands.join(", ") || "—"}</td>
                     <td className="px-4 py-2">{record.manager_name ?? "—"}</td>
-                    <td className="px-4 py-2">{record.active ? "Active" : "Inactive"}</td>
+                    <td className="px-4 py-2">
+                      <span className="capitalize">{record.employment_status.replace("_", " ")}</span>
+                      {record.on_probation && (
+                        <span className="ml-1 text-xs text-muted-foreground">(probation)</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-right space-x-2">
                       {canUpdate && (
                         <>

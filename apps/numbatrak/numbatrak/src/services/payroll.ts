@@ -48,14 +48,22 @@ export interface PayrollLine {
   sotm_awarded: boolean;
   paid: boolean;
   paid_at: string | null;
+  paid_amount: number | null;
+  paid_by_name: string | null;
+  paid_notes: string | null;
   total_pay: number;
   created_at: string | null;
   updated_at: string | null;
 }
 
+export type PayrollPeriodStatus = "open" | "closed";
+
 export interface PayrollRun {
   id: string;
   month: string;
+  status: PayrollPeriodStatus;
+  closed_at: string | null;
+  closed_by_name: string | null;
   lines: PayrollLine[];
   created_at: string | null;
   updated_at: string | null;
@@ -138,6 +146,9 @@ interface PayrollLineDto {
   sotmAwarded: boolean;
   paid: boolean;
   paidAt: string | null;
+  paidAmount: number | null;
+  paidByName: string | null;
+  paidNotes: string | null;
   totalPay: number;
   createdAt: string | null;
   updatedAt: string | null;
@@ -146,6 +157,9 @@ interface PayrollLineDto {
 interface PayrollRunDto {
   id: string;
   month: string;
+  status: PayrollPeriodStatus;
+  closedAt: string | null;
+  closedByName: string | null;
   lines: PayrollLineDto[];
   createdAt: string | null;
   updatedAt: string | null;
@@ -200,6 +214,9 @@ function lineFromDto(dto: PayrollLineDto): PayrollLine {
     sotm_awarded: dto.sotmAwarded,
     paid: dto.paid,
     paid_at: dto.paidAt,
+    paid_amount: dto.paidAmount,
+    paid_by_name: dto.paidByName,
+    paid_notes: dto.paidNotes,
     total_pay: dto.totalPay,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
@@ -210,6 +227,9 @@ function runFromDto(dto: PayrollRunDto): PayrollRun {
   return {
     id: dto.id,
     month: dto.month,
+    status: dto.status,
+    closed_at: dto.closedAt,
+    closed_by_name: dto.closedByName,
     lines: dto.lines.map(lineFromDto),
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
@@ -268,6 +288,16 @@ export async function runPayroll(month: string): Promise<PayrollRun> {
   return runFromDto(dto);
 }
 
+export async function closePayrollPeriod(month: string): Promise<PayrollRun> {
+  const dto = await apiRequest<PayrollRunDto>(`/org/numbatrak/payroll/run/${month}/close`, { method: "POST" });
+  return runFromDto(dto);
+}
+
+export async function reopenPayrollPeriod(month: string): Promise<PayrollRun> {
+  const dto = await apiRequest<PayrollRunDto>(`/org/numbatrak/payroll/run/${month}/reopen`, { method: "POST" });
+  return runFromDto(dto);
+}
+
 export async function overridePayrollLine(
   lineId: string,
   input: { overrideBaseSalary?: number | null; overrideCommission?: number | null },
@@ -295,10 +325,10 @@ export async function awardSotm(lineId: string, sotmAwarded: boolean): Promise<v
   });
 }
 
-export async function markLinePaid(lineId: string, paid: boolean): Promise<void> {
+export async function markLinePaid(lineId: string, paid: boolean, paidNotes?: string | null): Promise<void> {
   await apiRequest(`/org/numbatrak/payroll/lines/${lineId}/paid`, {
     method: "PATCH",
-    body: { paid },
+    body: { paid, paidNotes },
   });
 }
 

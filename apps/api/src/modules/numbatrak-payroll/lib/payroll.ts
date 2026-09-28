@@ -1,4 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { FastifyBaseLogger } from "fastify";
 import {
   numbatrakPayStructures,
@@ -7,10 +8,12 @@ import {
   numbatrakStaff,
   numbatrakCustomerOrders,
   numbatrakCustomerOrderItems,
+  numbatrakAdSpend,
   user,
   type Database,
   type Queryable,
 } from "@platform/db";
+import { getDirectReportStaffIds } from "../../numbatrak-staff/lib/staff.js";
 import type {
   NumbatrakPayStructure,
   NumbatrakPayrollRun,
@@ -24,6 +27,60 @@ import { payslipEmail } from "../../../lib/email-templates.js";
 
 type PayStructureRow = typeof numbatrakPayStructures.$inferSelect;
 type PayrollLineRow = typeof numbatrakPayrollLines.$inferSelect;
+type PayrollRunRow = typeof numbatrakPayrollRuns.$inferSelect;
+
+const paidByUser = alias(user, "paid_by_user");
+const closedByUser = alias(user, "closed_by_user");
+
+function serializeRun(run: PayrollRunRow, lines: NumbatrakPayrollLine[], closedByName: string | null): NumbatrakPayrollRun {
+  return {
+    id: run.id,
+    month: run.month,
+    status: run.status as NumbatrakPayrollRun["status"],
+    closedAt: run.closedAt?.toISOString() ?? null,
+    closedByName,
+    lines,
+    createdAt: run.createdAt?.toISOString() ?? null,
+    updatedAt: run.updatedAt?.toISOString() ?? null,
+  };
+}
+
+/** Throws if this org's month is closed - every mutating payroll action must call this before writing. */
+async function assertPeriodOpen(db: Queryable, organizationId: string, month: string): Promise<void> {
+  const [run] = await db
+    .select({ status: numbatrakPayrollRuns.status })
+    .from(numbatrakPayrollRuns)
+    .where(and(eq(numbatrakPayrollRuns.organizationId, organizationId), eq(numbatrakPayrollRuns.month, month)))
+    .limit(1);
+  if (run?.status === "closed") {
+    throw new Error(`Payroll for ${month} is closed. Reopen the period before making changes.`);
+  }
+}
+
+/**
+ * Resolves a payroll line's (organizationId, month), throwing 404-equivalent
+ * if the line doesn't belong to this org - closes the cross-tenant gap where
+ * override/adjustment/sotm/markPaid previously trusted any lineId under only
+ * an org-level permission check, never verifying the line itself was in that
+ * org. Also asserts the period isn't closed, in one place every mutator uses.
+ */
+async function assertLineMutable(
+  db: Queryable,
+  organizationId: string,
+  lineId: string,
+): Promise<{ month: string }> {
+  const [row] = await db
+    .select({ month: numbatrakPayrollRuns.month, status: numbatrakPayrollRuns.status })
+    .from(numbatrakPayrollLines)
+    .innerJoin(numbatrakPayrollRuns, eq(numbatrakPayrollLines.runId, numbatrakPayrollRuns.id))
+    .where(and(eq(numbatrakPayrollLines.id, lineId), eq(numbatrakPayrollRuns.organizationId, organizationId)))
+    .limit(1);
+  if (!row) throw new Error("Payroll line not found.");
+  if (row.status === "closed") {
+    throw new Error(`Payroll for ${row.month} is closed. Reopen the period before making changes.`);
+  }
+  return { month: row.month };
+}
 
 function serializePayStructure(row: PayStructureRow, staffName?: string | null): NumbatrakPayStructure {
   return {
@@ -53,7 +110,13 @@ function serializePayStructure(row: PayStructureRow, staffName?: string | null):
   };
 }
 
-function serializeLine(row: PayrollLineRow, staffName: string | null, primaryRole: string | null, runId: string): NumbatrakPayrollLine {
+function serializeLine(
+  row: PayrollLineRow,
+  staffName: string | null,
+  primaryRole: string | null,
+  runId: string,
+  paidByName: string | null = null,
+): NumbatrakPayrollLine {
   const baseSalary = row.overrideBaseSalary != null ? Number(row.overrideBaseSalary) : Number(row.calculatedBaseSalary);
   const commission = row.overrideCommission != null ? Number(row.overrideCommission) : Number(row.calculatedCommission);
   const upsell = Number(row.calculatedUpsellBonus);
@@ -84,6 +147,9 @@ function serializeLine(row: PayrollLineRow, staffName: string | null, primaryRol
     sotmAwarded: row.sotmAwarded,
     paid: row.paid,
     paidAt: row.paidAt?.toISOString() ?? null,
+    paidAmount: row.paidAmount != null ? Number(row.paidAmount) : null,
+    paidByName,
+    paidNotes: row.paidNotes,
     totalPay,
     createdAt: row.createdAt?.toISOString() ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
@@ -185,19 +251,30 @@ export async function getPayrollRun(
     : [eq(numbatrakPayrollLines.runId, run.id), eq(numbatrakStaff.userId, scope.ownUserId)];
 
   const lineRows = await db
-    .select({ line: numbatrakPayrollLines, userName: user.name, primaryRole: numbatrakStaff.primaryRole })
+    .select({
+      line: numbatrakPayrollLines,
+      userName: user.name,
+      primaryRole: numbatrakStaff.primaryRole,
+      paidByName: paidByUser.name,
+    })
     .from(numbatrakPayrollLines)
     .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
     .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+    .leftJoin(paidByUser, eq(numbatrakPayrollLines.paidBy, paidByUser.id))
     .where(and(...runConditions));
 
-  return {
-    id: run.id,
-    month: run.month,
-    lines: lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run.id)),
-    createdAt: run.createdAt?.toISOString() ?? null,
-    updatedAt: run.updatedAt?.toISOString() ?? null,
-  };
+  const closedByName = await getUserName(db, run.closedBy);
+  return serializeRun(
+    run,
+    lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run.id, r.paidByName ?? null)),
+    closedByName,
+  );
+}
+
+async function getUserName(db: Queryable, userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+  return row?.name ?? null;
 }
 
 export async function runPayroll(db: Database, organizationId: string, month: string): Promise<NumbatrakPayrollRun> {
@@ -214,6 +291,9 @@ export async function runPayroll(db: Database, organizationId: string, month: st
         .values({ organizationId, month })
         .returning();
     } else {
+      if (run!.status === "closed") {
+        throw new Error(`Payroll for ${month} is closed. Reopen the period before recomputing.`);
+      }
       await tx
         .update(numbatrakPayrollRuns)
         .set({ updatedAt: new Date() })
@@ -232,13 +312,22 @@ export async function runPayroll(db: Database, organizationId: string, month: st
 
     const roleStructures = new Map(structures.filter((s) => s.scopeType === "role").map((s) => [s.role, s]));
     const staffStructures = new Map(structures.filter((s) => s.scopeType === "staff").map((s) => [s.staffId, s]));
-    const teamDeliveryRates = await getTeamDeliveryRates(tx, organizationId, month);
 
     for (const staff of activeStaff) {
       const ps = staffStructures.get(staff.id) ?? roleStructures.get(staff.primaryRole);
       if (!ps) continue;
 
-      const orderData = await getStaffOrderData(tx, organizationId, staff.userId, month);
+      const orderData =
+        staff.primaryRole === "Media"
+          ? await getMediaBuyerOrderData(tx, organizationId, staff.userId, month)
+          : await getStaffOrderData(tx, organizationId, staff.userId, month);
+      // Team pool is this manager's own direct reports (numbatrakStaff.managerId),
+      // not every CRS org-wide - only fetched when this structure actually
+      // gates on it, since it's the one per-staff query in the loop.
+      const teamDeliveryRates =
+        ps.managerBonusEnabled && ps.managerGateEnabled
+          ? await getTeamDeliveryRates(tx, organizationId, month, staff.id)
+          : [];
       const calculated = calculatePay(ps, orderData, teamDeliveryRates);
 
       const [existing] = await tx
@@ -260,20 +349,50 @@ export async function runPayroll(db: Database, organizationId: string, month: st
     }
 
     const lineRows = await tx
-      .select({ line: numbatrakPayrollLines, userName: user.name, primaryRole: numbatrakStaff.primaryRole })
+      .select({
+        line: numbatrakPayrollLines,
+        userName: user.name,
+        primaryRole: numbatrakStaff.primaryRole,
+        paidByName: paidByUser.name,
+      })
       .from(numbatrakPayrollLines)
       .innerJoin(numbatrakStaff, eq(numbatrakPayrollLines.staffId, numbatrakStaff.id))
       .innerJoin(user, eq(numbatrakStaff.userId, user.id))
+      .leftJoin(paidByUser, eq(numbatrakPayrollLines.paidBy, paidByUser.id))
       .where(eq(numbatrakPayrollLines.runId, run!.id));
 
-    return {
-      id: run!.id,
-      month: run!.month,
-      lines: lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run!.id)),
-      createdAt: run!.createdAt?.toISOString() ?? null,
-      updatedAt: run!.updatedAt?.toISOString() ?? null,
-    };
+    const closedByName = await getUserName(tx, run!.closedBy);
+    return serializeRun(
+      run!,
+      lineRows.map((r) => serializeLine(r.line, r.userName, r.primaryRole, run!.id, r.paidByName ?? null)),
+      closedByName,
+    );
   });
+}
+
+export async function closePeriod(
+  db: Database,
+  organizationId: string,
+  month: string,
+  closedByUserId: string,
+): Promise<NumbatrakPayrollRun | null> {
+  const [run] = await db
+    .update(numbatrakPayrollRuns)
+    .set({ status: "closed", closedAt: new Date(), closedBy: closedByUserId, updatedAt: new Date() })
+    .where(and(eq(numbatrakPayrollRuns.organizationId, organizationId), eq(numbatrakPayrollRuns.month, month)))
+    .returning();
+  if (!run) return null;
+  return getPayrollRun(db, organizationId, month);
+}
+
+export async function reopenPeriod(db: Database, organizationId: string, month: string): Promise<NumbatrakPayrollRun | null> {
+  const [run] = await db
+    .update(numbatrakPayrollRuns)
+    .set({ status: "open", closedAt: null, closedBy: null, updatedAt: new Date() })
+    .where(and(eq(numbatrakPayrollRuns.organizationId, organizationId), eq(numbatrakPayrollRuns.month, month)))
+    .returning();
+  if (!run) return null;
+  return getPayrollRun(db, organizationId, month);
 }
 
 async function getStaffOrderData(
@@ -285,6 +404,14 @@ async function getStaffOrderData(
   const startDate = new Date(`${month}-01T00:00:00Z`);
   const endMonth = new Date(startDate);
   endMonth.setMonth(endMonth.getMonth() + 1);
+  // postgres-js's bind-parameter encoder doesn't stringify a bare JS Date
+  // passed through a raw sql`` template - it throws inside
+  // Buffer.byteLength at bind time. Every other value in this file goes
+  // through Drizzle's typed column comparisons, which handle that
+  // themselves; these date-range filters are raw sql`` so they need an
+  // explicit ISO string.
+  const startDateIso = startDate.toISOString();
+  const endMonthIso = endMonth.toISOString();
 
   const [orderStats] = await db
     .select({
@@ -296,8 +423,8 @@ async function getStaffOrderData(
       and(
         eq(numbatrakCustomerOrders.organizationId, organizationId),
         eq(numbatrakCustomerOrders.csrId, userId),
-        sql`${numbatrakCustomerOrders.createdAt} >= ${startDate}`,
-        sql`${numbatrakCustomerOrders.createdAt} < ${endMonth}`,
+        sql`${numbatrakCustomerOrders.createdAt} >= ${startDateIso}`,
+        sql`${numbatrakCustomerOrders.createdAt} < ${endMonthIso}`,
       ),
     );
 
@@ -311,8 +438,8 @@ async function getStaffOrderData(
         eq(numbatrakCustomerOrders.organizationId, organizationId),
         eq(numbatrakCustomerOrders.csrId, userId),
         eq(numbatrakCustomerOrders.status, "delivered"),
-        sql`${numbatrakCustomerOrders.createdAt} >= ${startDate}`,
-        sql`${numbatrakCustomerOrders.createdAt} < ${endMonth}`,
+        sql`${numbatrakCustomerOrders.createdAt} >= ${startDateIso}`,
+        sql`${numbatrakCustomerOrders.createdAt} < ${endMonthIso}`,
       ),
     );
 
@@ -327,8 +454,8 @@ async function getStaffOrderData(
         eq(numbatrakCustomerOrders.organizationId, organizationId),
         eq(numbatrakCustomerOrders.csrId, userId),
         sql`${numbatrakCustomerOrderItems.addedByUserId} IS NOT NULL`,
-        sql`${numbatrakCustomerOrders.createdAt} >= ${startDate}`,
-        sql`${numbatrakCustomerOrders.createdAt} < ${endMonth}`,
+        sql`${numbatrakCustomerOrders.createdAt} >= ${startDateIso}`,
+        sql`${numbatrakCustomerOrders.createdAt} < ${endMonthIso}`,
       ),
     );
 
@@ -346,15 +473,68 @@ async function getStaffOrderData(
 }
 
 /**
- * Team hit-KPI rate for the manager gate: every active CRS-primary-role
- * staff org-wide (no reporting hierarchy exists in this schema - see
- * payroll.ts schema comment), each person's own delivery rate for the
- * month. Computed once per run and reused across every manager's gate
- * check, since "team" is the same set of people regardless of which
- * manager is being paid - only the KPI threshold to compare against varies
- * per manager's own pay structure.
+ * Media-buyer commission input: this buyer's OWN attributed orders
+ * (numbatrak_ad_spend.orders, summed across every brand they bought ads for
+ * this month), not a shared team total - keying off each buyer's own
+ * ad_spend rows (already partitioned per buyerId) means two buyers on the
+ * same brand each get paid off their own numbers, never a shared/double-
+ * counted total. No delivery-rate concept applies to media buyers, so
+ * deliveryRate is fixed at 100 - it never lets a commission gate (if one's
+ * enabled on the Media pay structure) zero this out.
  */
-async function getTeamDeliveryRates(db: Queryable, organizationId: string, month: string): Promise<number[]> {
+async function getMediaBuyerOrderData(
+  db: Queryable,
+  organizationId: string,
+  userId: string,
+  month: string,
+): Promise<Awaited<ReturnType<typeof getStaffOrderData>>> {
+  const startDate = new Date(`${month}-01T00:00:00Z`);
+  const endMonth = new Date(startDate);
+  endMonth.setMonth(endMonth.getMonth() + 1);
+  const startDateStr = startDate.toISOString().slice(0, 10);
+  const endMonthStr = endMonth.toISOString().slice(0, 10);
+
+  const [spendStats] = await db
+    .select({
+      totalOrders: sql<number>`coalesce(sum(${numbatrakAdSpend.orders}), 0)::int`,
+    })
+    .from(numbatrakAdSpend)
+    .where(
+      and(
+        eq(numbatrakAdSpend.organizationId, organizationId),
+        eq(numbatrakAdSpend.buyerId, userId),
+        sql`${numbatrakAdSpend.spendDate} >= ${startDateStr}`,
+        sql`${numbatrakAdSpend.spendDate} < ${endMonthStr}`,
+      ),
+    );
+
+  const totalOrders = spendStats?.totalOrders ?? 0;
+  return {
+    totalOrders,
+    totalRevenue: 0,
+    deliveredCount: totalOrders,
+    deliveryRate: 100,
+    upsellCount: 0,
+  };
+}
+
+/**
+ * Team hit-KPI rate for the manager gate: active CRS-primary-role staff who
+ * report to this manager (numbatrakStaff.managerId - the real reporting
+ * hierarchy, already used org-wide by Staff's "managers see their team"
+ * rule), each person's own delivery rate for the month. Scoped per manager,
+ * not org-wide, so a manager's bonus depends only on the team actually
+ * assigned to them.
+ */
+async function getTeamDeliveryRates(
+  db: Queryable,
+  organizationId: string,
+  month: string,
+  managerStaffId: string,
+): Promise<number[]> {
+  const reportIds = await getDirectReportStaffIds(db, organizationId, managerStaffId);
+  if (reportIds.length === 0) return [];
+
   const crsStaff = await db
     .select()
     .from(numbatrakStaff)
@@ -363,6 +543,7 @@ async function getTeamDeliveryRates(db: Queryable, organizationId: string, month
         eq(numbatrakStaff.organizationId, organizationId),
         eq(numbatrakStaff.active, true),
         eq(numbatrakStaff.primaryRole, "CRS"),
+        inArray(numbatrakStaff.id, reportIds),
       ),
     );
 
@@ -426,9 +607,11 @@ function calculatePay(
 
 export async function overrideLine(
   db: Database,
+  organizationId: string,
   lineId: string,
   input: { overrideBaseSalary?: number | null; overrideCommission?: number | null },
 ): Promise<PayrollLineRow | null> {
+  await assertLineMutable(db, organizationId, lineId);
   const values: Partial<typeof numbatrakPayrollLines.$inferInsert> = { updatedAt: new Date() };
   if (input.overrideBaseSalary !== undefined) {
     values.overrideBaseSalary = input.overrideBaseSalary != null ? String(input.overrideBaseSalary) : null;
@@ -442,9 +625,11 @@ export async function overrideLine(
 
 export async function setManualAdjustment(
   db: Database,
+  organizationId: string,
   lineId: string,
   input: { manualAdjustment: number; manualAdjustmentNote?: string | null },
 ): Promise<PayrollLineRow | null> {
+  await assertLineMutable(db, organizationId, lineId);
   const [row] = await db
     .update(numbatrakPayrollLines)
     .set({
@@ -466,10 +651,12 @@ export async function setManualAdjustment(
  */
 export async function awardSotm(
   db: Database,
+  organizationId: string,
   lineId: string,
   awarded: boolean,
   overrideAmount?: number,
 ): Promise<PayrollLineRow | null> {
+  await assertLineMutable(db, organizationId, lineId);
   const [line] = await db.select().from(numbatrakPayrollLines).where(eq(numbatrakPayrollLines.id, lineId)).limit(1);
   if (!line) return null;
 
@@ -500,15 +687,49 @@ export async function awardSotm(
   return row ?? null;
 }
 
+/**
+ * `paidAmount` snapshots the line's total pay at the moment of marking, so a
+ * later override/adjustment can never retroactively change what was
+ * actually recorded as paid - re-marking (after an un-pay) captures a fresh
+ * snapshot each time, since it reads the current total at click-time.
+ */
 export async function markPaid(
   db: Database,
   logger: FastifyBaseLogger,
+  organizationId: string,
   lineId: string,
   paid: boolean,
+  paidByUserId: string | null,
+  paidNotes?: string | null,
 ): Promise<PayrollLineRow | null> {
+  await assertLineMutable(db, organizationId, lineId);
+
+  let paidAmount: string | null = null;
+  if (paid) {
+    const [line] = await db.select().from(numbatrakPayrollLines).where(eq(numbatrakPayrollLines.id, lineId)).limit(1);
+    if (!line) return null;
+    const baseSalary = line.overrideBaseSalary != null ? Number(line.overrideBaseSalary) : Number(line.calculatedBaseSalary);
+    const commission = line.overrideCommission != null ? Number(line.overrideCommission) : Number(line.calculatedCommission);
+    const total =
+      baseSalary +
+      commission +
+      Number(line.calculatedUpsellBonus) +
+      Number(line.calculatedSotmBonus) +
+      Number(line.calculatedManagerBonus) +
+      Number(line.manualAdjustment);
+    paidAmount = String(total);
+  }
+
   const [row] = await db
     .update(numbatrakPayrollLines)
-    .set({ paid, paidAt: paid ? new Date() : null, updatedAt: new Date() })
+    .set({
+      paid,
+      paidAt: paid ? new Date() : null,
+      paidAmount: paid ? paidAmount : null,
+      paidBy: paid ? paidByUserId : null,
+      paidNotes: paid ? (paidNotes ?? null) : null,
+      updatedAt: new Date(),
+    })
     .where(eq(numbatrakPayrollLines.id, lineId))
     .returning();
   if (!row) return null;
@@ -589,7 +810,10 @@ export async function getMyEarnings(
   const ps = staffStructure ?? roleStructure;
   if (!ps) return null;
 
-  const orderData = await getStaffOrderData(db, organizationId, userId, month);
+  const orderData =
+    staffRow.primaryRole === "Media"
+      ? await getMediaBuyerOrderData(db, organizationId, userId, month)
+      : await getStaffOrderData(db, organizationId, userId, month);
 
   const baseSalary = ps.baseSalaryEnabled ? Number(ps.baseSalaryAmount) : 0;
   let commissionSoFar = 0;
@@ -680,14 +904,21 @@ export async function getPayrollLineTrace(db: Database, lineId: string): Promise
   }
   steps.push({ component: "base_salary", label: "Base salary", enabled: baseEnabled, amount: effectiveBase, detail: baseDetail });
 
+  const isMedia = row.staffPrimaryRole === "Media";
   const commissionEnabled = ps?.commissionEnabled ?? false;
   let commissionDetail: string;
   if (!commissionEnabled) {
     commissionDetail = "Commission is not enabled for this pay structure.";
   } else {
-    const basisLabel = ps?.commissionBasis === "percentage_of_sale" ? `${Number(ps.commissionRate)}% of delivered sale value` : `${formatMoney(Number(ps?.commissionRate ?? 0))} per delivered order`;
+    const basisLabel = ps?.commissionBasis === "percentage_of_sale"
+      ? `${Number(ps.commissionRate)}% of delivered sale value`
+      : isMedia
+        ? `${formatMoney(Number(ps?.commissionRate ?? 0))} per order attributed to this buyer's own ad spend`
+        : `${formatMoney(Number(ps?.commissionRate ?? 0))} per delivered order`;
     commissionDetail = `Basis: ${basisLabel}.`;
-    if (ps?.commissionGateEnabled) {
+    if (isMedia) {
+      commissionDetail += " No delivery-rate gate applies to media-buyer commission.";
+    } else if (ps?.commissionGateEnabled) {
       const rate = line.deliveryRatePercent != null ? Number(line.deliveryRatePercent) : null;
       const threshold = Number(ps.commissionGateThresholdPercent);
       commissionDetail += line.commissionGateMissed
@@ -723,9 +954,9 @@ export async function getPayrollLineTrace(db: Database, lineId: string): Promise
   } else if (!ps?.managerGateEnabled) {
     managerDetail = "No team-ratio gate on this structure — manager bonus is paid in full.";
   } else if (line.managerGateMissed) {
-    managerDetail = `Team-ratio gate missed — fewer than ${Number(ps.managerGateTeamRatioPercent)}% of the team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month, so the manager bonus zeroes.`;
+    managerDetail = `Team-ratio gate missed — fewer than ${Number(ps.managerGateTeamRatioPercent)}% of your direct-report CRS team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month, so the manager bonus zeroes.`;
   } else {
-    managerDetail = `Team-ratio gate cleared — at least ${Number(ps.managerGateTeamRatioPercent)}% of the team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month.`;
+    managerDetail = `Team-ratio gate cleared — at least ${Number(ps.managerGateTeamRatioPercent)}% of your direct-report CRS team hit their ${Number(ps.managerGateKpiThresholdPercent)}% KPI threshold this month.`;
   }
   steps.push({ component: "manager_bonus", label: "Manager bonus", enabled: managerEnabled, amount: Number(line.calculatedManagerBonus), detail: managerDetail });
 

@@ -7,7 +7,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { organization } from "../../auth-schema.js";
+import { organization, user } from "../../auth-schema.js";
 import { numbatrakStaff } from "./staff.js";
 
 // One row per (org, role-tier) OR (org, staff-specific override). A staff
@@ -45,10 +45,10 @@ export const numbatrakPayStructures = pgTable(
     sotmBonusAmount: numeric("sotm_bonus_amount", { precision: 14, scale: 2 }).notNull().default("0"),
 
     // Manager bonus - a standalone component (not a modifier on commission),
-    // gated by team ratio when managerGateEnabled is on. "Team" = every
-    // active CRS-primary-role staff org-wide, since no reporting hierarchy
-    // exists anywhere in this schema; "hit KPI" = that team member's own
-    // delivery rate for the month >= managerGateKpiThresholdPercent.
+    // gated by team ratio when managerGateEnabled is on. "Team" = this
+    // manager's own direct reports (numbatrakStaff.managerId) who are
+    // CRS-primary-role, not every CRS org-wide; "hit KPI" = that team
+    // member's own delivery rate for the month >= managerGateKpiThresholdPercent.
     managerBonusEnabled: boolean("manager_bonus_enabled").notNull().default(false),
     managerBonusAmount: numeric("manager_bonus_amount", { precision: 14, scale: 2 }).notNull().default("0"),
     managerGateEnabled: boolean("manager_gate_enabled").notNull().default(false),
@@ -88,7 +88,12 @@ export const numbatrakPayStructures = pgTable(
   ],
 );
 
-// One per (org, month) - a payroll run for that calendar month.
+// One per (org, month) - a payroll run for that calendar month. `status`
+// gates the whole month: 'closed' blocks re-running, overriding, adjusting,
+// SOTM-toggling, and mark-paid/unpaid for every line in it (each mutating
+// action checks this directly - see assertPeriodOpen in lib/payroll.ts -
+// rather than relying on one central guard, since a single missed call site
+// would otherwise silently let a closed month be rewritten).
 export const numbatrakPayrollRuns = pgTable(
   "numbatrak_payroll_runs",
   {
@@ -98,12 +103,16 @@ export const numbatrakPayrollRuns = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     // 'YYYY-MM'.
     month: text("month").notNull(),
+    status: text("status").notNull().default("open"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    closedBy: text("closed_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("numbatrak_payroll_runs_org_idx").on(table.organizationId),
     uniqueIndex("numbatrak_payroll_runs_org_month_unique_idx").on(table.organizationId, table.month),
+    check("numbatrak_payroll_runs_status_chk", sql`${table.status} IN ('open', 'closed')`),
   ],
 );
 
@@ -146,9 +155,15 @@ export const numbatrakPayrollLines = pgTable(
 
     // Deactivate-style, not a hard lock: marking paid never blocks further
     // edits or a re-send (mirrors Staff's own deactivate-not-delete
-    // precedent for "don't destroy editability").
+    // precedent for "don't destroy editability"). paidAmount snapshots
+    // total_pay at the moment of marking, so a later override/adjustment
+    // can never retroactively change what was actually recorded as paid -
+    // the payment-execution table always shows the true historical figure.
     paid: boolean("paid").notNull().default(false),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    paidAmount: numeric("paid_amount", { precision: 14, scale: 2 }),
+    paidBy: text("paid_by").references(() => user.id, { onDelete: "set null" }),
+    paidNotes: text("paid_notes"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

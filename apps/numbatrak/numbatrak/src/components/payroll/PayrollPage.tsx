@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { PageLayout } from "../layout/PageLayout";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
-import { fetchStaff } from "../../services/staff";
+import { fetchStaff, updateMyBankDetails } from "../../services/staff";
 import type { Staff } from "../../types/staff";
 import {
   fetchPayStructures,
   fetchPayrollRun,
   runPayroll,
+  closePayrollPeriod,
+  reopenPayrollPeriod,
   awardSotm,
   markLinePaid,
   fetchMyEarnings,
@@ -24,7 +26,7 @@ import {
 import { PayStructureDialog, type PayStructureFormValues } from "./PayStructureDialog";
 import { PayrollLineEditDialog, type PayrollLineEditValues } from "./PayrollLineEditDialog";
 import { PayrollTraceDialog } from "./PayrollTraceDialog";
-import { DollarSign, Play, Check, Star, AlertTriangle, PenLine, FileSearch, Plus } from "lucide-react";
+import { DollarSign, Play, Check, Star, AlertTriangle, PenLine, FileSearch, Plus, Lock, Unlock } from "lucide-react";
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -48,6 +50,7 @@ export function PayrollPage() {
   const [myEarnings, setMyEarnings] = useState<MyEarnings | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [togglingPeriod, setTogglingPeriod] = useState(false);
 
   const [structureDialogOpen, setStructureDialogOpen] = useState(false);
   const [editingStructure, setEditingStructure] = useState<PayStructure | null>(null);
@@ -63,13 +66,29 @@ export function PayrollPage() {
   const [trace, setTrace] = useState<PayrollTrace | null>(null);
   const [traceLoading, setTraceLoading] = useState(false);
 
+  const [actionError, setActionError] = useState<string | null>(null);
+  const isClosed = payrollRun?.status === "closed";
+
+  const [myStaff, setMyStaff] = useState<Staff | null>(null);
+  const [bankForm, setBankForm] = useState({ bank_name: "", bank_account_number: "", bank_account_name: "" });
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankError, setBankError] = useState<string | null>(null);
+  const [bankSuccess, setBankSuccess] = useState(false);
+
   const load = useCallback(async () => {
     if (!currentOrganization) return;
     setLoading(true);
     try {
       if (isStaffOnly) {
-        const earnings = await fetchMyEarnings();
+        const [earnings, ownStaff] = await Promise.all([fetchMyEarnings(), fetchStaff(currentOrganization.id)]);
         setMyEarnings(earnings);
+        const record = ownStaff[0] ?? null;
+        setMyStaff(record);
+        setBankForm({
+          bank_name: record?.bank_name ?? "",
+          bank_account_number: record?.bank_account_number ?? "",
+          bank_account_name: record?.bank_account_name ?? "",
+        });
       } else {
         const [s, r, staffList] = await Promise.all([
           fetchPayStructures(),
@@ -91,24 +110,68 @@ export function PayrollPage() {
 
   const handleRun = async () => {
     setRunning(true);
+    setActionError(null);
     try {
       const run = await runPayroll(month);
       setPayrollRun(run);
     } catch (err) {
-      console.error("Failed to run payroll", err);
+      setActionError(err instanceof Error ? err.message : "Failed to run payroll.");
     } finally {
       setRunning(false);
     }
   };
 
+  const handleTogglePeriod = async () => {
+    setTogglingPeriod(true);
+    setActionError(null);
+    try {
+      const run = isClosed ? await reopenPayrollPeriod(month) : await closePayrollPeriod(month);
+      setPayrollRun(run);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update period status.");
+    } finally {
+      setTogglingPeriod(false);
+    }
+  };
+
   const handleMarkPaid = async (lineId: string, paid: boolean) => {
-    await markLinePaid(lineId, paid);
-    void load();
+    setActionError(null);
+    try {
+      await markLinePaid(lineId, paid);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update paid status.");
+    }
   };
 
   const handleAwardSotm = async (lineId: string, awarded: boolean) => {
-    await awardSotm(lineId, awarded);
-    void load();
+    setActionError(null);
+    try {
+      await awardSotm(lineId, awarded);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update SOTM award.");
+    }
+  };
+
+  const handleSaveBankDetails = async () => {
+    setBankSaving(true);
+    setBankError(null);
+    setBankSuccess(false);
+    try {
+      const updated = await updateMyBankDetails({
+        bank_name: bankForm.bank_name || null,
+        bank_account_number: bankForm.bank_account_number || null,
+        bank_account_name: bankForm.bank_account_name || null,
+      });
+      setMyStaff(updated);
+      setBankSuccess(true);
+      setTimeout(() => setBankSuccess(false), 3000);
+    } catch (err) {
+      setBankError(err instanceof Error ? err.message : "Failed to save bank details.");
+    } finally {
+      setBankSaving(false);
+    }
   };
 
   const openNewStructure = () => {
@@ -206,6 +269,49 @@ export function PayrollPage() {
         ) : (
           <div className="text-muted-foreground">No pay structure configured for your role.</div>
         )}
+
+        {!loading && myStaff && (
+          <div className="max-w-md p-4 rounded-lg border border-border bg-card space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">My bank details</h2>
+            <p className="text-xs text-muted-foreground">Used by Payroll when marking your pay as paid.</p>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Bank name</label>
+              <input
+                type="text"
+                value={bankForm.bank_name}
+                onChange={(e) => setBankForm((f) => ({ ...f, bank_name: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Account number</label>
+              <input
+                type="text"
+                value={bankForm.bank_account_number}
+                onChange={(e) => setBankForm((f) => ({ ...f, bank_account_number: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Account name</label>
+              <input
+                type="text"
+                value={bankForm.bank_account_name}
+                onChange={(e) => setBankForm((f) => ({ ...f, bank_account_name: e.target.value }))}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
+              />
+            </div>
+            {bankError && <p className="text-xs text-destructive">{bankError}</p>}
+            {bankSuccess && <p className="text-xs text-green-600">Saved.</p>}
+            <button
+              onClick={handleSaveBankDetails}
+              disabled={bankSaving}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+            >
+              {bankSaving ? "Saving..." : "Save bank details"}
+            </button>
+          </div>
+        )}
       </PageLayout>
     );
   }
@@ -245,15 +351,39 @@ export function PayrollPage() {
           {canManage && (
             <button
               onClick={handleRun}
-              disabled={running}
+              disabled={running || isClosed}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
             >
               <Play className="w-4 h-4" />
               {running ? "Running..." : "Run Payroll"}
             </button>
           )}
+          {canManage && payrollRun && (
+            <button
+              onClick={handleTogglePeriod}
+              disabled={togglingPeriod}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {isClosed ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              {togglingPeriod ? "Working..." : isClosed ? "Reopen period" : "Close period"}
+            </button>
+          )}
         </div>
       </div>
+
+      {actionError && (
+        <div className="p-3 rounded-lg border border-destructive/40 bg-destructive/10 text-sm text-destructive">
+          {actionError}
+        </div>
+      )}
+
+      {isClosed && (
+        <div className="p-3 rounded-lg border border-border bg-muted/40 text-sm text-muted-foreground flex items-center gap-2">
+          <Lock className="w-4 h-4" />
+          Payroll for {month} is closed{payrollRun?.closed_by_name ? ` by ${payrollRun.closed_by_name}` : ""} — recompute, overrides,
+          SOTM, and mark-paid are locked until it's reopened.
+        </div>
+      )}
 
       {loading ? (
         <div className="text-muted-foreground">Loading...</div>
@@ -281,6 +411,7 @@ export function PayrollPage() {
                     key={line.id}
                     line={line}
                     canManage={canManage}
+                    disabled={isClosed}
                     onMarkPaid={handleMarkPaid}
                     onAwardSotm={handleAwardSotm}
                     onEdit={openEditLine}
@@ -360,6 +491,7 @@ export function PayrollPage() {
 function PayrollLineRow({
   line,
   canManage,
+  disabled,
   onMarkPaid,
   onAwardSotm,
   onEdit,
@@ -367,6 +499,7 @@ function PayrollLineRow({
 }: {
   line: PayrollLine;
   canManage: boolean;
+  disabled: boolean;
   onMarkPaid: (lineId: string, paid: boolean) => void;
   onAwardSotm: (lineId: string, awarded: boolean) => void;
   onEdit: (line: PayrollLine) => void;
@@ -403,7 +536,16 @@ function PayrollLineRow({
       <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(line.total_pay)}</td>
       <td className="px-4 py-3 text-center">
         {line.paid ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+          <span
+            className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full"
+            title={[
+              line.paid_amount != null ? `Paid ${formatCurrency(line.paid_amount)}` : null,
+              line.paid_by_name ? `by ${line.paid_by_name}` : null,
+              line.paid_notes ? `— ${line.paid_notes}` : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <Check className="w-3 h-3" /> Paid
           </span>
         ) : (
@@ -423,21 +565,24 @@ function PayrollLineRow({
             <>
               <button
                 onClick={() => onEdit(line)}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                disabled={disabled}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
                 title="Override or adjust this line"
               >
                 <PenLine className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onMarkPaid(line.id, !line.paid)}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                disabled={disabled}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
                 title={line.paid ? "Mark unpaid" : "Mark paid"}
               >
                 <DollarSign className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onAwardSotm(line.id, !line.sotm_awarded)}
-                className={`p-1.5 rounded hover:bg-muted ${line.sotm_awarded ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"}`}
+                disabled={disabled}
+                className={`p-1.5 rounded hover:bg-muted disabled:opacity-40 disabled:pointer-events-none ${line.sotm_awarded ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"}`}
                 title={line.sotm_awarded ? "Remove SOTM" : "Award SOTM"}
               >
                 <Star className="w-4 h-4" />

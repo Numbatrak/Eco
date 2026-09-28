@@ -1,7 +1,7 @@
 "use client";
 
 import { apiRequest } from "../lib/apiClient";
-import type { EligibleMember, Staff } from "../types/staff";
+import type { EligibleMember, EmploymentStatus, Staff } from "../types/staff";
 import type { SpecRole } from "../utils/specRoles";
 import { emptyWithoutOrg } from "./orgQuery";
 
@@ -20,6 +20,12 @@ interface StaffDto {
   bankAccountNumber: string | null;
   bankAccountName: string | null;
   active: boolean;
+  employmentStatus: EmploymentStatus;
+  onProbation: boolean;
+  probationEndsAt: string | null;
+  deactivatedAt: string | null;
+  deactivatedByName: string | null;
+  deactivationReason: string | null;
   managerId: string | null;
   managerName: string | null;
   createdAt: string | null;
@@ -49,6 +55,12 @@ function fromDto(dto: StaffDto): Staff {
     bank_account_number: dto.bankAccountNumber,
     bank_account_name: dto.bankAccountName,
     active: dto.active,
+    employment_status: dto.employmentStatus,
+    on_probation: dto.onProbation,
+    probation_ends_at: dto.probationEndsAt,
+    deactivated_at: dto.deactivatedAt,
+    deactivated_by_name: dto.deactivatedByName,
+    deactivation_reason: dto.deactivationReason,
     manager_id: dto.managerId,
     manager_name: dto.managerName,
     created_at: dto.createdAt,
@@ -120,6 +132,10 @@ export async function updateStaff(
     bank_account_number?: string | null;
     bank_account_name?: string | null;
     manager_id?: string | null;
+    employment_status?: EmploymentStatus;
+    deactivation_reason?: string | null;
+    on_probation?: boolean;
+    probation_ends_at?: string | null;
   }
 ): Promise<Staff> {
   const dto = await apiRequest<StaffDto>(`/org/numbatrak/staff/${staffId}`, {
@@ -133,6 +149,10 @@ export async function updateStaff(
       bankAccountNumber: input.bank_account_number,
       bankAccountName: input.bank_account_name,
       managerId: input.manager_id,
+      employmentStatus: input.employment_status,
+      deactivationReason: input.deactivation_reason,
+      onProbation: input.on_probation,
+      probationEndsAt: input.probation_ends_at,
     },
   });
   return fromDto(dto);
@@ -142,6 +162,23 @@ export async function setStaffActive(staffId: string, active: boolean): Promise<
   const dto = await apiRequest<StaffDto>(`/org/numbatrak/staff/${staffId}/active`, {
     method: "PATCH",
     body: { active },
+  });
+  return fromDto(dto);
+}
+
+/** Self-service: the logged-in staff member updates only their own bank details. */
+export async function updateMyBankDetails(input: {
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_account_name?: string | null;
+}): Promise<Staff> {
+  const dto = await apiRequest<StaffDto>("/org/numbatrak/staff/me/bank-details", {
+    method: "PATCH",
+    body: {
+      bankName: input.bank_name,
+      bankAccountNumber: input.bank_account_number,
+      bankAccountName: input.bank_account_name,
+    },
   });
   return fromDto(dto);
 }

@@ -37,6 +37,21 @@ export const numbatrakStaff = pgTable(
     bankAccountNumber: text("bank_account_number"),
     bankAccountName: text("bank_account_name"),
     active: boolean("active").notNull().default(true),
+    // Finer-grained HR status than `active` alone. `active` stays the one
+    // real gate everything else (payroll, scoping) already checks -
+    // employmentStatus is additional detail layered on top, kept in sync by
+    // the staff service (not a DB trigger): 'inactive'/'suspended' force
+    // active=false, 'active'/'on_leave' force active=true.
+    employmentStatus: text("employment_status").notNull().default("active"),
+    onProbation: boolean("on_probation").notNull().default(false),
+    probationEndsAt: timestamp("probation_ends_at", { withTimezone: true }),
+    // Audit trail for the most recent deactivation - who and why, not a full
+    // history (that would need its own log table; this covers "why is this
+    // person inactive" at a glance, the common case). Cleared back to null
+    // when the person is reactivated.
+    deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
+    deactivatedBy: text("deactivated_by").references(() => user.id, { onDelete: "set null" }),
+    deactivationReason: text("deactivation_reason"),
     // Reporting hierarchy for the spec's "managers see their team" scoping
     // (Staff/Strikes/Leave). Self-referencing, nullable (top-level staff and
     // orgs that don't use hierarchy leave this null, which existing
@@ -55,6 +70,10 @@ export const numbatrakStaff = pgTable(
     check(
       "numbatrak_staff_primary_role_chk",
       sql`${table.primaryRole} IN ('CRS', 'Manager', 'Admin', 'Media', 'Accountant', 'Founder')`,
+    ),
+    check(
+      "numbatrak_staff_employment_status_chk",
+      sql`${table.employmentStatus} IN ('active', 'inactive', 'suspended', 'on_leave')`,
     ),
     check("numbatrak_staff_manager_not_self_chk", sql`${table.managerId} IS NULL OR ${table.managerId} <> ${table.id}`),
     foreignKey({ columns: [table.managerId], foreignColumns: [table.id], name: "numbatrak_staff_manager_fk" }).onDelete(
