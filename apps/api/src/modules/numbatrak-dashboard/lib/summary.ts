@@ -1,7 +1,7 @@
 import { inArray } from "drizzle-orm";
 import { numbatrakAgents, type Database } from "@platform/db";
 import type { DashboardScopeQuery, NumbatrakDashboardSummary } from "@platform/shared-types";
-import { fetchOrderRows } from "./order-rows.js";
+import { fetchOrderRows, fetchProductLossItemRows } from "./order-rows.js";
 import { fetchExpenseTotals, fetchFailedDeliveryCost } from "./expenses.js";
 import { computeBusinessPerformanceMetrics, computeLossMetrics } from "./metrics.js";
 
@@ -10,10 +10,11 @@ export async function fetchDashboardSummary(
   organizationId: string,
   scope: DashboardScopeQuery,
 ): Promise<NumbatrakDashboardSummary> {
-  const [orders, expenses, failedDeliveryCost] = await Promise.all([
+  const [orders, expenses, failedDeliveryCost, productItemRows] = await Promise.all([
     fetchOrderRows(db, organizationId, scope),
     fetchExpenseTotals(db, organizationId, scope.dateFrom, scope.dateTo),
     fetchFailedDeliveryCost(db, organizationId, scope.dateFrom, scope.dateTo),
+    fetchProductLossItemRows(db, organizationId, scope),
   ]);
 
   // Loss-metrics' byLocation/byAgent breakdowns need each order's agent's
@@ -44,6 +45,7 @@ export async function fetchDashboardSummary(
     startDate: scope.dateFrom,
     endDate: scope.dateTo,
     agents,
+    productItemRows,
   });
 
   return { businessMetrics, lossMetrics };

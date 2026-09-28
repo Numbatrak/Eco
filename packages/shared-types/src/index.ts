@@ -248,6 +248,8 @@ export {
   type NumbatrakBusinessPerformanceMetrics,
   numbatrakLossStatusBreakdownSchema,
   type NumbatrakLossStatusBreakdown,
+  numbatrakLossProductBreakdownSchema,
+  type NumbatrakLossProductBreakdown,
   numbatrakLossMetricsSchema,
   type NumbatrakLossMetrics,
   numbatrakDashboardSummarySchema,

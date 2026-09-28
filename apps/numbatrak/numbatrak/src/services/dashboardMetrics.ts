@@ -75,6 +75,18 @@ export type LossAgentBreakdown = {
   wouldBeSales: number;
 };
 
+export type LossProductBreakdown = {
+  productId: string;
+  productName: string;
+  /** Total units of this product sitting in undelivered orders this period. */
+  undeliveredQuantity: number;
+  /** Quantity-weighted average unit price from this product's delivered
+   * lines this period - 0 if it has no delivered history yet. */
+  averageSalesPrice: number;
+  /** undeliveredQuantity × averageSalesPrice. */
+  costOfFailedOrders: number;
+};
+
 export type LossMetrics = {
   undeliveredCount: number;
   wouldBeSales: number;
@@ -84,6 +96,7 @@ export type LossMetrics = {
   byStatus: LossStatusBreakdown[];
   byLocation: LossLocationBreakdown[];
   byAgent: LossAgentBreakdown[];
+  byProduct: LossProductBreakdown[];
 };
 
 export const EMPTY_BUSINESS_METRICS: BusinessPerformanceMetrics = {
@@ -117,6 +130,7 @@ export const EMPTY_LOSS_METRICS: LossMetrics = {
   byStatus: [],
   byLocation: [],
   byAgent: [],
+  byProduct: [],
 };
 
 /** Client-side status filter (supports legacy alias groups). */

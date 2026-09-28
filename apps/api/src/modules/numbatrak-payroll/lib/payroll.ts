@@ -555,7 +555,7 @@ async function getTeamDeliveryRates(
   return rates;
 }
 
-function calculatePay(
+export function calculatePay(
   ps: typeof numbatrakPayStructures.$inferSelect,
   orderData: Awaited<ReturnType<typeof getStaffOrderData>>,
   teamDeliveryRates: number[],

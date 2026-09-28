@@ -400,7 +400,13 @@ export function DashboardPage() {
           ) : (
             <>
               <LatestDeliveries />
-              <RouteErrorBoundary>
+              <RouteErrorBoundary
+                fallback={
+                  <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                    Activity feed isn&apos;t available yet.
+                  </div>
+                }
+              >
                 <Suspense fallback={null}>
                   <ActivityFeed />
                 </Suspense>

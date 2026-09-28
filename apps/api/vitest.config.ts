@@ -10,5 +10,10 @@ export default defineConfig({
     // would let one file's afterEach truncate tables mid-assertion in
     // another file.
     fileParallelism: false,
+    // TEST_DATABASE_URL may point at a remote Neon branch rather than local
+    // Postgres - the default 5s timeout is tuned for a same-host DB and
+    // trips on ordinary network + cold-compute-start latency, not a hung
+    // test.
+    testTimeout: 60000,
   },
 });

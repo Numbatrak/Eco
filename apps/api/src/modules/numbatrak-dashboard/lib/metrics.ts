@@ -1,15 +1,25 @@
 // Verbatim server-side port of services/dashboardMetrics.ts's pure
 // computeBusinessPerformanceMetrics/computeLossMetrics - can't import
 // frontend code from apps/api. Kept byte-for-byte equivalent to the source.
-import type { NumbatrakBusinessPerformanceMetrics, NumbatrakLossMetrics } from "@platform/shared-types";
+import type { NumbatrakBusinessPerformanceMetrics, NumbatrakLossMetrics, NumbatrakLossProductBreakdown } from "@platform/shared-types";
 import { isDeliveredStatus } from "../../numbatrak-orders/lib/order-status.js";
-import type { MetricsOrderRow } from "./order-rows.js";
+import type { MetricsOrderRow, ProductLossItemRow } from "./order-rows.js";
 
-function isGeneratedOrder(row: MetricsOrderRow): boolean {
+// Structural, not `MetricsOrderRow` itself, so ProductLossItemRow (order-LINE
+// rows, no orderRevenue/orderCost) satisfies it too - one generated/delivered/
+// period classification shared by both the order-level and item-level loss
+// computations below, instead of a second copy that could drift.
+interface StatusDatedRow {
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+function isGeneratedOrder(row: { status: string }): boolean {
   return row.status !== "cancelled";
 }
 
-function isDeliveredOrder(row: MetricsOrderRow): boolean {
+function isDeliveredOrder(row: { status: string }): boolean {
   return isDeliveredStatus(row.status);
 }
 
@@ -20,12 +30,64 @@ function withinRange(iso: string, startDate?: string, endDate?: string): boolean
   return true;
 }
 
-function inGeneratedPeriod(row: MetricsOrderRow, startDate?: string, endDate?: string): boolean {
+function inGeneratedPeriod(row: StatusDatedRow, startDate?: string, endDate?: string): boolean {
   return withinRange(row.createdAt, startDate, endDate);
 }
 
-function inDeliveredPeriod(row: MetricsOrderRow, startDate?: string, endDate?: string): boolean {
+function inDeliveredPeriod(row: StatusDatedRow, startDate?: string, endDate?: string): boolean {
   return withinRange(row.completedAt ?? row.createdAt, startDate, endDate);
+}
+
+/**
+ * Per-product loss: undeliveredQuantity (units of this product sitting in
+ * undelivered orders this period) × averageSalesPrice (quantity-weighted
+ * average unit price from this product's DELIVERED lines this period - the
+ * "undelivered" definition matches isGeneratedOrder/isDeliveredOrder above,
+ * i.e. everything except delivered/completed, same as undeliveredCount/
+ * wouldBeSales - not narrowed to just failed/returned/lost).
+ */
+function computeProductLossBreakdown(
+  itemRows: ProductLossItemRow[],
+  startDate?: string,
+  endDate?: string,
+): NumbatrakLossProductBreakdown[] {
+  const undeliveredByProduct = new Map<string, { name: string; qty: number }>();
+  const deliveredByProduct = new Map<string, { qty: number; totalPrice: number }>();
+
+  for (const row of itemRows) {
+    if (isGeneratedOrder(row) && inGeneratedPeriod(row, startDate, endDate) && !isDeliveredOrder(row)) {
+      const existing = undeliveredByProduct.get(row.productId);
+      if (existing) {
+        existing.qty += row.quantity;
+      } else {
+        undeliveredByProduct.set(row.productId, { name: row.productName, qty: row.quantity });
+      }
+    }
+    if (isDeliveredOrder(row) && inDeliveredPeriod(row, startDate, endDate)) {
+      const existing = deliveredByProduct.get(row.productId);
+      if (existing) {
+        existing.qty += row.quantity;
+        existing.totalPrice += row.totalPrice;
+      } else {
+        deliveredByProduct.set(row.productId, { qty: row.quantity, totalPrice: row.totalPrice });
+      }
+    }
+  }
+
+  const result: NumbatrakLossProductBreakdown[] = [];
+  for (const [productId, undelivered] of undeliveredByProduct) {
+    if (undelivered.qty <= 0) continue;
+    const delivered = deliveredByProduct.get(productId);
+    const averageSalesPrice = delivered && delivered.qty > 0 ? delivered.totalPrice / delivered.qty : 0;
+    result.push({
+      productId,
+      productName: undelivered.name,
+      undeliveredQuantity: undelivered.qty,
+      averageSalesPrice,
+      costOfFailedOrders: undelivered.qty * averageSalesPrice,
+    });
+  }
+  return result.sort((a, b) => b.costOfFailedOrders - a.costOfFailedOrders);
 }
 
 export function computeBusinessPerformanceMetrics(input: {
@@ -108,8 +170,11 @@ export function computeLossMetrics(input: {
    * to empty so existing callers/tests that don't care about location or
    * agent breakdowns keep working. */
   agents?: Array<{ id: number; name: string; locations: string | null }>;
+  /** Order-line rows for the byProduct breakdown - optional/defaults to
+   * empty for the same reason `agents` is optional. */
+  productItemRows?: ProductLossItemRow[];
 }): NumbatrakLossMetrics {
-  const { orders, adSpend, failedDeliveryCost, startDate, endDate, agents = [] } = input;
+  const { orders, adSpend, failedDeliveryCost, startDate, endDate, agents = [], productItemRows = [] } = input;
 
   const generated = orders.filter((o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate));
   const undelivered = generated.filter((o) => !isDeliveredOrder(o));
@@ -171,6 +236,7 @@ export function computeLossMetrics(input: {
 
   const byLocation = [...locationMap.values()].sort((a, b) => b.count - a.count);
   const byAgent = [...agentMap.values()].sort((a, b) => b.count - a.count);
+  const byProduct = computeProductLossBreakdown(productItemRows, startDate, endDate);
 
-  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus, byLocation, byAgent };
+  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus, byLocation, byAgent, byProduct };
 }

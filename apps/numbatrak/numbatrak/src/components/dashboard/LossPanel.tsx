@@ -163,6 +163,40 @@ export function LossPanel({
             </div>
           </div>
         )}
+
+        {m.byProduct.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-2">
+              Cost of failed orders by product
+            </p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Undelivered units × average delivered sale price
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {m.byProduct.map((row) => (
+                <span
+                  key={row.productId}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-border bg-background"
+                  title={
+                    row.averageSalesPrice === 0
+                      ? "No delivered sales this period - price basis unavailable"
+                      : `${row.undeliveredQuantity} undelivered × ${formatCurrency(row.averageSalesPrice)} avg`
+                  }
+                >
+                  <span className="font-medium text-foreground">
+                    {row.productName}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{row.undeliveredQuantity} units</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-amber-600 dark:text-amber-400">
+                    {formatCurrency(row.costOfFailedOrders)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

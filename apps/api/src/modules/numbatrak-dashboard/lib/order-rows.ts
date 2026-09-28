@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { numbatrakCustomerOrders, type Database } from "@platform/db";
+import { numbatrakCustomerOrders, numbatrakCustomerOrderItems, numbatrakProducts, type Database } from "@platform/db";
 import type { DashboardScopeQuery } from "@platform/shared-types";
 import { statusFilterToDbValues } from "../../numbatrak-orders/lib/order-status.js";
 
@@ -71,6 +71,65 @@ export async function fetchOrderRows(
     deliveryFee: num(r.deliveryFee),
     profit: num(r.profit),
     agentId: r.agentId,
+  }));
+
+  if (!scope.status) return mapped;
+  const dbValues = new Set(statusFilterToDbValues(scope.status));
+  return mapped.filter((r) => dbValues.has(r.status));
+}
+
+/** One row per order LINE (not per order) - needed for the loss metrics'
+ * byProduct breakdown, since a single order can carry several products and
+ * the order-level MetricsOrderRow above has no productId. */
+export interface ProductLossItemRow {
+  productId: string;
+  productName: string;
+  quantity: number;
+  totalPrice: number;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export async function fetchProductLossItemRows(
+  db: Database,
+  organizationId: string,
+  scope: Pick<
+    DashboardScopeQuery,
+    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status"
+  >,
+): Promise<ProductLossItemRow[]> {
+  const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
+  if (scope.formId) conditions.push(eq(numbatrakCustomerOrders.formId, scope.formId));
+  if (scope.csrId) conditions.push(eq(numbatrakCustomerOrders.csrId, scope.csrId));
+  if (scope.funnelName) conditions.push(eq(numbatrakCustomerOrders.funnelName, scope.funnelName));
+  if (scope.subBrand) conditions.push(eq(numbatrakCustomerOrders.subBrand, scope.subBrand));
+  if (scope.offerName) conditions.push(eq(numbatrakCustomerOrders.offerName, scope.offerName));
+  if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
+
+  const rows = await db
+    .select({
+      productId: numbatrakCustomerOrderItems.productId,
+      productName: numbatrakProducts.name,
+      quantity: numbatrakCustomerOrderItems.quantity,
+      totalPrice: numbatrakCustomerOrderItems.totalPrice,
+      status: numbatrakCustomerOrders.status,
+      createdAt: numbatrakCustomerOrders.createdAt,
+      completedAt: numbatrakCustomerOrders.completedAt,
+    })
+    .from(numbatrakCustomerOrderItems)
+    .innerJoin(numbatrakCustomerOrders, eq(numbatrakCustomerOrderItems.orderId, numbatrakCustomerOrders.id))
+    .innerJoin(numbatrakProducts, eq(numbatrakCustomerOrderItems.productId, numbatrakProducts.id))
+    .where(and(...conditions));
+
+  const mapped: ProductLossItemRow[] = rows.map((r) => ({
+    productId: r.productId,
+    productName: r.productName,
+    quantity: r.quantity,
+    totalPrice: num(r.totalPrice),
+    status: r.status,
+    createdAt: r.createdAt?.toISOString() ?? new Date().toISOString(),
+    completedAt: r.completedAt?.toISOString() ?? null,
   }));
 
   if (!scope.status) return mapped;

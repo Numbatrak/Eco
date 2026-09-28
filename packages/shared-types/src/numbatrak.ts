@@ -925,6 +925,24 @@ export const numbatrakLossAgentBreakdownSchema = z.object({
 });
 export type NumbatrakLossAgentBreakdown = z.infer<typeof numbatrakLossAgentBreakdownSchema>;
 
+/**
+ * Per-product loss: undeliveredQuantity (total units of this product sitting
+ * in undelivered orders in the period) × averageSalesPrice (quantity-
+ * weighted average unit price from this product's DELIVERED order lines in
+ * the same period - real achieved price, not list price). Products with no
+ * delivered history in the period get averageSalesPrice=0 (and therefore
+ * costOfFailedOrders=0) rather than being omitted, since there's still an
+ * undelivered-quantity fact worth surfacing even without a price basis yet.
+ */
+export const numbatrakLossProductBreakdownSchema = z.object({
+  productId: z.string().uuid(),
+  productName: z.string(),
+  undeliveredQuantity: z.number(),
+  averageSalesPrice: z.number(),
+  costOfFailedOrders: z.number(),
+});
+export type NumbatrakLossProductBreakdown = z.infer<typeof numbatrakLossProductBreakdownSchema>;
+
 export const numbatrakLossMetricsSchema = z.object({
   undeliveredCount: z.number(),
   wouldBeSales: z.number(),
@@ -933,6 +951,7 @@ export const numbatrakLossMetricsSchema = z.object({
   byStatus: z.array(numbatrakLossStatusBreakdownSchema),
   byLocation: z.array(numbatrakLossLocationBreakdownSchema),
   byAgent: z.array(numbatrakLossAgentBreakdownSchema),
+  byProduct: z.array(numbatrakLossProductBreakdownSchema),
 });
 export type NumbatrakLossMetrics = z.infer<typeof numbatrakLossMetricsSchema>;
 

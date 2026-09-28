@@ -56,7 +56,7 @@ export async function signUpOwnerWithOrg(
 /** Signs up a second user and adds them to an existing org with the given role. */
 export async function addUserToOrgWithRole(
   orgId: string,
-  role: "owner" | "admin" | "editor" | "viewer",
+  role: "owner" | "admin" | "editor" | "viewer" | "manager" | "csr",
   overrides: { email?: string; password?: string; name?: string } = {},
 ): Promise<SignedUpUser & { activeHeaders: Headers }> {
   const user = await signUpUser(overrides);

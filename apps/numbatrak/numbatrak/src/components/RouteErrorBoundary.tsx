@@ -2,6 +2,11 @@ import { Component, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  /** Custom fallback content, for boundaries scoped around one known-not-
+   * ready widget (e.g. ActivityFeed) rather than a whole route - avoids the
+   * default's route-level "something went wrong" framing reading like a
+   * bigger deal than "this one widget isn't available yet". */
+  fallback?: ReactNode;
 }
 
 interface State {
@@ -9,12 +14,13 @@ interface State {
 }
 
 /**
- * Contains a crash to the current route instead of blanking the whole app.
- * Most pages other than /agents still depend on Supabase (supabaseClient.ts
- * throws without VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY, which are no
- * longer set) - visiting one of those is expected to fail during this
- * incremental port, but it should fail as a contained "this page isn't
- * ready yet" message, not a blank white screen with no explanation.
+ * Contains a crash to the current route (or, when scoped tightly around a
+ * single widget, to just that widget) instead of blanking everything above
+ * it. Some pages/widgets still depend on Supabase (supabaseClient.ts throws
+ * without VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY, which are no longer set)
+ * - visiting/rendering one of those is expected to fail during this
+ * incremental port, but it should fail as a contained, honest message, not a
+ * blank white screen with no explanation.
  */
 export class RouteErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
@@ -37,6 +43,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
+      if (this.props.fallback) return this.props.fallback;
       return (
         <div style={{ padding: 32, maxWidth: 640 }}>
           <h2 style={{ marginBottom: 8 }}>Something went wrong loading this page</h2>
