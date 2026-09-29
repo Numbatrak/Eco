@@ -42,8 +42,8 @@ export function MonthlySummarySection({
     (async () => {
       try {
         const [a, p] = await Promise.all([
-          fetchAgents(currentOrganization.id),
-          fetchProducts(currentOrganization.id),
+          fetchAgents(currentOrganization.id, { activeOnly: true }),
+          fetchProducts(currentOrganization.id, { activeOnly: true }),
         ]);
         if (!cancelled) {
           setAgents(a);

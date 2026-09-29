@@ -64,8 +64,8 @@ export function DeliveryAnalyticsFiltersBar({
     (async () => {
       try {
         const [a, p, opts] = await Promise.all([
-          fetchAgents(currentOrganization.id),
-          fetchProducts(currentOrganization.id),
+          fetchAgents(currentOrganization.id, { activeOnly: true }),
+          fetchProducts(currentOrganization.id, { activeOnly: true }),
           fetchDashboardFilterOptions(currentOrganization.id),
         ]);
         if (!cancel) {

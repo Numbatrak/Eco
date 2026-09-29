@@ -2,11 +2,8 @@ import { useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { PageLayout } from "../layout/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
-import { DeliveryAnalyticsOverviewCards } from "./DeliveryAnalyticsOverviewCards";
 import { DeliveryAnalyticsFiltersBar, DEFAULT_DELIVERY_ANALYTICS_FILTERS } from "./DeliveryAnalyticsFiltersBar";
 import { DeliveryBreakdownTable } from "./DeliveryBreakdownTable";
-import { DeliveryRateByLocationComponent } from "../dashboard/DeliveryRateByLocation";
-import { WaybillStatisticsTable } from "../waybillStatistics/WaybillStatisticsTable";
 import { MonthlySummarySection } from "../deliveries/MonthlySummarySection";
 import {
   DeliveryAnalyticsFilters,
@@ -14,8 +11,11 @@ import {
 } from "../../services/deliveryAnalytics";
 
 /**
- * Delivery Analytics — waybill roll-up + delivery performance (spec §7).
- * Unified filters recalculate headline KPIs, location cards, breakdown, and monthly table.
+ * Delivery Analytics — deliberately just two things: the monthly summary and
+ * the per-product waybilled/delivered stock report, both driven by the same
+ * filter bar. Headline KPI cards, the location-rate cards, and the separate
+ * waybill-by-state table were cut - they duplicated data already visible
+ * here or on the Dashboard, without adding a distinct view.
  */
 export function DeliveryAnalyticsPage() {
   const { hasAnyRole } = usePermissions();
@@ -39,7 +39,7 @@ export function DeliveryAnalyticsPage() {
           Delivery Analytics
         </h1>
         <p className="text-muted-foreground text-sm max-w-3xl">
-          Waybilled vs delivered stock value, balance roll-up, and delivery rate —
+          Monthly summary and per-product waybilled vs delivered stock report —
           filterable by agent, location, product, sub-brand, and status.
         </p>
       </div>
@@ -49,33 +49,7 @@ export function DeliveryAnalyticsPage() {
         onFiltersChange={setFilters}
       />
 
-      <section className="space-y-3" aria-labelledby="delivery-overview-heading">
-        <h2 id="delivery-overview-heading" className="text-lg font-semibold text-foreground">
-          Headline metrics
-        </h2>
-        <DeliveryAnalyticsOverviewCards filters={filters} />
-      </section>
-
-      <section aria-labelledby="delivery-rate-heading">
-        <DeliveryRateByLocationComponent
-          embedded
-          analyticsFilters={filters}
-        />
-      </section>
-
       <DeliveryBreakdownTable filters={filters} />
-
-      <section className="space-y-4" aria-labelledby="waybill-by-state-heading">
-        <div className="space-y-1">
-          <h2 id="waybill-by-state-heading" className="text-lg font-semibold text-foreground">
-            Waybill statistics by state
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Inventory waybilled from HQ to agents — quantities, costs, and movement speed.
-          </p>
-        </div>
-        <WaybillStatisticsTable />
-      </section>
 
       <MonthlySummarySection
         embedded
