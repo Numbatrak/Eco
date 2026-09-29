@@ -453,8 +453,7 @@ export default function FormBuilderPage() {
     if (field.type !== "radio-group" || !field.radioOptions) return;
 
     const option = field.radioOptions[optionIndex];
-    const firstProduct = products.length > 0 ? products[0] : null;
-    const newProduct: RadioOptionProduct = { product_id: firstProduct?.id || "", quantity: 1 };
+    const newProduct: RadioOptionProduct = { product_id: "", quantity: 1 };
 
     updateRadioOption(fieldIndex, optionIndex, { products: [...option.products, newProduct] });
   };

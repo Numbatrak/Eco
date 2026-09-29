@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageLayout } from "../layout/PageLayout";
 import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 import { useOrganization } from "../../contexts/OrganizationContext";
@@ -106,6 +106,7 @@ export function MediaBuyersPage() {
   const [spendPlatform, setSpendPlatform] = useState("");
   const [spendTrackingLinkId, setSpendTrackingLinkId] = useState("");
   const [trackingLinks, setTrackingLinks] = useState<TrackingLink[]>([]);
+  const [spendFilterTrackingLinkId, setSpendFilterTrackingLinkId] = useState("");
 
   // --- Add target form state ---
   const [targetCpa, setTargetCpa] = useState(0);
@@ -115,6 +116,14 @@ export function MediaBuyersPage() {
   const [reviewWeekStart, setReviewWeekStart] = useState("");
   const [reviewVerdict, setReviewVerdict] = useState("on_track");
   const [reviewBiggestWin, setReviewBiggestWin] = useState("");
+
+  const filteredSpend = useMemo(
+    () =>
+      spendFilterTrackingLinkId
+        ? spend.filter((s) => s.tracking_link_id === spendFilterTrackingLinkId)
+        : spend,
+    [spend, spendFilterTrackingLinkId]
+  );
 
   const tabs: { key: Tab; label: string; icon: typeof Film }[] = [
     { key: "production", label: "Production", icon: Film },
@@ -346,13 +355,28 @@ export function MediaBuyersPage() {
                   </button>
                 </div>
               )}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Filter by tracking link:</label>
+                <select
+                  value={spendFilterTrackingLinkId}
+                  onChange={(e) => setSpendFilterTrackingLinkId(e.target.value)}
+                  className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                >
+                  <option value="">All tracking links</option>
+                  {trackingLinks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {[t.mediaBuyerName, t.platform, t.label ?? t.formName].filter(Boolean).join(" · ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-border text-muted-foreground">
                     <th className="text-left py-2 px-2">Date</th><th className="text-left py-2 px-2">Platform</th><th className="text-right py-2 px-2">Spend</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">CPA</th>{canManage && <th className="py-2 px-2"></th>}
                   </tr></thead>
                   <tbody>
-                    {spend.map((s) => (
+                    {filteredSpend.map((s) => (
                       <tr key={s.id} className="border-b border-border/50">
                         <td className="py-2 px-2 text-foreground">{s.spend_date}</td>
                         <td className="py-2 px-2 text-foreground">{s.platform ?? "—"}</td>
@@ -362,7 +386,7 @@ export function MediaBuyersPage() {
                         {canManage && <td className="py-2 px-2"><button onClick={async () => { await deleteSpend(s.id); void load(); }} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>}
                       </tr>
                     ))}
-                    {spend.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No spend entries yet</td></tr>}
+                    {filteredSpend.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No spend entries yet</td></tr>}
                   </tbody>
                 </table>
               </div>

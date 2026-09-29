@@ -7,10 +7,7 @@ import {
   ArrowDown,
   Plus,
   X,
-  Calendar,
-  User,
-  FileText,
-  Package,
+  MapPin,
 } from "lucide-react";
 import { useState } from "react";
 import { TablePagination } from "../ui/TablePagination";
@@ -27,27 +24,11 @@ interface DeliveryTableProps {
   onSearchChange: (query: string) => void;
   sortOrder: "asc" | "desc";
   onSortChange: (order: "asc" | "desc") => void;
-  agents: Array<{ id: number; name: string }>;
-  products: Array<{ id: string; name: string }>;
+  locations: string[];
   filters: {
-    date?: string;
-    agentId?: number;
-    csr?: string;
-    productId?: string;
-    status?: "Waybilled" | "Delivered";
-    month?: string;
-    subBrand?: string;
+    location?: string;
   };
-  onFilterChange: (filters: {
-    date?: string;
-    agentId?: number;
-    csr?: string;
-    productId?: string;
-    status?: "Waybilled" | "Delivered";
-    month?: string;
-    subBrand?: string;
-  }) => void;
-  subBrandOptions?: string[];
+  onFilterChange: (filters: { location?: string }) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   currentPage?: number;
@@ -66,11 +47,9 @@ export function DeliveryTable({
   onSearchChange,
   sortOrder,
   onSortChange,
-  agents,
-  products,
+  locations,
   filters,
   onFilterChange,
-  subBrandOptions = [],
   canEdit = true,
   canDelete = true,
   currentPage = 1,
@@ -90,46 +69,8 @@ export function DeliveryTable({
     onFilterChange({ ...filters, [filterType]: undefined });
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filters, date: e.target.value || undefined });
-  };
-
-  const handleAgentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onFilterChange({
-      ...filters,
-      agentId: e.target.value ? parseInt(e.target.value) : undefined,
-    });
-  };
-
-  const handleCSRChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filters, csr: e.target.value || undefined });
-  };
-
-  const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onFilterChange({
-      ...filters,
-      productId: e.target.value || undefined,
-    });
-  };
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    onFilterChange({
-      ...filters,
-      status:
-        value === "Waybilled" || value === "Delivered" ? value : undefined,
-    });
-  };
-
-  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filters, month: e.target.value || undefined });
-  };
-
-  const handleSubBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onFilterChange({
-      ...filters,
-      subBrand: e.target.value || undefined,
-    });
+  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onFilterChange({ ...filters, location: e.target.value || undefined });
   };
 
   return (
@@ -172,18 +113,18 @@ export function DeliveryTable({
             {/* Filter Buttons */}
             <div className="delivery-table-filters">
               <button
-                onClick={() => handleFilterClick("date")}
+                onClick={() => handleFilterClick("location")}
                 className={`delivery-table-filter-button ${
-                  filters.date ? "active" : ""
+                  filters.location ? "active" : ""
                 }`}
               >
                 <Plus className="delivery-table-filter-icon" />
-                Date
-                {filters.date && (
+                Location
+                {filters.location && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleFilterRemove("date");
+                      handleFilterRemove("location");
                     }}
                     className="delivery-table-filter-remove"
                   >
@@ -191,128 +132,6 @@ export function DeliveryTable({
                   </button>
                 )}
               </button>
-              <button
-                onClick={() => handleFilterClick("agent")}
-                className={`delivery-table-filter-button ${
-                  filters.agentId ? "active" : ""
-                }`}
-              >
-                <Plus className="delivery-table-filter-icon" />
-                Agent
-                {filters.agentId && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterRemove("agentId");
-                    }}
-                    className="delivery-table-filter-remove"
-                  >
-                    <X className="delivery-table-filter-remove-icon" />
-                  </button>
-                )}
-              </button>
-              <button
-                onClick={() => handleFilterClick("csr")}
-                className={`delivery-table-filter-button ${
-                  filters.csr ? "active" : ""
-                }`}
-              >
-                <Plus className="delivery-table-filter-icon" />
-                CSR
-                {filters.csr && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterRemove("csr");
-                    }}
-                    className="delivery-table-filter-remove"
-                  >
-                    <X className="delivery-table-filter-remove-icon" />
-                  </button>
-                )}
-              </button>
-              <button
-                onClick={() => handleFilterClick("product")}
-                className={`delivery-table-filter-button ${
-                  filters.productId ? "active" : ""
-                }`}
-              >
-                <Plus className="delivery-table-filter-icon" />
-                Name
-                {filters.productId && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterRemove("productId");
-                    }}
-                    className="delivery-table-filter-remove"
-                  >
-                    <X className="delivery-table-filter-remove-icon" />
-                  </button>
-                )}
-              </button>
-              <button
-                onClick={() => handleFilterClick("status")}
-                className={`delivery-table-filter-button ${
-                  filters.status ? "active" : ""
-                }`}
-              >
-                <Plus className="delivery-table-filter-icon" />
-                Status
-                {filters.status && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterRemove("status");
-                    }}
-                    className="delivery-table-filter-remove"
-                  >
-                    <X className="delivery-table-filter-remove-icon" />
-                  </button>
-                )}
-              </button>
-              <button
-                onClick={() => handleFilterClick("month")}
-                className={`delivery-table-filter-button ${
-                  filters.month ? "active" : ""
-                }`}
-              >
-                <Plus className="delivery-table-filter-icon" />
-                Month
-                {filters.month && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterRemove("month");
-                    }}
-                    className="delivery-table-filter-remove"
-                  >
-                    <X className="delivery-table-filter-remove-icon" />
-                  </button>
-                )}
-              </button>
-              {subBrandOptions.length > 0 && (
-                <button
-                  onClick={() => handleFilterClick("subBrand")}
-                  className={`delivery-table-filter-button ${
-                    filters.subBrand ? "active" : ""
-                  }`}
-                >
-                  <Plus className="delivery-table-filter-icon" />
-                  Sub-brand
-                  {filters.subBrand && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFilterRemove("subBrand");
-                      }}
-                      className="delivery-table-filter-remove"
-                    >
-                      <X className="delivery-table-filter-remove-icon" />
-                    </button>
-                  )}
-                </button>
-              )}
             </div>
 
             {/* Sort Toggle */}
@@ -345,121 +164,21 @@ export function DeliveryTable({
         {/* Filter Dropdowns */}
         {activeFilter && (
           <div className="delivery-table-filter-dropdowns">
-            {activeFilter === "date" && (
+            {activeFilter === "location" && (
               <div className="delivery-table-filter-dropdown">
                 <label className="delivery-table-filter-label">
-                  <Calendar className="delivery-table-filter-label-icon" />
-                  Filter by Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.date || ""}
-                  onChange={handleDateChange}
-                  className="delivery-table-filter-input"
-                />
-              </div>
-            )}
-            {activeFilter === "agent" && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <User className="delivery-table-filter-label-icon" />
-                  Filter by Agent
+                  <MapPin className="delivery-table-filter-label-icon" />
+                  Filter by Location
                 </label>
                 <select
-                  value={filters.agentId || ""}
-                  onChange={handleAgentChange}
+                  value={filters.location || ""}
+                  onChange={handleLocationChange}
                   className="delivery-table-filter-select"
                 >
-                  <option value="">All Agents</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {activeFilter === "csr" && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <FileText className="delivery-table-filter-label-icon" />
-                  Filter by CSR
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter CSR..."
-                  value={filters.csr || ""}
-                  onChange={handleCSRChange}
-                  className="delivery-table-filter-input"
-                />
-              </div>
-            )}
-            {activeFilter === "product" && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <Package className="delivery-table-filter-label-icon" />
-                  Filter by Product Name
-                </label>
-                <select
-                  value={filters.productId || ""}
-                  onChange={handleProductChange}
-                  className="delivery-table-filter-select"
-                >
-                  <option value="">All Products</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {activeFilter === "status" && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <FileText className="delivery-table-filter-label-icon" />
-                  Filter by Status
-                </label>
-                <select
-                  value={filters.status || ""}
-                  onChange={handleStatusChange}
-                  className="delivery-table-filter-select"
-                >
-                  <option value="">All statuses</option>
-                  <option value="Waybilled">Waybilled</option>
-                  <option value="Delivered">Delivered</option>
-                </select>
-              </div>
-            )}
-            {activeFilter === "month" && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <Calendar className="delivery-table-filter-label-icon" />
-                  Filter by Month
-                </label>
-                <input
-                  type="month"
-                  value={filters.month || ""}
-                  onChange={handleMonthChange}
-                  className="delivery-table-filter-input"
-                />
-              </div>
-            )}
-            {activeFilter === "subBrand" && subBrandOptions.length > 0 && (
-              <div className="delivery-table-filter-dropdown">
-                <label className="delivery-table-filter-label">
-                  <FileText className="delivery-table-filter-label-icon" />
-                  Filter by Sub-brand
-                </label>
-                <select
-                  value={filters.subBrand || ""}
-                  onChange={handleSubBrandChange}
-                  className="delivery-table-filter-select"
-                >
-                  <option value="">All sub-brands</option>
-                  {subBrandOptions.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
+                  <option value="">All Locations</option>
+                  {locations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
                     </option>
                   ))}
                 </select>
@@ -475,17 +194,17 @@ export function DeliveryTable({
           <tbody>
             {loading ? (
               <tr>
-                <TableLoadingCell colSpan={10} message="Loading deliveries…" />
+                <TableLoadingCell colSpan={9} message="Loading deliveries…" />
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={10} className="delivery-table-error">
+                <td colSpan={9} className="delivery-table-error">
                   {error}
                 </td>
               </tr>
             ) : deliveries.length === 0 ? (
               <tr>
-                <td colSpan={10} className="delivery-table-empty">
+                <td colSpan={9} className="delivery-table-empty">
                   No deliveries found. Create your first delivery to get
                   started.
                 </td>

@@ -232,11 +232,14 @@ export function RadioGroupOptionsEditor({
                                 ) : products.length === 0 ? (
                                   <option value="">No products available</option>
                                 ) : (
-                                  products.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.name}
-                                    </option>
-                                  ))
+                                  <>
+                                    <option value="">Select product</option>
+                                    {products.map((p) => (
+                                      <option key={p.id} value={p.id}>
+                                        {p.name}
+                                      </option>
+                                    ))}
+                                  </>
                                 )}
                               </select>
                               <input

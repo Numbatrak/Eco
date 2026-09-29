@@ -54,9 +54,6 @@ export function DeliveryTableRow({
         {delivery.csr || <span className="delivery-table-empty-value">N/A</span>}
       </td>
       <td className="delivery-table-cell">
-        {delivery.agent?.name || <span className="delivery-table-empty-value">N/A</span>}
-      </td>
-      <td className="delivery-table-cell">
         <span className={`delivery-table-status-badge ${isDelivered ? "delivered" : "waybilled"}`}>
           {isDelivered ? (
             <>

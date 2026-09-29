@@ -628,7 +628,8 @@ export function FormResponseDialog({
                     >
                       <div>
                         <p className="text-sm font-medium text-foreground">
-                          Product {idx + 1} × {item.quantity}
+                          {products.find((p) => p.id === item.product_id)?.name ?? `Product ${idx + 1}`} ×{" "}
+                          {item.quantity}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Price: {formatCurrency(item.unit_price_at_submission)}{" "}

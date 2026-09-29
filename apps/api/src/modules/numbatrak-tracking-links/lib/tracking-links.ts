@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, count, eq, desc } from "drizzle-orm";
+import { and, count, eq, desc, inArray } from "drizzle-orm";
 import { numbatrakTrackingLinks, numbatrakForms, numbatrakCustomerOrders, type Database, type Queryable } from "@platform/db";
 import type {
   NumbatrakTrackingLink,
@@ -62,20 +62,34 @@ export async function listTrackingLinks(
     .where(and(...conditions))
     .orderBy(desc(numbatrakTrackingLinks.createdAt));
 
-  const result: NumbatrakTrackingLink[] = [];
-  for (const row of rows) {
-    const [form] = await db
-      .select({ name: numbatrakForms.name, siteUrl: numbatrakForms.siteUrl })
+  if (rows.length === 0) return [];
+
+  // Batched instead of one form-lookup + one order-count query per row (was
+  // 1 + 2N round trips) - each round trip to the DB costs a fixed network
+  // latency regardless of query complexity, so N+1 here scaled linearly with
+  // the number of tracking links in an org.
+  const formIds = [...new Set(rows.map((r) => r.formId))];
+  const trackingLinkIds = rows.map((r) => r.id);
+
+  const [forms, orderCounts] = await Promise.all([
+    db
+      .select({ id: numbatrakForms.id, name: numbatrakForms.name, siteUrl: numbatrakForms.siteUrl })
       .from(numbatrakForms)
-      .where(eq(numbatrakForms.id, row.formId))
-      .limit(1);
-    const [orderCountResult] = await db
-      .select({ total: count() })
+      .where(inArray(numbatrakForms.id, formIds)),
+    db
+      .select({ trackingLinkId: numbatrakCustomerOrders.trackingLinkId, total: count() })
       .from(numbatrakCustomerOrders)
-      .where(eq(numbatrakCustomerOrders.trackingLinkId, row.id));
-    result.push(serialize(row, form?.name ?? null, form?.siteUrl ?? null, orderCountResult?.total ?? 0));
-  }
-  return result;
+      .where(inArray(numbatrakCustomerOrders.trackingLinkId, trackingLinkIds))
+      .groupBy(numbatrakCustomerOrders.trackingLinkId),
+  ]);
+
+  const formById = new Map(forms.map((f) => [f.id, f]));
+  const orderCountByLinkId = new Map(orderCounts.map((o) => [o.trackingLinkId, o.total]));
+
+  return rows.map((row) => {
+    const form = formById.get(row.formId);
+    return serialize(row, form?.name ?? null, form?.siteUrl ?? null, orderCountByLinkId.get(row.id) ?? 0);
+  });
 }
 
 export async function createTrackingLink(

@@ -7,7 +7,6 @@ export function DeliveryTableHeader() {
         <th className="delivery-table-header-cell">Date</th>
         <th className="delivery-table-header-cell">Month</th>
         <th className="delivery-table-header-cell">CSR</th>
-        <th className="delivery-table-header-cell">Agent</th>
         <th className="delivery-table-header-cell">Status</th>
         <th className="delivery-table-header-cell">Product</th>
         <th className="delivery-table-header-cell text-right">Quantity</th>

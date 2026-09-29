@@ -439,7 +439,7 @@ export function FormResponseTableRow({
                       <div key={item.id} className="form-response-product-item">
                         <div>
                           <div className="form-response-product-name">
-                            Product {idx + 1} (Qty: {item.quantity})
+                            {productsMap.get(item.product_id) ?? `Product ${idx + 1}`} (Qty: {item.quantity})
                           </div>
                           <div className="form-response-product-details">
                             Price:{" "}

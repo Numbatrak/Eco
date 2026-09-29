@@ -52,15 +52,7 @@ export default function DeliveriesForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [filters, setFilters] = useState<{
-    date?: string;
-    agentId?: number;
-    csr?: string;
-    productId?: string;
-    status?: "Waybilled" | "Delivered";
-    month?: string;
-    subBrand?: string;
-  }>({});
+  const [filters, setFilters] = useState<{ location?: string }>({});
   const [subBrandOptions, setSubBrandOptions] = useState<string[]>([]);
   const [waybillOpen, setWaybillOpen] = useState(false);
 
@@ -72,6 +64,16 @@ export default function DeliveriesForm() {
       .filter(Boolean) as string[];
     setSubBrandOptions([...new Set(fromDeliveries)].sort());
   }, [deliveries]);
+
+  // Location filter options come from agents' own coverage areas (locations
+  // is a free-text list per agent, e.g. states) rather than a dedicated
+  // per-delivery location field - deliveries don't carry their own location.
+  const locationOptions = useMemo(
+    () => [...new Set(agents.flatMap((a) => a.locations ?? []).map((l) => l.trim()).filter(Boolean))].sort(),
+    [agents]
+  );
+
+  const agentsById = useMemo(() => new Map(agents.map((a) => [a.id, a])), [agents]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -204,37 +206,11 @@ export default function DeliveriesForm() {
         if (!matchesSearch) return false;
       }
 
-      // Date filter
-      if (filters.date) {
-        if (delivery.date !== filters.date) return false;
-      }
-
-      // Agent filter
-      if (filters.agentId !== undefined) {
-        if (delivery.agent_id !== filters.agentId) return false;
-      }
-
-      // CSR filter
-      if (filters.csr) {
-        const csrQuery = filters.csr.toLowerCase();
-        if (!delivery.csr?.toLowerCase().includes(csrQuery)) return false;
-      }
-
-      // Product filter
-      if (filters.productId !== undefined) {
-        if (delivery.product_id !== filters.productId) return false;
-      }
-
-      if (filters.status && delivery.status !== filters.status) {
-        return false;
-      }
-
-      if (filters.month) {
-        if (!delivery.date.startsWith(filters.month)) return false;
-      }
-
-      if (filters.subBrand) {
-        if ((delivery.sub_brand ?? "") !== filters.subBrand) return false;
+      // Location filter - deliveries don't carry their own location, so this
+      // filters by whether the delivery's assigned agent covers that location.
+      if (filters.location) {
+        const agent = delivery.agent_id != null ? agentsById.get(delivery.agent_id) : undefined;
+        if (!agent?.locations?.includes(filters.location)) return false;
       }
 
       return true;
@@ -338,9 +314,7 @@ export default function DeliveriesForm() {
             onSearchChange={setSearchQuery}
             sortOrder={sortOrder}
             onSortChange={setSortOrder}
-            agents={agents}
-            products={products}
-            subBrandOptions={subBrandOptions}
+            locations={locationOptions}
             filters={filters}
             onFilterChange={setFilters}
             canEdit={canUpdate}
