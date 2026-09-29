@@ -28,6 +28,7 @@ export type DashboardMetricsScope = {
   status?: string | null;
   platform?: string | null;
   mediaBuyerName?: string | null;
+  trackingLinkId?: string | null;
 };
 
 export type BusinessPerformanceMetrics = {
@@ -163,6 +164,7 @@ function buildScopeParams(scope: DashboardMetricsScope, dateFrom?: string, dateT
   if (scope.status) params.set("status", scope.status);
   if (scope.platform) params.set("platform", scope.platform);
   if (scope.mediaBuyerName) params.set("mediaBuyerName", scope.mediaBuyerName);
+  if (scope.trackingLinkId) params.set("trackingLinkId", scope.trackingLinkId);
   return params;
 }
 

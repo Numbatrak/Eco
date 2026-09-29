@@ -10,6 +10,7 @@ import {
   Layers,
   Megaphone,
   Users,
+  Link2,
   X,
 } from "lucide-react";
 import {
@@ -49,8 +50,11 @@ export type DashboardFilterValues = {
   status: string | null;
   platform: string | null;
   mediaBuyerName: string | null;
+  trackingLinkId: string | null;
   viewMode: DashboardViewMode;
 };
+
+export type DashboardTrackingLinkOption = { id: string; label: string };
 
 interface DashboardFiltersProps {
   values: DashboardFilterValues;
@@ -69,6 +73,7 @@ interface DashboardFiltersProps {
   onStatusChange: (status: string | null) => void;
   onPlatformChange: (platform: string | null) => void;
   onMediaBuyerChange: (mediaBuyerName: string | null) => void;
+  onTrackingLinkChange: (trackingLinkId: string | null) => void;
   onViewModeChange: (mode: DashboardViewMode) => void;
   forms: Form[];
   csrUsers: UserProfile[];
@@ -78,6 +83,7 @@ interface DashboardFiltersProps {
   offerNames: string[];
   platforms: string[];
   mediaBuyerNames: string[];
+  trackingLinkOptions: DashboardTrackingLinkOption[];
   showCsrFilter?: boolean;
   showExtendedFilters?: boolean;
   showViewToggle?: boolean;
@@ -100,6 +106,7 @@ export function DashboardFilters({
   onStatusChange,
   onPlatformChange,
   onMediaBuyerChange,
+  onTrackingLinkChange,
   onViewModeChange,
   forms,
   csrUsers,
@@ -109,6 +116,7 @@ export function DashboardFilters({
   offerNames,
   platforms,
   mediaBuyerNames,
+  trackingLinkOptions,
   showCsrFilter = true,
   showExtendedFilters = false,
   showViewToggle = false,
@@ -125,6 +133,8 @@ export function DashboardFilters({
   const statusSelectValue = values.status ?? "all";
   const platformSelectValue = values.platform ?? "all";
   const mediaBuyerSelectValue = values.mediaBuyerName ?? "all";
+  const trackingLinkSelectValue = values.trackingLinkId ?? "all";
+  const selectedTrackingLink = trackingLinkOptions.find((t) => t.id === values.trackingLinkId);
 
   const selectedForm = forms.find((f) => f.id === values.formId);
   const selectedCsr = csrUsers.find((u) => u.id === values.csrId);
@@ -166,6 +176,13 @@ export function DashboardFilters({
     if (values.mediaBuyerName) {
       list.push({ key: "mediaBuyer", label: values.mediaBuyerName, onClear: () => onMediaBuyerChange(null) });
     }
+    if (values.trackingLinkId) {
+      list.push({
+        key: "trackingLink",
+        label: selectedTrackingLink?.label ?? "Tracking link",
+        onClear: () => onTrackingLinkChange(null),
+      });
+    }
     return list;
   }, [
     values.dateFilter,
@@ -178,9 +195,11 @@ export function DashboardFilters({
     values.status,
     values.platform,
     values.mediaBuyerName,
+    values.trackingLinkId,
     selectedForm,
     selectedCsr,
     selectedAgent,
+    selectedTrackingLink,
     onDateFilterChange,
     onFormChange,
     onCsrChange,
@@ -191,6 +210,7 @@ export function DashboardFilters({
     onStatusChange,
     onPlatformChange,
     onMediaBuyerChange,
+    onTrackingLinkChange,
   ]);
 
   function clearAll() {
@@ -204,6 +224,7 @@ export function DashboardFilters({
     onStatusChange(null);
     onPlatformChange(null);
     onMediaBuyerChange(null);
+    onTrackingLinkChange(null);
   }
 
   return (
@@ -462,6 +483,31 @@ export function DashboardFilters({
                         {mediaBuyerNames.map((name) => (
                           <SelectItem key={name} value={name}>
                             {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {trackingLinkOptions.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Link2 className="w-3.5 h-3.5" />
+                      Tracking link (funnel)
+                    </span>
+                    <Select
+                      value={trackingLinkSelectValue}
+                      onValueChange={(v) => onTrackingLinkChange(v === "all" ? null : v)}
+                    >
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by tracking link">
+                        <SelectValue placeholder="All tracking links" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All tracking links</SelectItem>
+                        {trackingLinkOptions.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

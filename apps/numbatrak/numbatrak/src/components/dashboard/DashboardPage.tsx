@@ -8,7 +8,9 @@ import { AbandonedCarts } from "./AbandonedCarts";
 import {
   DashboardFilters,
   type DashboardFilterValues,
+  type DashboardTrackingLinkOption,
 } from "./DashboardFilters";
+import { trackingLinksApi } from "../../services/trackingLinks";
 import { LossPanel } from "./LossPanel";
 import { DashboardAlertsBanner } from "./DashboardAlertsBanner";
 import { useDashboardAlertsContext } from "../../contexts/DashboardAlertsContext";
@@ -69,6 +71,7 @@ export function DashboardPage() {
     status: null,
     platform: null,
     mediaBuyerName: null,
+    trackingLinkId: null,
     viewMode: "business",
   });
   const [customStartDate, setCustomStartDate] = useState("");
@@ -81,6 +84,7 @@ export function DashboardPage() {
   const [offerNames, setOfferNames] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [mediaBuyerNames, setMediaBuyerNames] = useState<string[]>([]);
+  const [trackingLinkOptions, setTrackingLinkOptions] = useState<DashboardTrackingLinkOption[]>([]);
   const [lossMetrics, setLossMetrics] = useState<LossMetrics | null>(null);
   const [lossLoading, setLossLoading] = useState(false);
   const [dashboardAlerts, setDashboardAlerts] = useState<DashboardAlert[]>([]);
@@ -100,6 +104,7 @@ export function DashboardPage() {
       status: filterValues.status,
       platform: filterValues.platform,
       mediaBuyerName: filterValues.mediaBuyerName,
+      trackingLinkId: filterValues.trackingLinkId,
     }),
     [
       filterValues.formId,
@@ -111,6 +116,7 @@ export function DashboardPage() {
       filterValues.status,
       filterValues.platform,
       filterValues.mediaBuyerName,
+      filterValues.trackingLinkId,
     ]
   );
 
@@ -126,6 +132,7 @@ export function DashboardPage() {
       status: null,
       platform: null,
       mediaBuyerName: null,
+      trackingLinkId: null,
     }));
     if (!currentOrganization) {
       setForms([]);
@@ -135,6 +142,7 @@ export function DashboardPage() {
       setOfferNames([]);
       setPlatforms([]);
       setMediaBuyerNames([]);
+      setTrackingLinkOptions([]);
       return;
     }
     let cancelled = false;
@@ -153,9 +161,10 @@ export function DashboardPage() {
       }
 
       try {
-        const [agentList, attrOptions] = await Promise.all([
+        const [agentList, attrOptions, trackingLinksResult] = await Promise.all([
           fetchAgents(currentOrganization.id, { activeOnly: true }),
           fetchDashboardFilterOptions(currentOrganization.id),
+          trackingLinksApi.list(),
         ]);
         if (!cancelled) {
           setAgents(agentList);
@@ -164,6 +173,12 @@ export function DashboardPage() {
           setOfferNames(attrOptions.offerNames);
           setPlatforms(attrOptions.platforms);
           setMediaBuyerNames(attrOptions.mediaBuyerNames);
+          setTrackingLinkOptions(
+            trackingLinksResult.trackingLinks.map((t) => ({
+              id: t.id,
+              label: [t.mediaBuyerName, t.platform, t.label ?? t.formName].filter(Boolean).join(" · "),
+            }))
+          );
         }
       } catch (e) {
         console.error("Error loading dashboard filter data:", e);
@@ -174,6 +189,7 @@ export function DashboardPage() {
           setOfferNames([]);
           setPlatforms([]);
           setMediaBuyerNames([]);
+          setTrackingLinkOptions([]);
         }
       }
     })();
@@ -366,6 +382,9 @@ export function DashboardPage() {
         onMediaBuyerChange={(mediaBuyerName) =>
           setFilterValues((prev) => ({ ...prev, mediaBuyerName }))
         }
+        onTrackingLinkChange={(trackingLinkId) =>
+          setFilterValues((prev) => ({ ...prev, trackingLinkId }))
+        }
         onViewModeChange={(viewMode) =>
           setFilterValues((prev) => ({ ...prev, viewMode }))
         }
@@ -377,6 +396,7 @@ export function DashboardPage() {
         offerNames={offerNames}
         platforms={platforms}
         mediaBuyerNames={mediaBuyerNames}
+        trackingLinkOptions={trackingLinkOptions}
         showCsrFilter={!scopedCsrId}
         showExtendedFilters={canViewAnalytics}
         showViewToggle={canViewAnalytics}

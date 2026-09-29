@@ -879,6 +879,7 @@ export const dashboardScopeQuerySchema = z.object({
   status: z.string().optional(),
   platform: z.string().optional(),
   mediaBuyerName: z.string().optional(),
+  trackingLinkId: z.string().uuid().optional(),
 });
 export type DashboardScopeQuery = z.infer<typeof dashboardScopeQuerySchema>;
 

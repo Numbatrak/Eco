@@ -35,7 +35,16 @@ export async function fetchOrderRows(
   organizationId: string,
   scope: Pick<
     DashboardScopeQuery,
-    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status" | "platform" | "mediaBuyerName"
+    | "formId"
+    | "csrId"
+    | "funnelName"
+    | "subBrand"
+    | "offerName"
+    | "agentId"
+    | "status"
+    | "platform"
+    | "mediaBuyerName"
+    | "trackingLinkId"
   >,
 ): Promise<MetricsOrderRow[]> {
   const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
@@ -47,6 +56,7 @@ export async function fetchOrderRows(
   if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
   if (scope.platform) conditions.push(eq(numbatrakCustomerOrders.platform, scope.platform));
   if (scope.mediaBuyerName) conditions.push(eq(numbatrakCustomerOrders.mediaBuyerName, scope.mediaBuyerName));
+  if (scope.trackingLinkId) conditions.push(eq(numbatrakCustomerOrders.trackingLinkId, scope.trackingLinkId));
 
   const rows = await db
     .select({
@@ -98,7 +108,16 @@ export async function fetchProductLossItemRows(
   organizationId: string,
   scope: Pick<
     DashboardScopeQuery,
-    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status" | "platform" | "mediaBuyerName"
+    | "formId"
+    | "csrId"
+    | "funnelName"
+    | "subBrand"
+    | "offerName"
+    | "agentId"
+    | "status"
+    | "platform"
+    | "mediaBuyerName"
+    | "trackingLinkId"
   >,
 ): Promise<ProductLossItemRow[]> {
   const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
@@ -110,6 +129,7 @@ export async function fetchProductLossItemRows(
   if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
   if (scope.platform) conditions.push(eq(numbatrakCustomerOrders.platform, scope.platform));
   if (scope.mediaBuyerName) conditions.push(eq(numbatrakCustomerOrders.mediaBuyerName, scope.mediaBuyerName));
+  if (scope.trackingLinkId) conditions.push(eq(numbatrakCustomerOrders.trackingLinkId, scope.trackingLinkId));
 
   const rows = await db
     .select({
