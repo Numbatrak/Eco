@@ -82,17 +82,27 @@ export function StaffDialog({
 
   const roleOptions = selectedMember ? compatibleSpecRoles(selectedMember.member_role) : ALL_SPEC_ROLES;
 
+  const checkedRoles = [values.primary_role, ...values.extra_roles];
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit(values);
   };
 
-  const toggleExtraRole = (role: SpecRole) => {
-    const has = values.extra_roles.includes(role);
-    onChange({
-      ...values,
-      extra_roles: has ? values.extra_roles.filter((r) => r !== role) : [...values.extra_roles, role],
-    });
+  // Single flat role list - whichever checked role appears earliest in
+  // roleOptions order becomes primary_role, the rest are extra_roles. Avoids
+  // showing the same role names in two separate lists (a dropdown + a
+  // checkbox group) for what's really one "which roles does this person
+  // hold" decision.
+  const toggleRole = (role: SpecRole) => {
+    const isChecked = checkedRoles.includes(role);
+    const nextChecked = isChecked
+      ? checkedRoles.filter((r) => r !== role)
+      : [...checkedRoles, role];
+    if (nextChecked.length === 0) return; // must keep at least one role
+    const ordered = roleOptions.filter((r) => nextChecked.includes(r));
+    const [primary, ...extra] = ordered;
+    onChange({ ...values, primary_role: primary, extra_roles: extra });
   };
 
   const addSubBrand = () => {
@@ -141,33 +151,14 @@ export function StaffDialog({
           )}
 
           <div className="space-y-2">
-            <Label>Primary role</Label>
-            <Select
-              value={values.primary_role}
-              onValueChange={(role) => onChange({ ...values, primary_role: role as SpecRole })}
-              disabled={mode === "create" && !values.user_id}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roleOptions.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Extra roles</Label>
+            <Label>Roles</Label>
             <div className="flex flex-wrap gap-3">
-              {ALL_SPEC_ROLES.filter((role) => role !== values.primary_role).map((role) => (
+              {roleOptions.map((role) => (
                 <label key={role} className="flex items-center gap-2 text-sm">
                   <Checkbox
-                    checked={values.extra_roles.includes(role)}
-                    onCheckedChange={() => toggleExtraRole(role)}
+                    checked={checkedRoles.includes(role)}
+                    onCheckedChange={() => toggleRole(role)}
+                    disabled={mode === "create" && !values.user_id}
                   />
                   {role}
                 </label>
