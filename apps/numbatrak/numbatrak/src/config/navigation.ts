@@ -264,6 +264,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         requiredPermission: { resource: "mediaBuyers", action: "canView" },
       },
       {
+        id: "tracking-links",
+        label: "Tracking Links",
+        icon: LineChart,
+        path: "/tracking-links",
+        requiredPermission: { resource: "trackingLinks", action: "canView" },
+      },
+      {
         id: "crm",
         label: "Customer Management",
         icon: HeartHandshake,

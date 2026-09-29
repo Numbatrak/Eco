@@ -1,7 +1,6 @@
 "use client";
 
 import { authApi, type OrgMember, type OrgRecord } from "../lib/authApi";
-import { supabase } from "../supabaseClient";
 import { Organization, OrganizationMember } from "../types/organization";
 import { UserRole } from "../types/user";
 import { mapOrgRoleToUserRole, mapUserRoleToOrgRole } from "../utils/roleMapping";
@@ -14,6 +13,8 @@ function toOrganization(org: OrgRecord): Organization {
     logo_url: org.logo ?? null,
     timezone: (metadata.timezone as string | undefined) ?? null,
     currency: (metadata.currency as string | undefined) ?? null,
+    business_phone: (metadata.businessPhone as string | undefined) ?? null,
+    business_whatsapp: (metadata.businessWhatsapp as string | undefined) ?? null,
     created_at: org.createdAt,
     updated_at: org.createdAt,
   };
@@ -92,10 +93,15 @@ export async function removeMember(organizationId: string, memberId: string): Pr
 }
 
 /**
- * Update organization name/locale (only Owners and Admins can do this).
- * timezone/currency live in Better Auth's opaque `metadata` field - only
- * included in the request when at least one is provided, so a name-only
- * update never clobbers the other.
+ * Update organization name/locale/identity (only Owners and Admins can do
+ * this). timezone/currency/businessPhone/businessWhatsapp all live in
+ * Better Auth's opaque `metadata` field, which the update endpoint replaces
+ * wholesale (no server-side deep merge) - so any caller that sends a
+ * `metadata`-backed field MUST send all four together (read the current
+ * values and re-send them even if unchanged), or the ones it omits get
+ * silently wiped. General Settings' one "Save" button does this by always
+ * submitting its full local state; don't add a second save path for just
+ * one of these fields without the same care.
  */
 export async function updateOrganization(
   organizationId: string,
@@ -104,6 +110,8 @@ export async function updateOrganization(
     logo_url?: string | null;
     timezone?: string;
     currency?: string;
+    business_phone?: string | null;
+    business_whatsapp?: string | null;
   }
 ): Promise<Organization> {
   const data: { name?: string; logo?: string | null; metadata?: Record<string, unknown> } = {};
@@ -113,10 +121,17 @@ export async function updateOrganization(
   if (updates.logo_url !== undefined) {
     data.logo = updates.logo_url;
   }
-  if (updates.timezone !== undefined || updates.currency !== undefined) {
+  if (
+    updates.timezone !== undefined ||
+    updates.currency !== undefined ||
+    updates.business_phone !== undefined ||
+    updates.business_whatsapp !== undefined
+  ) {
     data.metadata = {
       ...(updates.timezone !== undefined ? { timezone: updates.timezone } : {}),
       ...(updates.currency !== undefined ? { currency: updates.currency } : {}),
+      ...(updates.business_phone !== undefined ? { businessPhone: updates.business_phone } : {}),
+      ...(updates.business_whatsapp !== undefined ? { businessWhatsapp: updates.business_whatsapp } : {}),
     };
   }
 
@@ -133,6 +148,15 @@ const ORG_LOGO_MAX_BYTES = 5 * 1024 * 1024;
  * DEFERRED: apps/api has no storage/S3 module yet, so this still goes
  * straight to Supabase Storage rather than through apps/api - the rest of
  * this file is fully migrated. Revisit once apps/api gets a storage layer.
+ *
+ * The supabaseClient import is dynamic (not a static top-of-file import) so
+ * that merely importing this service - which every consumer of
+ * updateOrganization/fetchOrganizationMembers/etc. does, including the
+ * whole Settings page - doesn't eagerly construct a Supabase client and
+ * throw when VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY aren't set (which
+ * they no longer are, since the app talks to apps/api now). The throw is
+ * deferred until someone actually tries to upload a logo, where it's a
+ * normal catchable rejection instead of a route-level crash.
  */
 export async function uploadOrganizationLogo(
   organizationId: string,
@@ -144,6 +168,8 @@ export async function uploadOrganizationLogo(
   if (file.size > ORG_LOGO_MAX_BYTES) {
     throw new Error("Image must be 5 MB or smaller.");
   }
+
+  const { supabase } = await import("../supabaseClient");
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${organizationId}/logo.${ext}`;

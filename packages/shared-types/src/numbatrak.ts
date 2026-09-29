@@ -256,6 +256,8 @@ export const numbatrakOrderSchema = z.object({
   trackingLinkId: z.string().uuid().nullable(),
   platform: z.string().nullable(),
   mediaBuyerName: z.string().nullable(),
+  trackingLinkOfferId: z.string().nullable(),
+  trackingLinkOfferLabel: z.string().nullable(),
   abandonedCartId: z.string().nullable(),
   moneyReceivedBy: numbatrakMoneyReceivedBySchema,
   items: z.array(numbatrakOrderItemSchema),
@@ -875,6 +877,8 @@ export const dashboardScopeQuerySchema = z.object({
   offerName: z.string().optional(),
   agentId: z.coerce.number().int().optional(),
   status: z.string().optional(),
+  platform: z.string().optional(),
+  mediaBuyerName: z.string().optional(),
 });
 export type DashboardScopeQuery = z.infer<typeof dashboardScopeQuerySchema>;
 
@@ -965,8 +969,35 @@ export const numbatrakDashboardFilterOptionsSchema = z.object({
   funnelNames: z.array(z.string()),
   subBrands: z.array(z.string()),
   offerNames: z.array(z.string()),
+  platforms: z.array(z.string()),
+  mediaBuyerNames: z.array(z.string()),
 });
 export type NumbatrakDashboardFilterOptions = z.infer<typeof numbatrakDashboardFilterOptionsSchema>;
+
+// ---------- funnel performance (media buyer + platform + offer) ----------
+// "Funnel" here means the combo a tracking link represents (see
+// numbatrak_tracking_links) - groups real orders by that combo so buyers can
+// be compared against each other, not just against spend totals (see
+// numbatrak-media-buyers' getPerformanceAnalytics, which is spend-only).
+
+export const numbatrakFunnelBreakdownQuerySchema = dashboardScopeQuerySchema.omit({
+  platform: true,
+  mediaBuyerName: true,
+});
+export type NumbatrakFunnelBreakdownQuery = z.infer<typeof numbatrakFunnelBreakdownQuerySchema>;
+
+export const numbatrakFunnelBreakdownRowSchema = z.object({
+  key: z.string(),
+  mediaBuyerName: z.string(),
+  platform: z.string(),
+  offerLabel: z.string().nullable(),
+  orderCount: z.number().int(),
+  revenue: z.number(),
+  cost: z.number(),
+  profit: z.number(),
+  averageOrderValue: z.number(),
+});
+export type NumbatrakFunnelBreakdownRow = z.infer<typeof numbatrakFunnelBreakdownRowSchema>;
 
 export const numbatrakDeliveryRateByLocationSchema = z.object({
   // "Overall" is the aggregate row; every other value is a real agent

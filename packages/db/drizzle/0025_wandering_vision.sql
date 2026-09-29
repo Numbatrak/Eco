@@ -1,0 +1,3 @@
+ALTER TABLE "numbatrak_customer_orders" ADD COLUMN "tracking_link_offer_id" text;--> statement-breakpoint
+ALTER TABLE "numbatrak_customer_orders" ADD COLUMN "tracking_link_offer_label" text;--> statement-breakpoint
+CREATE INDEX "numbatrak_customer_orders_tracking_link_offer_idx" ON "numbatrak_customer_orders" USING btree ("organization_id","tracking_link_offer_label") WHERE "numbatrak_customer_orders"."tracking_link_offer_label" IS NOT NULL;

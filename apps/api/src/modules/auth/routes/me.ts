@@ -5,6 +5,27 @@ import type { MeResponse, OrgRole } from "@platform/shared-types";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../../lib/auth.js";
 
+/**
+ * `auth.api.listOrganizations()` (the internal server-side call used here)
+ * returns `metadata` as the raw JSON string straight from the DB column,
+ * unlike the HTTP `/api/auth/organization/update` endpoint which parses it
+ * before responding - so this route must parse it itself, or every
+ * metadata-backed field (timezone, currency, business phone/WhatsApp)
+ * silently reads back as undefined on every page load.
+ */
+function parseOrgMetadata(metadata: unknown): Record<string, unknown> | null {
+  if (metadata == null) return null;
+  if (typeof metadata === "object") return metadata as Record<string, unknown>;
+  if (typeof metadata === "string") {
+    try {
+      return JSON.parse(metadata) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export default async function meRoutes(app: FastifyInstance): Promise<void> {
   app.get("/auth/me", async (request, reply) => {
     const headers = fromNodeHeaders(request.headers);
@@ -45,6 +66,8 @@ export default async function meRoutes(app: FastifyInstance): Promise<void> {
         name: org.name,
         slug: org.slug,
         role: roleByOrgId.get(org.id) ?? "viewer",
+        logo: org.logo ?? null,
+        metadata: parseOrgMetadata(org.metadata),
       })),
       activeOrganizationId: session.session.activeOrganizationId ?? null,
     };

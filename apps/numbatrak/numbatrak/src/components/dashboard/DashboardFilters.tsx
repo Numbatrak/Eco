@@ -8,6 +8,8 @@ import {
   Tag,
   Truck,
   Layers,
+  Megaphone,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -45,6 +47,8 @@ export type DashboardFilterValues = {
   offerName: string | null;
   agentId: number | null;
   status: string | null;
+  platform: string | null;
+  mediaBuyerName: string | null;
   viewMode: DashboardViewMode;
 };
 
@@ -63,6 +67,8 @@ interface DashboardFiltersProps {
   onOfferChange: (offer: string | null) => void;
   onAgentChange: (agentId: number | null) => void;
   onStatusChange: (status: string | null) => void;
+  onPlatformChange: (platform: string | null) => void;
+  onMediaBuyerChange: (mediaBuyerName: string | null) => void;
   onViewModeChange: (mode: DashboardViewMode) => void;
   forms: Form[];
   csrUsers: UserProfile[];
@@ -70,6 +76,8 @@ interface DashboardFiltersProps {
   funnelNames: string[];
   subBrands: string[];
   offerNames: string[];
+  platforms: string[];
+  mediaBuyerNames: string[];
   showCsrFilter?: boolean;
   showExtendedFilters?: boolean;
   showViewToggle?: boolean;
@@ -90,6 +98,8 @@ export function DashboardFilters({
   onOfferChange,
   onAgentChange,
   onStatusChange,
+  onPlatformChange,
+  onMediaBuyerChange,
   onViewModeChange,
   forms,
   csrUsers,
@@ -97,6 +107,8 @@ export function DashboardFilters({
   funnelNames,
   subBrands,
   offerNames,
+  platforms,
+  mediaBuyerNames,
   showCsrFilter = true,
   showExtendedFilters = false,
   showViewToggle = false,
@@ -111,6 +123,8 @@ export function DashboardFilters({
   const agentSelectValue =
     values.agentId != null ? String(values.agentId) : "all";
   const statusSelectValue = values.status ?? "all";
+  const platformSelectValue = values.platform ?? "all";
+  const mediaBuyerSelectValue = values.mediaBuyerName ?? "all";
 
   const selectedForm = forms.find((f) => f.id === values.formId);
   const selectedCsr = csrUsers.find((u) => u.id === values.csrId);
@@ -146,6 +160,12 @@ export function DashboardFilters({
     if (values.status) {
       list.push({ key: "status", label: orderStatusLabel(values.status), onClear: () => onStatusChange(null) });
     }
+    if (values.platform) {
+      list.push({ key: "platform", label: values.platform, onClear: () => onPlatformChange(null) });
+    }
+    if (values.mediaBuyerName) {
+      list.push({ key: "mediaBuyer", label: values.mediaBuyerName, onClear: () => onMediaBuyerChange(null) });
+    }
     return list;
   }, [
     values.dateFilter,
@@ -156,6 +176,8 @@ export function DashboardFilters({
     values.offerName,
     values.agentId,
     values.status,
+    values.platform,
+    values.mediaBuyerName,
     selectedForm,
     selectedCsr,
     selectedAgent,
@@ -167,6 +189,8 @@ export function DashboardFilters({
     onOfferChange,
     onAgentChange,
     onStatusChange,
+    onPlatformChange,
+    onMediaBuyerChange,
   ]);
 
   function clearAll() {
@@ -178,6 +202,8 @@ export function DashboardFilters({
     onOfferChange(null);
     onAgentChange(null);
     onStatusChange(null);
+    onPlatformChange(null);
+    onMediaBuyerChange(null);
   }
 
   return (
@@ -390,6 +416,50 @@ export function DashboardFilters({
                       <SelectContent>
                         <SelectItem value="all">All offers</SelectItem>
                         {offerNames.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {platforms.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Megaphone className="w-3.5 h-3.5" />
+                      Platform
+                    </span>
+                    <Select value={platformSelectValue} onValueChange={(v) => onPlatformChange(v === "all" ? null : v)}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by platform">
+                        <SelectValue placeholder="All platforms" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All platforms</SelectItem>
+                        {platforms.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {mediaBuyerNames.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <Users className="w-3.5 h-3.5" />
+                      Media buyer
+                    </span>
+                    <Select value={mediaBuyerSelectValue} onValueChange={(v) => onMediaBuyerChange(v === "all" ? null : v)}>
+                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by media buyer">
+                        <SelectValue placeholder="All media buyers" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All media buyers</SelectItem>
+                        {mediaBuyerNames.map((name) => (
                           <SelectItem key={name} value={name}>
                             {name}
                           </SelectItem>

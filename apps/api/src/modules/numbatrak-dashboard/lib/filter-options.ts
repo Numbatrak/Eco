@@ -22,9 +22,25 @@ export async function fetchFilterOptions(db: Database, organizationId: string): 
     .from(numbatrakCustomerOrders)
     .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), isNotNull(numbatrakCustomerOrders.offerName)));
 
+  const platformRows = await db
+    .selectDistinct({ platform: numbatrakCustomerOrders.platform })
+    .from(numbatrakCustomerOrders)
+    .where(and(eq(numbatrakCustomerOrders.organizationId, organizationId), isNotNull(numbatrakCustomerOrders.platform)));
+
+  const mediaBuyerRows = await db
+    .selectDistinct({ mediaBuyerName: numbatrakCustomerOrders.mediaBuyerName })
+    .from(numbatrakCustomerOrders)
+    .where(
+      and(eq(numbatrakCustomerOrders.organizationId, organizationId), isNotNull(numbatrakCustomerOrders.mediaBuyerName)),
+    );
+
   const funnelNames = [...new Set(funnelRows.map((r) => r.funnelName?.trim()).filter((v): v is string => !!v))].sort();
   const subBrands = [...new Set(subBrandRows.map((r) => r.subBrand?.trim()).filter((v): v is string => !!v))].sort();
   const offerNames = [...new Set(offerRows.map((r) => r.offerName?.trim()).filter((v): v is string => !!v))].sort();
+  const platforms = [...new Set(platformRows.map((r) => r.platform?.trim()).filter((v): v is string => !!v))].sort();
+  const mediaBuyerNames = [
+    ...new Set(mediaBuyerRows.map((r) => r.mediaBuyerName?.trim()).filter((v): v is string => !!v)),
+  ].sort();
 
-  return { funnelNames, subBrands, offerNames };
+  return { funnelNames, subBrands, offerNames, platforms, mediaBuyerNames };
 }

@@ -67,6 +67,8 @@ export function DashboardPage() {
     offerName: null,
     agentId: null,
     status: null,
+    platform: null,
+    mediaBuyerName: null,
     viewMode: "business",
   });
   const [customStartDate, setCustomStartDate] = useState("");
@@ -77,6 +79,8 @@ export function DashboardPage() {
   const [funnelNames, setFunnelNames] = useState<string[]>([]);
   const [subBrands, setSubBrands] = useState<string[]>([]);
   const [offerNames, setOfferNames] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
+  const [mediaBuyerNames, setMediaBuyerNames] = useState<string[]>([]);
   const [lossMetrics, setLossMetrics] = useState<LossMetrics | null>(null);
   const [lossLoading, setLossLoading] = useState(false);
   const [dashboardAlerts, setDashboardAlerts] = useState<DashboardAlert[]>([]);
@@ -94,6 +98,8 @@ export function DashboardPage() {
       offerName: filterValues.offerName,
       agentId: filterValues.agentId,
       status: filterValues.status,
+      platform: filterValues.platform,
+      mediaBuyerName: filterValues.mediaBuyerName,
     }),
     [
       filterValues.formId,
@@ -103,6 +109,8 @@ export function DashboardPage() {
       filterValues.offerName,
       filterValues.agentId,
       filterValues.status,
+      filterValues.platform,
+      filterValues.mediaBuyerName,
     ]
   );
 
@@ -116,6 +124,8 @@ export function DashboardPage() {
       offerName: null,
       agentId: null,
       status: null,
+      platform: null,
+      mediaBuyerName: null,
     }));
     if (!currentOrganization) {
       setForms([]);
@@ -123,6 +133,8 @@ export function DashboardPage() {
       setFunnelNames([]);
       setSubBrands([]);
       setOfferNames([]);
+      setPlatforms([]);
+      setMediaBuyerNames([]);
       return;
     }
     let cancelled = false;
@@ -150,6 +162,8 @@ export function DashboardPage() {
           setFunnelNames(attrOptions.funnelNames);
           setSubBrands(attrOptions.subBrands);
           setOfferNames(attrOptions.offerNames);
+          setPlatforms(attrOptions.platforms);
+          setMediaBuyerNames(attrOptions.mediaBuyerNames);
         }
       } catch (e) {
         console.error("Error loading dashboard filter data:", e);
@@ -158,6 +172,8 @@ export function DashboardPage() {
           setFunnelNames([]);
           setSubBrands([]);
           setOfferNames([]);
+          setPlatforms([]);
+          setMediaBuyerNames([]);
         }
       }
     })();
@@ -344,6 +360,12 @@ export function DashboardPage() {
         onStatusChange={(status) =>
           setFilterValues((prev) => ({ ...prev, status }))
         }
+        onPlatformChange={(platform) =>
+          setFilterValues((prev) => ({ ...prev, platform }))
+        }
+        onMediaBuyerChange={(mediaBuyerName) =>
+          setFilterValues((prev) => ({ ...prev, mediaBuyerName }))
+        }
         onViewModeChange={(viewMode) =>
           setFilterValues((prev) => ({ ...prev, viewMode }))
         }
@@ -353,6 +375,8 @@ export function DashboardPage() {
         funnelNames={funnelNames}
         subBrands={subBrands}
         offerNames={offerNames}
+        platforms={platforms}
+        mediaBuyerNames={mediaBuyerNames}
         showCsrFilter={!scopedCsrId}
         showExtendedFilters={canViewAnalytics}
         showViewToggle={canViewAnalytics}

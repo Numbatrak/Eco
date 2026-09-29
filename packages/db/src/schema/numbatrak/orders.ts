@@ -241,6 +241,14 @@ export const numbatrakCustomerOrders = pgTable(
     trackingLinkId: uuid("tracking_link_id").references(() => numbatrakTrackingLinks.id, { onDelete: "set null" }),
     platform: text("platform"),
     mediaBuyerName: text("media_buyer_name"),
+    // Denormalized snapshot of the tracking link's *intended* offer (its own
+    // offerId/offerLabel) at order time - distinct from `offerName` above,
+    // which reflects what the customer actually selected on the form. The
+    // two usually match but can diverge (upsell/downsell), and funnel
+    // comparison (buyer+platform+offer) needs the intended-offer dimension
+    // to stay stable even if the tracking link is edited later.
+    trackingLinkOfferId: text("tracking_link_offer_id"),
+    trackingLinkOfferLabel: text("tracking_link_offer_label"),
   },
   (table) => [
     index("numbatrak_customer_orders_agent_idx").on(table.agentId),
@@ -269,6 +277,9 @@ export const numbatrakCustomerOrders = pgTable(
     index("numbatrak_customer_orders_media_buyer_idx")
       .on(table.organizationId, table.mediaBuyerName)
       .where(sql`${table.mediaBuyerName} IS NOT NULL`),
+    index("numbatrak_customer_orders_tracking_link_offer_idx")
+      .on(table.organizationId, table.trackingLinkOfferLabel)
+      .where(sql`${table.trackingLinkOfferLabel} IS NOT NULL`),
     // Predicate mirrors is_order_delivered_status(status) - kept in sync by
     // the source migration that dropped+recreated this specific index.
     index("numbatrak_customer_orders_money_received_idx")

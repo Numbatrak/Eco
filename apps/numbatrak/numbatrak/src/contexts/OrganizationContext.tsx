@@ -28,16 +28,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   const organizations = useMemo<OrganizationWithRole[]>(
     () =>
-      memberships.map((m) => ({
-        id: m.id,
-        name: m.name,
-        logo_url: null,
-        timezone: null,
-        currency: null,
-        created_at: null,
-        updated_at: null,
-        role: mapOrgRoleToUserRole(m.role),
-      })),
+      memberships.map((m) => {
+        const metadata = m.metadata ?? {};
+        return {
+          id: m.id,
+          name: m.name,
+          logo_url: m.logo ?? null,
+          timezone: (metadata.timezone as string | undefined) ?? null,
+          currency: (metadata.currency as string | undefined) ?? null,
+          business_phone: (metadata.businessPhone as string | undefined) ?? null,
+          business_whatsapp: (metadata.businessWhatsapp as string | undefined) ?? null,
+          created_at: null,
+          updated_at: null,
+          role: mapOrgRoleToUserRole(m.role),
+        };
+      }),
     [memberships],
   );
 

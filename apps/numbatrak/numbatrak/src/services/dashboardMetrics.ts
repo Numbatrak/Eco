@@ -26,6 +26,8 @@ export type DashboardMetricsScope = {
   offerName?: string | null;
   agentId?: number | null;
   status?: string | null;
+  platform?: string | null;
+  mediaBuyerName?: string | null;
 };
 
 export type BusinessPerformanceMetrics = {
@@ -159,6 +161,8 @@ function buildScopeParams(scope: DashboardMetricsScope, dateFrom?: string, dateT
   if (scope.offerName) params.set("offerName", scope.offerName);
   if (scope.agentId != null) params.set("agentId", String(scope.agentId));
   if (scope.status) params.set("status", scope.status);
+  if (scope.platform) params.set("platform", scope.platform);
+  if (scope.mediaBuyerName) params.set("mediaBuyerName", scope.mediaBuyerName);
   return params;
 }
 
@@ -174,13 +178,17 @@ async function fetchSummary(
 
 export async function fetchDashboardFilterOptions(
   organizationId: string
-): Promise<{ funnelNames: string[]; subBrands: string[]; offerNames: string[] }> {
+): Promise<{ funnelNames: string[]; subBrands: string[]; offerNames: string[]; platforms: string[]; mediaBuyerNames: string[] }> {
   if (!organizationId) {
-    return { funnelNames: [], subBrands: [], offerNames: [] };
+    return { funnelNames: [], subBrands: [], offerNames: [], platforms: [], mediaBuyerNames: [] };
   }
-  return apiRequest<{ funnelNames: string[]; subBrands: string[]; offerNames: string[] }>(
-    "/org/numbatrak/dashboard/filter-options"
-  );
+  return apiRequest<{
+    funnelNames: string[];
+    subBrands: string[];
+    offerNames: string[];
+    platforms: string[];
+    mediaBuyerNames: string[];
+  }>("/org/numbatrak/dashboard/filter-options");
 }
 
 export async function fetchBusinessPerformanceMetrics(
@@ -210,6 +218,36 @@ export async function fetchLossMetrics(
     ...lossMetrics,
     byStatus: lossMetrics.byStatus.map((s) => ({ ...s, label: orderStatusLabel(s.status) })),
   };
+}
+
+export type FunnelBreakdownRow = {
+  key: string;
+  mediaBuyerName: string;
+  platform: string;
+  offerLabel: string | null;
+  orderCount: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  averageOrderValue: number;
+};
+
+/** Real orders grouped by (mediaBuyerName, platform, offer) - the "funnel"
+ * combo a tracking link represents - for comparing buyers/platforms/offers
+ * against each other. Doesn't accept platform/mediaBuyerName scope filters
+ * since those are the dimensions being compared. */
+export async function fetchFunnelBreakdown(
+  organizationId: string,
+  startDate?: string,
+  endDate?: string,
+  scope: Omit<DashboardMetricsScope, "platform" | "mediaBuyerName"> = {}
+): Promise<FunnelBreakdownRow[]> {
+  if (!organizationId) return [];
+  const params = buildScopeParams(scope, startDate, endDate);
+  const { rows } = await apiRequest<{ rows: FunnelBreakdownRow[] }>(
+    `/org/numbatrak/dashboard/funnel-breakdown?${params.toString()}`
+  );
+  return rows;
 }
 
 /** @deprecated Use deliveryRateBand from utils/dashboardHealth */

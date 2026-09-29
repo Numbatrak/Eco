@@ -20,7 +20,7 @@ import { Building2, User, Shield, Trash2, Loader2, Settings, Mail, Plus, X, Copy
 import { InvitationDialog } from "./InvitationDialog";
 import { OrderAssignmentSettings } from "./OrderAssignmentSettings";
 import { DeliveryFeeSettings } from "./DeliveryFeeSettings";
-import { OrganizationBrandingSettings } from "./OrganizationBrandingSettings";
+import { GeneralSettings } from "./GeneralSettings";
 import { DashboardAlertThresholdsSettings } from "./DashboardAlertThresholdsSettings";
 import { InventorySettings } from "./InventorySettings";
 import { DeliveryAgentSettings } from "./DeliveryAgentSettings";
@@ -422,7 +422,7 @@ export function OrganizationSettingsPage() {
           )}
         </div>
 
-        <OrganizationBrandingSettings
+        <GeneralSettings
           organization={currentOrganization}
           canEdit={canEditOrganization}
           onUpdated={(org) => {

@@ -231,6 +231,8 @@ export async function submitFormOrder(
         trackingLinkId: trackingLink?.id ?? null,
         platform: trackingLink?.platform ?? null,
         mediaBuyerName: trackingLink?.mediaBuyerName ?? null,
+        trackingLinkOfferId: trackingLink?.offerId ?? null,
+        trackingLinkOfferLabel: trackingLink?.offerLabel ?? null,
       })
       .returning();
     if (!order) throw new Error("Failed to create order");

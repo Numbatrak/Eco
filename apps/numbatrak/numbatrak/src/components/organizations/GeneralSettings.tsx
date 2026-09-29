@@ -12,7 +12,7 @@ import {
   TIMEZONE_OPTIONS,
 } from "../../constants/profileOptions";
 
-interface OrganizationBrandingSettingsProps {
+interface GeneralSettingsProps {
   organization: OrganizationWithRole;
   canEdit: boolean;
   onUpdated: (org: OrganizationWithRole) => void;
@@ -20,13 +20,21 @@ interface OrganizationBrandingSettingsProps {
   onSuccess: (message: string) => void;
 }
 
-export function OrganizationBrandingSettings({
+/**
+ * The spec's "Profile" layer (business identity, timezone, currency) -
+ * everything here is stored in Better Auth's `organization.metadata` JSON
+ * (see services/organizations.ts's updateOrganization doc comment), which
+ * the update endpoint replaces wholesale. One save button submits all four
+ * metadata-backed fields together every time, so saving e.g. just a phone
+ * number can never silently wipe the saved timezone/currency.
+ */
+export function GeneralSettings({
   organization,
   canEdit,
   onUpdated,
   onError,
   onSuccess,
-}: OrganizationBrandingSettingsProps) {
+}: GeneralSettingsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [timezone, setTimezone] = useState(
     organization.timezone ?? DEFAULT_TIMEZONE
@@ -34,26 +42,36 @@ export function OrganizationBrandingSettings({
   const [currency, setCurrency] = useState(
     organization.currency ?? DEFAULT_CURRENCY
   );
+  const [businessPhone, setBusinessPhone] = useState(
+    organization.business_phone ?? ""
+  );
+  const [businessWhatsapp, setBusinessWhatsapp] = useState(
+    organization.business_whatsapp ?? ""
+  );
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     setTimezone(organization.timezone ?? DEFAULT_TIMEZONE);
     setCurrency(organization.currency ?? DEFAULT_CURRENCY);
+    setBusinessPhone(organization.business_phone ?? "");
+    setBusinessWhatsapp(organization.business_whatsapp ?? "");
   }, [organization]);
 
-  const handleSaveLocale = async () => {
+  const handleSave = async () => {
     if (!canEdit) return;
     try {
       setSaving(true);
       const updated = await updateOrganization(organization.id, {
         timezone,
         currency,
+        business_phone: businessPhone.trim() || null,
+        business_whatsapp: businessWhatsapp.trim() || null,
       });
       onUpdated({ ...organization, ...updated });
-      onSuccess("Business locale settings saved.");
+      onSuccess("General settings saved.");
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : "Failed to save locale settings.");
+      onError(err instanceof Error ? err.message : "Failed to save general settings.");
     } finally {
       setSaving(false);
     }
@@ -78,15 +96,17 @@ export function OrganizationBrandingSettings({
     }
   };
 
-  const localeDirty =
+  const dirty =
     timezone !== (organization.timezone ?? DEFAULT_TIMEZONE) ||
-    currency !== (organization.currency ?? DEFAULT_CURRENCY);
+    currency !== (organization.currency ?? DEFAULT_CURRENCY) ||
+    businessPhone !== (organization.business_phone ?? "") ||
+    businessWhatsapp !== (organization.business_whatsapp ?? "");
 
   return (
     <div className="org-settings-section">
-      <h2 className="org-settings-section-title">Business branding</h2>
+      <h2 className="org-settings-section-title">General settings</h2>
       <p className="text-sm text-muted-foreground mb-4">
-        Logo, timezone, and currency for this organization
+        Business identity, contact details, timezone, and currency for this organization
       </p>
 
       <div className="space-y-4">
@@ -136,6 +156,40 @@ export function OrganizationBrandingSettings({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
+            <label htmlFor="orgBusinessPhone" className="text-sm font-medium">
+              Business phone
+            </label>
+            <input
+              id="orgBusinessPhone"
+              type="tel"
+              value={businessPhone}
+              onChange={(e) => setBusinessPhone(e.target.value)}
+              disabled={!canEdit}
+              placeholder="e.g. +234 800 000 0000"
+              className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="orgBusinessWhatsapp" className="text-sm font-medium">
+              Business WhatsApp number
+            </label>
+            <input
+              id="orgBusinessWhatsapp"
+              type="tel"
+              value={businessWhatsapp}
+              onChange={(e) => setBusinessWhatsapp(e.target.value)}
+              disabled={!canEdit}
+              placeholder="e.g. +234 800 000 0000"
+              className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Used for customer-facing WhatsApp notifications.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
             <label htmlFor="orgTimezone" className="text-sm font-medium">
               Business timezone
             </label>
@@ -176,8 +230,8 @@ export function OrganizationBrandingSettings({
         {canEdit && (
           <button
             type="button"
-            onClick={handleSaveLocale}
-            disabled={saving || !localeDirty}
+            onClick={handleSave}
+            disabled={saving || !dirty}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {saving ? (
@@ -185,7 +239,7 @@ export function OrganizationBrandingSettings({
             ) : (
               <Save className="w-4 h-4" />
             )}
-            Save locale settings
+            Save general settings
           </button>
         )}
       </div>

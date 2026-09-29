@@ -119,6 +119,8 @@ export async function attachRelations(
     trackingLinkId: row.trackingLinkId,
     platform: row.platform,
     mediaBuyerName: row.mediaBuyerName,
+    trackingLinkOfferId: row.trackingLinkOfferId,
+    trackingLinkOfferLabel: row.trackingLinkOfferLabel,
     abandonedCartId: row.abandonedCartId,
     moneyReceivedBy: (row.moneyReceivedBy ?? "agent_collected") as NumbatrakOrder["moneyReceivedBy"],
     items: itemsByOrder.get(row.id) ?? [],
@@ -266,6 +268,8 @@ async function insertOrder(
       trackingLinkId: trackingLink?.id ?? null,
       platform: trackingLink?.platform ?? null,
       mediaBuyerName: trackingLink?.mediaBuyerName ?? null,
+      trackingLinkOfferId: trackingLink?.offerId ?? null,
+      trackingLinkOfferLabel: trackingLink?.offerLabel ?? null,
     })
     .returning();
   if (!order) throw new Error("Failed to create order");
@@ -427,6 +431,8 @@ export async function updateOrder(
     values.trackingLinkId = trackingLink?.id ?? null;
     values.platform = trackingLink?.platform ?? null;
     values.mediaBuyerName = trackingLink?.mediaBuyerName ?? null;
+    values.trackingLinkOfferId = trackingLink?.offerId ?? null;
+    values.trackingLinkOfferLabel = trackingLink?.offerLabel ?? null;
   }
   if (becomingDelivered) values.completedAt = new Date();
 

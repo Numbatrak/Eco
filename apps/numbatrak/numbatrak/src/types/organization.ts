@@ -4,6 +4,10 @@ export interface Organization {
   logo_url?: string | null;
   timezone?: string | null;
   currency?: string | null;
+  /** Business contact phone - org-wide, distinct from any individual user's own profile phone. */
+  business_phone?: string | null;
+  /** Business WhatsApp number for customer notifications - org-wide, distinct from any individual user's profile. */
+  business_whatsapp?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

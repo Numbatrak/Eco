@@ -80,6 +80,11 @@ export const userOrganizationMembershipSchema = z.object({
   name: z.string(),
   slug: z.string(),
   role: orgRoleSchema,
+  logo: z.string().nullable(),
+  // Opaque JSON metadata (better-auth's org plugin) - timezone/currency/
+  // businessPhone/businessWhatsapp live in here, keyed loosely since this
+  // blob's shape is caller-defined, not part of better-auth's schema.
+  metadata: z.record(z.string(), z.unknown()).nullable(),
 });
 export type UserOrganizationMembership = z.infer<typeof userOrganizationMembershipSchema>;
 

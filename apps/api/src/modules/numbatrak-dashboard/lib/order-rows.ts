@@ -35,7 +35,7 @@ export async function fetchOrderRows(
   organizationId: string,
   scope: Pick<
     DashboardScopeQuery,
-    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status"
+    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status" | "platform" | "mediaBuyerName"
   >,
 ): Promise<MetricsOrderRow[]> {
   const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
@@ -45,6 +45,8 @@ export async function fetchOrderRows(
   if (scope.subBrand) conditions.push(eq(numbatrakCustomerOrders.subBrand, scope.subBrand));
   if (scope.offerName) conditions.push(eq(numbatrakCustomerOrders.offerName, scope.offerName));
   if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
+  if (scope.platform) conditions.push(eq(numbatrakCustomerOrders.platform, scope.platform));
+  if (scope.mediaBuyerName) conditions.push(eq(numbatrakCustomerOrders.mediaBuyerName, scope.mediaBuyerName));
 
   const rows = await db
     .select({
@@ -96,7 +98,7 @@ export async function fetchProductLossItemRows(
   organizationId: string,
   scope: Pick<
     DashboardScopeQuery,
-    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status"
+    "formId" | "csrId" | "funnelName" | "subBrand" | "offerName" | "agentId" | "status" | "platform" | "mediaBuyerName"
   >,
 ): Promise<ProductLossItemRow[]> {
   const conditions = [eq(numbatrakCustomerOrders.organizationId, organizationId)];
@@ -106,6 +108,8 @@ export async function fetchProductLossItemRows(
   if (scope.subBrand) conditions.push(eq(numbatrakCustomerOrders.subBrand, scope.subBrand));
   if (scope.offerName) conditions.push(eq(numbatrakCustomerOrders.offerName, scope.offerName));
   if (scope.agentId != null) conditions.push(eq(numbatrakCustomerOrders.agentId, scope.agentId));
+  if (scope.platform) conditions.push(eq(numbatrakCustomerOrders.platform, scope.platform));
+  if (scope.mediaBuyerName) conditions.push(eq(numbatrakCustomerOrders.mediaBuyerName, scope.mediaBuyerName));
 
   const rows = await db
     .select({

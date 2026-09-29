@@ -22,6 +22,8 @@ export interface UserOrganizationMembership {
   name: string;
   slug: string;
   role: OrgRole;
+  logo: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface MeResponse {

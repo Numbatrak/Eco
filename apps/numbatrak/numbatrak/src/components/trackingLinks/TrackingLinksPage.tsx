@@ -58,6 +58,11 @@ export function TrackingLinksPage() {
     void load();
   }, [load]);
 
+  const knownMediaBuyerNames = useMemo(
+    () => [...new Set(links.map((l) => l.mediaBuyerName.trim()).filter(Boolean))].sort(),
+    [links]
+  );
+
   const selectedForm = useMemo(() => forms.find((f) => f.id === formId) ?? null, [forms, formId]);
   const offerOptions = useMemo(() => {
     if (!selectedForm) return [];
@@ -197,7 +202,17 @@ export function TrackingLinksPage() {
                 value={mediaBuyerName}
                 onChange={(e) => setMediaBuyerName(e.target.value)}
                 placeholder="e.g. John"
+                list="tl-buyer-suggestions"
+                autoComplete="off"
               />
+              {/* Suggests previously used names so "John"/"john"/"Jon" don't
+                  silently fragment funnel-comparison data - still free text,
+                  so a genuinely new buyer can still be typed. */}
+              <datalist id="tl-buyer-suggestions">
+                {knownMediaBuyerNames.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-1.5">

@@ -22,7 +22,6 @@ import {
   deleteTarget,
   fetchReviews,
   createReview,
-  fetchAnalytics,
   type MediaBuyerSettings,
   type Contractor,
   type ProductionBatch,
@@ -31,12 +30,12 @@ import {
   type AdSpendEntry,
   type CpaTarget,
   type WeeklyReview,
-  type PerformanceAnalytics,
 } from "../../services/mediaBuyers";
+import { fetchFunnelBreakdown, type FunnelBreakdownRow } from "../../services/dashboardMetrics";
 import { trackingLinksApi, TrackingLink } from "../../services/trackingLinks";
 import { Trash2, Plus, Check, TrendingUp, Film, DollarSign, Target, FileText, BarChart3 } from "lucide-react";
 
-type Tab = "production" | "contractors" | "payments" | "ads" | "spend" | "targets" | "reviews" | "analytics";
+type Tab = "production" | "contractors" | "payments" | "ads" | "spend" | "targets" | "reviews" | "funnels";
 
 export function MediaBuyersPage() {
   const { currentOrganization } = useOrganization();
@@ -52,14 +51,14 @@ export function MediaBuyersPage() {
   const [spend, setSpend] = useState<AdSpendEntry[]>([]);
   const [targets, setTargets] = useState<CpaTarget[]>([]);
   const [reviews, setReviews] = useState<WeeklyReview[]>([]);
-  const [analytics, setAnalytics] = useState<PerformanceAnalytics[]>([]);
+  const [funnelBreakdown, setFunnelBreakdown] = useState<FunnelBreakdownRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!currentOrganization) return;
     setLoading(true);
     try {
-      const [s, c, b, p, a, sp, t, r, an, tl] = await Promise.all([
+      const [s, c, b, p, a, sp, t, r, fb, tl] = await Promise.all([
         fetchMediaBuyerSettings(),
         fetchContractors(),
         fetchBatches(),
@@ -68,7 +67,7 @@ export function MediaBuyersPage() {
         fetchSpend(),
         fetchTargets(),
         fetchReviews(),
-        fetchAnalytics(),
+        fetchFunnelBreakdown(currentOrganization.id),
         trackingLinksApi.list(),
       ]);
       setSettings(s);
@@ -79,7 +78,7 @@ export function MediaBuyersPage() {
       setSpend(sp);
       setTargets(t);
       setReviews(r);
-      setAnalytics(an);
+      setFunnelBreakdown(fb);
       setTrackingLinks(tl.trackingLinks);
     } catch (err) {
       console.error("Failed to load media buyers data", err);
@@ -125,7 +124,7 @@ export function MediaBuyersPage() {
     { key: "spend", label: "Spend", icon: TrendingUp },
     { key: "targets", label: "Targets", icon: Target },
     { key: "reviews", label: "Reviews", icon: FileText },
-    { key: "analytics", label: "Analytics", icon: BarChart3 },
+    { key: "funnels", label: "Funnel Performance", icon: BarChart3 },
   ];
 
   return (
@@ -445,28 +444,48 @@ export function MediaBuyersPage() {
             </div>
           )}
 
-          {/* Analytics */}
-          {tab === "analytics" && (
+          {/* Funnel performance */}
+          {tab === "funnels" && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Performance Analytics</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Funnel Performance</h3>
+                <p className="text-sm text-muted-foreground">
+                  Real orders grouped by media buyer + platform + offer, so funnels can be compared against each
+                  other. Ranked by revenue.
+                </p>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-2 px-2">Brand</th><th className="text-left py-2 px-2">Platform</th><th className="text-left py-2 px-2">Buyer</th><th className="text-right py-2 px-2">Spend</th><th className="text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">CPA</th><th className="text-right py-2 px-2">ROAS</th>
-                  </tr></thead>
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="text-left py-2 px-2">Media buyer</th>
+                      <th className="text-left py-2 px-2">Platform</th>
+                      <th className="text-left py-2 px-2">Offer</th>
+                      <th className="text-right py-2 px-2">Orders</th>
+                      <th className="text-right py-2 px-2">Revenue</th>
+                      <th className="text-right py-2 px-2">Profit</th>
+                      <th className="text-right py-2 px-2">Avg order value</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {analytics.map((a, i) => (
-                      <tr key={i} className="border-b border-border/50">
-                        <td className="py-2 px-2 text-foreground">{a.brand ?? "—"}</td>
-                        <td className="py-2 px-2 text-foreground">{a.platform ?? "—"}</td>
-                        <td className="py-2 px-2 text-foreground">{a.buyer_name ?? "—"}</td>
-                        <td className="py-2 px-2 text-right text-foreground">{a.total_spend.toLocaleString()}</td>
-                        <td className="py-2 px-2 text-right text-foreground">{a.total_orders}</td>
-                        <td className="py-2 px-2 text-right text-foreground">{a.cpa.toFixed(2)}</td>
-                        <td className="py-2 px-2 text-right text-foreground">{a.roas.toFixed(2)}</td>
+                    {funnelBreakdown.map((f) => (
+                      <tr key={f.key} className="border-b border-border/50">
+                        <td className="py-2 px-2 text-foreground">{f.mediaBuyerName}</td>
+                        <td className="py-2 px-2 text-foreground">{f.platform}</td>
+                        <td className="py-2 px-2 text-foreground">{f.offerLabel ?? "—"}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{f.orderCount}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{f.revenue.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{f.profit.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right text-foreground">{f.averageOrderValue.toFixed(2)}</td>
                       </tr>
                     ))}
-                    {analytics.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No data yet — add spend entries to see analytics</td></tr>}
+                    {funnelBreakdown.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                          No attributed orders yet — orders placed through a tracking link's URL will show up here
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
