@@ -207,6 +207,26 @@ export default function StaffForm() {
           </select>
         </div>
 
+        {!loading && staff.length === 0 && (
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+            <h2 className="text-sm font-semibold text-foreground">Setting up your first staff member</h2>
+            <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
+              <li>
+                Invite them to the organization first from{" "}
+                <Link to="/organization-settings" className="text-primary hover:underline">
+                  Organization Settings
+                </Link>{" "}
+                — they need to accept and log in before they're eligible here.
+              </li>
+              <li>Come back here and click "Add staff" to pick them from the eligible-members list.</li>
+              <li>
+                Assign a primary role (and any extra roles) — access is the combined union of every role checked.
+                A <strong>Manager</strong> only sees their own team's orders and dashboard data.
+              </li>
+            </ol>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : filteredStaff.length === 0 ? (

@@ -20,7 +20,7 @@ import type {
   NumbatrakOrderItem,
   UpdateNumbatrakOrderRequest,
 } from "@platform/shared-types";
-import { getNextAssignedUser } from "./assignment.js";
+import { getNextAssignedUser, getNextAssignedAgentForState } from "./assignment.js";
 import { getNextStatus, isDeliveredStatus, statusFilterToDbValues } from "./order-status.js";
 import { mergeOrderNotesOnSave } from "./order-notes.js";
 import { createDeliveryMovement, productsAlreadyDelivered } from "./stock.js";
@@ -226,7 +226,11 @@ async function refreshOrderTotals(db: Database, orderId: string): Promise<void> 
 async function insertOrder(
   db: Database,
   organizationId: string,
-  input: CreateNumbatrakOrderRequest,
+  // Storefront orders don't capture state yet (no zone-based delivery pulled
+  // into checkout) - state is mandatory only at the manual-order API
+  // boundary (createNumbatrakOrderRequestSchema), not for this shared
+  // internal inserter.
+  input: Omit<CreateNumbatrakOrderRequest, "state"> & { state: string | null },
   source: "manual" | "storefront",
 ): Promise<NumbatrakOrder> {
   const lineTotals = input.items.map((line) => {
@@ -245,6 +249,8 @@ async function insertOrder(
   const profit = orderRevenue - orderCost - deliveryFee;
 
   const csrId = input.csrId ?? (await getNextAssignedUser(db, organizationId));
+  const agentId =
+    input.agentId ?? (await getNextAssignedAgentForState(db, organizationId, input.state ?? null));
 
   // No click context for a dashboard-entered order, and no customer link at
   // all when there's no phone to dedupe on (numbatrak_customers.phone is
@@ -265,7 +271,7 @@ async function insertOrder(
     .values({
       organizationId,
       csrId,
-      agentId: input.agentId ?? null,
+      agentId,
       customerId: customer?.id ?? null,
       source,
       status: "new",
@@ -520,6 +526,7 @@ export async function updateOrder(
       fromStatus: current.status,
       toStatus: updated.status,
       changedBy: changedBy ?? null,
+      reason: patch.statusChangeReason?.trim() || null,
     });
   }
 
@@ -599,7 +606,7 @@ export async function markOrderFailedDelivery(
     db,
     organizationId,
     orderId,
-    { status: "failed" },
+    { status: "failed", statusChangeReason: `Failed delivery — loss recorded: ₦${amount.toLocaleString()}` },
     logger,
     options.createdBy ?? null,
   );

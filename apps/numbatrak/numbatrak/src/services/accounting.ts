@@ -5,6 +5,7 @@ import { apiRequest, API_BASE_URL } from "../lib/apiClient";
 interface PnLDto {
   revenue: { total: number; bySubBrand: Record<string, number> };
   cogs: number;
+  deliveryFees: number;
   grossProfit: number;
   expenses: {
     operational: number;
@@ -35,6 +36,7 @@ interface AccountingReportDto {
 export interface AccountingPnL {
   revenue: { total: number; by_sub_brand: Record<string, number> };
   cogs: number;
+  delivery_fees: number;
   gross_profit: number;
   expenses: {
     operational: number;
@@ -67,6 +69,7 @@ function reportFromDto(d: AccountingReportDto): AccountingReport {
     pnl: {
       revenue: { total: d.pnl.revenue.total, by_sub_brand: d.pnl.revenue.bySubBrand },
       cogs: d.pnl.cogs,
+      delivery_fees: d.pnl.deliveryFees,
       gross_profit: d.pnl.grossProfit,
       expenses: d.pnl.expenses,
       net_profit: d.pnl.netProfit,

@@ -369,6 +369,10 @@ export const numbatrakOrderStatusHistory = pgTable(
     fromStatus: text("from_status"),
     toStatus: text("to_status").notNull(),
     changedBy: text("changed_by").references(() => user.id, { onDelete: "set null" }),
+    // Optional free-text reason for the transition (e.g. why an order was
+    // marked failed, or corrected back from one status to another) - closes
+    // part of the "one comprehensive audit trail" gap flagged 2026-09-22.
+    reason: text("reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [

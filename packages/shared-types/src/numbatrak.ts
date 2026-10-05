@@ -296,7 +296,11 @@ export const createNumbatrakOrderRequestSchema = z.object({
   agentId: z.number().int().nullable().optional(),
   customerName: z.string().trim().min(1),
   phoneNumber: z.string().trim().nullable().optional(),
-  state: z.string().trim().nullable().optional(),
+  // Mandatory as of 2026-10: state drives delivery-fee lookup and
+  // per-location agent assignment, so an order with no state silently broke
+  // both. The DB column stays nullable (legacy rows predate this) - only new
+  // submissions are rejected.
+  state: z.string().trim().min(1, "State is required"),
   deliveryAddress: z.string().trim().nullable().optional(),
   deliveryFee: z.number().nonnegative().nullable().optional(),
   amountPaid: z.number().nonnegative().nullable().optional(),
@@ -319,6 +323,8 @@ export const updateNumbatrakOrderRequestSchema = z.object({
   agentId: z.number().int().nullable().optional(),
   moneyReceivedBy: numbatrakMoneyReceivedBySchema.optional(),
   trackingLinkId: z.string().uuid().nullable().optional(),
+  /** Optional free-text reason for a status change, recorded on numbatrak_order_status_history. */
+  statusChangeReason: z.string().trim().nullable().optional(),
 });
 export type UpdateNumbatrakOrderRequest = z.infer<typeof updateNumbatrakOrderRequestSchema>;
 
@@ -668,7 +674,9 @@ export const numbatrakExpenseSourceTypeSchema = z.enum([
   "waybill_fee",
   "failed_delivery",
   "remittance_net_off",
+  "remittance_shortfall",
   "stock_transfer_fee",
+  "stock_shrinkage_loss",
 ]);
 export type NumbatrakExpenseSourceType = z.infer<typeof numbatrakExpenseSourceTypeSchema>;
 
@@ -912,6 +920,8 @@ export type DashboardScopeQuery = z.infer<typeof dashboardScopeQuerySchema>;
 export const numbatrakBusinessPerformanceMetricsSchema = z.object({
   totalOrdersGenerated: z.number(),
   totalOrdersDelivered: z.number(),
+  /** Count of distinct products appearing on generated orders this period - not a full-catalog SKU count. */
+  totalDistinctProducts: z.number(),
   deliveryRate: z.number(),
   totalDeliveredSales: z.number(),
   averageOrderValue: z.number(),

@@ -64,7 +64,11 @@ import {
 } from "./expenses.js";
 import { numbatrakAbandonedCarts } from "./abandoned-carts.js";
 import { numbatrakFollowUps } from "./follow-ups.js";
-import { numbatrakOrderAssignmentSettings, numbatrakOrderAssignmentWeights } from "./order-assignment.js";
+import {
+  numbatrakOrderAssignmentSettings,
+  numbatrakOrderAssignmentWeights,
+  numbatrakAgentAssignmentState,
+} from "./order-assignment.js";
 import { numbatrakActivities } from "./activities.js";
 import { numbatrakStaff, numbatrakStaffSubBrands } from "./staff.js";
 import { numbatrakPayStructures, numbatrakPayrollRuns, numbatrakPayrollLines } from "./payroll.js";
@@ -126,6 +130,7 @@ export const numbatrakSchema = {
   numbatrakFollowUps,
   numbatrakOrderAssignmentSettings,
   numbatrakOrderAssignmentWeights,
+  numbatrakAgentAssignmentState,
   numbatrakActivities,
   numbatrakStaff,
   numbatrakStaffSubBrands,

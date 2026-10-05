@@ -74,6 +74,9 @@ const DeliverySettingsPage = lazy(() =>
 const AnalyticsSettingsPage = lazy(() =>
   import("./pages/storefront/AnalyticsSettingsPage").then((m) => ({ default: m.AnalyticsSettingsPage })),
 );
+const DiscountsPage = lazy(() =>
+  import("./pages/storefront/DiscountsPage").then((m) => ({ default: m.DiscountsPage })),
+);
 const IntegrationsSettingsPage = lazy(() =>
   import("./pages/storefront/IntegrationsSettingsPage").then((m) => ({ default: m.IntegrationsSettingsPage })),
 );
@@ -580,6 +583,14 @@ function AppContent() {
                   element={
                     <ProtectedRoute roles={["Owner", "Admin"]}>
                       <AnalyticsSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/storefront/discounts"
+                  element={
+                    <ProtectedRoute roles={["Owner", "Admin"]}>
+                      <DiscountsPage />
                     </ProtectedRoute>
                   }
                 />

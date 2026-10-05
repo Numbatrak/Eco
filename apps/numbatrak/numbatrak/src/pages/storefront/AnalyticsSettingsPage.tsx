@@ -14,6 +14,9 @@ import { ApiError } from "../../lib/apiClient";
 const formSchema = z.object({
   metaPixelId: z.string().trim().min(1, "Pixel ID is required"),
   metaCapiToken: z.string().trim().min(1, "CAPI access token is required"),
+  // TikTok is an optional secondary channel - blank just means not configured.
+  tiktokPixelId: z.string().trim().optional().default(""),
+  tiktokCapiToken: z.string().trim().optional().default(""),
   enabled: z.boolean(),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -32,7 +35,13 @@ export function AnalyticsSettingsPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { metaPixelId: "", metaCapiToken: "", enabled: false },
+    defaultValues: {
+      metaPixelId: "",
+      metaCapiToken: "",
+      tiktokPixelId: "",
+      tiktokCapiToken: "",
+      enabled: false,
+    },
   });
 
   useEffect(() => {
@@ -41,6 +50,7 @@ export function AnalyticsSettingsPage() {
       .then((response) => {
         setSettings(response);
         setValue("metaPixelId", response.metaPixelId ?? "");
+        setValue("tiktokPixelId", response.tiktokPixelId ?? "");
         setValue("enabled", response.enabled);
       })
       .catch(() => setLoadError("Could not load analytics settings."));
@@ -77,6 +87,10 @@ export function AnalyticsSettingsPage() {
               <span className="text-muted-foreground">CAPI access token</span>
               <span className="text-foreground">{settings.hasCapiToken ? "•••••••• (saved)" : "Not set"}</span>
             </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">TikTok Events API access token</span>
+              <span className="text-foreground">{settings.hasTiktokCapiToken ? "•••••••• (saved)" : "Not set"}</span>
+            </div>
           </div>
         ) : null}
 
@@ -97,6 +111,28 @@ export function AnalyticsSettingsPage() {
             }
             error={errors.metaCapiToken?.message}
             {...register("metaCapiToken")}
+          />
+
+          <TextField
+            label="TikTok Pixel ID"
+            hint={
+              !errors.tiktokPixelId
+                ? "From TikTok Events Manager - fires the browser Pixel on your storefront. Optional."
+                : undefined
+            }
+            error={errors.tiktokPixelId?.message}
+            {...register("tiktokPixelId")}
+          />
+
+          <PasswordField
+            label="TikTok Events API access token"
+            hint={
+              !errors.tiktokCapiToken
+                ? "Only ever stored encrypted; never shown again after saving. Used for server-side CompletePayment events. Optional."
+                : undefined
+            }
+            error={errors.tiktokCapiToken?.message}
+            {...register("tiktokCapiToken")}
           />
 
           <label className="flex items-center gap-2 text-sm text-foreground">

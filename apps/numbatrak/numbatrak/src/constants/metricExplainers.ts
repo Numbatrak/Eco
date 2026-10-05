@@ -1,6 +1,7 @@
 export type MetricExplainerKey =
   | "orders_generated"
   | "orders_delivered"
+  | "total_distinct_products"
   | "delivery_rate"
   | "average_order_value"
   | "platform_cpa"
@@ -44,6 +45,16 @@ export const METRIC_EXPLAINERS: Record<MetricExplainerKey, MetricExplainer> = {
     bullets: [
       "This is the revenue-truth set for profit and ROAS.",
       "Undelivered orders never count here.",
+    ],
+  },
+  total_distinct_products: {
+    title: "Total products",
+    summary:
+      "How many different products appeared on at least one generated order in the selected period — not your full catalog's SKU count.",
+    formula: "Count of distinct product IDs across generated orders' line items in range",
+    bullets: [
+      "Uses the same 'generated' order set as Orders Generated above.",
+      "A product with zero orders this period doesn't count, even if it's active in your catalog.",
     ],
   },
   delivery_rate: {

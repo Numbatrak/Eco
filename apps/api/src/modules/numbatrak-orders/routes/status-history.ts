@@ -26,6 +26,7 @@ async function listStatusHistory(db: Database, organizationId: string, orderId: 
     fromStatus: r.fromStatus,
     toStatus: r.toStatus,
     changedByName: r.changedBy ? (userMap.get(r.changedBy) ?? null) : null,
+    reason: r.reason,
     createdAt: r.createdAt?.toISOString() ?? null,
   }));
 }

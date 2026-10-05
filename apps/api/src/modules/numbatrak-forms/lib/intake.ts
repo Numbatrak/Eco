@@ -8,7 +8,7 @@ import {
   type Database,
 } from "@platform/db";
 import type { PublicFormLineItem, SubmitPublicNumbatrakFormResult } from "@platform/shared-types";
-import { getNextAssignedUser } from "../../numbatrak-orders/lib/assignment.js";
+import { getNextAssignedUser, getNextAssignedAgentForState } from "../../numbatrak-orders/lib/assignment.js";
 import { createCart } from "../../numbatrak-abandoned-carts/lib/abandoned-carts.js";
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
 import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
@@ -106,6 +106,7 @@ export async function submitFormOrder(
 
   if (!contact.customerName) throw new Error("Customer name is required");
   if (!contact.phone && !contact.whatsapp) throw new Error("A phone or WhatsApp number is required");
+  if (!contact.state) throw new Error("State is required");
   if (input.items.length === 0) throw new Error("At least one product is required");
 
   const schemaError = validateSubmissionAgainstSchema(form.schema as Record<string, unknown>, input.fieldValues);
@@ -202,6 +203,7 @@ export async function submitFormOrder(
     }
 
     const csrId = await getNextAssignedUser(tx, form.organizationId);
+    const agentId = await getNextAssignedAgentForState(tx, form.organizationId, contact.state);
     const profit = orderRevenue - orderCost;
     const deliveryFee = await getDeliveryFeeForLocation(tx, form.organizationId, contact.state);
 
@@ -242,6 +244,7 @@ export async function submitFormOrder(
       .values({
         organizationId: form.organizationId,
         csrId,
+        agentId,
         customerId: customer.id,
         source: "form",
         formId: form.id,

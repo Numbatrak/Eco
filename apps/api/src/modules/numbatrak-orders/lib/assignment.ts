@@ -9,7 +9,15 @@
 // weights. Ordering is by user id (a stable but not otherwise meaningful
 // rotation order, same as the source).
 import { and, asc, eq, sql } from "drizzle-orm";
-import { member, numbatrakOrderAssignmentSettings, numbatrakOrderAssignmentWeights, type Queryable } from "@platform/db";
+import {
+  member,
+  numbatrakAgents,
+  numbatrakAgentAssignmentState,
+  numbatrakOrderAssignmentSettings,
+  numbatrakOrderAssignmentWeights,
+  type Queryable,
+} from "@platform/db";
+import { parseLocations } from "../../numbatrak-agents/lib/agents.js";
 
 async function csrCandidatePool(
   db: Queryable,
@@ -88,4 +96,72 @@ export async function getNextAssignedUser(db: Queryable, organizationId: string)
     return getNextRoundRobinUser(db, organizationId);
   }
   return getPercentageAssignedUser(db, organizationId);
+}
+
+/** Candidate delivery agents serving a given state: active, can-deliver,
+ * non-warehouse agents whose primary `state` matches or whose free-text
+ * `locations` list includes it (same matching used by waybills-by-state.ts /
+ * delivery-rate.ts). Ordered by id for a stable rotation order. */
+async function deliveryAgentCandidatePool(
+  db: Queryable,
+  organizationId: string,
+  state: string,
+): Promise<{ id: number }[]> {
+  const rows = await db
+    .select({ id: numbatrakAgents.id, state: numbatrakAgents.state, locations: numbatrakAgents.locations })
+    .from(numbatrakAgents)
+    .where(
+      and(
+        eq(numbatrakAgents.organizationId, organizationId),
+        eq(numbatrakAgents.active, true),
+        eq(numbatrakAgents.canDeliver, true),
+        eq(numbatrakAgents.isWarehouse, false),
+      ),
+    )
+    .orderBy(asc(numbatrakAgents.id));
+
+  const normalized = state.trim().toLowerCase();
+  return rows
+    .filter(
+      (r) =>
+        (r.state?.trim().toLowerCase() ?? "") === normalized ||
+        parseLocations(r.locations).some((loc) => loc.toLowerCase() === normalized),
+    )
+    .map((r) => ({ id: r.id }));
+}
+
+/** Auto-assign the next delivery agent for a new order's state, round-robin
+ * per (organizationId, state) - mirrors getNextRoundRobinUser's cursor
+ * pattern but scoped per state since agents only cover a subset of states. */
+export async function getNextAssignedAgentForState(
+  db: Queryable,
+  organizationId: string,
+  state: string | null | undefined,
+): Promise<number | null> {
+  if (!state || !state.trim()) return null;
+
+  const pool = await deliveryAgentCandidatePool(db, organizationId, state);
+  if (pool.length === 0) return null;
+
+  const [cursor] = await db
+    .select({ lastAssignedAgentId: numbatrakAgentAssignmentState.lastAssignedAgentId })
+    .from(numbatrakAgentAssignmentState)
+    .where(
+      and(eq(numbatrakAgentAssignmentState.organizationId, organizationId), eq(numbatrakAgentAssignmentState.state, state)),
+    )
+    .limit(1);
+  const lastAssignedAgentId = cursor?.lastAssignedAgentId ?? null;
+
+  const next = (lastAssignedAgentId ? pool.find((c) => c.id > lastAssignedAgentId) : undefined) ?? pool[0];
+  if (!next) return null;
+
+  await db
+    .insert(numbatrakAgentAssignmentState)
+    .values({ organizationId, state, lastAssignedAgentId: next.id })
+    .onConflictDoUpdate({
+      target: [numbatrakAgentAssignmentState.organizationId, numbatrakAgentAssignmentState.state],
+      set: { lastAssignedAgentId: next.id, updatedAt: sql`now()` },
+    });
+
+  return next.id;
 }

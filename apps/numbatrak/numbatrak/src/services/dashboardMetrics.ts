@@ -34,6 +34,8 @@ export type DashboardMetricsScope = {
 export type BusinessPerformanceMetrics = {
   totalOrdersGenerated: number;
   totalOrdersDelivered: number;
+  /** Count of distinct products appearing on generated orders this period - not a full-catalog SKU count. */
+  totalDistinctProducts: number;
   deliveryRate: number;
   /** Total sales value of delivered orders */
   totalDeliveredSales: number;
@@ -105,6 +107,7 @@ export type LossMetrics = {
 export const EMPTY_BUSINESS_METRICS: BusinessPerformanceMetrics = {
   totalOrdersGenerated: 0,
   totalOrdersDelivered: 0,
+  totalDistinctProducts: 0,
   deliveryRate: 0,
   totalDeliveredSales: 0,
   averageOrderValue: 0,

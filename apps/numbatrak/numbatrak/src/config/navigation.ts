@@ -27,6 +27,7 @@ import {
   Truck,
   LineChart,
   Paintbrush,
+  Tag,
 } from "lucide-react";
 
 export type NavPermission = {
@@ -174,6 +175,14 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Delivery Settings",
         icon: Truck,
         path: "/storefront/delivery-settings",
+        requiredPermission: null,
+        requiredRoles: ["Admin", "Owner"],
+      },
+      {
+        id: "storefront-discounts",
+        label: "Discounts",
+        icon: Tag,
+        path: "/storefront/discounts",
         requiredPermission: null,
         requiredRoles: ["Admin", "Owner"],
       },

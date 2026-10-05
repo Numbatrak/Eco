@@ -150,6 +150,7 @@ function PnLView({ report, onViewCash }: { report: AccountingReport; onViewCash:
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard label="Revenue" value={currency(pnl.revenue.total)} />
         <MetricCard label="COGS" value={currency(pnl.cogs)} />
+        <MetricCard label="Delivery Fees" value={currency(pnl.delivery_fees)} />
         <MetricCard label="Gross Profit" value={currency(pnl.gross_profit)} />
         <MetricCard label="Net Profit" value={currency(pnl.net_profit)} className={pnl.net_profit < 0 ? "text-red-600" : "text-green-600"} />
       </div>

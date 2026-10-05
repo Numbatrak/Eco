@@ -13,12 +13,29 @@ import {
 } from "../../services/storefrontSettings";
 import { ApiError } from "../../lib/apiClient";
 
-const formSchema = z.object({
-  provider: z.enum(["paystack", "flutterwave"]),
-  publicKey: z.string().trim().min(1, "Public key is required"),
-  secretKey: z.string().trim().min(1, "Secret key is required"),
-  mode: z.enum(["test", "live"]),
-});
+const formSchema = z
+  .object({
+    collectionMethod: z.enum(["cod", "prepaid", "both"]),
+    provider: z.enum(["paystack", "flutterwave"]).optional(),
+    publicKey: z.string().trim().optional(),
+    secretKey: z.string().trim().optional(),
+    mode: z.enum(["test", "live"]).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.collectionMethod === "cod") return;
+    if (!data.provider) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["provider"], message: "Required" });
+    }
+    if (!data.publicKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["publicKey"], message: "Public key is required" });
+    }
+    if (!data.secretKey) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["secretKey"], message: "Secret key is required" });
+    }
+    if (!data.mode) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["mode"], message: "Required" });
+    }
+  });
 type FormValues = z.infer<typeof formSchema>;
 
 export function PaymentSettingsPage() {
@@ -33,18 +50,36 @@ export function PaymentSettingsPage() {
     register,
     handleSubmit,
     control,
+    watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { provider: "paystack", publicKey: "", secretKey: "", mode: "test" },
+    defaultValues: {
+      collectionMethod: "prepaid",
+      provider: "paystack",
+      publicKey: "",
+      secretKey: "",
+      mode: "test",
+    },
   });
+  const collectionMethod = watch("collectionMethod");
 
   useEffect(() => {
     storefrontSettingsApi
       .getPaymentSettings()
-      .then(setSettings)
+      .then((response) => {
+        setSettings(response);
+        reset({
+          collectionMethod: response.collectionMethod ?? "prepaid",
+          provider: response.provider ?? "paystack",
+          publicKey: "",
+          secretKey: "",
+          mode: response.mode ?? "test",
+        });
+      })
       .catch(() => setLoadError("Could not load payment settings."));
-  }, []);
+  }, [reset]);
 
   async function saveSettings(values: FormValues, reauth?: ReauthFormValues): Promise<void> {
     setFormError(null);
@@ -88,6 +123,16 @@ export function PaymentSettingsPage() {
         {settings ? (
           <div className="p-4 rounded-lg border border-border bg-card space-y-2">
             <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Collection method</span>
+              <span className="text-foreground">
+                {settings.collectionMethod === "cod"
+                  ? "Cash on delivery only"
+                  : settings.collectionMethod === "both"
+                    ? "COD + Prepaid"
+                    : "Prepaid only"}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Current provider</span>
               <span className="text-foreground">{settings.provider ?? "Not configured"}</span>
             </div>
@@ -103,63 +148,103 @@ export function PaymentSettingsPage() {
         ) : null}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="provider">
-              Provider
-            </label>
-            <select
-              id="provider"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-              {...register("provider")}
-            >
-              <option value="paystack">Paystack</option>
-              <option value="flutterwave">Flutterwave</option>
-            </select>
-          </div>
-
-          <TextField
-            label="Public key"
-            error={errors.publicKey?.message}
-            {...register("publicKey")}
-          />
-          <PasswordField
-            label="Secret key"
-            hint={
-              !errors.secretKey
-                ? "Only ever stored encrypted; never shown again after saving."
-                : undefined
-            }
-            error={errors.secretKey?.message}
-            {...register("secretKey")}
-          />
-
           <Controller
             control={control}
-            name="mode"
+            name="collectionMethod"
             render={({ field }) => (
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium text-foreground">Mode</span>
-                <div className="flex gap-4">
+                <span className="text-sm font-medium text-foreground">How do you get paid?</span>
+                <div className="flex flex-col gap-2">
                   <label className="flex items-center gap-1.5 text-sm text-foreground">
                     <input
                       type="radio"
-                      checked={field.value === "test"}
-                      onChange={() => field.onChange("test")}
+                      checked={field.value === "cod"}
+                      onChange={() => field.onChange("cod")}
                     />
-                    Test
+                    Cash on delivery only — no payment gateway needed
                   </label>
                   <label className="flex items-center gap-1.5 text-sm text-foreground">
                     <input
                       type="radio"
-                      checked={field.value === "live"}
-                      onChange={() => field.onChange("live")}
+                      checked={field.value === "prepaid"}
+                      onChange={() => field.onChange("prepaid")}
                     />
-                    Live
+                    Prepaid only — buyers pay online at checkout
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-foreground">
+                    <input
+                      type="radio"
+                      checked={field.value === "both"}
+                      onChange={() => field.onChange("both")}
+                    />
+                    Both — buyers choose Pay on Delivery or Pay Now
                   </label>
                 </div>
               </div>
             )}
           />
+
+          {collectionMethod !== "cod" && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="provider">
+                  Provider
+                </label>
+                <select
+                  id="provider"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                  {...register("provider")}
+                >
+                  <option value="paystack">Paystack</option>
+                  <option value="flutterwave">Flutterwave</option>
+                </select>
+              </div>
+
+              <TextField
+                label="Public key"
+                error={errors.publicKey?.message}
+                {...register("publicKey")}
+              />
+              <PasswordField
+                label="Secret key"
+                hint={
+                  !errors.secretKey
+                    ? "Only ever stored encrypted; never shown again after saving."
+                    : undefined
+                }
+                error={errors.secretKey?.message}
+                {...register("secretKey")}
+              />
+
+              <Controller
+                control={control}
+                name="mode"
+                render={({ field }) => (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-foreground">Mode</span>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-1.5 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          checked={field.value === "test"}
+                          onChange={() => field.onChange("test")}
+                        />
+                        Test
+                      </label>
+                      <label className="flex items-center gap-1.5 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          checked={field.value === "live"}
+                          onChange={() => field.onChange("live")}
+                        />
+                        Live
+                      </label>
+                    </div>
+                  </div>
+                )}
+              />
+            </>
+          )}
 
           {savedNotice ? (
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground" role="status">

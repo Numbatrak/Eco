@@ -225,6 +225,14 @@ export function DashboardSummary({
           onExplain={openExplainer("orders_delivered")}
         />
         <KPICard
+          title="Total Products"
+          value={m.totalDistinctProducts.toLocaleString()}
+          subtitle="Distinct products on orders this period"
+          icon={Package}
+          color="indigo"
+          onExplain={openExplainer("total_distinct_products")}
+        />
+        <KPICard
           title="Delivery Rate"
           value={`${m.deliveryRate.toFixed(1)}%`}
           icon={Percent}

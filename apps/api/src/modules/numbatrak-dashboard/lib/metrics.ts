@@ -5,6 +5,21 @@ import type { NumbatrakBusinessPerformanceMetrics, NumbatrakLossMetrics, Numbatr
 import { isDeliveredStatus } from "../../numbatrak-orders/lib/order-status.js";
 import type { MetricsOrderRow, ProductLossItemRow } from "./order-rows.js";
 
+/** Count of distinct products appearing on generated orders within the period - the "Total product(s)" metric. */
+function computeTotalDistinctProducts(
+  itemRows: ProductLossItemRow[],
+  startDate?: string,
+  endDate?: string,
+): number {
+  const productIds = new Set<string>();
+  for (const row of itemRows) {
+    if (isGeneratedOrder(row) && inGeneratedPeriod(row, startDate, endDate)) {
+      productIds.add(row.productId);
+    }
+  }
+  return productIds.size;
+}
+
 // Structural, not `MetricsOrderRow` itself, so ProductLossItemRow (order-LINE
 // rows, no orderRevenue/orderCost) satisfies it too - one generated/delivered/
 // period classification shared by both the order-level and item-level loss
@@ -92,18 +107,20 @@ function computeProductLossBreakdown(
 
 export function computeBusinessPerformanceMetrics(input: {
   orders: MetricsOrderRow[];
+  productItemRows: ProductLossItemRow[];
   adSpend: number;
   totalNonAdExpenses: number;
   startDate?: string;
   endDate?: string;
 }): NumbatrakBusinessPerformanceMetrics {
-  const { orders, adSpend, totalNonAdExpenses, startDate, endDate } = input;
+  const { orders, productItemRows, adSpend, totalNonAdExpenses, startDate, endDate } = input;
 
   const generated = orders.filter((o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate));
   const delivered = orders.filter((o) => isDeliveredOrder(o) && inDeliveredPeriod(o, startDate, endDate));
 
   const totalOrdersGenerated = generated.length;
   const totalOrdersDelivered = delivered.length;
+  const totalDistinctProducts = computeTotalDistinctProducts(productItemRows, startDate, endDate);
 
   const deliveryRate = totalOrdersGenerated > 0 ? (totalOrdersDelivered / totalOrdersGenerated) * 100 : 0;
 
@@ -131,6 +148,7 @@ export function computeBusinessPerformanceMetrics(input: {
   return {
     totalOrdersGenerated,
     totalOrdersDelivered,
+    totalDistinctProducts,
     deliveryRate,
     totalDeliveredSales,
     averageOrderValue,

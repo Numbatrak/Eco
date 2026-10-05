@@ -32,6 +32,7 @@ export async function fetchDashboardSummary(
 
   const businessMetrics = computeBusinessPerformanceMetrics({
     orders,
+    productItemRows,
     adSpend: expenses.adSpend,
     totalNonAdExpenses: expenses.totalNonAdExpenses,
     startDate: scope.dateFrom,

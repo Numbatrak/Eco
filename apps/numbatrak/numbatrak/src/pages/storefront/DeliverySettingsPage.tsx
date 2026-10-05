@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -7,6 +7,7 @@ import { TextField } from "../../components/storefront/TextField";
 import { storefrontSettingsApi } from "../../services/storefrontSettings";
 import { ApiError } from "../../lib/apiClient";
 import { sanitizeDecimalInput } from "../../utils/numericInput";
+import { nigeriaStates } from "../../constants/nigeriaStates";
 
 const formSchema = z.object({
   deliveryFeeAmount: z.coerce.number().nonnegative("Fee can't be negative"),
@@ -23,7 +24,7 @@ const DEFAULT_VALUES: FormValues = {
   vatRatePercent: 0,
 };
 
-export function DeliverySettingsPage() {
+function DeliverySettingsInner() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
@@ -85,11 +86,10 @@ export function DeliverySettingsPage() {
   }
 
   return (
-    <PageLayout>
-      <div className="max-w-lg space-y-6">
-        <h1 className="text-2xl font-semibold text-foreground">Delivery &amp; VAT</h1>
+    <div className="max-w-lg space-y-6">
+      <h1 className="text-2xl font-semibold text-foreground">Delivery &amp; VAT</h1>
 
-        {loadError ? (
+      {loadError ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
             {loadError}
           </div>
@@ -171,6 +171,162 @@ export function DeliverySettingsPage() {
             </button>
           </form>
         )}
+    </div>
+  );
+}
+
+const zonesFormSchema = z.object({
+  rates: z.array(
+    z.object({
+      state: z.string().min(1, "Pick a state"),
+      feeAmount: z.coerce.number().nonnegative("Fee can't be negative"),
+    }),
+  ),
+});
+type ZonesFormValues = z.infer<typeof zonesFormSchema>;
+
+function DeliveryZonesSection() {
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ZonesFormValues>({
+    resolver: zodResolver(zonesFormSchema),
+    defaultValues: { rates: [] },
+  });
+  const { fields, append, remove } = useFieldArray({ control, name: "rates" });
+
+  useEffect(() => {
+    storefrontSettingsApi
+      .getDeliveryZones()
+      .then(({ rates }) => {
+        reset({ rates: rates.map((rate) => ({ state: rate.state, feeAmount: rate.feeCents / 100 })) });
+        setLoaded(true);
+      })
+      .catch(() => setLoadError("Could not load delivery zones."));
+  }, [reset]);
+
+  async function onSubmit(values: ZonesFormValues): Promise<void> {
+    setFormError(null);
+    setSavedNotice(null);
+    try {
+      await storefrontSettingsApi.saveDeliveryZones({
+        rates: values.rates.map((rate) => ({
+          state: rate.state,
+          feeCents: Math.round(rate.feeAmount * 100),
+        })),
+      });
+      setSavedNotice("Delivery zones saved.");
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.message : "Could not save delivery zones.");
+    }
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+        {loadError}
+      </div>
+    );
+  }
+  if (!loaded) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
+
+  return (
+    <div className="max-w-lg space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Delivery zones</h2>
+        <p className="text-sm text-muted-foreground">
+          Set a per-state fee to override the flat delivery fee above for that state.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-3">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-start gap-2">
+            <select
+              className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              defaultValue={field.state}
+              {...register(`rates.${index}.state` as const)}
+            >
+              <option value="" disabled>
+                Select a state
+              </option>
+              {nigeriaStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              placeholder="Fee"
+              aria-label="Fee"
+              className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+              {...register(`rates.${index}.feeAmount` as const)}
+            />
+            {errors.rates?.[index]?.feeAmount ? (
+              <span className="text-sm text-destructive" role="alert">
+                {errors.rates[index]?.feeAmount?.message}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className="text-sm text-muted-foreground hover:underline"
+              onClick={() => remove(index)}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          onClick={() => append({ state: "", feeAmount: 0 })}
+        >
+          Add zone
+        </button>
+
+        {savedNotice ? (
+          <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground" role="status">
+            {savedNotice}
+          </div>
+        ) : null}
+        {formError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {formError}
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isSubmitting ? "Saving…" : "Save delivery zones"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export function DeliverySettingsPage() {
+  return (
+    <PageLayout>
+      <div className="space-y-10">
+        <DeliverySettingsInner />
+        <DeliveryZonesSection />
       </div>
     </PageLayout>
   );

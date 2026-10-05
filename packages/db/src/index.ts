@@ -80,6 +80,7 @@ export {
   numbatrakFollowUps,
   numbatrakOrderAssignmentSettings,
   numbatrakOrderAssignmentWeights,
+  numbatrakAgentAssignmentState,
   numbatrakActivities,
   numbatrakStaff,
   numbatrakStaffSubBrands,

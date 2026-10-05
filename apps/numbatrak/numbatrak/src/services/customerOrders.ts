@@ -275,6 +275,7 @@ export interface OrderStatusHistoryEntry {
   from_status: string | null;
   to_status: string;
   changed_by_name: string | null;
+  reason: string | null;
   created_at: string | null;
 }
 
@@ -283,6 +284,7 @@ interface StatusHistoryDto {
   fromStatus: string | null;
   toStatus: string;
   changedByName: string | null;
+  reason: string | null;
   createdAt: string | null;
 }
 
@@ -295,6 +297,7 @@ export async function fetchOrderStatusHistory(orderId: string): Promise<OrderSta
     from_status: h.fromStatus,
     to_status: h.toStatus,
     changed_by_name: h.changedByName,
+    reason: h.reason,
     created_at: h.createdAt,
   }));
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "numbatrak_order_status_history" ADD COLUMN "reason" text;

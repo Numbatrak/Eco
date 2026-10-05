@@ -37,15 +37,20 @@ export function OrderStatusHistory({ orderId }: OrderStatusHistoryProps) {
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className="flex items-center justify-between text-sm border-b border-border/60 last:border-b-0 pb-1.5 last:pb-0"
+            className="border-b border-border/60 last:border-b-0 pb-1.5 last:pb-0"
           >
-            <span className="text-foreground">
-              {entry.from_status ? `${entry.from_status} → ${entry.to_status}` : `Set to ${entry.to_status}`}
-            </span>
-            <span className="text-muted-foreground text-xs whitespace-nowrap ml-3">
-              {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
-              {entry.changed_by_name ? ` · ${entry.changed_by_name}` : ""}
-            </span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground">
+                {entry.from_status ? `${entry.from_status} → ${entry.to_status}` : `Set to ${entry.to_status}`}
+              </span>
+              <span className="text-muted-foreground text-xs whitespace-nowrap ml-3">
+                {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
+                {entry.changed_by_name ? ` · ${entry.changed_by_name}` : ""}
+              </span>
+            </div>
+            {entry.reason && (
+              <p className="text-xs text-muted-foreground italic mt-0.5">{entry.reason}</p>
+            )}
           </div>
         ))}
       </div>

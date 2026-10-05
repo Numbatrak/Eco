@@ -1,6 +1,14 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { numbatrakAgents, numbatrakCustomerOrders, numbatrakRemittanceLines, numbatrakStaff, user, type Database } from "@platform/db";
+import {
+  numbatrakAgents,
+  numbatrakCustomerOrders,
+  numbatrakRemittanceLines,
+  numbatrakStaff,
+  numbatrakUnifiedExpenses,
+  user,
+  type Database,
+} from "@platform/db";
 import type { NumbatrakRemittanceLineStatus, NumbatrakRemittanceLine, NumbatrakRemittanceSourceOrder } from "@platform/shared-types";
 import { DELIVERED_STATUSES } from "../../numbatrak-orders/lib/order-status.js";
 import { sendEmail } from "../../auth/lib/email.js";
@@ -240,6 +248,42 @@ async function syncOrdersRemittanceStatus(
 }
 
 /**
+ * Posts an agent-scope operational expense for a remittance shortfall at
+ * the moment a line is marked "short" - previously the shortfall was only
+ * computed/displayed, never actually recorded as a loss (same intent as
+ * addNetOff in net-off.ts, just fired automatically instead of by a manual
+ * staff action). Idempotent: sourceId bakes in the shortfall amount, same
+ * trick net-off.ts uses, so re-marking the same line with the same
+ * shortfall is a no-op (onConflictDoNothing) while a corrected/changed
+ * amount posts a fresh row rather than silently updating a stale one.
+ */
+async function postShortfallExpense(
+  db: Database,
+  organizationId: string,
+  line: { id: string | null; lineKey: string; agentId: number; agentName: string; remittanceDate: string },
+  shortfall: number,
+  userId: string,
+): Promise<void> {
+  if (shortfall <= 0) return;
+  await db
+    .insert(numbatrakUnifiedExpenses)
+    .values({
+      organizationId,
+      scope: "agent",
+      category: "operational",
+      subcategory: "agent_remittance_shortfall",
+      amount: String(shortfall),
+      agentId: line.agentId,
+      note: `Remittance shortfall — ${line.agentName} ${line.remittanceDate}`,
+      occurredAt: line.remittanceDate,
+      createdBy: userId,
+      sourceType: "remittance_shortfall",
+      sourceId: `${line.id ?? line.lineKey}:${shortfall}`,
+    })
+    .onConflictDoNothing();
+}
+
+/**
  * "Every mark pings the accountant" (LOCKED RULE) - she reviews and confirms
  * externally, in the business's own chats, never inside the app. Email is
  * the notification channel available today; the in-app bell half needs the
@@ -340,6 +384,17 @@ export async function recordRemittance(
 
   if (status === "remitted") {
     await syncOrdersRemittanceStatus(db, organizationId, line.orders.map((o) => o.id), userId);
+  }
+
+  if (status === "short") {
+    const shortfallAmount = Math.max(0, line.expectedRemittance - actualAmount);
+    await postShortfallExpense(
+      db,
+      organizationId,
+      { id: line.id, lineKey: line.lineKey, agentId, agentName: line.agentName, remittanceDate: line.remittanceDate },
+      shortfallAmount,
+      userId,
+    );
   }
 
   await pingAccountants(

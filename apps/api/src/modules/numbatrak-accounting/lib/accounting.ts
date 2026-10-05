@@ -20,6 +20,7 @@ export interface AccountingPnL {
     bySubBrand: Record<string, number>;
   };
   cogs: number;
+  deliveryFees: number;
   grossProfit: number;
   expenses: {
     operational: number;
@@ -64,6 +65,7 @@ export async function getAccountingReport(
     .select({
       orderRevenue: numbatrakCustomerOrders.orderRevenue,
       orderCost: numbatrakCustomerOrders.orderCost,
+      deliveryFee: numbatrakCustomerOrders.deliveryFee,
       profit: numbatrakCustomerOrders.profit,
       subBrand: numbatrakCustomerOrders.subBrand,
       completedAt: numbatrakCustomerOrders.completedAt,
@@ -76,6 +78,7 @@ export async function getAccountingReport(
 
   let totalRevenue = 0;
   let totalCogs = 0;
+  let totalDeliveryFees = 0;
   let orderCount = 0;
   const bySubBrand: Record<string, number> = {};
   let totalEarned = 0;
@@ -89,6 +92,7 @@ export async function getAccountingReport(
     const cost = num(row.orderCost);
     totalRevenue += revenue;
     totalCogs += cost;
+    totalDeliveryFees += num(row.deliveryFee);
     orderCount++;
     totalEarned += revenue;
 
@@ -131,7 +135,11 @@ export async function getAccountingReport(
     expenses.total += amount;
   }
 
-  const grossProfit = totalRevenue - totalCogs;
+  // Matches the per-order definition used everywhere else (Orders'
+  // orderProfit = revenue - cost - deliveryFee) - Accounting's own P&L
+  // previously omitted delivery fees here, producing a gross-profit number
+  // inconsistent with the order-level one shown in Orders/Dashboard.
+  const grossProfit = totalRevenue - totalCogs - totalDeliveryFees;
   const netProfit = grossProfit - expenses.total;
   const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
@@ -142,6 +150,7 @@ export async function getAccountingReport(
     pnl: {
       revenue: { total: totalRevenue, bySubBrand },
       cogs: totalCogs,
+      deliveryFees: totalDeliveryFees,
       grossProfit,
       expenses,
       netProfit,
@@ -176,6 +185,7 @@ export async function exportAccountingCsv(
       ([brand, amount]): [string, string | number] => [`Revenue — ${brand}`, amount],
     ),
     ["Cost of Goods Sold", pnl.cogs],
+    ["Delivery Fees", pnl.deliveryFees],
     ["Gross Profit", pnl.grossProfit],
     ["Operational Expenses", pnl.expenses.operational],
     ["Building Expenses", pnl.expenses.building],
