@@ -8,6 +8,8 @@ export interface Organization {
   business_phone?: string | null;
   /** Business WhatsApp number for customer notifications - org-wide, distinct from any individual user's profile. */
   business_whatsapp?: string | null;
+  /** Business address shown on generated invoices/documents. */
+  business_address?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

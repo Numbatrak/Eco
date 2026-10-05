@@ -29,6 +29,7 @@ interface ExpenseDto {
   sourceType: ExpenseSourceType;
   sourceId: string | null;
   offerName: string | null;
+  funnelName: string | null;
   platform: string | null;
 }
 
@@ -50,6 +51,7 @@ function expenseFromDto(dto: ExpenseDto, organizationId: string): UnifiedExpense
     source_type: dto.sourceType,
     source_id: dto.sourceId,
     offer_name: dto.offerName,
+    funnel_name: dto.funnelName,
     platform: dto.platform,
     agent: dto.agentId != null ? { id: dto.agentId, name: dto.agentName ?? "" } : null,
     product: dto.productId != null ? { id: dto.productId, name: dto.productName ?? "" } : null,
@@ -100,6 +102,7 @@ export async function createUnifiedExpense(input: {
   source_type?: ExpenseSourceType;
   source_id?: string | null;
   offer_name?: string | null;
+  funnel_name?: string | null;
   platform?: string | null;
   skip_attribution_validation?: boolean;
 }): Promise<UnifiedExpense> {
@@ -132,6 +135,7 @@ export async function createUnifiedExpense(input: {
       note: input.note,
       occurredAt: input.occurred_at,
       offerName: input.offer_name,
+      funnelName: input.funnel_name,
       platform,
     },
   });
@@ -172,6 +176,7 @@ export async function updateUnifiedExpense(
     note: string | null;
     occurred_at: string;
     offer_name: string | null;
+    funnel_name: string | null;
     platform: string | null;
   }>
 ): Promise<UnifiedExpense> {
@@ -200,6 +205,7 @@ export async function updateUnifiedExpense(
       note: patch.note,
       occurredAt: patch.occurred_at,
       offerName: patch.offer_name,
+      funnelName: patch.funnel_name,
       platform,
     },
   });

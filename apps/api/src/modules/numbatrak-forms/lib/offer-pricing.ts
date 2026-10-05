@@ -6,6 +6,13 @@ import {
   numbatrakProducts,
   type Queryable,
 } from "@platform/db";
+import { consumeFifoLots } from "./inventory-consumption.js";
+
+export interface BundleComponentSpec {
+  productId: string;
+  variantId?: string | null;
+  quantity: number;
+}
 
 export interface ResolvedLinePricing {
   variantId: string | null;
@@ -14,6 +21,8 @@ export interface ResolvedLinePricing {
   trueUnitCount: number;
   unitPrice: number;
   unitCost: number;
+  /** Non-null only for a "bundle"-type offer - the other products this offer bundles in, per-unit quantities. */
+  bundleItems: BundleComponentSpec[] | null;
 }
 
 /**
@@ -92,6 +101,7 @@ export async function resolveLinePricing(
       trueUnitCount: quantityPaid + freeQuantity,
       unitPrice,
       unitCost,
+      bundleItems: offer.offerType === "bundle" ? (offer.bundleItems as BundleComponentSpec[] | null) : null,
     };
   }
 
@@ -117,6 +127,7 @@ export async function resolveLinePricing(
       trueUnitCount: quantity,
       unitPrice: Number(variant.basePrice),
       unitCost: Number(variant.costPrice),
+      bundleItems: null,
     };
   }
 
@@ -136,6 +147,7 @@ export async function resolveLinePricing(
       trueUnitCount: quantity,
       unitPrice: Number(priceRow.price),
       unitCost: Number(priceRow.costPrice),
+      bundleItems: null,
     };
   }
 
@@ -154,5 +166,72 @@ export async function resolveLinePricing(
     trueUnitCount: quantity,
     unitPrice: Number(product.basePrice),
     unitCost: Number(product.costPrice),
+    bundleItems: null,
   };
+}
+
+export interface BundleComponentLine {
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+}
+
+/**
+ * Expands a bundle offer's other component products into inventory-only
+ * order lines - each deducts its own stock (via consumeFifoLots, same as
+ * any other line) and contributes to COGS, but carries zero price/revenue
+ * since the bundle's single price already lives on the primary line.
+ * `orderedQuantity` is the number of bundle units ordered (the same
+ * `quantity` passed into resolveLinePricing for the primary line) - each
+ * component's own per-bundle quantity is multiplied by this.
+ */
+export async function resolveBundleComponentLines(
+  tx: Queryable,
+  organizationId: string,
+  bundleItems: BundleComponentSpec[],
+  orderedQuantity: number,
+): Promise<BundleComponentLine[]> {
+  const lines: BundleComponentLine[] = [];
+
+  for (const component of bundleItems) {
+    const totalQuantity = component.quantity * orderedQuantity;
+    if (totalQuantity <= 0) continue;
+    const variantId = component.variantId ?? null;
+
+    const consumption = await consumeFifoLots(tx, organizationId, component.productId, variantId, totalQuantity);
+
+    let unitCost: number;
+    let totalCost: number;
+    if (consumption) {
+      totalCost = consumption.totalCost;
+      unitCost = totalQuantity > 0 ? totalCost / totalQuantity : 0;
+    } else {
+      // No lots tracked for this component - fall back to its own flat cost price.
+      const costSource = variantId
+        ? await tx
+            .select({ costPrice: numbatrakProductVariants.costPrice })
+            .from(numbatrakProductVariants)
+            .where(eq(numbatrakProductVariants.id, variantId))
+            .limit(1)
+        : await tx
+            .select({ costPrice: numbatrakProducts.costPrice })
+            .from(numbatrakProducts)
+            .where(eq(numbatrakProducts.id, component.productId))
+            .limit(1);
+      unitCost = Number(costSource[0]?.costPrice ?? 0);
+      totalCost = unitCost * totalQuantity;
+    }
+
+    lines.push({
+      productId: component.productId,
+      variantId,
+      quantity: totalQuantity,
+      unitCost,
+      totalCost,
+    });
+  }
+
+  return lines;
 }

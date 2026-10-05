@@ -33,7 +33,11 @@ export function OrderTableRow({
   console.log(order);
 
   const handleDownloadInvoice = () => {
-    generateInvoicePDF(order, currentOrganization?.name);
+    void generateInvoicePDF(order, {
+      organizationName: currentOrganization?.name,
+      logoUrl: currentOrganization?.logo_url,
+      businessAddress: currentOrganization?.business_address,
+    });
   };
 
   // Check if order is eligible for invoice (Delivered or Pending with pay on delivery)

@@ -1,13 +1,31 @@
-import { FormEvent, useRef } from "react";
+import { FormEvent, ReactNode, useRef } from "react";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { BrandedDialogHero } from "../brand/BrandedDialogHero";
 import { ErrorAlert } from "../agents/ErrorAlert";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { formatNaira } from "../../utils/currency";
-import { Package } from "lucide-react";
+import { HelpCircle, Package } from "lucide-react";
 import { ProductType } from "../../types/product";
 import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
+
+function InfoTooltip({ children }: { children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex text-muted-foreground hover:text-foreground"
+          aria-label="More info"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[220px]">{children}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export interface ProductFormValues {
   productName: string;
@@ -130,8 +148,13 @@ export function ProductDialog({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="product-sku" className="dialog-field-label">
+                <Label htmlFor="product-sku" className="dialog-field-label flex items-center gap-1.5">
                   SKU
+                  <InfoTooltip>
+                    Stock Keeping Unit — a unique internal code you assign to identify a
+                    specific product or variant. Optional, but helpful once you have many
+                    similar products.
+                  </InfoTooltip>
                 </Label>
                 <Input
                   id="product-sku"
@@ -241,6 +264,10 @@ export function ProductDialog({
                   className="rounded border-border"
                 />
                 Variants (size, color, etc.)
+                <InfoTooltip>
+                  Lets this product have multiple versions (e.g. sizes or colors), each with
+                  its own price, cost, and inventory count tracked separately.
+                </InfoTooltip>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -252,6 +279,10 @@ export function ProductDialog({
                   className="rounded border-border"
                 />
                 Bundles (cross-product offers)
+                <InfoTooltip>
+                  Lets you sell this product together with other products as one offer (e.g.
+                  "buy a mat + a belt"). Each component still deducts from its own inventory.
+                </InfoTooltip>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -263,6 +294,10 @@ export function ProductDialog({
                   className="rounded border-border"
                 />
                 Discounts (tiers, buy-X-get-Y)
+                <InfoTooltip>
+                  Lets you set quantity-based pricing (e.g. buy 3 for a lower unit price) or
+                  "buy one get one free" style offers on this product.
+                </InfoTooltip>
               </label>
             </div>
 

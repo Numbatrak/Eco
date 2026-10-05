@@ -1,0 +1,1 @@
+ALTER TABLE "numbatrak_unified_expenses" ADD COLUMN "funnel_name" text;

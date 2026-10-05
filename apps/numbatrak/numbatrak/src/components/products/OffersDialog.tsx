@@ -19,6 +19,13 @@ import { formatNaira } from "../../utils/currency";
 import { Tag, Plus, Trash2, X, Package } from "lucide-react";
 import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
 
+const OFFER_TYPE_DESCRIPTIONS: Record<ProductOfferType, string> = {
+  single: "One unit at a fixed price — the simplest offer.",
+  quantity_tier: "A fixed quantity at its own total price (e.g. 3 units for a set price).",
+  bundle: "Combines this product with one or more other products as one sellable package — each component still deducts from its own inventory.",
+  buy_x_get_y: "Buy X units, get Y extra units free — the free units still count toward inventory and cost of goods.",
+};
+
 interface OfferFormData {
   offer_type: ProductOfferType;
   label: string;
@@ -336,6 +343,9 @@ export function OffersDialog({
                         )
                       )}
                     </select>
+                    <p className="text-xs text-muted-foreground">
+                      {OFFER_TYPE_DESCRIPTIONS[entry.offer_type]}
+                    </p>
                   </div>
                   {variants.length > 0 && (
                     <div className="space-y-1">

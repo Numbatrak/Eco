@@ -389,6 +389,8 @@ export const listNumbatrakAbandonedCartsQuerySchema = z.object({
   formId: z.string().uuid().optional(),
   funnelName: z.string().optional(),
   productId: z.string().uuid().optional(),
+  offerName: z.string().optional(),
+  phone: z.string().optional(),
 });
 export type ListNumbatrakAbandonedCartsQuery = z.infer<typeof listNumbatrakAbandonedCartsQuerySchema>;
 
@@ -688,6 +690,7 @@ export const numbatrakUnifiedExpenseSchema = z.object({
   sourceType: numbatrakExpenseSourceTypeSchema,
   sourceId: z.string().nullable(),
   offerName: z.string().nullable(),
+  funnelName: z.string().nullable(),
   platform: z.string().nullable(),
 });
 export type NumbatrakUnifiedExpense = z.infer<typeof numbatrakUnifiedExpenseSchema>;
@@ -697,6 +700,25 @@ export const listNumbatrakUnifiedExpensesQuerySchema = z.object({
   category: z.string().optional(),
 });
 export type ListNumbatrakUnifiedExpensesQuery = z.infer<typeof listNumbatrakUnifiedExpensesQuerySchema>;
+
+// Advertising-category org-scope expenses must carry product+offer
+// attribution (mandatory for CPA/ROAS reporting) - mirrors the frontend's
+// `advertisingRequired` check in UnifiedExpenseDialog.tsx, enforced here too
+// so a direct API call (or the client's skip_attribution_validation escape
+// hatch) can't bypass it.
+function requireAdvertisingAttribution(
+  data: { scope: string; category?: string; productId?: string | null; offerName?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if (data.scope === "org" && data.category === "advertising") {
+    if (!data.productId) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["productId"], message: "Product is required for advertising expenses" });
+    }
+    if (!data.offerName) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["offerName"], message: "Offer is required for advertising expenses" });
+    }
+  }
+}
 
 export const createNumbatrakUnifiedExpenseRequestSchema = z.object({
   scope: numbatrakExpenseScopeSchema,
@@ -709,8 +731,9 @@ export const createNumbatrakUnifiedExpenseRequestSchema = z.object({
   note: z.string().trim().nullable().optional(),
   occurredAt: z.string(),
   offerName: z.string().trim().nullable().optional(),
+  funnelName: z.string().trim().nullable().optional(),
   platform: z.string().trim().nullable().optional(),
-});
+}).superRefine(requireAdvertisingAttribution);
 export type CreateNumbatrakUnifiedExpenseRequest = z.infer<typeof createNumbatrakUnifiedExpenseRequestSchema>;
 
 export const updateNumbatrakUnifiedExpenseRequestSchema = z.object({
@@ -724,6 +747,7 @@ export const updateNumbatrakUnifiedExpenseRequestSchema = z.object({
   note: z.string().trim().nullable().optional(),
   occurredAt: z.string().optional(),
   offerName: z.string().trim().nullable().optional(),
+  funnelName: z.string().trim().nullable().optional(),
   platform: z.string().trim().nullable().optional(),
 });
 export type UpdateNumbatrakUnifiedExpenseRequest = z.infer<typeof updateNumbatrakUnifiedExpenseRequestSchema>;

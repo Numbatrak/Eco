@@ -48,6 +48,9 @@ export function GeneralSettings({
   const [businessWhatsapp, setBusinessWhatsapp] = useState(
     organization.business_whatsapp ?? ""
   );
+  const [businessAddress, setBusinessAddress] = useState(
+    organization.business_address ?? ""
+  );
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -56,6 +59,7 @@ export function GeneralSettings({
     setCurrency(organization.currency ?? DEFAULT_CURRENCY);
     setBusinessPhone(organization.business_phone ?? "");
     setBusinessWhatsapp(organization.business_whatsapp ?? "");
+    setBusinessAddress(organization.business_address ?? "");
   }, [organization]);
 
   const handleSave = async () => {
@@ -67,6 +71,7 @@ export function GeneralSettings({
         currency,
         business_phone: businessPhone.trim() || null,
         business_whatsapp: businessWhatsapp.trim() || null,
+        business_address: businessAddress.trim() || null,
       });
       onUpdated({ ...organization, ...updated });
       onSuccess("General settings saved.");
@@ -100,7 +105,8 @@ export function GeneralSettings({
     timezone !== (organization.timezone ?? DEFAULT_TIMEZONE) ||
     currency !== (organization.currency ?? DEFAULT_CURRENCY) ||
     businessPhone !== (organization.business_phone ?? "") ||
-    businessWhatsapp !== (organization.business_whatsapp ?? "");
+    businessWhatsapp !== (organization.business_whatsapp ?? "") ||
+    businessAddress !== (organization.business_address ?? "");
 
   return (
     <div className="org-settings-section">
@@ -186,6 +192,24 @@ export function GeneralSettings({
               Used for customer-facing WhatsApp notifications.
             </p>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="orgBusinessAddress" className="text-sm font-medium">
+            Business address
+          </label>
+          <textarea
+            id="orgBusinessAddress"
+            value={businessAddress}
+            onChange={(e) => setBusinessAddress(e.target.value)}
+            disabled={!canEdit}
+            placeholder="e.g. 12 Example Street, Lagos, Nigeria"
+            rows={2}
+            className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Shown on generated invoices alongside your logo.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -13,6 +13,7 @@ import {
   createBatch,
   markBatchDone,
   fetchPayments,
+  payContractor,
   fetchAds,
   fetchSpend,
   createSpend,
@@ -98,6 +99,13 @@ export function MediaBuyersPage() {
   const [batchType, setBatchType] = useState("voiceover");
   const [batchCount, setBatchCount] = useState(0);
   const [batchBrand, setBatchBrand] = useState("");
+  const [batchVoArtistId, setBatchVoArtistId] = useState("");
+  const [batchEditorId, setBatchEditorId] = useState("");
+
+  const [payContractorId, setPayContractorId] = useState("");
+  const [payPieces, setPayPieces] = useState(0);
+  const [payAmount, setPayAmount] = useState(0);
+  const [payBrand, setPayBrand] = useState("");
 
   // --- Add spend form state ---
   const [spendDate, setSpendDate] = useState("");
@@ -192,10 +200,30 @@ export function MediaBuyersPage() {
                   </select>
                   <input type="text" inputMode="numeric" placeholder="Videos" value={batchCount || ""} onChange={(e) => { const v = sanitizeIntegerInput(e.target.value); setBatchCount(v === "" ? 0 : Number(v)); }} className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
                   <input type="text" placeholder="Brand" value={batchBrand} onChange={(e) => setBatchBrand(e.target.value)} className="w-32 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground" />
+                  <select value={batchVoArtistId} onChange={(e) => setBatchVoArtistId(e.target.value)} className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground">
+                    <option value="">VO Artist (optional)</option>
+                    {contractors.filter((c) => c.role === "vo_artist").map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <select value={batchEditorId} onChange={(e) => setBatchEditorId(e.target.value)} className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground">
+                    <option value="">Editor (optional)</option>
+                    {contractors.filter((c) => c.role === "video_editor").map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                   <button
                     onClick={async () => {
                       if (batchCount < 1) return;
-                      await createBatch({ creativeType: batchType, videoCount: batchCount, brand: batchBrand || null });
+                      await createBatch({
+                        creativeType: batchType,
+                        videoCount: batchCount,
+                        brand: batchBrand || null,
+                        voArtistId: batchVoArtistId || null,
+                        editorId: batchEditorId || null,
+                      });
+                      setBatchVoArtistId("");
+                      setBatchEditorId("");
                       void load();
                     }}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
@@ -277,6 +305,71 @@ export function MediaBuyersPage() {
           {tab === "payments" && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Contractor Payments</h3>
+              {canManage && (
+                <div className="flex flex-wrap gap-2 items-end bg-muted/50 p-3 rounded-lg">
+                  <select
+                    value={payContractorId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setPayContractorId(id);
+                      const c = contractors.find((x) => x.id === id);
+                      setPayPieces(c?.pieces_unpaid ?? 0);
+                      setPayAmount(c?.amount_owed ?? 0);
+                    }}
+                    className="px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  >
+                    <option value="">Select contractor</option>
+                    {contractors.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} (owed {c.amount_owed.toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Pieces"
+                    value={payPieces || ""}
+                    onChange={(e) => {
+                      const v = sanitizeIntegerInput(e.target.value);
+                      setPayPieces(v === "" ? 0 : Number(v));
+                    }}
+                    className="w-20 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Amount"
+                    value={payAmount || ""}
+                    onChange={(e) => {
+                      const v = sanitizeDecimalInput(e.target.value);
+                      setPayAmount(v === "" ? 0 : Number(v));
+                    }}
+                    className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Brand"
+                    value={payBrand}
+                    onChange={(e) => setPayBrand(e.target.value)}
+                    className="w-28 px-2 py-1.5 text-sm border border-border rounded bg-background text-foreground"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!payContractorId || payAmount <= 0) return;
+                      await payContractor(payContractorId, payPieces, payAmount, payBrand || null);
+                      setPayContractorId("");
+                      setPayPieces(0);
+                      setPayAmount(0);
+                      setPayBrand("");
+                      void load();
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                  >
+                    <DollarSign size={14} /> Pay
+                  </button>
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-border text-muted-foreground">

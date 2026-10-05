@@ -11,6 +11,7 @@ import {
   fetchAbandonedCartsCount,
   updateAbandonedCart,
   fetchAbandonedCartFunnels,
+  fetchAbandonedCartOffers,
   AbandonedCartFilters,
 } from "../services/abandonedCarts";
 import { createCustomerOrderFromAbandonedCart } from "../services/customerOrders";
@@ -43,6 +44,7 @@ export default function AbandonedCartsForm() {
   const [forms, setForms] = useState<Form[]>([]);
   const [funnelOptions, setFunnelOptions] = useState<string[]>([]);
   const [productOptions, setProductOptions] = useState<{ id: string; name: string }[]>([]);
+  const [offerOptions, setOfferOptions] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCarts, setTotalCarts] = useState(0);
   const [convertedCount, setConvertedCount] = useState(0);
@@ -74,13 +76,15 @@ export default function AbandonedCartsForm() {
       }
 
       try {
-        const [funnels, products] = await Promise.all([
+        const [funnels, products, offers] = await Promise.all([
           fetchAbandonedCartFunnels(currentOrganization.id),
           fetchProducts(currentOrganization.id, { activeOnly: true }),
+          fetchAbandonedCartOffers(currentOrganization.id),
         ]);
         if (!cancelled) {
           setFunnelOptions(funnels);
           setProductOptions(products.map((p) => ({ id: p.id, name: p.name })));
+          setOfferOptions(offers);
         }
       } catch (e) {
         console.error("Error loading funnels/products:", e);
@@ -318,6 +322,7 @@ export default function AbandonedCartsForm() {
           formList={formList}
           funnelOptions={funnelOptions}
           productOptions={productOptions}
+          offerOptions={offerOptions}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           itemsPerPage={itemsPerPage}

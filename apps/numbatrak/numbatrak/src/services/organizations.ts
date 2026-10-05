@@ -15,6 +15,7 @@ function toOrganization(org: OrgRecord): Organization {
     currency: (metadata.currency as string | undefined) ?? null,
     business_phone: (metadata.businessPhone as string | undefined) ?? null,
     business_whatsapp: (metadata.businessWhatsapp as string | undefined) ?? null,
+    business_address: (metadata.businessAddress as string | undefined) ?? null,
     created_at: org.createdAt,
     updated_at: org.createdAt,
   };
@@ -112,6 +113,7 @@ export async function updateOrganization(
     currency?: string;
     business_phone?: string | null;
     business_whatsapp?: string | null;
+    business_address?: string | null;
   }
 ): Promise<Organization> {
   const data: { name?: string; logo?: string | null; metadata?: Record<string, unknown> } = {};
@@ -125,13 +127,15 @@ export async function updateOrganization(
     updates.timezone !== undefined ||
     updates.currency !== undefined ||
     updates.business_phone !== undefined ||
-    updates.business_whatsapp !== undefined
+    updates.business_whatsapp !== undefined ||
+    updates.business_address !== undefined
   ) {
     data.metadata = {
       ...(updates.timezone !== undefined ? { timezone: updates.timezone } : {}),
       ...(updates.currency !== undefined ? { currency: updates.currency } : {}),
       ...(updates.business_phone !== undefined ? { businessPhone: updates.business_phone } : {}),
       ...(updates.business_whatsapp !== undefined ? { businessWhatsapp: updates.business_whatsapp } : {}),
+      ...(updates.business_address !== undefined ? { businessAddress: updates.business_address } : {}),
     };
   }
 

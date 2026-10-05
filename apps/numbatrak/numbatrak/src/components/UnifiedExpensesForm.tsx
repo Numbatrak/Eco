@@ -25,12 +25,18 @@ import {
 } from "../services/unifiedExpenses";
 import {
   computeExpenseSummary,
+  computeMonthlyExpenseSeries,
   filterExpensesByDateRange,
   fetchExpenseSummary,
-  fetchMonthlyExpenseSeries,
   ExpenseSummary,
-  MonthlyExpensePoint,
 } from "../services/expenseSummary";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { ExpenseReportChart } from "./expenses/ExpenseReportChart";
 import { fetchProducts } from "../services/products";
 import {
@@ -91,8 +97,11 @@ export default function UnifiedExpensesForm() {
 
   const [rows, setRows] = useState<UnifiedExpenseWithRelations[]>([]);
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
-  const [monthlySeries, setMonthlySeries] = useState<MonthlyExpensePoint[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
+  const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [productFilter, setProductFilter] = useState<string>("all");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [customSubcategories, setCustomSubcategories] = useState<
     ExpenseSubcategoryRow[]
   >([]);
@@ -129,17 +138,15 @@ export default function UnifiedExpensesForm() {
     setSummaryLoading(true);
     setErr(null);
     try {
-      const [data, summaryData, series, productList, customSubs] =
+      const [data, summaryData, productList, customSubs] =
         await Promise.all([
           fetchUnifiedExpenses(currentOrganization.id),
           fetchExpenseSummary(currentOrganization.id, dateFilter),
-          fetchMonthlyExpenseSeries(currentOrganization.id, dateFilter),
           fetchProducts(currentOrganization.id, { activeOnly: true }),
           fetchCustomExpenseSubcategories(currentOrganization.id),
         ]);
       setRows(data);
       setSummary(summaryData);
-      setMonthlySeries(series);
       setProducts(productList);
       setCustomSubcategories(customSubs);
     } catch (e) {
@@ -165,14 +172,62 @@ export default function UnifiedExpensesForm() {
     [rows, startDate, endDate]
   );
 
+  const productBrandById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of products) {
+      if (p.sub_brand) map.set(p.id, p.sub_brand);
+    }
+    return map;
+  }, [products]);
+
+  const subcategoryOptions = useMemo(() => {
+    const byValue = new Map<string, string>();
+    for (const r of filteredRows) {
+      if (r.subcategory && !byValue.has(r.subcategory)) {
+        byValue.set(r.subcategory, r.category);
+      }
+    }
+    return [...byValue.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredRows]);
+  const brandOptions = useMemo(
+    () => [...new Set(products.map((p) => p.sub_brand).filter((b): b is string => !!b))].sort(),
+    [products]
+  );
+  const productOptions = useMemo(
+    () => [...new Map(products.map((p) => [p.id, p.name])).entries()],
+    [products]
+  );
+  const platformOptions = useMemo(
+    () => [...new Set(filteredRows.map((r) => r.platform).filter((p): p is string => !!p))].sort(),
+    [filteredRows]
+  );
+
+  const reportRows = useMemo(() => {
+    return filteredRows.filter((r) => {
+      if (subcategoryFilter !== "all" && r.subcategory !== subcategoryFilter) return false;
+      if (productFilter !== "all" && r.product_id !== productFilter) return false;
+      if (platformFilter !== "all" && r.platform !== platformFilter) return false;
+      if (brandFilter !== "all") {
+        const brand = r.product_id ? productBrandById.get(r.product_id) : undefined;
+        if (brand !== brandFilter) return false;
+      }
+      return true;
+    });
+  }, [filteredRows, subcategoryFilter, productFilter, platformFilter, brandFilter, productBrandById]);
+
+  const monthlySeries = useMemo(
+    () => computeMonthlyExpenseSeries(reportRows),
+    [reportRows]
+  );
+
   const tabRows = useMemo(() => {
     if (activeTab === "agent") {
-      return filteredRows.filter((r) => r.scope === "agent");
+      return reportRows.filter((r) => r.scope === "agent");
     }
-    return filteredRows.filter(
+    return reportRows.filter(
       (r) => r.scope === "org" && r.category === activeTab
     );
-  }, [filteredRows, activeTab]);
+  }, [reportRows, activeTab]);
 
   const onTab = (value: string) => {
     setSearchParams((prev) => {
@@ -215,6 +270,7 @@ export default function UnifiedExpensesForm() {
           note: values.note,
           product_id: values.product_id,
           offer_name: values.offer_name,
+          funnel_name: values.funnel_name,
         };
         if (!isAutoFedExpense(editingExpense.source_type)) {
           patch.category = values.category;
@@ -235,6 +291,7 @@ export default function UnifiedExpensesForm() {
           agent_id: values.agent_id,
           product_id: values.product_id,
           offer_name: values.offer_name,
+          funnel_name: values.funnel_name,
           note: values.note,
           occurred_at: values.occurred_at,
           created_by: user?.id || null,
@@ -296,6 +353,64 @@ export default function UnifiedExpensesForm() {
         dateFilter={dateFilter}
         onDateFilterChange={setDateFilter}
       />
+
+      <div className="flex flex-wrap gap-3">
+        <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+          <SelectTrigger className="w-[180px]" aria-label="Filter by subcategory">
+            <SelectValue placeholder="All subcategories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All subcategories</SelectItem>
+            {subcategoryOptions.map(([subcategory, category]) => (
+              <SelectItem key={subcategory} value={subcategory}>
+                {formatExpenseSubcategoryLabel(category, subcategory)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={brandFilter} onValueChange={setBrandFilter}>
+          <SelectTrigger className="w-[160px]" aria-label="Filter by brand">
+            <SelectValue placeholder="All brands" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All brands</SelectItem>
+            {brandOptions.map((b) => (
+              <SelectItem key={b} value={b}>
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={productFilter} onValueChange={setProductFilter}>
+          <SelectTrigger className="w-[180px]" aria-label="Filter by product">
+            <SelectValue placeholder="All products" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All products</SelectItem>
+            {productOptions.map(([id, name]) => (
+              <SelectItem key={id} value={id}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={platformFilter} onValueChange={setPlatformFilter}>
+          <SelectTrigger className="w-[160px]" aria-label="Filter by platform">
+            <SelectValue placeholder="All platforms" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All platforms</SelectItem>
+            {platformOptions.map((p) => (
+              <SelectItem key={p} value={p}>
+                {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <ExpenseSummaryCards summary={inlineSummary} loading={summaryLoading} />
 

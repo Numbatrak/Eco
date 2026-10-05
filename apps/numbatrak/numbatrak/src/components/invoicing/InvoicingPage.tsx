@@ -117,7 +117,11 @@ export function InvoicingPage() {
       mail_quan2: null,
       agent_quan2: null,
     } as any;
-    generateInvoicePDF(orderLike, currentOrganization?.name ?? undefined);
+    void generateInvoicePDF(orderLike, {
+      organizationName: currentOrganization?.name ?? undefined,
+      logoUrl: currentOrganization?.logo_url,
+      businessAddress: currentOrganization?.business_address,
+    });
   }
 
   function addLineItem() {

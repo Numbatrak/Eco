@@ -16,7 +16,7 @@ import { parseAttributionSource, extractTrackingLinkCode } from "../../numbatrak
 import { findActiveTrackingLinkByCode } from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { getDeliveryFeeForLocation } from "../../numbatrak-delivery-fees/lib/delivery-fees.js";
 import { validateSubmissionAgainstSchema } from "./validation.js";
-import { resolveLinePricing } from "./offer-pricing.js";
+import { resolveLinePricing, resolveBundleComponentLines } from "./offer-pricing.js";
 import { consumeFifoLots } from "./inventory-consumption.js";
 
 export type FormRow = typeof numbatrakForms.$inferSelect;
@@ -130,6 +130,7 @@ export async function submitFormOrder(
     let orderCost = 0;
     const lineRows: Array<{
       productId: string;
+      variantId: string | null;
       quantity: number;
       unitPriceAtSubmission: string;
       unitCostAtSubmission: string;
@@ -164,6 +165,7 @@ export async function submitFormOrder(
 
       lineRows.push({
         productId: item.productId,
+        variantId: pricing.variantId,
         quantity: pricing.quantityPaid,
         unitPriceAtSubmission: String(pricing.unitPrice),
         unitCostAtSubmission: String(unitCostAvg),
@@ -171,6 +173,32 @@ export async function submitFormOrder(
         totalCost: String(lineTotalCost),
         profit: String(lineTotalPrice - lineTotalCost),
       });
+
+      // Bundle offer: the other product(s) this offer bundles in don't get
+      // their own price (the bundle's single price already lives on the
+      // primary line above) but each still deducts from its own inventory
+      // and contributes to COGS - zero-price, cost-only lines.
+      if (pricing.bundleItems && pricing.bundleItems.length > 0) {
+        const componentLines = await resolveBundleComponentLines(
+          tx,
+          form.organizationId,
+          pricing.bundleItems,
+          item.quantity,
+        );
+        for (const component of componentLines) {
+          orderCost += component.totalCost;
+          lineRows.push({
+            productId: component.productId,
+            variantId: component.variantId,
+            quantity: component.quantity,
+            unitPriceAtSubmission: "0",
+            unitCostAtSubmission: String(component.unitCost),
+            totalPrice: "0",
+            totalCost: String(component.totalCost),
+            profit: String(-component.totalCost),
+          });
+        }
+      }
     }
 
     const csrId = await getNextAssignedUser(tx, form.organizationId);

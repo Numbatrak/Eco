@@ -40,6 +40,7 @@ interface AbandonedCartTableProps {
   formList?: { id: string; name: string }[];
   funnelOptions?: string[];
   productOptions?: { id: string; name: string }[];
+  offerOptions?: string[];
   currentPage: number;
   onPageChange: (page: number) => void;
   itemsPerPage: number;
@@ -66,6 +67,7 @@ export function AbandonedCartTable({
   formList = [],
   funnelOptions = [],
   productOptions = [],
+  offerOptions = [],
   currentPage,
   onPageChange,
   itemsPerPage,
@@ -124,6 +126,14 @@ export function AbandonedCartTable({
     onFilterChange({
       ...filters,
       productId: value === "all" ? undefined : value,
+    });
+  };
+
+  const offerSelectValue = filters.offerName ?? "all";
+  const handleOfferSelect = (value: string) => {
+    onFilterChange({
+      ...filters,
+      offerName: value === "all" ? undefined : value,
     });
   };
 
@@ -262,6 +272,46 @@ export function AbandonedCartTable({
                 </Select>
               </div>
             )}
+
+            {offerOptions.length > 0 && (
+              <div
+                className="flex items-center gap-2 shrink-0"
+                style={{ minWidth: "180px", maxWidth: "min(100%, 280px)" }}
+              >
+                <Select value={offerSelectValue} onValueChange={handleOfferSelect}>
+                  <SelectTrigger
+                    className="w-full border-border bg-background h-9 text-sm"
+                    aria-label="Filter by offer"
+                  >
+                    <SelectValue placeholder="All offers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All offers</SelectItem>
+                    {offerOptions.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div
+              className="flex items-center gap-2 shrink-0"
+              style={{ minWidth: "160px", maxWidth: "min(100%, 220px)" }}
+            >
+              <input
+                type="text"
+                value={filters.phone ?? ""}
+                onChange={(e) =>
+                  onFilterChange({ ...filters, phone: e.target.value || undefined })
+                }
+                placeholder="Filter by phone"
+                aria-label="Filter by phone"
+                className="w-full rounded-md border border-border bg-background h-9 px-3 text-sm"
+              />
+            </div>
 
             <div className="abandoned-cart-table-filters">
               <button

@@ -62,6 +62,8 @@ function buildFilterConditions(organizationId: string, filters: Partial<ListNumb
   if (filters.productId) {
     conditions.push(sql`${numbatrakAbandonedCarts.selectedProducts} @> ${JSON.stringify([{ product_id: filters.productId }])}::jsonb`);
   }
+  if (filters.offerName) conditions.push(eq(numbatrakAbandonedCarts.offerName, filters.offerName));
+  if (filters.phone) conditions.push(ilike(numbatrakAbandonedCarts.phoneNumber, `%${filters.phone}%`));
   if (filters.search) {
     const term = `%${filters.search}%`;
     conditions.push(
@@ -111,6 +113,17 @@ export async function listDistinctFunnels(db: Database, organizationId: string):
     .where(and(eq(numbatrakAbandonedCarts.organizationId, organizationId), isNotNull(numbatrakAbandonedCarts.funnelName)));
   return rows
     .map((r) => r.funnelName?.trim())
+    .filter((name): name is string => !!name)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+export async function listDistinctOffers(db: Database, organizationId: string): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ offerName: numbatrakAbandonedCarts.offerName })
+    .from(numbatrakAbandonedCarts)
+    .where(and(eq(numbatrakAbandonedCarts.organizationId, organizationId), isNotNull(numbatrakAbandonedCarts.offerName)));
+  return rows
+    .map((r) => r.offerName?.trim())
     .filter((name): name is string => !!name)
     .sort((a, b) => a.localeCompare(b));
 }

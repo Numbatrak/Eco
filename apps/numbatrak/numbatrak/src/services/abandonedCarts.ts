@@ -11,6 +11,8 @@ export interface AbandonedCartFilters {
   formId?: string;
   funnelName?: string;
   productId?: string;
+  offerName?: string;
+  phone?: string;
 }
 
 export interface CartLineInput {
@@ -137,6 +139,8 @@ function buildQuery(
   if (filters?.formId) params.set("formId", filters.formId);
   if (filters?.funnelName) params.set("funnelName", filters.funnelName);
   if (filters?.productId) params.set("productId", filters.productId);
+  if (filters?.offerName) params.set("offerName", filters.offerName);
+  if (filters?.phone) params.set("phone", filters.phone);
   return `?${params.toString()}`;
 }
 
@@ -172,6 +176,8 @@ export async function fetchAbandonedCartsCount(
   if (filters?.formId) params.set("formId", filters.formId);
   if (filters?.funnelName) params.set("funnelName", filters.funnelName);
   if (filters?.productId) params.set("productId", filters.productId);
+  if (filters?.offerName) params.set("offerName", filters.offerName);
+  if (filters?.phone) params.set("phone", filters.phone);
 
   const { count } = await apiRequest<{ count: number }>(`/org/numbatrak/abandoned-carts/count?${params.toString()}`);
   return count;
@@ -181,6 +187,12 @@ export async function fetchAbandonedCartFunnels(organizationId: string | null): 
   if (!organizationId) return [];
   const { funnels } = await apiRequest<{ funnels: string[] }>("/org/numbatrak/abandoned-carts/funnels");
   return funnels;
+}
+
+export async function fetchAbandonedCartOffers(organizationId: string | null): Promise<string[]> {
+  if (!organizationId) return [];
+  const { offers } = await apiRequest<{ offers: string[] }>("/org/numbatrak/abandoned-carts/offers");
+  return offers;
 }
 
 /**

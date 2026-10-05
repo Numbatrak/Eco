@@ -43,6 +43,10 @@ export const numbatrakUnifiedExpenses = pgTable(
     sourceType: text("source_type").notNull().default("manual"),
     sourceId: text("source_id"),
     offerName: text("offer_name"),
+    // Distinct from offerName (a product-catalog offer) - this is the
+    // traffic-source funnel attribution, per the product owner's explicit
+    // "it is not the offer name... it is the funnel that it came from" note.
+    funnelName: text("funnel_name"),
     platform: text("platform"),
   },
   (table) => [

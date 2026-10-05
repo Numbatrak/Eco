@@ -23,6 +23,7 @@ export interface UnifiedExpense {
   source_type?: ExpenseSourceType;
   source_id?: string | null;
   offer_name?: string | null;
+  funnel_name?: string | null;
   platform?: string | null;
 }
 

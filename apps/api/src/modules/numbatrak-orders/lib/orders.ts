@@ -4,10 +4,12 @@ import {
   numbatrakAgents,
   numbatrakCustomerOrderItems,
   numbatrakCustomerOrders,
+  numbatrakCustomers,
   numbatrakOrderStatusHistory,
   numbatrakProductVariants,
   numbatrakProducts,
   numbatrakUnifiedExpenses,
+  organization,
   user,
   type Database,
 } from "@platform/db";
@@ -26,6 +28,7 @@ import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follo
 import { findOrCreateCustomer, createFeedbackCall, getOrCreateFeedbackSettings } from "../../numbatrak-crm/lib/crm.js";
 import { findTrackingLinkById } from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { sendOrderStatusUpdateWhatsApp } from "../../../lib/whatsapp.js";
+import { sendEmail } from "../../auth/lib/email.js";
 
 export type OrderRow = typeof numbatrakCustomerOrders.$inferSelect;
 export type OrderItemRow = typeof numbatrakCustomerOrderItems.$inferSelect;
@@ -430,6 +433,58 @@ export async function updateOrder(
         orderId,
         scheduledAt: scheduledAt.toISOString(),
       });
+
+      // Customer-facing invoice email on delivery completion - best-effort,
+      // never blocks the status update itself (same posture as the WhatsApp
+      // notification below). Only fires when the customer has an email on
+      // file (numbatrak_customers.email) - no email capture on an order
+      // means no email to send, not an error.
+      try {
+        const [customerRow] = await db
+          .select({ email: numbatrakCustomers.email })
+          .from(numbatrakCustomers)
+          .where(eq(numbatrakCustomers.id, current.customerId))
+          .limit(1);
+        if (customerRow?.email && logger) {
+          const [org] = await db
+            .select({ name: organization.name })
+            .from(organization)
+            .where(eq(organization.id, organizationId))
+            .limit(1);
+          const productNamesById = new Map<string, string>();
+          if (items.length > 0) {
+            const productRows = await db
+              .select({ id: numbatrakProducts.id, name: numbatrakProducts.name })
+              .from(numbatrakProducts)
+              .where(inArray(numbatrakProducts.id, [...new Set(items.map((i) => i.productId))]));
+            for (const p of productRows) productNamesById.set(p.id, p.name);
+          }
+          const itemRows = items
+            .map(
+              (i) =>
+                `<tr><td style="padding:4px 12px 4px 0;">${productNamesById.get(i.productId) ?? "Item"} × ${i.quantity}</td><td style="padding:4px 0;text-align:right;">₦${Number(i.totalPrice).toLocaleString()}</td></tr>`,
+            )
+            .join("");
+          const orgName = org?.name ?? "Your order";
+          const body = `
+            <h2 style="margin:0 0 4px;">${orgName} — Order Invoice</h2>
+            <p style="margin:0 0 16px;color:#6b7280;">Order #${orderId.slice(0, 8).toUpperCase()} — delivered</p>
+            <table cellspacing="0" cellpadding="0" style="width:100%;max-width:400px;">${itemRows}</table>
+            <table cellspacing="0" cellpadding="0" style="margin-top:12px;">
+              <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Delivery fee</td><td style="padding:4px 0;font-weight:600;">₦${Number(current.deliveryFee ?? 0).toLocaleString()}</td></tr>
+              <tr><td style="padding:4px 12px 4px 0;color:#6b7280;font-weight:700;">Total</td><td style="padding:4px 0;font-weight:700;">₦${Number(current.orderRevenue ?? 0).toLocaleString()}</td></tr>
+            </table>
+            <p style="margin-top:16px;color:#6b7280;">Thank you for your order!</p>
+          `.trim();
+          await sendEmail(logger, {
+            to: customerRow.email,
+            subject: `${orgName} — your invoice (Order #${orderId.slice(0, 8).toUpperCase()})`,
+            body,
+          });
+        }
+      } catch (err) {
+        logger?.error({ err, orderId }, "Order delivery invoice email failed");
+      }
     }
   }
 

@@ -1,15 +1,68 @@
 import jsPDF from "jspdf";
 import { OrderWithRelations } from "../types/order";
 
+export interface InvoiceBrandingOptions {
+  organizationName?: string;
+  /** Public URL of the org's logo (e.g. Organization.logo_url) - fetched and embedded if reachable. */
+  logoUrl?: string | null;
+  /** Free-text business address shown under the org name. */
+  businessAddress?: string | null;
+}
+
+/** Fetches an image URL and converts it to a data: URL jsPDF's addImage can embed - returns null on any failure (network, CORS, non-image), so a broken/unreachable logo never blocks invoice generation. */
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (!blob.type.startsWith("image/")) return null;
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function imageFormatFromDataUrl(dataUrl: string): "PNG" | "JPEG" | "WEBP" {
+  if (dataUrl.startsWith("data:image/png")) return "PNG";
+  if (dataUrl.startsWith("data:image/webp")) return "WEBP";
+  return "JPEG";
+}
+
 /**
  * Generate and download a PDF invoice for an order
  */
-export function generateInvoicePDF(order: OrderWithRelations, organizationName?: string): void {
+export async function generateInvoicePDF(
+  order: OrderWithRelations,
+  branding?: InvoiceBrandingOptions | string
+): Promise<void> {
+  // Accept the old `organizationName?: string` positional form too, so
+  // existing callers that haven't moved to the options object keep working.
+  const options: InvoiceBrandingOptions =
+    typeof branding === "string" ? { organizationName: branding } : (branding ?? {});
+  const { organizationName, logoUrl, businessAddress } = options;
+
+  const logoDataUrl = logoUrl ? await fetchImageAsDataUrl(logoUrl) : null;
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
   let yPosition = margin;
+
+  if (logoDataUrl) {
+    try {
+      const logoHeight = 16;
+      const logoWidth = 16;
+      doc.addImage(logoDataUrl, imageFormatFromDataUrl(logoDataUrl), margin, yPosition, logoWidth, logoHeight);
+    } catch {
+      // Malformed image data - skip the logo rather than fail the whole invoice.
+    }
+  }
 
   // Helper function to format currency
   const formatCurrency = (value: number | null): string => {
@@ -51,6 +104,13 @@ export function generateInvoicePDF(order: OrderWithRelations, organizationName?:
   if (organizationName) {
     doc.text(organizationName, pageWidth - margin, yPosition, { align: "right" });
     yPosition += 6;
+  }
+  if (businessAddress) {
+    doc.setFontSize(9);
+    const addressLines = doc.splitTextToSize(businessAddress, 80);
+    doc.text(addressLines, pageWidth - margin, yPosition, { align: "right" });
+    yPosition += addressLines.length * 5;
+    doc.setFontSize(12);
   }
   yPosition += 10;
 

@@ -50,6 +50,7 @@ async function attachRelations(db: Database, rows: ExpenseRow[]): Promise<Numbat
     sourceType: row.sourceType as NumbatrakUnifiedExpense["sourceType"],
     sourceId: row.sourceId,
     offerName: row.offerName,
+    funnelName: row.funnelName,
     platform: row.platform,
   }));
 }
@@ -93,6 +94,7 @@ export async function createExpense(
       occurredAt: input.occurredAt,
       createdBy,
       offerName: input.offerName?.trim() || null,
+      funnelName: input.funnelName?.trim() || null,
       platform: input.platform ?? null,
     })
     .returning();
@@ -101,12 +103,33 @@ export async function createExpense(
   return full!;
 }
 
+// Fields an auto-fed row's amount/date/category/subcategory are locked -
+// only a manual (source_type = "manual") row's core numbers can be edited.
+// Attribution (product/offer/funnel) and notes stay editable either way.
+// Matches the UI's own documented lock in UnifiedExpenseDialog.tsx - this
+// closes the gap where that lock was previously UI-only, not enforced here.
+const LOCKED_FOR_AUTO_FED = ["category", "subcategory", "amount", "agentId", "occurredAt"] as const;
+
 export async function updateExpense(
   db: Database,
   organizationId: string,
   expenseId: string,
   input: UpdateNumbatrakUnifiedExpenseRequest,
 ): Promise<NumbatrakUnifiedExpense | null> {
+  const [existing] = await db
+    .select({ sourceType: numbatrakUnifiedExpenses.sourceType })
+    .from(numbatrakUnifiedExpenses)
+    .where(and(eq(numbatrakUnifiedExpenses.organizationId, organizationId), eq(numbatrakUnifiedExpenses.id, expenseId)))
+    .limit(1);
+  if (!existing) return null;
+
+  if (existing.sourceType !== "manual") {
+    const attemptedLockedField = LOCKED_FOR_AUTO_FED.find((field) => input[field] !== undefined);
+    if (attemptedLockedField) {
+      throw new Error(`Cannot change "${attemptedLockedField}" on an auto-fed expense - only manual entries allow this.`);
+    }
+  }
+
   const values: Partial<typeof numbatrakUnifiedExpenses.$inferInsert> = {};
   if (input.scope !== undefined) values.scope = input.scope;
   if (input.category !== undefined) values.category = input.category;
@@ -118,6 +141,7 @@ export async function updateExpense(
   if (input.note !== undefined) values.note = input.note;
   if (input.occurredAt !== undefined) values.occurredAt = input.occurredAt;
   if (input.offerName !== undefined) values.offerName = input.offerName?.trim() || null;
+  if (input.funnelName !== undefined) values.funnelName = input.funnelName?.trim() || null;
   if (input.platform !== undefined) values.platform = input.platform;
 
   const [row] = await db

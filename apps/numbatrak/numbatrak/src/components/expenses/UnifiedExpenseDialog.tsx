@@ -41,6 +41,7 @@ export interface UnifiedExpenseFormValues {
   agent_id: number | null;
   product_id: string | null;
   offer_name: string | null;
+  funnel_name: string | null;
   note: string | null;
 }
 
@@ -88,6 +89,7 @@ export function UnifiedExpenseDialog({
   const [agentId, setAgentId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
   const [offerName, setOfferName] = useState("");
+  const [funnelName, setFunnelName] = useState("");
   const [note, setNote] = useState("");
   const [newSubLabel, setNewSubLabel] = useState("");
 
@@ -127,6 +129,7 @@ export function UnifiedExpenseDialog({
       setAgentId(expense.agent_id ? String(expense.agent_id) : "");
       setProductId(expense.product_id || "");
       setOfferName(expense.offer_name || "");
+      setFunnelName(expense.funnel_name || "");
       setNote(expense.note || "");
     } else {
       const today = new Date().toISOString().slice(0, 10);
@@ -145,6 +148,7 @@ export function UnifiedExpenseDialog({
       setAgentId("");
       setProductId("");
       setOfferName("");
+      setFunnelName("");
       setNote("");
     }
     setNewSubLabel("");
@@ -172,6 +176,7 @@ export function UnifiedExpenseDialog({
       agent_id: scope === "agent" ? parseInt(agentId, 10) : null,
       product_id: productId || null,
       offer_name: offerName.trim() || null,
+      funnel_name: funnelName.trim() || null,
       note: note.trim() || null,
     });
   };
@@ -358,9 +363,24 @@ export function UnifiedExpenseDialog({
                   id="offer-name"
                   value={offerName}
                   onChange={(e) => setOfferName(e.target.value)}
-                  placeholder="e.g. Buy 2 Get 1, Meta campaign Q1"
+                  placeholder="e.g. Buy 2 Get 1"
                   required={advertisingRequired}
                 />
+                <p className="text-xs text-muted-foreground">
+                  The product-catalog offer this spend is tied to.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expense-funnel-name">Funnel</Label>
+                <Input
+                  id="expense-funnel-name"
+                  value={funnelName}
+                  onChange={(e) => setFunnelName(e.target.value)}
+                  placeholder="e.g. Meta campaign Q1"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Which traffic source/campaign this spend came from — distinct from the offer above.
+                </p>
               </div>
             </div>
           )}
