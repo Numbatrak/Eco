@@ -223,7 +223,7 @@ export function FormResponseDialog({
   const deliveryFeeUnchanged =
     deliveryFee.trim() === "" ||
     parseFloat(deliveryFee) === (response.delivery_fee ?? 0);
-  const displayNetProfit = isCompleted
+  const displayGrossProfit = isCompleted
     ? deliveryFeeUnchanged
       ? (response.profit ?? orderProfit(fullPrice, totalCost, deliveryFeeNum))
       : orderProfit(fullPrice, totalCost, deliveryFeeNum)
@@ -578,7 +578,7 @@ export function FormResponseDialog({
                   </p>
                 )}
                 <p className="dialog-field-hint mt-1">
-                  Subtracted from profit for net profit
+                  Subtracted from profit for gross profit
                 </p>
               </div>
 
@@ -679,12 +679,12 @@ export function FormResponseDialog({
                       </div>
                       <span
                         className={`text-lg font-bold ${
-                          displayNetProfit >= 0
+                          displayGrossProfit >= 0
                             ? "text-primary"
                             : "text-destructive"
                         }`}
                       >
-                        {formatCurrency(displayNetProfit)}
+                        {formatCurrency(displayGrossProfit)}
                       </span>
                     </div>
                   </div>
@@ -720,6 +720,17 @@ export function FormResponseDialog({
                             ))}
                         </SelectContent>
                       </Select>
+                      {upsellProductId && (() => {
+                        const selectedUpsellProduct = products.find(
+                          (p) => p.id === upsellProductId
+                        );
+                        return selectedUpsellProduct ? (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Price: {formatCurrency(selectedUpsellProduct.base_price ?? 0)}{" "}
+                            | Cost: {formatCurrency(selectedUpsellProduct.cost_price ?? 0)}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                     <Input
                       className="w-20"

@@ -1,0 +1,1826 @@
+﻿Please rate the new Quick notes tab by taking a short survey.
+Meeting Sep 25, 2026 at 19:46 WAT
+
+
+Sep 25, 2026
+
+
+System review and architecture refinement with dashboard updates and inventory controls.
+
+
+Tracking architecture and funnel analysis
+* Toheeb explained that tracking links must capture media buyers, platforms, and funnels independently.
+* UTM parameters cannot identify specific media buyers without custom tracking link integration.
+* The tracking architecture targets high-volume e-commerce businesses managing multiple media buyers.
+
+
+Dashboard metrics and financial reporting
+* Dashboard filters require redesigning to display the newest orders at the top of lists.
+* Toheeb clarified that profit metrics must display gross profit instead of net profit.
+* Failed delivery statuses must automatically log associated costs as financial losses.
+
+
+Order management and location tracking
+* The system must support manual order entry to accommodate diverse user workflows.
+* Mandatory state dropdowns standardize location-based delivery rate analysis across customer order forms.
+* Systems must support order assignments per location for businesses not utilizing dropdown forms.
+
+
+Inventory and warehouse architecture
+* The warehouse functions as a central agent holding stock without performing direct deliveries.
+* Stock transfers require valid reasons to maintain accurate audit trails.
+* System edits enforce a source of truth model updating all related records.
+
+
+Accounting and financial framework
+* The system provides a lightweight P&L summary separate from double entry bookkeeping.
+* Dashboards track cash-based metrics while accounting focuses on revenue, profit, and expense categorization.
+* Gross profit is defined as sales minus the cost of goods sold and delivery fees.
+
+
+Payroll and HR module design
+* The payroll engine supports flexible configurations including fixed salary, commissions, and performance bonuses.
+* Manager bonuses are contingent on meeting specific team performance ratios.
+* Toheeb finalized removing attendance, strikes, stars, and leave modules from the HR dashboard.
+
+
+Delivery partner and remittance structure
+* Remittance agents operate as external contractual delivery partners receiving payment via delivery fees.
+* Discrepant versus expected remittances are recorded as operational expenses rather than silent subtractions.
+* Prepaid orders or company-received payments bypass remittance lines while agent-collected funds designate owing entities.
+
+
+Inventory and stock processing
+* Warehouse serves as the core source of truth for tracking inventory and stock reception.
+* Stock transfers between warehouses and product variants require final interface polishing.
+
+
+Dashboard architecture and financial tracking
+* Dashboards require dual views separating advertising performance from business-level operations.
+* Accounting provides a consolidated money view pulling income from delivered orders and categorizing expenses.
+* Remittance accounting tracks cash on delivery movements and collections from agents to business receipts.
+
+
+Staff management and payroll configuration
+* Toheeb configured payroll settings within the system settings area for centralized management.
+* Staff commissions activate automatically upon meeting brand-specific key performance indicator targets.
+* Staff members log into the platform to view individual earnings rather than companywide salary data.
+
+
+Project timeline and execution
+* Targeting internal platform adoption by the end of the month.
+* Eyimofe is reviewing task checklists by 3:00 PM, with a follow-up meeting scheduled for the next day.
+
+
+Next steps
+* [Toheeb Yusuf] Send Messaging Architecture: Send the separate document outlining the messaging architecture.
+* [Eyimofe Omotayo] Review Claude Prompts: Evaluate the provided Claude prompts regarding the tracking architecture to facilitate the new implementation.
+* [The group] Update Profit Metric: Change the system display label from net profit to gross profit within the orders module.
+* [The group] Implement Tracking Link: Create a unique tracking link system allowing filtering by media buyer, platform, and funnel.
+* [The group] Add Upsell Feature: Flag missing upsell features and enable adding products to existing customer orders.
+* [The group] Log Delivery Loss: Update the system to automatically log associated costs as a loss upon a failed delivery status.
+* [Eyimofe Omotayo] Tracking Link: Develop a tracking link to correlate ad results with specific offer sources for performance monitoring.
+* [Eyimofe Omotayo] Update CRS Tracking: Configure performance metrics to allow tracking by individual sales representatives to assess sales records accurately.
+* [Eyimofe Omotayo] Inventory Variants: Enable the display of inventory variants for products within the inventory system.
+* [Eyimofe Omotayo] Implement Upsell: Add an upsell feature to include additional products in existing orders and reflect updates automatically in the customer management tab.
+* [Eyimofe Omotayo] Automate Failed Delivery Expense: Trigger an automatic entry into the expense log whenever an order status is updated to failed delivery, accounting for associated costs.
+* [Eyimofe Omotayo] Create Stock Alerts: Build system settings to configure notification thresholds for low inventory levels.
+* [Eyimofe Omotayo] Add Loss Panel: Develop a dashboard widget to visualize financial losses from failed deliveries and advertising costs based on hypothetical loss calculations.
+* [Eyimofe Omotayo] Configure Pay Structure: Move payroll and configuration settings into the general system settings area for centralized management.
+* [Eyimofe Omotayo] Consolidate Remittance: Consolidate multiple daily deliveries for a single agent into a single remittance line per day.
+* [Eyimofe Omotayo] Implement Accounting View: Implement a consolidated accounting view that pulls income from delivered orders and wallets while categorizing expenses for a profit and loss summary.
+* [Eyimofe Omotayo] Add Remittance History: Include remittance history within the agent management session to allow users to view transaction logs for external delivery partners.
+* [Eyimofe Omotayo] Staff Login: Create a login system for staff members to access their assigned roles and features.
+* [Eyimofe Omotayo] Remove HR Features: Remove the attendance, strikes, stars, and leave modules from the HR dashboard.
+* [Eyimofe] Fix Dashboard Metrics: Adjust dashboard filters to use gross profit calculations instead of net profit. Ensure accurate data tracking for the customer product funnel.
+* [Eyimofe] Update Order Management: Implement automated expense recording for failed deliveries and ensure inventory stock decreases when an order is marked as delivered.
+* [Eyimofe] Automate CRM Integration: Configure delivered orders to automatically flow into the customer relationship management database without requiring manual uploads.
+* [Eyimofe] Rename Wallet Functionality: Update the wallet functionality labels to remittance accounting and consolidated profit.
+* [Eyimofe] Fix Delivery Analytics: Refine delivery analytics by removing unnecessary filters and fixing the waybill tracking display. Ensure data correctly reflects in transit and picked up statuses.
+* [Eyimofe] Complete Checklist: Complete the 15 specific tasks identified during the session by 3:00 PM today. Maintain a checklist to track progress.
+* [The group] Schedule Meeting: Convene to discuss and address items 3 and 4 of the project plan.
+* [Toheeb] Send Notes: Provide the session notes and the list of action items to Eyimofe.
+
+
+
+
+
+
+Want to see more? View the full notes
+Tip: You can always access your full notes from the left sidebar.
+
+
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+Sep 25, 2026
+Meeting Sep 25, 2026 at 19:46 WAT
+Meeting records Transcript 
+
+
+
+
+Summary
+System review and architecture refinement with dashboard updates and inventory controls.
+
+Dashboard and Inventory Architecture
+Dashboard filters and analytics were restructured to track customer sales representatives and delivery rates accurately. Inventory tracking and variants were aligned with automated delivery statuses.
+
+Financial Metrics and Accounting
+Profit metrics were updated to display gross profit alongside automated failed delivery expense tracking. Remittance accounting and consolidated profit and loss summaries were established.
+
+Staff Management and System Settings
+Attendance and strike features were removed to streamline operations. Payroll structures and user roles were moved to a centralized settings area.
+
+
+
+
+Decisions
+Aligned
+* Dashboard filter redesign and manual entry The system must feature a redesigned dashboard prioritizing newest orders and support manual order entry.
+* Specific CRS performance tracking configuration Performance tracking must focus on specific customer representative sales (CRS) rather than generic agents.
+* Mandatory state dropdown and location assignment Order forms must include a mandatory state dropdown, and the system must support manual location assignments for non-dropdown forms.
+* Profit metric gross profit display The profit metric must display gross profit rather than net profit.
+* Failed delivery cost logging Failed delivery status updates must automatically log associated costs as a loss.
+* Tracking link architecture implementation The system must implement tracking links combining media buyer, platform, and funnel parameters to separate ad results.
+* Wallet component remittance standard naming Wallet components must be explicitly designated and labelled as remittance rather than wallets.
+* Removal of attendance and leave features The system features for attendance, strikes, stars, and leave must be removed from the platform.
+* Separation of uncollected cash in profit calculations Uncollected cash must be excluded from profit and loss statements until the funds are officially collected.
+
+
+
+
+Next steps
+* [Toheeb Yusuf] Send Messaging Architecture: Send the separate document outlining the messaging architecture.
+* [Eyimofe Omotayo] Review Claude Prompts: Evaluate the provided Claude prompts regarding the tracking architecture to facilitate the new implementation.
+* [The group] Update Profit Metric: Change the system display label from net profit to gross profit within the orders module.
+* [The group] Implement Tracking Link: Create a unique tracking link system allowing filtering by media buyer, platform, and funnel.
+* [The group] Add Upsell Feature: Flag missing upsell features and enable adding products to existing customer orders.
+* [The group] Log Delivery Loss: Update the system to automatically log associated costs as a loss upon a failed delivery status.
+* [Eyimofe Omotayo] Tracking Link: Develop a tracking link to correlate ad results with specific offer sources for performance monitoring.
+* [Eyimofe Omotayo] Update CRS Tracking: Configure performance metrics to allow tracking by individual sales representatives to assess sales records accurately.
+* [Eyimofe Omotayo] Inventory Variants: Enable the display of inventory variants for products within the inventory system.
+* [Eyimofe Omotayo] Implement Upsell: Add an upsell feature to include additional products in existing orders and reflect updates automatically in the customer management tab.
+* [Eyimofe Omotayo] Automate Failed Delivery Expense: Trigger an automatic entry into the expense log whenever an order status is updated to failed delivery, accounting for associated costs.
+* [Eyimofe Omotayo] Create Stock Alerts: Build system settings to configure notification thresholds for low inventory levels.
+* [Eyimofe Omotayo] Add Loss Panel: Develop a dashboard widget to visualize financial losses from failed deliveries and advertising costs based on hypothetical loss calculations.
+* [Eyimofe Omotayo] Configure Pay Structure: Move payroll and configuration settings into the general system settings area for centralized management.
+* [Eyimofe Omotayo] Consolidate Remittance: Consolidate multiple daily deliveries for a single agent into a single remittance line per day.
+* [Eyimofe Omotayo] Implement Accounting View: Implement a consolidated accounting view that pulls income from delivered orders and wallets while categorizing expenses for a profit and loss summary.
+* [Eyimofe Omotayo] Add Remittance History: Include remittance history within the agent management session to allow users to view transaction logs for external delivery partners.
+* [Eyimofe Omotayo] Staff Login: Create a login system for staff members to access their assigned roles and features.
+* [Eyimofe Omotayo] Remove HR Features: Remove the attendance, strikes, stars, and leave modules from the HR dashboard.
+* [Eyimofe] Fix Dashboard Metrics: Adjust dashboard filters to use gross profit calculations instead of net profit. Ensure accurate data tracking for the customer product funnel.
+* [Eyimofe] Update Order Management: Implement automated expense recording for failed deliveries and ensure inventory stock decreases when an order is marked as delivered.
+* [Eyimofe] Automate CRM Integration: Configure delivered orders to automatically flow into the customer relationship management database without requiring manual uploads.
+* [Eyimofe] Rename Wallet Functionality: Update the wallet functionality labels to remittance accounting and consolidated profit.
+* [Eyimofe] Fix Delivery Analytics: Refine delivery analytics by removing unnecessary filters and fixing the waybill tracking display. Ensure data correctly reflects in transit and picked up statuses.
+* [Eyimofe] Complete Checklist: Complete the 15 specific tasks identified during the session by 3:00 PM today. Maintain a checklist to track progress.
+* [The group] Schedule Meeting: Convene to discuss and address items 3 and 4 of the project plan.
+* [Toheeb] Send Notes: Provide the session notes and the list of action items to Eyimofe.
+
+
+
+
+Details
+* Dashboard Filter Review and Redesign: Toheeb Yusuf noted that existing dashboard filters were inadequate, necessitating a redesign to improve data visibility by prioritizing newest orders at the top and supporting manual order entry. Eyimofe Omotayo and Toheeb Yusuf reviewed the dashboard layout improvements, confirming that manual order entry and layout updates were successfully implemented (00:01:40) (00:58:47).
+* Performance Tracking Shift to Sales Representatives: Toheeb Yusuf specified that performance tracking must shift focus from generic agents to specific customer sales representatives (CSRs) to accurately differentiate results and assess individual sales records. Toheeb Yusuf noted that the filter in the dashboard currently labeled as agents is supposed to be configured for CSRs (00:02:54) (00:55:19).
+  
+
+* State Dropdown Implementation: Toy proposed integrating a mandatory state dropdown within all customer order forms to standardize location-based delivery rate analysis (00:04:33) (00:57:25). Toheeb Yusuf and Eyimofe Omotayo discussed that while Number Track forms support this dropdown, alternative solutions are required for external forms (00:04:33) (00:06:52).
+  
+
+* Order Assignment for Non-Dropdown Forms: Toheeb Yusuf raised the problem of businesses not utilizing dropdown forms, proposing that the system must support order assignment per location so that orders can be immediately assigned to one of the 36 states upon arrival to facilitate delivery rate analysis. Eyimofe Omotayo engaged in the discussion as Toheeb Yusuf explained the workflow differences between ad setups with fixed state selections and those without dropdowns (00:04:33) (00:57:25).
+* Upsell Feature and Automated WhatsApp Updates: Toheeb Yusuf flagged the absence of an upsell feature in the order management system, which should allow adding products to existing orders when customers purchase additional items (00:08:06). Additionally, Toheeb Yusuf confirmed the requirement for automated WhatsApp delivery updates and noted that a separate messaging architecture document would be shared with Eyimofe Omotayo (00:09:11).
+* Financial Metrics and Delivery Loss Logging: Toheeb Yusuf directed an update to the profit metrics to display gross profit (calculated before expenses) rather than net profit to avoid confusing users with accounting figures. Furthermore, Toheeb Yusuf established that fail delivery status updates must automatically log associated costs as a loss (00:09:11).
+* Tracking Link and Terminology Discussion: Toheeb Yusuf and Eyimofe Omotayo discussed terminology confusion regarding funnels, offers, and sources, noting that a single product can have multiple links testing different platforms, media buyers, or pricing offers (00:11:41). Following prompt references to Claude's analysis, Toheeb Yusuf and Eyimofe Omotayo established the "tracking link" concept, where a unique tracking link represents a combination of a media buyer, platform, and funnel or offer (00:23:32) (00:37:25).
+  
+
+* Targeting High-Revenue E-Commerce Businesses: Eyimofe Omotayo expressed concern that users might find the software's advanced features too complex or difficult to learn. In response, Toheeb Yusuf argued that the platform is intentionally built for high-revenue e-commerce businesses handling multiple media buyers, offers, and forms who require robust tracking to evaluate media buyer performance (00:30:55) (00:51:21).
+  
+
+* Tracking Link Architecture and Expense Attribution: Toheeb Yusuf and Eyimofe Omotayo detailed how tracking links function, explaining that ad expenses can be manually recorded and pointed to a specific ad link, while incoming orders are auto-tagged with the link identity (00:33:27) (00:38:28). Toheeb Yusuf requested the implementation of this tracking system to separate ad results by specific offers, platforms, and media buyers as a source of truth (00:10:22) (00:53:19).
+* Form Compatibility and External Form Tracking: Eyimofe Omotayo and Toheeb Yusuf discussed whether external forms could utilize the tracking architecture, noting that tracking works seamlessly with supported form builders like WordPress Forms and Fluent Forms, where form subjects help differentiate tracking links (00:47:25). Eyimofe Omotayo noted that user experience on the dashboard needs to be smooth so users can easily hook up their forms without coding (00:50:22).
+* Inventory Tracking and Automatic Reduction: Toheeb Yusuf and Eyimofe Omotayo confirmed that inventory tracking is connected to delivery statuses, ensuring that once a delivery is marked as delivered, inventory levels are automatically and accurately reduced (00:58:47).
+* Inventory Variants and Tracking: Toheeb Yusuf raised concerns regarding inventory variants for products with multiple sizes, such as XL and XXL, noting that variants must be properly visible in the customer management tab and inventory tracking. Eyimofe Omotayo assisted with screen sharing and refreshing the system to review how variant selections appear on the platform (01:00:06). Toheeb Yusuf requested that variant inventory counts be clearly displayed so they can track stock levels accurately (01:02:00).
+  
+
+* Order Management Line Items: Toheeb Yusuf demonstrated adding order line items in the orders tab, selecting products such as a postpartum belt, smart tablet, and vacuum sealer, while ensuring sales prices and cost prices are visible. Eyimofe Omotayo followed along as Toheeb Yusuf reviewed the interface for editing orders and adding products (01:02:00). Toheeb Yusuf noted that these order line items and pricing metrics need to be properly configured by the developer (01:03:54).
+* Automated Failed Delivery Expense Trigger: Toheeb Yusuf proposed automating failed delivery expenses so that updating an order status to "fail delivery" automatically triggers an entry into the expense log (01:03:54). Toheeb Yusuf explained that this feature should generate a pop-up to record the money lost on failed delivery fees and costs instantly. Eyimofe Omotayo and Toheeb Yusuf agreed on the need to calculate and record delivery failures to accurately track operational losses (01:05:51).
+* Dashboard Location Filters and State Analytics: Toheeb Yusuf discussed dashboard metrics and location delivery rates, instructing Eyimofe Omotayo to remove the outside Lagos timber map and enable filtering by location (01:09:16). Toheeb Yusuf pointed out that the dashboard should display top states, noting an example where only Abia appeared instead of top states like Lagos and Abia. Eyimofe Omotayo and Toheeb Yusuf examined how order statuses and agent locations are displayed, with Toheeb Yusuf emphasizing that order numbers and status filters need to look cleaner and more intuitive (01:10:42).
+* System Architecture and Core Business Logic: Toheeb Yusuf outlined the foundational architecture of the system during a technical review, specifying that the warehouse functions as a central agent holding stock without performing delivery. Toheeb Yusuf detailed that stock transfers require valid reasons for audit trails, negative stock values must be prevented, and gross profit must be calculated as sales minus cost of goods and delivery. Additionally, Toheeb Yusuf clarified that ad spend is distributed evenly, external contractual delivery partners are paid via delivery fees, remittance discrepancies are operational expenses, and attendance tracking is optional (01:14:37).
+* Next Steps and Audit Trails: Toheeb Yusuf reviewed the required to-dos, including tracking order sources and UTM links, re-recording advertising expenses against specific sources, and creating stock alerts via system settings thresholds (01:17:20). Toheeb Yusuf noted that a comprehensive audit trail must be developed for inventory movements, while Eyimofe Omotayo confirmed the current status of existing inventory movement histories and order advancement features (01:18:32).
+  
+
+* Loss Panel Dashboard Widget: Toheeb Yusuf and Eyimofe Omotayo discussed building a loss panel widget to display financial losses from failed deliveries and advertising costs (01:19:52). Toheeb Yusuf provided the exact mathematical formulas for hypothetical losses, stating that the cost of failed delivery orders equals the total number of undelivered orders multiplied by the platform Cost Per Acquisition, and the product sales loss equals undelivered orders multiplied by the average sales price. Toheeb Yusuf sent these formulas to Eyimofe Omotayo via WhatsApp, clarifying that this panel represents a hypothetical loss of potential revenue rather than a direct deduction from expenses (01:23:44) (01:27:03).
+  
+
+* Payroll Structure Configuration: Toheeb Yusuf directed that payroll configurations, including fixed salaries, commissions, and performance bonuses, must be movable into the general system settings area (01:30:23). Eyimofe Omotayo and Toheeb Yusuf agreed that organizing staff settings under a centralized organization settings menu will streamline staff management (01:31:32).
+* Consolidated Remittance Grouping: Toheeb Yusuf instructed that multiple daily deliveries for a single external agent must be consolidated into a single remittance line per day rather than generating multiple separate lines (01:31:32). Eyimofe Omotayo inquired about the remittance frequency, and Toheeb Yusuf confirmed that remittances occur daily, citing an example where an agent remitted 360,000 Naira for multiple deliveries. Toheeb Yusuf emphasized that combining these into one remittance line will simplify tracking agent balances (01:33:43).
+* Payment Receiver Tracking Flags: Toheeb Yusuf confirmed the implementation of tracking flags on orders to indicate who received the payment, distinguishing between company accounts, prepaid orders, and specific external agents who collected cash. Eyimofe Omotayo and Toheeb Yusuf verified that if an order is prepaid or handled via a company account, it does not generate an agent remittance line, whereas agent-collected payments correctly assign the debt to the respective agent (01:34:57).
+* Accounting View and Profit and Loss Summary: Toheeb Yusuf discussed implementing an accounting view to provide a consolidated money view that pulls income from delivered orders and wallets while categorizing expenses. Toheeb Yusuf stated that this system must provide a simplified profit and loss summary across all subbrands, and Eyimofe Omotayo noted that this functionality resides under the finance section (01:37:07).
+* Remittance History and Agent Management: Toheeb Yusuf specified that remittance history must be included within the agent management section, allowing users to view transaction logs and edit details for external delivery partners. Eyimofe Omotayo checked the interface while Toheeb Yusuf confirmed that users need clear visibility into when agents have remitted funds (01:40:24).
+* Staff Login Mechanism and Role Assignment: Toheeb Yusuf addressed the staff login mechanism, requiring a system for staff members to access their assigned roles and features (01:40:24). Eyimofe Omotayo explained that roles and permissions can be managed by creating specific user roles, and Toheeb Yusuf raised questions about handling staff with single or multiple roles and managers (01:41:43). Toheeb Yusuf noted that a guide should be created for business owners to ensure proper user setup and role selection (01:43:27).
+* Removal of Attendance, Strikes, and Star Features: Toheeb Yusuf proposed scraping out the attendance, strikes, stars, and leave features from the main system, deciding that they are unnecessary for general staff use and should be managed externally or on a separate HR dashboard. Eyimofe Omotayo listened as Toheeb Yusuf made the final decision to remove these four modules to keep the business focus narrow and streamlined (01:44:38).
+* Delivery Analytics and Waybill Workflow: Toheeb Yusuf and Eyimofe Omotayo reviewed delivery analytics, waybills, and inventory stock flows (01:49:08). Toheeb Yusuf explained that when waybills are booked out, products are in transit and should not immediately add to an agent's inventory until marked as picked up or delivered (01:50:36) (01:55:01). Toheeb Yusuf noted that unnecessary filters and buttons, such as the "add new delivery" button and CSR fields, should be removed from the delivery analytics view to clean up the interface and ensure deliveries automatically deduct from warehouse stock (01:52:43). Eyimofe Omotayo acknowledged Toheeb Yusuf's instructions and agreed to guide the fixes accordingly (01:55:01).
+* Stock Reception and Billing Logic: Toheeb Yusuf discussed the inventory process where stock is received into the warehouse and subsequently booked out to agents using FIFO price tracking. Eyimofe Omotayo noted that the warehouse serves as the source of truth (01:57:39). Toheeb Yusuf pointed out that entering quantities like 1,000 pieces is not straightforward and requested a fix, and mentioned that a 2,000 Naira web fee goes immediately to operational expenses. The final consensus was that while test products can be billed out, inventory space and variant transfers still require further refinement (01:59:16).
+* Dashboard Architecture and Delivery Analytics: Toheeb Yusuf identified errors in delivery analytics values, emphasizing that delivery values must be accurately calculated using product costs and broken down by state, location, and agent (02:00:48). Toheeb Yusuf described the dashboard as the core of the product that requires dual views separating advertising from operational expenses to reflect true business health. It was decided that settings must include alert thresholds, color-coded health indicators, and a diagnostic panel for non-delivered orders (02:02:16).
+* Inventory Settings, Audit Trails, and Loss Tracking: Toheeb Yusuf specified that inventory settings require low stock alerts and a comprehensive audit trail to track all stock movements, transfers, and user attributions. Regarding damaged or missing items, Toheeb Yusuf clarified that marking items as damaged or missing requires separate reasoning and reduces agent stock, but does not automatically generate an expense unless explicitly recorded as a loss by staff (02:02:16).
+* Payroll and Commission Structures: Toheeb Yusuf detailed payroll features supporting percentage-of-sales compensation and operating with company-wide administrative views alongside individual earnings views for staff when logging in (02:04:03). Toheeb Yusuf explained that managers record weekly deliveries to match totals, though Customer Relationship Specialists tracking makes manual entries redundant (02:13:52). Commissions activate based on whether staff meet brand-specific Key Performance Indicators. Payroll settings allow editing, marking items as paid, and triggering email notifications (02:14:58).
+  
+
+* Wallet Tracking and Cash Remittance Accounting: Toheeb Yusuf explained wallet cash-on-delivery movements from agents to the business and noted that agent deliveries compile into a single remittance line to calculate expected remittances and record shortfalls (02:04:03). Toheeb Yusuf emphasized that money reaching the company does not mean an order is settled if collected improperly by an agent (02:05:43). Furthermore, Toheeb Yusuf stated that uncollected cash in the remittance line must be separated so it does not prematurely enter profit calculations (02:10:56). Wallet functionality is to be renamed to remittance accounting, and accountants will review and confirm orders and remittances without in-app approvals (02:05:43).
+* Consolidated Profit and Loss Accounting System: Toheeb Yusuf outlined the accounting system as a consolidated money view that pulls income from delivered orders and wallets, and expenses from four categories to show overall business numbers rolled up across sub-brands. Toheeb Yusuf described it as a lighter version of a profit and loss statement, citing examples such as 800 total expenses and gross profit minus 1,000 net profit based on average order value (02:05:43). Balance calculations use warehouse inventory minus delivered items to represent unconverted stock value (02:07:39). The system must support viewing sub-brands, filtering by time frame, and direct invoicing (02:05:43).
+* Staff Management, Delivery Groups, and System Testing: Toheeb Yusuf identified missing developer features for delivery groups, including agent remittance history, partner names, locations, and contacts (02:07:39). Toheeb Yusuf granted Eyimofe Omotayo co-owner access to the HR dashboard with a manager salary set to 400,000 Naira to test account creation and password resets (02:17:31). Eyimofe Omotayo will review the 15 specified items by 3 PM, and Toheeb Yusuf scheduled a follow-up meeting for the next day to address remaining topics, aiming for internal system usage by the end of the month (02:20:33).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+Sep 25, 2026
+Meeting Sep 25, 2026 at 19:46 WAT - Transcript
+00:00:00
+
+
+Toheeb Yusuf: other.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So this meeting is basically us going through what happened in the previous meeting. So So should we start going through them?
+Eyimofe Omotayo: Yeah. First of I, you know, I think I only got three notes between one, two, and five.
+Toheeb Yusuf: I didn't send you three and four.
+Eyimofe Omotayo: I don't think so.
+Toheeb Yusuf: f***. Okay. I I I I thought I did because they were they were actually um 1 2 3 4 5
+Eyimofe Omotayo: It's meeting five, meeting one, meeting two. I'm checking my email now.
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: So, it's just three.
+Toheeb Yusuf: Okay. No problem. So, should we go over starting from one?
+Eyimofe Omotayo: Okay. Can I share my screen?
+Toheeb Yusuf: Um, let me share my screen or Yeah,
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: let me share my screen. Okay. So here we go. So here is meeting one. So basically everything we are addressing in meeting one is what we'll now like look at on the number track itself like you know then we now do
+
+
+
+
+00:01:40
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: some I want you to also note down some things that might not be like in the in my in in what I would say per say in terms of in terms of like um the existing option the existing features this one are like As I'm seeing it, I'm just saying it.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So, um, first off, I like the way the tabs are, you know, open and close,
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: you know. I like the way they are like, yeah, that's pretty good. So, um, let's go to meeting one. So, this is meeting one.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Dashboard filter review feature configuration. Do identified existing dashboard filters as inadequate necessitating a redesign to improve data visibility targeting list that prioritize newest orders at the top. The system must support manual order entry to accommodate diverse user workflows.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: I'm going to I'm just going to go I'm reading them. I'll go to the next step. Those ones that involves the to-do ex exactly.
+
+
+
+
+00:02:54
+
+
+Toheeb Yusuf: So he specified the need for granular offer tracking to accurately differentiate result by price point or platform. This one is a very important thing. I've actually been battling AI on how to I was asking you for explanation on this but I don't think you got me right. Um, performance tracking must shift focus to performance tracking must shift focus on specific um, CRS rather than generic agents. Performance tracking must shift focus on specific CRS. So I will tell you what that means shortly now. But let me Okay, let me just bring this number tracking close to what I'm what I'm doing.
+Eyimofe Omotayo: Thank you.
+Toheeb Yusuf: Right. So, this is it. Overview dashboard. Um, overview dashboard.
+Eyimofe Omotayo: Is a deployment going on?
+Toheeb Yusuf: Oh, there's a deployment going on.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay. Okay. So, um, so, okay. So, um, we need to be able to filter by, um, there was something here that's no longer there. Anyways, um, can you hold on on the deployment like or
+
+
+
+
+00:04:33
+
+
+Eyimofe Omotayo: It should walk. It should walk like I think should
+Toheeb Yusuf: Okay. Okay. So, let me continue. Performance tracking must shift to because that time there was something here that is like agent but it's supposed to be CRS, right? We are supposed to be able to view each CRS, right? So, not not really agents. Then Toy proposed a mandatory state dropdown in other forms to
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: standardize location based delivery rate analysis. And I'm going to I'm going to like I think in the meeting I was asking which should we do? I was asking which should we do particularly because there were two options right? Particularly because two options.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: This one too is one of the confusion. So confusion one this even in my notes I remember this was the first thing I noted confusion one and two but we'll get back to it the system must support other assignments per location for businesses that you did not utilize drop down from beautiful so um immediately the other comes you know some people let me explain what I'm trying to talk about to
+
+
+
+
+00:05:43
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: you let me explain it um So that is actually very easy for you to understand. So some people run out like this. They run out like this and um in this place state is not a drop down. You know normally you are supposed to put your state but some people they will put
+Eyimofe Omotayo: Okay. Yeah. Yeah.
+Toheeb Yusuf: there some people will put um or they put some people put it correctly. But I'm just saying a lot of people will just put what they want which does not which is not a drop
+Eyimofe Omotayo: Everybody.
+Toheeb Yusuf: down. Then there are some people that run ads like this. This is also one of our ads where people have to select specific state. You see that is cannot you cannot choose anything that is outside what you can
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: choose.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So I was asking yeah what this part was talking about this last two points proposing the mandatory drop down either we propose it that everybody that is using our system they have to do that drop down
+
+
+
+
+00:06:52
+
+
+Eyimofe Omotayo: Oh,
+Toheeb Yusuf: like mandatory like we have to mandate it
+Eyimofe Omotayo: it's always be there.
+Toheeb Yusuf: or eh I didn't get
+Eyimofe Omotayo: That will always be there. And the drop down will always be there.
+Toheeb Yusuf: Yes. You know some people would use fluent form,
+Eyimofe Omotayo: Uh-huh.
+Toheeb Yusuf: some people not use our form. Correct. So if they don't use our phone, we cannot mandate that because it's not mandated in those places.
+Eyimofe Omotayo: You're right.
+Toheeb Yusuf: So h so we have two options that I
+Eyimofe Omotayo: You're right.
+Toheeb Yusuf: proposed.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: The system must support other order assignments per location for businesses that you do not that do not utilize drop down forms. That means immediately a order comes. Immediately a order comes bam. Then they will assign it to a state. And then once they assign it to a state, it will now it will now be it will now help us because they need to be able to read location based delivery rate analysis which is something I'm going to jump down to very shortly down here.
+
+
+
+
+00:08:06
+
+
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Do you get do you get what I'm saying?
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So that is the exact purpose of this part. So if there's no drop down in their own then immediately the other comes they have to they have to select it the 36 states and we can even
+Eyimofe Omotayo: Okay. Should this
+Toheeb Yusuf: make it then later as we go outside of Nigeria we can we can add other other countries and other states something like that.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So the system must support other order assignment per location for businesses that you did not utilize drop down form. Boom. Order management system to flag the absence of an upsell feature which should allow adding product to existing orders. Beautiful. So if a customer places an order, I'm I'm going to still come back to it because they are in to-do. So we'll come back to them, right?
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Because if a customer places an order like if they can they can buy more stuff so we should be able to add more stuff to them that they bought more stuff right.
+
+
+
+
+00:09:11
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So that is it. So that is that about that confirmed to confirm the need for automated WhatsApp delivery updates. This one is when we imbued WhatsApp.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Um I because I actually created a separate stuff for the ones that requires um WhatsApp or messaging. I this one is part of it. Then after the entire meeting that we are going to have now I'll now send you a separate document for our messaging architecture. I know you sent me something the other time there was about seven messaging line that you sent me right.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So they still the one that is like that you've not seen. I mean financial metrics making orders as deliver automatically trigger inventory reduction. Definitely um to directed you use update of profit metric to display gross profit rather than net profit. There was a place you put net profit.
+Eyimofe Omotayo: Question.
+Toheeb Yusuf: It's not net profit. It's actually gross profit.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Um I've forgotten where that place is but it should be it should be somewhere in or others.
+
+
+
+
+00:10:22
+
+
+Toheeb Yusuf: In orders you know the difference between gross profit and net profit. Net profit is after after expenses but that one gross profit was before
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: actually.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So, so, so that we don't give people confused figures because anybody that has a slight understanding of accounting will say net profit kept because nothing has been deducted. It is gross profit.
+Eyimofe Omotayo: That's just
+Toheeb Yusuf: So, fail delivery status updates must automatically log associated cost as a loss. If a delivery fails, it must automatically log associated cost as a loss. Project documentation to requested a details feature specification tab. So next steps. So let's go to next steps.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: The developer add offer tracking implement filter to separate art and result by that specific offer to serve as source of truth. This is now the first thing that I think we have to tackle.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So I need I it's you that would probably explain your idea. So I need you to I need you to see what I'm trying to get at because even me um I actually got confused by it.
+
+
+
+
+00:11:41
+
+
+Toheeb Yusuf: So but I believe that with looking at it together I will not get confused. So um you know we can have in a website here in a like let's assume this is one of our business here.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So we can have multiple advertisers running ads for it.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: But that's that's one side to it. We can have each of those advertisers running ads to different offers. We can have each of those advertisers running ads to different platforms. So let me give you exactly what this is all about. So if you come to total here right so for example if you want to check we
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: call it source that was why I was confused as to what to call it I used to call it funnel I used to call it offer we used to call it source but then it is now confusing because all of these things mean different thing because offer already is already in product and storefront because you create your offer there are four different kinds of offers here Then h funnel probably the best way to put it.
+
+
+
+
+00:12:55
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Then source platform that one is already attributed from where the ad is coming from like though that one has not been done yet. We'll still talk about it later but that one is is like um is different. So now how do we do it in such a way that we can know the so in this place let me come to number track. If I come to orders, we can know. Okay. Stop from order. Um I don't know. We can know. Okay. You've changed it. So you've changed it to gross profit.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Yeah, you've changed it. So we can know like um it's not here yet. This is it. Funnel/offer.
+Eyimofe Omotayo: Awesome.
+Toheeb Yusuf: So it's not the it's not offer. You know, we already have offer. So it was just me hallucinating the name that it should be called. So I don't know what you think we can call it because we want to be able to see like the results of different funnels that we are testing.
+
+
+
+
+00:14:05
+
+
+Toheeb Yusuf: For example, if I go into our HR dashboard, let me go into our HR dashboard. You'll see what talking about. Um where is funnel and offer? Okay, it's here. So if you go into our HR dashboard, you will see see the see see if you want to create a target, we say media buyer will say pick a brand, pick a product, then they'll put the funnel or offer.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So 32k funnel or 62k funnel or whatn not. This one is just for us to be able to separate like where the others came from.
+Eyimofe Omotayo: It's coming from Mhm.
+Toheeb Yusuf: Or maybe I'm over complicating it. I think I am. I think I am.
+Eyimofe Omotayo: They calling s
+Toheeb Yusuf: So we we we all we need to be able to track is that somebody can have separate links for the same product.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So this is just the entire idea about it. Somebody can have separate links for the same product in such a way that each link is testing different thing.
+
+
+
+
+00:15:19
+
+
+Toheeb Yusuf: Some of them those link is going is going is coming from is going to Tik Tok.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Some of them those link is going to a particular media buyer. Some of them those link is going to um is going to a particular kind of pricing a particular kind of offer.
+Eyimofe Omotayo: Mhm. Mhm.
+Toheeb Yusuf: So um maybe maybe we can call it source but now you recognize that it's very dicey. So maybe there's an explanation. I was prompting Claude before we met about it.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Maybe go through what I prompted Claude with and see what Claude says. But basically the idea is that we could call it source but of course that is that is just like again we have another source already on the platform because I you've not done that part yet but it's a source like where the ad is coming from in terms of where the other is coming from. This one in terms of the art in terms of the art itself. But this particular other one that we are seeing right it is now dictated by where you want it to be dictate what you want it to be dictated by your own personal dictation of what this is because again one product can have three if in fact if a business knows what they are doing one product should not have one link.
+
+
+
+
+00:16:50
+
+
+Toheeb Yusuf: It's only businesses that do not really that don't test a lot of things that just they just do it as they want that they have one link for one product but one product can have multiple links. Each of those links each of those links um where we each of those links doing like coming from different like different like they are testing different things. One, it could be that different media buyers. Two, it could be um it could be different um different um forail, different offer that they could be testing. It could be different source, different platform. So, I'm thinking we call it I don't know how we could maybe I'm over complicating it. I don't know, but I think I am. But the main reason why I think it seems I though I am is that I don't know if you are actually getting me is because that in my own business right now we have different of them. So for example, if I go to discount offer, you will see that all these numbers will change.
+
+
+
+
+00:18:02
+
+
+Toheeb Yusuf: Can you see that those numbers has changed for our discount offer?
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: The total orders we've gotten so far in September is 520. Right? For our Tik Tok discount, uh, sorry, for our for our afro discount, the total orders goten is 372.
+Eyimofe Omotayo: Oh,
+Toheeb Yusuf: So for our normal, we got zero. But then before now it is normal that we were getting right and when we are recording the
+Eyimofe Omotayo: there.
+Toheeb Yusuf: expenses we record especially the ad spend when we are recording ad spend. So all of this is aimed the purpose of this thing that I'm saying. Thank God this came to my head. The purpose of this part of this equation is to be able to see your results of your ad spend per per test
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: that. So we can call it something something else maybe but it's definitely not offer offer is
+Eyimofe Omotayo: Hey,
+Toheeb Yusuf: already offer is already yes because
+Eyimofe Omotayo: I'll find a picture.
+Toheeb Yusuf: offer is like again you know I said it that is not really about for us I just called it offer because that was the idea that generated it in the first place but again the main idea is that one person can have multiple links for different reasons.
+
+
+
+
+00:19:29
+
+
+Toheeb Yusuf: One of the reasons, let me explain it again, is that they have different price points that they are testing, which is offer,
+Eyimofe Omotayo: I'm one
+Toheeb Yusuf: which is the first thing that made me start this thing. Number two, it could be because they have two media buyers. They want to see the result of the two media buyers separately. Number three, it could be because they are testing um two different platforms. They want to be able to see the result of the platforms separately.
+Eyimofe Omotayo: What the f***?
+Toheeb Yusuf: So what do you think we could call it and how do you think it would work with regards to when they now recording their expense that they will be able to they will be able to measure the result of those ads separately because this one is just ad related actually because all the other expenses let me show you if you notice when I'm recording other when I'm recording the expenses you see that it is only that I'm picking the source for. If you see others, I left it blank because those ones are business expense.
+
+
+
+
+00:20:35
+
+
+Toheeb Yusuf: They are the importance of this is to see our ad results for this particular offer.
+Eyimofe Omotayo: Hey, Um, so How about track ID?
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: Um.
+Toheeb Yusuf: Or or add tracks.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: No, no, not add track source. Um,
+Eyimofe Omotayo: Source truck source
+Toheeb Yusuf: link source. What about that?
+Eyimofe Omotayo: link source.
+Toheeb Yusuf: Or link track or
+Eyimofe Omotayo: Thank you.
+Toheeb Yusuf: funnel. Funnel the way we funnel track though again it's just it's not just about funnel. It could be because they want to track a media buyer or um it could be
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: also because they want to track a platform which will bring me to the fact that they should be able to let me come back to number track which will bring me to the fact that they should be able to um if they come here funnel they should be able to see the platform which is is supposed to now be here that they can they can swipe type it right.
+
+
+
+
+00:22:12
+
+
+Toheeb Yusuf: So but you know that now um if
+Eyimofe Omotayo: What?
+Toheeb Yusuf: we if we now do it call it um so maybe we'll give it four options because again it's like dependent on offer. No I think we I think I'm already over complicating it. I think we have to all these things I said I wish I could have given it to charity in detail I could stop this meeting and extract this notes that we've had so far and give chargity but
+Eyimofe Omotayo: Let me ask. No, no, no. I
+Toheeb Yusuf: okay okay okay is it like written on your phone maybe you copy and paste for me let me give my cla yes let me give my cl
+Eyimofe Omotayo: Okay, one second.
+Toheeb Yusuf: then Let's let's come to a conclusion on it. So that is like the first part because every order has to ask that tag where they are coming from or who that order is meant for or basically how to tag that order because in expenses you have to record them.
+Eyimofe Omotayo: This is the part that concerns it.
+
+
+
+
+00:23:32
+
+
+Eyimofe Omotayo: It's not really like that, but
+Toheeb Yusuf: Okay. So this is why I had prompted charg so far. H sorry clo so So let me so I'm still waiting for yours
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: but what I prompted CL so far I'll probably give CL because all these things I explain to you actually did not give Claude those details. So I'll now give Claude those details.
+Eyimofe Omotayo: Hey.
+Toheeb Yusuf: So this is a real architecture question. You arrive you have three different concepts. The source which is like the platform the funnel test you see you call it test link h a campaign entry point a specific landing page you are testing you said declar this
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: is not product offer or the stuff on is entirely separate because you can have five different funnels testing five different angle for same product each widget only which specific page or angle did they enter through and it could also be platform let me start writing it down the funnel link think you mentioned
+Eyimofe Omotayo: What is this?
+
+
+
+
+00:24:52
+
+
+Toheeb Yusuf: earlier. So we would have an answer now because this is actually straightforward.
+Eyimofe Omotayo: So everything is is dancing around UTM.
+Toheeb Yusuf: What's that?
+Eyimofe Omotayo: It's dancing around UTM.
+Toheeb Yusuf: No,
+Eyimofe Omotayo: So it's
+Toheeb Yusuf: it's actually not UTM. UTM is different. UTM is a completely different thing. Yeah, that's what I want to actually say now. UTM is actually different. UTM is a I will explain it now. Let me not jump there.
+Eyimofe Omotayo: okay.
+Toheeb Yusuf: It could also it could also mean that the media buyer running the ad or even the platform itself. That could be the distinguishing factor for some business having several links. But now the bottleneck is that we can't call it platform just like that because we have the UTM source as a complete different parasa that would track platform. form and source and the importance of this of this link track maybe in our link track we will call himself is to be able to see arts results in specifics for different links they might be testing.
+
+
+
+
+00:27:06
+
+
+Toheeb Yusuf: Eg there are different media buyers or or platform or offer cornel. Yeah, let me put that first. Offer the commercial unit. These are the separate axis. Here's how the M. So every link you create is just a URL with UTM baked inside it. So maybe you see UTM same product, same pattern. So all the alignment your CS is doing the job of all three badly. The system repl. So if the UTM if the UTM are you still with me? So if the UTM link this thing is telling me like the UTM link will actually replace everything. So if the UTM link replaces everything. If the UTM replaces everything that means that
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: UTM was able to identify this the entire thing in different places but
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: UTM cannot identify the media buyer. Okay, let me read and give you this more context. Then in the CRM dashboard,
+Eyimofe Omotayo: What's the media buyer?
+Toheeb Yusuf: did you send me that?
+
+
+
+
+00:28:32
+
+
+Eyimofe Omotayo: Who's the media buyer?
+Toheeb Yusuf: What did you say?
+Eyimofe Omotayo: Who's the media buyer the ad?
+Toheeb Yusuf: Like the person running the ads. Mhm.
+Eyimofe Omotayo: Then you can also add it like so you can add it as part of the um params to of that URL. So each each person each media buyer will have their own would I say buyer ID or media expressing and they will know exactly who who did who did what
+Toheeb Yusuf: And and then they when they want to filter it, how does the filter look like?
+Eyimofe Omotayo: we'll be able to
+Toheeb Yusuf: when they recording the expenses, would they record it separately for each of these each of these you know because that is the main point where they recording the ad expense the ad spend though the ad spend goes straight to the expenses from the media buyers Right.
+Eyimofe Omotayo: Mhm. That expose
+Toheeb Yusuf: So let's put that let's let's hold that dot first. Let me continue. Then in the CRM dashboard you can filter on any of the three independently which convers I need to say now I can see exactly what was on ground.
+
+
+
+
+00:30:55
+
+
+Toheeb Yusuf: Sir, right now your s*** is trying to f***
+Eyimofe Omotayo: But do you know my greatest fear?
+Toheeb Yusuf: What's up?
+Eyimofe Omotayo: My greatest fear might have a lot of features that users might not really use or might not or might not be learned enough to
+Toheeb Yusuf: Mhm.
+Eyimofe Omotayo: use.
+Toheeb Yusuf: Mhm. So we have like um in in the marketing we have something currently doing the beach head most of these things here that I'm like I'm focused on right now especially this part they are what I know people in in this industry do the big boys right the big boys some of them have 10
+Eyimofe Omotayo: What?
+Toheeb Yusuf: media buyers five media buyers two media buyers they track their work separately That one is a fact. So the confusion they always have is tracking each of. So this one in fact one of the reason is that the media buyers I can easily advertise this to media buyers. Media buyers will make sure the people they working for have this because the way they pay media buyers is dependent on the result.
+
+
+
+
+00:32:33
+
+
+Toheeb Yusuf: So everybody can be seeing their results on the go.
+Eyimofe Omotayo: Uhhuh. Uhhuh.
+Toheeb Yusuf: So I actually because it's just because I know that this is how my media buyers now I know how I work with them is the same you have to know what they sometimes they are even unsure if you go on Twitter now I'll tell you to some post shortly is actually the argument we having
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: today buyers are angry that most business owners don't let them know what's going on in the business. They just tell them what they want to hear and then they just whether they eat target or not, they just pay them what they want to pay them. But then they have to know they have to know if they eating target, right? So that's why this is actually important.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Yeah, of course there are some there are some features I've seen that they are not like necess necessitated yet like that.
+Eyimofe Omotayo: Huh?
+Toheeb Yusuf: Um I didn't on some of them. I would I would still see it.
+
+
+
+
+00:33:27
+
+
+Toheeb Yusuf: It's part of actually the note. Um, let me just finish this thought. It is your orers that need to be t. You can't spend revenue. Where's the root cause revenue?
+Eyimofe Omotayo: What if media buyers got emails? Uh, okay. This this what you've done so far. Like this what you brought in so far.
+Toheeb Yusuf: Yeah. Um just give me a sec. Let me finish this thought my read. Just give me a sec. We talk the media by our service. That part has not been iron that finished. Let's let me just like my head not go and explode. So the tags can be used on all orders and expense. So it's like when you are recording your expense, you pick the tag, right?
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Are you are you are you let me finish this but I'm getting some ideas. So when you record an ad expense, you tag it.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: you tag it.
+
+
+
+
+00:34:54
+
+
+Toheeb Yusuf: When an order comes, it is auto tagged. Then the system can match them. And then when you're recording your expense, you now tag it. When an expense goes, even if it's a media buyer that is recording their ad spent,
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: it probably gets auto tagged because when they are recording their ad spend, you know the funnel is there.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Yeah, the funnel is there. The funnel like for example, see this is Jesse's ad. So the funnel is part of what they So maybe it's auto tags, you know. So I'm not yet done though, but this this looks like it makes sense. So let's see the final thing that this thing says. This will be the final answer actually because um that was my like bottleneck in the meeting when I was having that call and I was recording it. I was consistently saying I wanted you to help me think about it because that night I was even tired. So I wasn't thinking about it well.
+
+
+
+
+00:37:25
+
+
+Eyimofe Omotayo: Sorry.
+Toheeb Yusuf: So, so it says you are not overthinking. You've actually spotted the real problem. It's a good catch. Let me separate the two things you've tangled because once they are separate the confusion that the core insight you are the link and the UTM are two different mechanisms and you are right they shouldn't be forced to mean the same thing. Let me name them properly. The link is the tracking. The UTM is just one way to carry the tax on that link. Here's the thing you are cycling. You want a generic unique concept that can distribute whatever you decide matters media buyer or platform or angle or offer because different businesses slice it differently. You don't want to add code it to platform because platform is already handled by UTM source. Yes, you're absolutely right. So don't call it platform, call it what it is. Tracking link is just a unique link you create and you decide what it represent. It could represent a media buyer, a platform, an angle, a test.
+
+
+
+
+00:38:28
+
+
+Toheeb Yusuf: The system doesn't care what it means to you. It just needs each link to be unique. So model is simpl and UTM. So you create a tracking link. It has a name. You choose flusher.
+Eyimofe Omotayo: Let me hear first.
+Toheeb Yusuf: The system generate a unique link. Whatever comes with that link gets tapped with that link identity on the
+Eyimofe Omotayo: It's true.
+Toheeb Yusuf: order. The single linked name can encode whatever you want. the buyer, the platform and the offer because you name it. The system just records it. Now, does it have to be UTM? No. Here's the honest answer. UTM is only the technical for passing tags blah blah blah. Layer one, your internal tracking. You create carries an ID. This 100% yours. So, how do the other expense actually get the tab?
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: We are
+Eyimofe Omotayo: Yeah. Okay. Okay. So, I'm going to be adding it as manual expenses, but we're also pointing it to the add link like the media link the link basically.
+
+
+
+
+00:40:12
+
+
+Toheeb Yusuf: One question to log when you create the do you want to attach structure tax to it? Let me clarify this for it. The tax could actually be all three standing differently. I mean a media buyer could have multiple 2K and because for example to could be running to multiple links.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Media can have angle A. Yes. Link one, link two, link three, link four. Exactly. Exactly. So each link carried. So this is what the confusion. A link is one of those things. So a tracking link a unique combination of all three are stamped on every other conflict and every expense can can point at it. So is it possible to have how does this now work?
+Eyimofe Omotayo: You construct this.
+Toheeb Yusuf: Okay. So it's is not the it's not really the source. It's just like um so let me go to number track. Where is number track? So it's just like um when we come to this dashboard, right?
+
+
+
+
+00:42:11
+
+
+Toheeb Yusuf: I will come to this funnels. So it can now be like you want to be able to see the let me show you quick buy. This quick buy will put it into perspective for you. Quick buy has this exact confusion. Uh yes my because other platforms other this thing they have just one most of them have just one funnel one this thing. So that's why you are seeing one thing but let me show you quick buy. So quick buy has Tik Tok. Oh okay. Peta has changed it. Peta has okay I'm on fish stand. Ah, no wonder S flusher. So, so now let me point out what I'm trying to say. So, when I'm recording expense, let's look at the last, let's look at July for example.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: You see that for sync flusher I recorded for normal that is normal offer.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: That one is now based on offer. I recorded for discount. Then I recorded for Tik Tok.
+
+
+
+
+00:43:27
+
+
+Toheeb Yusuf: Then I still have Tik Tok discount. It's just that I did not separate my media buyers into this place.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: I added my media buyers into like so me and my media buyers ran discount. I just put it discount. You understand?
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Instead of you know instead of having to separate it. But look at this particular check this screenshot out. Check your DM.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: What did you notice them? Those are ad sperm. Can you see that they if the the different aspects of each person I write them separately?
+Eyimofe Omotayo: Afro confirm please.
+Toheeb Yusuf: Can you see afro Ty Afro mic afro Afro Tik Tok confirm TY confirm TY PP MH So so you see that
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: I now mix them up. So the thing is that now we don't want number track. We don't want people to be putting it into paper like this. We want them to be able to come here and say, "Okay, let's say it's by media buyer. Maybe this is the forail that they Right.
+
+
+
+
+00:44:59
+
+
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Maybe this is the funnel. I was talking about agent earlier. Thank you for doing this. But let me not jump there. So maybe this is the funnel. Like though I'm not seen any funnel to pick here. But let's say this is it. This is where we put it. And then they click it. Then they can now say they want to now filter it by let's say
+Eyimofe Omotayo: Yeah, it is combinations
+Toheeb Yusuf: uh the yes maybe a
+Eyimofe Omotayo: after Tik Tok.
+Toheeb Yusuf: maybe media buyer platform and funnel you can call it funnel I don't want us
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: to call it offer I don't want to call it offer yeah so you can call
+Eyimofe Omotayo: All
+Toheeb Yusuf: it media buyer platformer because those are the three things Actually those are the three proportions that you can have you except you you can be running the ads yourself.
+Eyimofe Omotayo: right.
+Toheeb Yusuf: Yeah, you're a media buyer at that point. Platform you cannot run outside of Facebook.
+
+
+
+
+00:45:57
+
+
+Toheeb Yusuf: You cannot run outside platform. Which platform do you run the ads? Then funnel which funnel is it? So then so maybe maybe the others now has all three. How do we now make the the others have all three? That's now the major problem. Then when the orers have all three then um like let's say this order now this order now is this um mo so it will now be media buyer to um platform Facebook um funnel maybe anything we call funnel right A or funnel B
+Eyimofe Omotayo: Yeah. Mhm.
+Toheeb Yusuf: right is all there so if we now filter to we can see all of now say okay we want to now see to on Tik Tok we'll see if to run on Tik Tok or not so I think that's what we call it then we can call it um what did these people say we should call it I don't know because could have multiple this so yes we could call
+Eyimofe Omotayo: trucking link.
+Toheeb Yusuf: it tracking link media buyer platform and yeah tracking link.
+
+
+
+
+00:47:25
+
+
+Toheeb Yusuf: But my question will be if they using um WP form and they're not using number track domain to run the ads how do how do we know how do we get that or maybe we say in order for you to get this you have to use number track architecture
+Eyimofe Omotayo: How do we make sure
+Toheeb Yusuf: h yeah so maybe we can though yeah we can say that maybe in order for you to be able to track this this though you can track other stuff but in order for you to be able to to have this tracking link to be able to know each of your links what they represent you have to use number track architecture at least for
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: now maybe but I don't know I'm just thinking out loud
+Eyimofe Omotayo: That was specific. I'm not sure there's a way to exactly make your work yet.
+Toheeb Yusuf: What do you say?
+Eyimofe Omotayo: I'm not sure there's a way to exactly make it work for external forms. There is number trucks. Um
+Toheeb Yusuf: Okay.
+
+
+
+
+00:49:18
+
+
+Eyimofe Omotayo: or or wait, does each tracking link have it own can can each tracking link have it own form?
+Toheeb Yusuf: Yes. Now it's different form now.
+Eyimofe Omotayo: then and then it's easy to track.
+Toheeb Yusuf: It's different form.
+Eyimofe Omotayo: What we can do is
+Toheeb Yusuf: Um let me show you why is different from let me give you a sample side look at look at
+Eyimofe Omotayo: okay.
+Toheeb Yusuf: this architecture so you see that all of them you see say the the difference you
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: see that we have form so is different form it can never be the same
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: form it can never be the same form is za
+Eyimofe Omotayo: Is it too? Yeah.
+Toheeb Yusuf: actually different form because we have each of those form the way we did it with this email with this our sheet. So each of those form the way we did it is that each of those form in their subject we put something there. Yeah. So that's how we did it. So if it's different from easy so
+
+
+
+
+00:50:22
+
+
+Eyimofe Omotayo: Yes.
+Toheeb Yusuf: sharp. So that means um would they use can they use it from any form or it has to be number track form
+Eyimofe Omotayo: Um they can use it from the forms that we support which is uh WP form and fluent form.
+Toheeb Yusuf: form.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Oh wow. Oh wow. Sharp. So you just Okay.
+Eyimofe Omotayo: is that we also we also have to work on our user experience because I don't think your
+Toheeb Yusuf: So
+Eyimofe Omotayo: board is smooth because it's only me that might really understand how to hook it up.
+Toheeb Yusuf: Yeah,
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: No, so far it's not so they not going to code anything. Now,
+Eyimofe Omotayo: They're not anything.
+Toheeb Yusuf: so far is just to press button here and there. The thing is that it's not everybody that like you said not everybody it's not all features that people Okay, like for example now this one is just like is is like a marketing. Let me do it like a marketer.
+
+
+
+
+00:51:21
+
+
+Toheeb Yusuf: It's not every feature that is in a software that you use. For example, this our laptop that this my laptop not I was showing how to do one
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: daddy right this phone that I buy like 1.6 6 million now I'm
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: using it to do normal stuff. I've not used it to do any extraordinary stuff. So most people would want the basics but the but the marketing that we are marketing is like this thing exist exist this thing exist they'll be like oh wow they have
+Eyimofe Omotayo: Yeah. Stop.
+Toheeb Yusuf: this this has some of them may not use it right some of them
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: will not but some of them the big boys will use it and my goal actually the way I want to market this stuff is to give it to the big boys if the big boys are satisfied with it they have a lot of followers that their followers give they will be the one to advertise it to their followers. Their followers will now use it.
+
+
+
+
+00:52:16
+
+
+Toheeb Yusuf: If they now like it, their followers will now start spreading the word. That's like my goal with it.
+Eyimofe Omotayo: Huh?
+Toheeb Yusuf: So that's why I'm building it like for the big boys. I want to build it for big business, not big businesses, but at least e-commerce on delivery people that are doing at least a billion in revenue by building for those kind of people. They have these people they have multiple trust me they have multiple products multiple offers multiple media buyers they they don't have one thing this one I just showed you that you see like how many forms like how many forms 16 forms this one they are like if you they show you their site they have like 50 forms so those are the ones that because those ones have each media buyer to their own form they don't they will because they want to be able to track you guys work.
+Eyimofe Omotayo: I am.
+Toheeb Yusuf: That's the essence. They want to know which media buyer is performing. So if they can boot you or not like I booted one of our staffs.
+
+
+
+
+00:53:19
+
+
+Toheeb Yusuf: I was unhappy about it but it was necessary. So So you will cook it up and and show me tracking link. Okay. So that makes sense. That makes sense. That makes sense. So we can push forward now.
+Eyimofe Omotayo: Yeah. Oh, now it's clear.
+Toheeb Yusuf: So implement to separate ad result by their specific offers source of tools for performance tracking. Yes. Then there will now be a place to now check everything generally. For example, we can check to result generally. We can check to result Tik Tok wise. You can check to result. Um maybe this funnel wise you know something like that. So the developer.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So for the funnel, what do we classify that as? What name should we give that funnel? What will be the architect of the funnel? Maybe the offer. Yes, the offer. So platform,
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: media buyer and funnel. So the funnel is like the offer now,
+
+
+
+
+00:54:21
+
+
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: but we don't I don't want to call it offer.
+Eyimofe Omotayo: You called it um You call it You call it funny.
+Toheeb Yusuf: Soh yeah
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: 32k for nail for example for our product now we have the different offer we have this 2k offer we have the 32k offer so we called it we can call it 32k or forail 2k for now as the case may be okay so um so I'll be waiting on that so that is what number one so should Should I start writing number one to do, number two to do now separately?
+Eyimofe Omotayo: Okay. Okay. I'm never thinking of running. No. No. No.
+Toheeb Yusuf: Uh, okay. So, what should we do? So, should we run down meeting one and two then you run it?
+Eyimofe Omotayo: This one. Okay.
+Toheeb Yusuf: Maybe I then we run meeting two and three then we run it like that instead of doing it one one.
+Eyimofe Omotayo: Okay. Okay. Let's do one answer.
+Toheeb Yusuf: Okay.
+
+
+
+
+00:55:19
+
+
+Toheeb Yusuf: So um let me write number one now the funnel thing. So if I say the funnel thing you will understand but okay number two. So update CRS tracking configure performance metrics to enable tracking by individual sales representative. Enable accurate assessment of sales record per person. Configure performance metric Configure performance metric to enable tracking by individual sales. Enable accurate assessment of sales record per person. Let me check my notes. I don't lose track of waiting at the top for gross profit. Talked about that one. Funnial offer source. We've talked about that one.
+Eyimofe Omotayo: It's a picture.
+Toheeb Yusuf: State delivery rate correction source of truth. Okay. I think this is this place this filter where it is agent is actually supposed
+Eyimofe Omotayo: agents.
+Toheeb Yusuf: to be CRS.
+Eyimofe Omotayo: No agents.
+Toheeb Yusuf: Yes.
+Eyimofe Omotayo: Okay. So, let me just construct this.
+Toheeb Yusuf: Can we continue?
+Eyimofe Omotayo: Give us boss.
+Toheeb Yusuf: Okay. The developer add state dropdown integrate a mandatory dropdown for states within all customer order forms.
+
+
+
+
+00:57:25
+
+
+Eyimofe Omotayo: I think that's been done.
+Toheeb Yusuf: Yes. Okay. for number track forms.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: H okay. Okay. Then um let me check. Then um for the people that are not using our track, they will what did you even say? They will those ones they would attribute it to a to a state immediately. They will attribute all their orders to a state. Right?
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So let's go back to order. So they can if I'm editing this order. So can I attribute it to a state? I cannot though.
+Eyimofe Omotayo: I mean,
+Toheeb Yusuf: So um the location is even missing all of them.
+Eyimofe Omotayo: attribute that's location. Okay. Okay. Oh,
+Toheeb Yusuf: Yeah.
+Eyimofe Omotayo: okay.
+Toheeb Yusuf: Yeah. So, um it should be states. It should be state. So, um then there is something I wanted to So, so that's it. So, we should be able to edit all orders to a particular state especially when it is not dropped down that we use.
+
+
+
+
+00:58:47
+
+
+Toheeb Yusuf: So, the is the job of the CRS to edit it. But anybody that does not want the CRS to do too much work should just use the drop down Abby.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay. So we can so developer improve dashboard redesign the dashboard layout and filters to improve usability. Ensure the newest display display at the top of the list. This has been done by okay.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Enable manual entry. Create a function allow manual input of orders providing all options
+Eyimofe Omotayo: Open. Yeah,
+Toheeb Yusuf: okay okay
+Eyimofe Omotayo: this one has a state drop down.
+Toheeb Yusuf: yeah it does it does link inventory tracking connect the markers delivers status to automatic inventory reduction. Yeah, it wasn't working but when I did that ensure the inventory update accurately upon.
+Eyimofe Omotayo: Yeah, we're shooting now.
+Toheeb Yusuf: So once delivery is made, you should be deducting I think we we had a lot of agreement already on the inventory. I think I I I was saying it in that meeting.
+Eyimofe Omotayo: Mhm.
+
+
+
+
+01:00:06
+
+
+Toheeb Yusuf: I like the I can't remember. Yeah, this is it. And it has varants here for product that has variant because I know
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: that was some of my concerns too.
+Eyimofe Omotayo: Oh. because using the same account I'm coming
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: has loaded but I think it's also using the same account at the same time. Let me stop.
+Toheeb Yusuf: Oh, okay. Okay.
+Eyimofe Omotayo: It should be working good now.
+Toheeb Yusuf: Let me refresh.
+Eyimofe Omotayo: Interesting. Loaded very fast.
+Toheeb Yusuf: Maybe my next work.
+Eyimofe Omotayo: my screen. So you see something.
+Toheeb Yusuf: Okay. Yes. Share your screen. I don't have to stop sharing.
+Eyimofe Omotayo: So you can see it's refresh.
+Toheeb Yusuf: Yes.
+Eyimofe Omotayo: comes in. Comes in. They're both in. Let me refresh again.
+Toheeb Yusuf: postpartum belt. What? Where is the XL and XL XL and XXL?
+Eyimofe Omotayo: So it's usually a product you see.
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: Severance. Just exhale.
+
+
+
+
+01:02:00
+
+
+Eyimofe Omotayo: Exhale.
+Toheeb Yusuf: Okay. How many does each have you know that that that's that's the so that we can see the variant.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: I think that was part of what I I I I talked about. Should I put it as number two?
+Eyimofe Omotayo: Okay. Yeah.
+Toheeb Yusuf: Yeah. inventory variance. Okay. So, let's continue. Should we continue?
+Eyimofe Omotayo: Yeah. Yeah. I'm still sharing
+Toheeb Yusuf: So the developer link inventory tracking Yeah. Yeah. That's what I just did. Implement offsel feature. Add the option to include offset product to existing or reflect this update automatically within the customer management tab. So it should reflect automatically for the customer.
+Eyimofe Omotayo: Yeah, crazy. I don't think so.
+Toheeb Yusuf: Um let's go to orders bar.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Let me just add an order for to um so let's say the product is ah why can't I select product okay he bought three one postpartum belt he bought two he has not paid now so we don't need to with all of this so let me just create orders so let's say to now bought where is the where's the edit button
+
+
+
+
+01:03:54
+
+
+Eyimofe Omotayo: I think we even need to move it to the start. I don't
+Toheeb Yusuf: Yeah. Yeah. So he added a product. So where is the
+Eyimofe Omotayo: see products.
+Toheeb Yusuf: okay okay? So we can put the two add line.
+Eyimofe Omotayo: Yeah, understand.
+Toheeb Yusuf: Okay. Two to two to um what did I even add now?
+Eyimofe Omotayo: Oh, so that mean
+Toheeb Yusuf: Yeah. So I'm like if I add smart tablet too but let me Okay, let me add Yeah, I should show the name.
+Eyimofe Omotayo: Yeah, I've heard of him. Just
+Toheeb Yusuf: So I add vacuum sealer too and then the sales price and we should be able to see the sales price and the cost price, right?
+Eyimofe Omotayo: Yeah. Sure. Okay.
+Toheeb Yusuf: So I should put it as number three or you are doing it.
+Eyimofe Omotayo: Hey, you can you can wait.
+Toheeb Yusuf: Okay. Um so let's continue the automate failed delivery expense trigger an automatic entry
+Eyimofe Omotayo: All right.
+Toheeb Yusuf: into the expense log when another is maxed we ensure the cost of the fail delivery.
+
+
+
+
+01:05:51
+
+
+Toheeb Yusuf: So basically uh M fail delivery. It's loading.
+Eyimofe Omotayo: I'm What does
+Toheeb Yusuf: So if I mark fail delivery fail delivery, you know, we pay fail delivery fee. It should make a popup. I think that was what I actually called it. It should make a popup.
+Eyimofe Omotayo: I think the field delivery
+Toheeb Yusuf: You think what?
+Eyimofe Omotayo: feeling?
+Toheeb Yusuf: H. Okay. You seen it on your end?
+Eyimofe Omotayo: say pop.
+Toheeb Yusuf: What' you say?
+Eyimofe Omotayo: He said you should see.
+Toheeb Yusuf: Yeah. Yeah. Failed delivery should um like we should be able to record the money we lost on the failed delivery now
+Eyimofe Omotayo: So send patrons.
+Toheeb Yusuf: which is yeah failed delivery should trigger an automatic entry to the expense log when another status is updated to fail. Ensure the cost of the fa delivery is calculated and recorded instantly.
+Eyimofe Omotayo: Nice.
+Toheeb Yusuf: delivery.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So can we continue?
+Eyimofe Omotayo: Yeah, boss.
+Toheeb Yusuf: Okay. F delivery. So add specification tab.
+
+
+
+
+01:09:16
+
+
+Toheeb Yusuf: Create a dedicated session in the future document outlining specific instructions for the developer to clear details for requested adjustments. Okay. No no this one. No, this one Gemini do Gemini Gemini correct profit metric upgrade the profit to show gross. Yes. So let's go to full notes. Um next steps are already here. Dashboard other tabs details. So we'll go over details. We will not go over the full transcriptto but go over details. So dashboard filters and funnel configuration this is number one say we are doing it already. Um offer and platform source tracking. Yes this is this is um this is number two for this is the part of number one dashboard metrics and location delivery rate.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: You should be able to filter by location, the delivery rate of each location. So, let me go back to the homepage actually.
+Eyimofe Omotayo: refresh.
+Toheeb Yusuf: Okay. Should be able to go back to the homepage. So, we should be able to filter by location here.
+
+
+
+
+01:10:42
+
+
+Toheeb Yusuf: So, um overall then, okay, I told you to remove that outside Lagos timber map.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Thank you. So I think that time I was building it specifically for us to get. So um so we can't filter by location here. It's not here.
+Eyimofe Omotayo: Usually agents, you know, agents are usually solid location.
+Toheeb Yusuf: No, you know two agents can handle one location.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So that's why we should be able to there's a place we will check agent stuff. is still is still there. There's a place we check agent stuff, but this place is like for location.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yes, you should be able to filter by location and see top states. Maybe the top two states shows here overall and maybe the top two states as this place showed only Abia.
+Eyimofe Omotayo: Oops.
+Toheeb Yusuf: So maybe you can see Abia and Lagos. Lagos and Abby are the top two states. But what is this thing? This thing that is here.
+Eyimofe Omotayo: So new confirmed um okay so there are um what do you call it two new orders one confirmed order um by Okay.
+
+
+
+
+01:11:59
+
+
+Eyimofe Omotayo: and two from a unspecified what you're losing.
+Toheeb Yusuf: Oh, okay. What you losing like they not yet delivered.
+Eyimofe Omotayo: So yeah by agent.
+Toheeb Yusuf: So,
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: okay. So, it should not be like this.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: It should actually look different. It should be a filter that we can open and we can see the numbers just like the way we can see this one in I don't know if you get me the way it looks it looks
+Eyimofe Omotayo: Yeah. Okay. What's
+Toheeb Yusuf: somehow I don't know how to explain it but there should be a way for this to look better yeah what you are losing looking
+Eyimofe Omotayo: done? Okay.
+Toheeb Yusuf: better let me put it as number times I deliver it by location too. Okay. So um so let's continue state drop downs versus agent based. So they should be able to assign it. They should be able they should have assigned it. Are you with me? They should be able to assign the states.
+
+
+
+
+01:13:20
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Now for those that are not using drop down,
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: you should be able to assign the states. Other stab data feed and gross profit calculation including customer name should be to ensure the profit metric is displayed. Yeah. Other staff functionality to detailed the detailed required functionalities including manual entry tapping any sorting this noted that marking another should drop inventory from the connecting users. This one is for WhatsApp missing features for upsell. Yeah. Then this is the transcript of the call like 15 pages basically everything I was saying.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So I don't know if there's anything that is missing here. I don't know but I don't think so.
+Eyimofe Omotayo: See?
+Toheeb Yusuf: I don't think so. But I don't think there is anything that I said that is not there. So let's go to number two.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So let me remove this. This is number two. Yes.
+Eyimofe Omotayo: So
+Toheeb Yusuf: So number two quick note missing context and objective.
+
+
+
+
+01:14:37
+
+
+Toheeb Yusuf: This section marks the third attempt at the meeting. So I actually started the meeting. I had issues that night. I did not record it. It was it was it was frustrating.
+Eyimofe Omotayo: beautiful. Sure.
+Toheeb Yusuf: The primary objective is aligning current developer implementation with established feature specification. Inventory system architecture. The man. House functions as a central agent that own stocks. Yes. Stock transfer require valid reason to maintain accurate audit trails. Edit shows if the system prevent negative stock value. Sorry. Edit shows a follow a source of truth model where correction has scaled up date across all related records. Gross profit is defined as sales minus the cost of goods and delivery. Ad spend is allocated and as an even spend across or others rather than exact trace attribution. The payroll engine supports flexible configurations include fixed salary commission and performance. Manager bonuses are contingent on meeting specific team performance ratios. Remittance agent are external contractual delivery agents.
+
+
+
+
+01:15:55
+
+
+Toheeb Yusuf: Contractual believe. Let me just read it up before we go to the things that actually to-dos. Um, okay. Agents are external contractual delivery partners distin from internal staff and receive payment via delivery fees rather than salary. Discreed versus expected remittance are recorded as operational expense rather than silent subtractions. Accounter review and confirm remittance in the business logic without requiring direct approval within the app. The warehouse is categorized as a special debt entity that holds stock but does not perform delivery. The system provide lightweight profit and loss summary distr from double entry bookkeeping blah blah blah. Dashboard tracks cashbased metrics while the accounting model focused on revenue profit and expense categorization. staff and attendance. The role architecture utilize a union pattern allowing individual staff members to hold multiple roles across brands. Attendance tracking is an optional model that business may disable entirely if unnecessary. Stripe systems and leaderboard should match the existing HR dashboard aesthetics. Yes, that one we talk about it too. Other assignment and delivery analytics.
+
+
+
+
+01:17:20
+
+
+Toheeb Yusuf: Other assignment includes round robin or percentage rate distribution. Delivery analytics tracks performance rates categorized by agent location and product. Delivered balance is calculated as total wave use minus delivered orders. Negative balance are acceptable for operations predating the system. Next steps. Are you with me?
+Eyimofe Omotayo: Yeah, boss.
+Toheeb Yusuf: So these next steps are the I think they are the to do directly to do the developer track order source capture region for in transaction and categorize it in the funnel. track order source.
+Eyimofe Omotayo: This is the other is the number one of the previous page.
+Toheeb Yusuf: So is the number one for the previous stage.
+Eyimofe Omotayo: Yeah, the one with the unique orders like um UTM and other stuff tracking
+Toheeb Yusuf: Uh okay,
+Eyimofe Omotayo: link.
+Toheeb Yusuf: maybe I just mentioned it in passing because I thought the first one did not record. Re record ad expense. Track advertising expenditure against specific source list. I think it's still that part one.
+Eyimofe Omotayo: which is what? Yeah.
+Toheeb Yusuf: Okay.
+
+
+
+
+01:18:32
+
+
+Toheeb Yusuf: Okay. Update profit calculation. Change net profit to display gross profit by subtracting. Yes. Cost of goods deliver.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Automate fail delivery. Trigger an automatic. Am I reading two or one?
+Eyimofe Omotayo: Is it
+Toheeb Yusuf: Trigger an automatic expense recording when another status is updated to fail delivery. Show inventory variants. These are the things we discussed earlier. Create stock alerts.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Build a system settings to configure threshold notifications for low inventory levels. Yes. So there's our system settings is currently non-existent actually. So number four, number seven, system settings for stock alert. So basically there should be a threshold for it.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Numbers this one create audit tree develop a comprehensive law for all stock movements. I think it already exists.
+Eyimofe Omotayo: Yeah. Yeah. You know when Mhm.
+Toheeb Yusuf: And if another status changes, is it there? Other status change an audit.
+Eyimofe Omotayo: Yeah changes now
+
+
+
+
+01:19:52
+
+
+Toheeb Yusuf: Yes. The audit for it.
+Eyimofe Omotayo: is in let me see I think it's an inventory
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: movement history.
+Toheeb Yusuf: H this is for product movement not other status change.
+Eyimofe Omotayo: Okay. Uh others
+Toheeb Yusuf: Other status change is it necessary? I don't think so. Is it?
+Eyimofe Omotayo: I know we have mark delivered advanced to packed uh mark fail delivery.
+Toheeb Yusuf: Mhm.
+Eyimofe Omotayo: That mark fail delivery is failing at the moment. Well M delivered and advanced to packed currently. You can even advance to dispatch advanced
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: delivered.
+Toheeb Yusuf: Yeah. Yeah. So I'm just talking about this particular thing that I mentioned other status changes is not the audit trade for that one is not there. Okay.
+Eyimofe Omotayo: Oh,
+Toheeb Yusuf: So ad loss panel display dashboard showing financial losses from fail deliveries and advertising. cost. I think this is like the biggest bottleneck. So, is that what you try to do here on this dashboard?
+
+
+
+
+01:21:12
+
+
+Eyimofe Omotayo: yeah. Okay.
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: Oh, this one is Now this one is what what potential profit that is not coming in. What like potential profit that can still be taken back.
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: How is it
+Toheeb Yusuf: Okay. So, this place is we we need a loss panel to display a dashboard widget showing financial loss from failed deliveries and advertising cost. So, all the deliveries that failed. There's a way that I calculated the advertising cost. It's a pity is is probably not here.
+Eyimofe Omotayo: Can you check expenses under finance?
+Toheeb Yusuf: Huh?
+Eyimofe Omotayo: Can you check expenses?
+Toheeb Yusuf: Okay. Maybe he's there
+Eyimofe Omotayo: Yeah, I'm seeing that we have logistic and delivery fees.
+Toheeb Yusuf: expenses.
+Eyimofe Omotayo: You can also see advertising, agent cost, building, marketing, operational. So, you can add an expense
+Toheeb Yusuf: Yeah. Yeah. Yeah. I know. This is not expense yet. This is something different. You know, this one is something different. It's not the expense.
+
+
+
+
+01:22:41
+
+
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yeah. It's not the expense. So it's um that day when I was doing it, I'll try and see my transcript but I'll just put this pending but I will come back to it when I check my transcript. But that day I actually calculated like how to I calculated how to do it right. I calculated it. I remember I even had back and forth. If I came to this, it should be here. No, no, it's not here. Okay, it should be here. It is going to be here. So, look at this this space because I remember that I was asking myself that how do I how do we calculate this that you know how much are you losing for each fail delivery? There's a way to calculate the formula. There's a formula for it. So, I wanted to give you the formula. Then I lost track. I lost I don't know why it's not in this note but I know I calculated it.
+
+
+
+
+01:23:44
+
+
+Toheeb Yusuf: Let this cloud tab let it load. Analyze your profit margins.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yeah this this is it. I want to know profit per deliver before opex. No, no, this is not it.
+Eyimofe Omotayo: Of
+Toheeb Yusuf: August 6. No, I did it September. Yes. So, if we spend 1 million on our generated 100 orders, what's the platform CPA and RI CPA? If we have 70% delivery rate, then what is the cost of the failed deliver order? This is it. Cost of failed deliver order is total number of orders not delivered times platform CPA.
+Eyimofe Omotayo: course.
+Toheeb Yusuf: So that's how much we wasted on failed delivery on cancelled orders. Failed orders and cancelled orders. So total number of orders that are not delivered times how much we spent to acquire them. That's the total cost of money that was lost.
+Eyimofe Omotayo: Are you sure this can like
+Toheeb Yusuf: Mhm. I'm sending to you on WhatsApp now.
+Eyimofe Omotayo: Okay. Okay.
+Toheeb Yusuf: So a widget is a loss panel that just tells us how much we've lost but it's not really a loss that will be deducted from our expenses.
+
+
+
+
+01:25:39
+
+
+Toheeb Yusuf: Now you know.
+Eyimofe Omotayo: No, please come in.
+Toheeb Yusuf: So this loss is just how much we theoretically would have gained more if we delivered the orders. How much we lost.
+Eyimofe Omotayo: Oh,
+Toheeb Yusuf: So this loss is not part of the loss that deducted from expenses because you know like overall we've already known our profit even though we lost 30 orders that did not get delivered. We've known our profit by delivered order already and we have it.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So this loss is not really a loss. is just um an hypothetical loss of
+Eyimofe Omotayo: Excuse
+Toheeb Yusuf: what if this is if we spend if we have spent 700k on ad and we got the same number of orders delivered will not have lost this 300k it's just a way of telling you
+Eyimofe Omotayo: me.
+Toheeb Yusuf: that you know this is how much you you are losing right you know so then let's add to it let's also add the product part of it. How much hypothetical loss a product would have made? So let's add a product.
+
+
+
+
+01:27:03
+
+
+Toheeb Yusuf: Let's add a product part to it. So it will just it's just an hypothetical loss. It's not really a loss. But what it means is that if they had delivered more, they would have made more. It's just a way of showing you. You get what I'm saying? Just a way of showing them, you know. So if you have 33 orders and the cost of good is 10,000 NRA, it will be 300,000 NRA in product, right? That if No, not cost of goods. It should be just hold on give me a second. Shouldn't it be the product sales price? So, just hold on. Give me a moment. So the sales they missed is the total number of orders that failed multiply by their average order value or multiply by their average sales price.
+Eyimofe Omotayo: Okay. Can you copy this?
+Toheeb Yusuf: Yes. Yes. I'll just send it to you. Um, why is our chat like this?
+Eyimofe Omotayo: Okay.
+
+
+
+
+01:28:54
+
+
+Toheeb Yusuf: Is that 30? You know, it's just number of deliveries they did not have. It's not 30.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: And the 10,000 is like platform CP just an example you know.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay.
+Eyimofe Omotayo: So it's like every let's say 1 million to acquire 200 people. Yeah. Cost per acquisition is
+Toheeb Yusuf: If you use 2 million to acquire what?
+Eyimofe Omotayo: use 1 million to acquire 200 people or let's say 2,000 people. Yeah, that's a 500.
+Toheeb Yusuf: Cost perition is 500.
+Eyimofe Omotayo: So that means if um if if we now try to deliver orders to those people, yeah, the amount loss and let's say it's failed. Let's say we deliver to we have F is 20. Yeah, it will be 20 times.
+Toheeb Yusuf: 20 inside 2000. I bet give me that result. But yeah, I get Yeah. 20 * 500.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Yes.
+Eyimofe Omotayo: So, thank you
+Toheeb Yusuf: So for the cost of for cost of for product side it will be it will be total undelivered multiply by uh multiply by what?
+
+
+
+
+01:30:23
+
+
+Toheeb Yusuf: average sales price you
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: get multiply by average sales price.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So if the average sales price is is 30,000 and they can filter this by product actually and if they have multiple product it should do their average automatic if you just do the mass of their automatic average and put it together. If they f by product they should see it by product too. So it's just a widget that shows their hypothetical loss of what they are losing out on.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So loss panel. Yeah. Thank god I had that this thing. I don't know that means this um this um this
+Eyimofe Omotayo: Awesome.
+Toheeb Yusuf: Gemini note is flawed because I actually made sure that I did that mass. I thought it would have brought it here. I did the mass. Anyways,
+Eyimofe Omotayo: No.
+Toheeb Yusuf: configure pay structure. Move payroll configurations into the general system settings area. Yes. Um, it should be here. Organization settings.
+
+
+
+
+01:31:32
+
+
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Most like the first settings I talked about. Um, for stock alerts, it should be here. Payroll settings should be here. We should be able to set it here.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yeah. Um, yeah, we should be able to set it here in
+Eyimofe Omotayo: So,
+Toheeb Yusuf: settings because that's where the staffs comes now.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Configure payroll structure in settings. And I think you got it already, but yeah, you have to be able to configure it in settings.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So that's um number nine. Number 10, consolidate remittance group. Consolidate remittance group multiple daily deliveries for a single agent into a single remittance line. You know what that is? So it's in this place um remittance. So if one agent has multiple deliveries, it should be in one line for that day.
+Eyimofe Omotayo: You can click this drop down. No, on the um list itself um um where the
+Toheeb Yusuf: Which one?
+Eyimofe Omotayo: John do. You can see there.
+
+
+
+
+01:33:43
+
+
+Toheeb Yusuf: Okay. So we can we should be able to see it inside one line here and we can we can you know we can can accept we can when it's remitted we will say it has been remitted and so multiple delivery should be inside one line. I think this has been done I don't know but multiple delivery should be inside one line you know this is just one delivery. So let's assume we do this person does multiple deliveries today. So all their money if it's 500,000 everything will be here not that 30k 30k here 30k there eh
+Eyimofe Omotayo: every day or per month or how does it work?
+Toheeb Yusuf: every day every day remittance is every day
+Eyimofe Omotayo: Okay. Yeah.
+Toheeb Yusuf: remittance is every day so I'm just saying it because one agent for example um yesterday our agent remitted 360,000 so that's about probably 10 deliveries or seven deliveries. So imagine we now have seven seven is too much. So let's just have it in one place because it's one is one time that they remit it
+
+
+
+
+01:34:57
+
+
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: one remittance line.
+Eyimofe Omotayo: I like
+Toheeb Yusuf: Okay. flag payment receiver. Add a tracking flag to indicate if a payment was received by a company or agent. Yes, every order should have a tracking flag. Who received the money? Who received the money? Is Has it been done?
+Eyimofe Omotayo: Yeah, I think Yeah. Yeah. Okay, I'm going
+Toheeb Yusuf: who received the money. So we'll find out here in orders. Okay. Who received the money? Okay. So if it is company account,
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: it will not have remittance line. Abby uh like yeah I'm just asking so that I'm sure that we are
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: like on the same page if it is yeah because that's how if it is company or if it is prepaid it does not have a remittance prepaid means the customer has paid before delivery company receiving the money means that there's nobody that is remitting anything the money is already with us but if it is agent that collected it and then we pick the agent who collected it.
+
+
+
+
+01:37:07
+
+
+Toheeb Yusuf: That agent is the one owing
+Eyimofe Omotayo: Yeah, it doesn't show any remittance.
+Toheeb Yusuf: when you put company number.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay. Okay. Okay. Developer that has been done. So developer implement accounting view the consolidated money view pulling income from delivered orders and wallet while categorizing expense. Ensure the system provides a profit and loss summary across all brand.
+Eyimofe Omotayo: Okay, that's on the finance.
+Toheeb Yusuf: Mhm. I'm trying to understand what I mean here. I think we'll be able to do one and two today because I don't know when you finish implementing this for us to go three and four but um
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: finance accounting so I don't know what I was saying here though I'll go through
+Eyimofe Omotayo: like a profit and loss somewhere.
+Toheeb Yusuf: my let me let me go through my notes let me go through my notes Correction
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: of source of truth. Delivery analytics. Explain delivery analytics. Hold on. Fail delivery not working.
+
+
+
+
+01:38:51
+
+
+Toheeb Yusuf: We've talked about that. Who received the money? We talked about that. Product variants. We've talked about that. That has not been done. But way straight to expense. We fee straight to expense. We've not talked about that yet. We fee web rates incorrect. We've not talked about that. Settings. Low stock. We've talked about that but it's not yet done. Audit tree. We've talked about that but it's not yet done. Um choosing dashboard settings pay structure wallet ro how to staff get their login talked about. Okay. Okay, this one is not something we've talked about. So, I have to be careful because I don't remember it very well. Geminina is not perfect. Implement accounting view. The consolidated money view. The consolidated money view pulling income from and wallet while categorizing
+Eyimofe Omotayo: deliverers and wallets, right?
+Toheeb Yusuf: expenses ensure the system provide a profit and lo summary across subbrands.
+
+
+
+
+01:40:24
+
+
+Toheeb Yusuf: I still can't remember I will go through the the this thing to remember the transcript add remittance history include remittance history within the agent
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: management session. Allow users to edit agent details. View transaction logs for external delivery partners. So we can check the history of agents. Yes. Right.
+Eyimofe Omotayo: Can I click on this? Um, yeah, this chat. I'm checking my head. Okay.
+Toheeb Yusuf: Is it there remittance history? So we can open it in remittance.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay. Is that what I'm saying here? Add remittance history. Include remittance history within the agent management. Allow users to edit and view transaction. Okay. Basically I want to view remittance history. So the thing is actually when they say agent has rem I want to be able to see it. Okay. That's exactly it.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So then develop a login mechanism create a login system for staff members to assign their roles assess their assigned roles.
+
+
+
+
+01:41:43
+
+
+Eyimofe Omotayo: assess the assigned roles and features.
+Toheeb Yusuf: Yes. So how did we do that?
+Eyimofe Omotayo: I think that was rules and permissions.
+Toheeb Yusuf: Mhm.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So, how do they how do they get access this stuff.
+Eyimofe Omotayo: Yeah. All rules. You can create other stuff manager or anything anything you want.
+Toheeb Yusuf: This this primary row cannot change between these three.
+Eyimofe Omotayo: You can add more. You add more.
+Toheeb Yusuf: H what if there are not two rows they have only one road
+Eyimofe Omotayo: You not just select or something. Okay.
+Toheeb Yusuf: I can't just talk
+Eyimofe Omotayo: Okay. Okay. Okay, we're back.
+Toheeb Yusuf: so I can't select the role Right. Then um manager. Yes. Depending on who their manager is. So how do they log in?
+Eyimofe Omotayo: Um,
+Toheeb Yusuf: So staff login. Let me write it down.
+Eyimofe Omotayo: Okay,
+Toheeb Yusuf: 11. Staff login.
+Eyimofe Omotayo: it's about to be a lonely night.
+Toheeb Yusuf: Yeah, staff login.
+
+
+
+
+01:43:27
+
+
+Toheeb Yusuf: Um I would before we close this call because that's why I said we do one and two. I'll now show you um two things in the this
+Eyimofe Omotayo: Okay, guys.
+Toheeb Yusuf: uh develop login mechanism. Create a login system for members guide staff addition. Create a guide for business owners on how to how to for ensure the guide cover selection and user setup. Yeah. Implement other assignment. View the other assignment details. Enable to filter and exclude.
+Eyimofe Omotayo: Round robbing
+Toheeb Yusuf: You can exclude specific and staff role
+Eyimofe Omotayo: stuff.
+Toheeb Yusuf: assignments. Okay. So that's um that's all with this. Let me go to full notes. Um summary technical review. Jesus. Technical review session covering developer requirement and inventory management system adjustment. Developer tabs and metrics. Developer need dedicated staff for corrections and missing features. Dashboard filters must accurately calculate. We've talked about this. Inventory and delivery tracking. Staff payroll and accounting system.
+
+
+
+
+01:44:38
+
+
+Toheeb Yusuf: Align decisions. Wallet renaming to remittance standard. Wallet components must be explicitly designated and labelled as remittance, not wallets. I think that has been done.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Yeah. Yeah. Remittance, not wallet. Because it's not really a wallet. Um accounting model design standard must lighter profit and loss version attendance model self marking attendance. So let's do something here.
+Eyimofe Omotayo: Yes.
+Toheeb Yusuf: Let's do something. Scrap out this attendance and strikes and stars.
+Eyimofe Omotayo: Sorry.
+Toheeb Yusuf: Yes.
+Eyimofe Omotayo: Okay. One second.
+Toheeb Yusuf: But leave. Hm.
+Eyimofe Omotayo: Hello.
+Toheeb Yusuf: I'm trying to I was make I was trying to make decision that day. Yeah. But I want you to advise me you know payroll of course very important. So people ask us they do meeting and all they do meeting you know so they want to sometimes they might want to do stand up are you available but they on WhatsApp so it's not
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: necessary strikes is not necessary stars is is is my business broa leave If somebody wants to be on leave, they'll just be on leave.
+
+
+
+
+01:46:10
+
+
+Toheeb Yusuf: So remove these four things. Attendance strike unnecessary. Honestly, unnecessary. Yeah. Is a my business thing. It's not people's thing.
+Eyimofe Omotayo: narrow. Mhm.
+Toheeb Yusuf: So remove stars, strikes, attendance, and leave. So I'll be managing that one on the HR dashboard.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: for anybody that needs it. I can give it as a bonus that I can help you to I'll give you access to but no be not before number track I be maybe in the future remove it please remove it thank
+Eyimofe Omotayo: Mhm. Okay.
+Toheeb Yusuf: you sorry for wasting your time
+Eyimofe Omotayo: No.
+Toheeb Yusuf: so attendance removing so we are removing attendance strikes stars and leave other assign assignment method. Yes. Separation on start next test. We've gone over it. Details. Yes. So these are now the details. So are we good to go?
+Eyimofe Omotayo: Yeah. Yeah. All right.
+Toheeb Yusuf: Okay. So I'm coming. So details.
+
+
+
+
+01:47:35
+
+
+Toheeb Yusuf: So we are going to go over we are going to go over this meeting purpose and developer tab requirements dashboard filters and profit address problem with bogus dashboard filters mislabelled profit metrics noting that calculation must use gross profit calculated rather than net profit specify that other sources must track customer product funnel. talked about this state delivery location to discuss tracking delivery states by location. Nothing debate over whether noting debate over whether vendors use mandatory state down or rely on agent location. Toy recommended making state selection automatic for all users on number track to prevent agent confusion and ensure accurate filing. order management and fail delivery expense automation to you so highlighted missing features in order management such as adding up sales editing delivered orders moving other stats and automatically popping up an expense t record losses when an order change to fail delivery to emphasize that inventory stock must drop when another mark has delivered rather than when it initially pleased and sales profit must be calculated as sales minus cost of goods sold minus delivery customer relationship management and cash reception flags to stated that delivered orders must automatically flow customers into the customer relationship management database without manual upload right we'll get there I think that's three and four right so explain that this flag can be used
+
+
+
+
+01:49:08
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: as agent collecting flag on behalf of the company which has as the routes which orders into wallet or create agent remittance line. Yes, we've talked about this inventory structure and warehouse management. Toy detailed inventory model where stock is owned by agent rather than a central pool through a warehouse acting as a central agent that holds stocks without delivery. Toy explained that stock grid screen the place as rows and warehouses columns allow users to track between agents and record whatever stock reception web integration and delivery analytics. So this place um before I read that part out this place on number track here um
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: um web views. Yeah that's where web views is sent out.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So we don't need this add new delivery button now because delivered goes into it goes is for delivery analytics.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So we don't need it here then. Ab is already here. I believe it's not here. Okay. It's not in delivery analytics. So it is it is now summary by month.
+
+
+
+
+01:50:36
+
+
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So what do we need? What don't we need over here? CSR. is actually a manager is actually a CRS not CSR but so this is CRS not CSR then name of who product name
+Eyimofe Omotayo: agents.
+Toheeb Yusuf: status then you know we
+Eyimofe Omotayo: The name is 40. Okay.
+Toheeb Yusuf: said if we bill out there's something missing here and I don't think I even said it in the transmitting. If we wait bill out, it should be in transit until received before it can join the agent stock of stock stock
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: in transit for web views
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: and yes so I think that status but most of these things I don't know what they are doing here especially the date then the month then this agent maybe all agents here CRS I don't know CRS not CSR but I don't know what they are doing
+Eyimofe Omotayo: Thank you.
+Toheeb Yusuf: there and ascending order
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So, so my my question is that now if you want to bill out, so this web and delivered now like it should delivered and web should not I don't believe it should be showing here.
+
+
+
+
+01:52:43
+
+
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: I believe it should be here. This is the summary though.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: But I believe regardless this this particular part the way it is like the deliveries and web views I believe it should be here. Then what is not supposed to be here. So delivery delivery by location you can filter by agent by product by status. Yes I think this is it. This is it way build delivered. I see all the same thing I'm seeing here.
+Eyimofe Omotayo: It is actually
+Toheeb Yusuf: We build two but the way build is showing only one. It's not showing both and it's not showing the product.
+Eyimofe Omotayo: cool.
+Toheeb Yusuf: So fixing the delivery analytics.
+Eyimofe Omotayo: Okay. Somebody's broke.
+Toheeb Yusuf: So you should So you should not be on web dab.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Then web statistic by state total quantity ABI has had the most way and um average day since way which is fine. full year monthly summary full year we can look at it month by month but I believe that this one to this all these parts all these part should be in this place and some things are not necessary in this filter and then when a way bill is made I think it's only way bill that should be here the way bill and delivery deduction should be in this analytics and then when a way bill is made when a way bill is made right then this ad delivery is not needed
+
+
+
+
+01:55:01
+
+
+Toheeb Yusuf: Abby Abby no I'm asking actually
+Eyimofe Omotayo: Okay. No, no, I get you. I get you. Like I'm Yeah.
+Toheeb Yusuf: yeah so it's not needed because the delivery is already autoop populating and minusing yeah so um for way if we b way out the product is in transit then when it gets there we should be able to just see it over here maybe change to picked up. Then once you pick pick up, you just add to the agent's inventory. But when he's in transit, it is not yet with the agent. So it should not be adding to their inventory.
+Eyimofe Omotayo: Okay,
+Toheeb Yusuf: Yeah. Then um so
+Eyimofe Omotayo: boss. What you just said? Yeah, I don't know if I will pick everything, but like I would really like to guide how or fix it.
+Toheeb Yusuf: you really like what
+Eyimofe Omotayo: Like I would really like um how you explained it. Like for instance, we're taking out this thing the button while also uh we're not allowing it to reflect in their inventory until it is completely delivered.
+
+
+
+
+01:56:02
+
+
+Toheeb Yusuf: Mhm.
+Eyimofe Omotayo: Then um what should show in the delivery analytics? Yeah, I think you said yeah also said the filters are not necessarily there. They're not necessarily there.
+Toheeb Yusuf: like some of them like status because it's only way that supposed to be here. Okay, maybe that status cannot be done in transit and deliver. We can now say we want to see the in transit I say deliver picked up rather picked up.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: You get it? bar that's status has to be there then month not necessary name of agent name of product okay is necessary CSR is not necessary CSR is not necessary agent is okay dates and month one should go one should status should be picked picked up and in transit name of product CSR not necessary add new delivery button not necessary because it doesn't do anything so the only other thing now is that when we book way out it deducts from warehouse I'm asking.
+Eyimofe Omotayo: Yes.
+Toheeb Yusuf: Okay. So then if you want to put inventory, if you want to put um product on warehouse, we go to products and go to products
+
+
+
+
+01:57:39
+
+
+Eyimofe Omotayo: Yeah. Copy it.
+Toheeb Yusuf: and um where is that place again? This place we we receive stock. Abby.
+Eyimofe Omotayo: Yeah. And Mhm.
+Toheeb Yusuf: So once once you receive stock it goes to warehouse. Is that true?
+Eyimofe Omotayo: Yes.
+Toheeb Yusuf: So once we book out it now goes to the agent from the warehouse. Okay.
+Eyimofe Omotayo: He's also FIFO like he's also tracking the
+Toheeb Yusuf: So what it also what?
+Eyimofe Omotayo: prices of when he came to the warehouse.
+Toheeb Yusuf: Okay. So okay. Okay. So what if we did not receive stock and we will bill out? What will happen?
+Eyimofe Omotayo: It's a trying arrow.
+Toheeb Yusuf: H let me see which product does not have inventory from here. Nothing.
+Eyimofe Omotayo: All of them have. You can add a new product and just not receive stuff.
+Toheeb Yusuf: Okay. Test product. Let me just leave all of this thing because it's it's not is part of later discussion.
+Eyimofe Omotayo: I think your internet is lagging on the app.
+
+
+
+
+01:59:16
+
+
+Toheeb Yusuf: Yeah, it's dodgy. So, test products. So, let's pop with bill out. Yes,
+Eyimofe Omotayo: But
+Toheeb Yusuf: I have to I think I have to refresh.
+Eyimofe Omotayo: I think maybe because it's empty. Interesting. Okay, that's test product.
+Toheeb Yusuf: And this thing I said that the numbers is is not straightforward to to write 1,000 pieces First.
+Eyimofe Omotayo: M
+Toheeb Yusuf: So like help fix it. The numbers are not straightforward to write
+Eyimofe Omotayo: beautiful.
+Toheeb Yusuf: cost 2,000 error web fee. So this web fee goes to operational expense immediately.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So this is the post web batch. It went through. It went through. It was web build. Then if I go to inventory test
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: product, John do has 1,000. So we don't have to we don't have to receive stock. I think receiving stock is when you want to have in your warehouse.
+Eyimofe Omotayo: Well, it's supposed to read from the because the warehouse is the source of truth.
+
+
+
+
+02:00:48
+
+
+Toheeb Yusuf: But that's not what happened right now.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: So because you might you might not have in your what if we don't have in our warehouse right and um we want to so the way I think the way it is
+Eyimofe Omotayo: Check.
+Toheeb Yusuf: here is if you transfer stock you can transfer stock from warehouse to dond do a product with varants that's where problem comes in So that varian and transfer this inventory space still needs some final touching.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yeah, we still need some final touching. So let's continue here.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Stock reception with bid integration and delivery analysis. Du described how stock is received into the warehouse with specified units and now this can be posted to delivery agents and deliveries flowing into expenses. Yes, you pointed out errors in delivery analytics values noting that delivery value must be correctly calculated based on product cost and delivery statistics should break down by state, location and agent. This is very important actually. It's part of the things that I still mentioned.
+
+
+
+
+02:02:16
+
+
+Toheeb Yusuf: Inventory settings and audit to align the need for inventory settings such as low stock alert, full audit trade for tracking all stock movement, transfers and user attribution. to clarify that to clarify that marking items as damage or missing required separate reasoning and reduces agent stock as judgment call but does not automatically pop up an expense until deliberately recorded as loss. Yeah, because if you remove product it automatically removes from your money essentially. So it's not really a loss until except you want to do it by yourself. Dash. board architecture and dual view metrics to res described the dashboard as the brain of the product requiring dual views that show advertising in isolation alongside a business level view incorporating all operational expenses to show true business health to noted that settings must allow alert threshold colorcoded health indicators what you are losing panel like I talked about to diagnose non-d delivered orders all of these things is like to make it for people to see important numbers right that's why I said the other dashboard like I wasn't I didn't understand why I was saying it can it it should actually look different that and that panel should be added spend allocation and field order loss calculation to explain that ad spend is an allocation rather than a direct trace providing a mathematical formula An example we're spending 1 million blah blah blah we've talked about this staff pay structures and commission
+
+
+
+
+02:04:03
+
+
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: to detailed this payroll supporting fixes percentage of sale blah blah blah pay salary operates without giving in settings why payroll should companywide an individual life earnings so payroll yeah this is this is something I think you did not understand yes So payroll over here should show like companies
+Eyimofe Omotayo: Yeah,
+Toheeb Yusuf: company then individual when they log into of course they can see their own not other people's own but then the thing is now that
+Eyimofe Omotayo: heat.
+Toheeb Yusuf: um the settings should be made in settings not from here.
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: Yeah it should be made in settings not from here. I'll still show something like I said before we we push on wallet tracking and
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: agent rem explained that wallet cash on delivery movement collection from agent to business receipts alllighting gaps between revenue and actual cash in Bisu stated that agent deliveries compile to a single remittance line to calculate expected remittance record shortfalls mark payments with others paid directly to company accounts bypassing the remittance process. Yes, I think we we finished this cash remittance and fail delivery to receive discuss cash remittance um procedures where agents stand until cash is remitted and marked by a manager.
+
+
+
+
+02:05:43
+
+
+Toheeb Yusuf: Pay deliveries are routed to operational expenses rather than requiring approval inside the app because no cash was collected. Let clarify that an accountant reviews and confirms orders and remittance in the business on charge but does not approve inside the app. Furthermore, Toybisu noted that money reaching the company does not automatically mean another is settled if collected improperly by an agent and instructed developer to rename wallet functionality to remittance accounting and consolidated profit. I think this is where I had issues. So let me let me bring that issue out first before we read that part. Implement accounting build the consolidated money view system provides a profit loss.
+Eyimofe Omotayo: Is it?
+Toheeb Yusuf: So let's see what this place has to say. So outlined the accounting system as a consolidated money view pulling income from delivered orders and wallets and expense from four categories to show overall business numbers rolled up across subbrands. Toybisu described it that subbrand we'll talk about what it means later. I don't think we've actually addressed it to describe it as a lighter version of profit and loss statement rather than heavy kini citing examples such as 800 total expense golf profit minus 1,000 net profit based on average order value profit margins do receive confirm features including view sub filing time frame filing d capabilities and direct invoicing.
+
+
+
+
+02:07:39
+
+
+Toheeb Yusuf: So basically what we have to go through the transcript from 1 hour 16 minutes to 1 hour 19 minutes.
+Eyimofe Omotayo: chat.
+Toheeb Yusuf: Yeah, we have to go through the transcript from 1 hour 15 minutes to 1 hour 19 minutes. Staff management. Do explain staff management's functionality for handling payroll within settings. I talked about that. And organizing staff members. I talked about that. Staff features specification and attendance modules. scrapped. It's only login that is here. Tracking strikes and other assignment. The only thing important here is other assignments. Delivery group distinguish between internal staff and external delivery group identify a critical missing feature for the developer to add agent remittance history along with agent partner names, locations, contacts and all. Okay. which has been added. Delivery analytics and performance metric. I explained that delivery analytics performance rate by agent and product to measure how well stock converts to delivery. to be so detailed that the balance calculation has way B minus deliver representing stock value left that has not yet converted money motion.
+
+
+
+
+02:08:59
+
+
+Toheeb Yusuf: I noted that negative balance are normal if operations began before using the system. confirmed that all delivery analytics operate on live data. Other headache and phase one completion to address other as an untreated section of the project concluding phase one I stated that phase two will continue in different section or location basically like so let's read the transcript from 1 hour 15 minutes to 1 hour 19 minutes it's a lot
+Eyimofe Omotayo: Okay. Well, there
+Toheeb Yusuf: all right So, so um accounting, what was it? Accounting. What's there in accounting? Accounting is a consolidated money view. It pulls money from delivered and wallet accounts expense from the four categories, categorizes them and shows the business overall number rolled up across brand drillable into a single brand. It is deliberately it is deliberately the lighter version. So this is players create consolidated profit and loss business income categorized expense by category and net profit net profit as expense of percentage of revenue. So breakdown so expense breakdown operational I just ramble that let me just read it inside.
+
+
+
+
+02:10:56
+
+
+Toheeb Yusuf: So I think what I was saying is we need to be able to separate the cash that has not been collected in the remittance line because it's not yet our money now. It's not yet collected. Abby, I think that's what I was saying here.
+Eyimofe Omotayo: Just All right.
+Toheeb Yusuf: I think that's what I was saying here separating the ones that has been collected and the one that has not been collected. So it does not enter profit but once it's collected it enters profit in that accounting profit
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: and loss but not on dashboard.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: I don't know if you get what I'm saying.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: Okay. So um that's it with number two actually. So there are 14 things that I jot down to be done. Let me remove number two. So we have number three and four. They're actually not deep. Number four is deeper. Then number five is probably deepest. So I think we should do one and two corrections first before we jump to before we do three and four.
+
+
+
+
+02:12:36
+
+
+Eyimofe Omotayo: Okay,
+Toheeb Yusuf: Yeah, because it's a lot on its own. So I don't know if you take note of all the 14 things or I should snap what I wrote down.
+Eyimofe Omotayo: you can stop. I have a list. I have some things here, but my is more like to
+Toheeb Yusuf: You don't always see my writing.
+Eyimofe Omotayo: Okay,
+Toheeb Yusuf: don't really see my writing but okay yeah
+Eyimofe Omotayo: but this time I was with you when you're writing it.
+Toheeb Yusuf: true true so um so let me show payrolls based on I think payroll is the only thing that is based on from staff this thing the other casting and the staff this thing as well so let me show you from the HR dashboard the repository so look see how the payroll looks
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: So staff management. So the deliveries currently we record the deliveries manually over here but you know we will not have to record it. Are are are you with me?
+Eyimofe Omotayo: Yes, I'm with you.
+Toheeb Yusuf: So, so let me show you like for example now see this see this um let me show you confirm.
+
+
+
+
+02:13:52
+
+
+Toheeb Yusuf: So see this confirm now. So at the end of the month not at the end of the month every week every week actually the managers would not from here from what happened in real life they will come and record it here in this week.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: You see it's every week every week seven.
+Eyimofe Omotayo: Yeah. Yeah.
+Toheeb Yusuf: So they record it here every week. Then at the end of the month, what we now check is that what is now here in the total, it must match. It must match.
+Eyimofe Omotayo: What's that?
+Toheeb Yusuf: It must match what is here. It must match it. That's the indication that um what they did is correct. But now that we have CRS each of the CRS on the number track we don't need we don't need a space for this because we can already see it in their in their deliveries right we can already see then we can see if they meet targets
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: for when they don't meet targets this thing should be there is in is in the gate setting KPI which is part of the payroll What?
+
+
+
+
+02:14:58
+
+
+Toheeb Yusuf: thing that I was saying we should be able to set KPI for
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: each for each business for each um brand. So once you set KPI like this then you see if they see this person did not eat this person eat it eat it eat almost all of them eat this person did not eat. Now the next thing to now look at here is payroll. So based on what they eat their commission will not activate. If they don't eat their commission does not activate but if they eat their commission activate. Can you see it?
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So their commission just activates and this is how the payroll looks. If they log in now if I log in as a CRS their this thing will now show their own payroll. It's not showing all this everybody own. So this is how the payroll now looks. Um then we now have that and we should be able to edit it because in some cases we can edit it and then at the end of the month we mark it paid and they get an email.
+
+
+
+
+02:16:07
+
+
+Eyimofe Omotayo: That makes friends.
+Toheeb Yusuf: So that's how the payroll works, right? That's how the payroll works. The stars and strikes are also here, right? But I don't want to go into that. We are not doing that. Then once you get to other stuff, they also here, right?
+Eyimofe Omotayo: Plus,
+Toheeb Yusuf: Then let me show you.
+Eyimofe Omotayo: you know what I'm thinking? Yeah.
+Toheeb Yusuf: Yeah.
+Eyimofe Omotayo: You can tell you can tell your AI to summarize the feature payroll in your own in in um HR dashboard. Yeah. So that mean
+Toheeb Yusuf: Now that repository you collected it is there MD it's updated every anything I do updates is here MD file
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: um um docs is in docs HR dashboard Turn off. Yeah, everything is here.
+Eyimofe Omotayo: Okay. Okay.
+Toheeb Yusuf: Everything is there. And I can give you a login right now
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: to be able to login and and see it.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Should I give you?
+
+
+
+
+02:17:31
+
+
+Eyimofe Omotayo: Yes, please.
+Toheeb Yusuf: Okay. So this is how it works for staff, right? So you can actually like request access and I'll grant you access. But let me just invite you. So let me just invite you aim email. Let me call your email.
+Eyimofe Omotayo: Yeah, you can just paste that guy.
+Toheeb Yusuf: Okay, I can paste this guy. So, I'm going to give you um CO access to give you access to everything.
+Eyimofe Omotayo: Okay. Yeah.
+Toheeb Yusuf: Then manager have a manager now salary make I put you for 400k. Okay. So, try set up your account. Let me confirm it's working before I I zoom.
+Eyimofe Omotayo: Okay. Voila.
+Toheeb Yusuf: It would have added your payroll like this. our payroll automatically. Yes. Now if I go to payroll now and refresh, you will see your name there. How much did I put? Is it 400k?
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: You see? So it would it would have increased our payroll.
+
+
+
+
+02:19:10
+
+
+Toheeb Yusuf: If I mark you paid, you get the email.
+Eyimofe Omotayo: What password did you put for me?
+Toheeb Yusuf: No, you would have to set your password. I didn't set it. I is asking you to
+Eyimofe Omotayo: Yes. It's g it's taking me to the dashboard. It's not taking me to where I was set.
+Toheeb Yusuf: set it. So, did you maybe like do forgotten password or something?
+Eyimofe Omotayo: Okay.
+Toheeb Yusuf: I think that thing was dice the last time. I think it's part of what I wanted to fix the forgotten password. I don't think it's working. But try first. Let me see. I I'm even trying to find your name here. I can't find it. Okay, I've not refreshed.
+Eyimofe Omotayo: All right. I'm in.
+Toheeb Yusuf: You are in B.
+Eyimofe Omotayo: Yeah. I reset password.
+Toheeb Yusuf: Hey, what?
+Eyimofe Omotayo: I reset password.
+Toheeb Yusuf: Oh, okay. Okay, I'll handle the line. So, we are good to go.
+
+
+
+
+02:20:33
+
+
+Eyimofe Omotayo: It's even tracking everything. Created stuff. Created document status. Change. Nice. Nice. Nice.
+Toheeb Yusuf: It's crazy. So some things are not needed for number track like those stars strikes
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: f those ones are personal business.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So, Um,
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: so let's So would you be done with this thing tonight?
+Eyimofe Omotayo: To be honest, I don't think so.
+Toheeb Yusuf: And I want do three, four, five, two.
+Eyimofe Omotayo: Cuz when I when I'm looking at all these things, by by the time is let's just say around uh 3 p.m.
+Toheeb Yusuf: Okay. So can you like do a checklist once you do it based on these 15 things I sent? Yam yam. So by 300 p.m. I will see where I am. Then I think we should have this meeting again tomorrow to address three and four.
+Eyimofe Omotayo: Three and four. Mhm.
+Toheeb Yusuf: Yes. Then but before we address three and four, we now go through these 15 things and take it off.
+Eyimofe Omotayo: Okay. Okay. Okay, that makes sense.
+Toheeb Yusuf: All right.
+Eyimofe Omotayo: At least I like I have like I'm feeling a sense of progress.
+Toheeb Yusuf: Yeah. Yeah. Yeah. Yeah. Same here. Same here. I think like worst case scenario, I know by by the end of this month, we we should start using this thing internally.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: Yeah. So once we start using it internally, the kind of joy I would have because that's the first step actually before anybody else touches it.
+Eyimofe Omotayo: Yeah.
+Toheeb Yusuf: So okay. So, I'll be awaiting.
+Eyimofe Omotayo: All right.
+Toheeb Yusuf: Um, just let me know.
+Eyimofe Omotayo: Mhm.
+Toheeb Yusuf: All right, my king. Have a good night. Let me stop taking notes.
+Eyimofe Omotayo: Uh, no. Okay. I would even like if you can send me this notes, too.
+
+
+
+
+Transcription ended after 02:22:32
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

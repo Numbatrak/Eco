@@ -5,6 +5,7 @@ import {
   numbatrakCustomerOrderItems,
   numbatrakCustomerOrders,
   numbatrakOrderStatusHistory,
+  numbatrakProductVariants,
   numbatrakProducts,
   numbatrakUnifiedExpenses,
   user,
@@ -34,6 +35,7 @@ function serializeItem(row: OrderItemRow): NumbatrakOrderItem {
     id: row.id,
     orderId: row.orderId,
     productId: row.productId,
+    variantId: row.variantId,
     quantity: row.quantity,
     unitPriceAtSubmission: row.unitPriceAtSubmission,
     unitCostAtSubmission: row.unitCostAtSubmission,
@@ -71,6 +73,18 @@ export async function attachRelations(
       .from(numbatrakProducts)
       .where(inArray(numbatrakProducts.id, productIds));
     for (const p of products) productNames[p.id] = p.name;
+  }
+
+  const variantIds = [
+    ...new Set(itemRows.map((i) => i.variantId).filter((id): id is string => id != null)),
+  ];
+  const variantNames: Record<string, string> = {};
+  if (variantIds.length > 0) {
+    const variants = await db
+      .select({ id: numbatrakProductVariants.id, name: numbatrakProductVariants.name })
+      .from(numbatrakProductVariants)
+      .where(inArray(numbatrakProductVariants.id, variantIds));
+    for (const v of variants) variantNames[v.id] = v.name;
   }
 
   const csrIds = [...new Set(rows.map((r) => r.csrId).filter((id): id is string => id != null))];
@@ -127,6 +141,7 @@ export async function attachRelations(
     csr: row.csrId ? (csrMap.get(row.csrId) ?? null) : null,
     agent: row.agentId != null ? (agentMap.get(row.agentId) ?? null) : null,
     productNames,
+    variantNames,
   }));
 }
 

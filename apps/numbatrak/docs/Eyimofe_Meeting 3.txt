@@ -1,0 +1,811 @@
+﻿‘ Please rate the new Quick notes tab by taking a short survey.
+Meeting Sep 11, 2026 at 12:33 UTC
+
+
+Sep 11, 2026
+
+
+Prototype review covering storefront forms and inventory tracking and expense attribution
+
+
+Order Intake and Form Builder
+* Toheeb Yusuf noted that order forms and storefront checkouts share the same data collection mechanism, meaning abandoned cart functionality applies to both.
+* The form builder requires functionality to separate funnel or source attribution from product-specific offers.
+* Messaging layer integration is not a dependency for capturing order intake or abandoned cart data.
+* Abandoned cart records require filterable source and funnel metadata to assist in recovery efforts.
+
+
+Product Catalog and Inventory Management
+* Toheeb Yusuf defined the product catalog as the universal parent entity that drives categories, inventory, and storefront performance metrics.
+* Inventory systems must aggregate variant-level sales and cost data up to the parent product for accurate reporting.
+* Cross-product bundles must deduct correct inventory quantities from each component product upon delivery.
+* Product offers must be defined at the product level and selected within forms, rather than redefined at each customer touchpoint.
+
+
+Expense Tracking and Financial Reporting
+* Toheeb Yusuf clarified that expense tracking must exclude costs already captured in per-order profit calculations, such as COGS, to prevent double counting.
+* Advertising expenses require product and offer attribution to enable accurate CPA and ROAS reporting.
+
+
+Invoicing Procedures
+* Invoicing should be generated on-demand from specific orders rather than occurring automatically.
+
+
+Next steps
+* [The developer] Explain funnel attribution: Find a solution for funnel and source attribution and provide a detailed explanation.
+* [The developer] Place feed logic: Properly integrate and document the form feed logic.
+* [The developer] Add dropdown: Include a dropdown menu for state selection in the order form.
+* [The developer] Implement conditional logic: Add support for conditional logic within the form builder.
+* [The developer] Enable multi-product offers: Develop the functionality to add multi-product offers from the product catalog to forms.
+* [The developer] Add phone validation: Implement phone number format validation to prevent incorrect submissions.
+* [The developer] Demo package selection: Demonstrate the package selection and offer creation process.
+* [The developer] Add term explainers: Create tooltips or explanations for special technical terms like SKU.
+* [The developer] Fix inventory visibility: Fix the inventory view to correctly display individual product variants.
+* [The developer] Demo bundle creation: Demonstrate the workflow for creating cross-product bundles.
+* [The developer] Update expense visualization: Improve the visual interface and reporting for the expense list.
+* [The developer] Enable expense editing: Enable manual editing for auto-filled expense entries.
+* [The developer] Configure invoice branding: Ensure that all generated invoices include the correct business branding details.
+
+
+
+
+
+
+Want to see more? View the full notes
+Tip: You can always access your full notes from the left sidebar.
+
+
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+Sep 11, 2026
+Meeting Sep 11, 2026 at 12:33 UTC
+Meeting records Transcript 
+
+
+
+
+Summary
+Prototype review covering storefront forms and inventory tracking and expense attribution
+
+Prototype and Form Configuration
+Order intake and attribution mapping remain unaddressed. Form builder requires documentation for funnel names.
+
+Inventory and Variant Visibility
+Multi-price variants fail to reflect properly in inventory view. Developer must fix inventory visibility.
+
+Expense Attribution and Invoicing
+Advertising expenses require mandatory product attribution. Invoices must be generated manually with proper branding.
+
+
+
+
+Next steps
+* [The developer] Explain funnel attribution: Find a solution for funnel and source attribution and provide a detailed explanation.
+* [The developer] Place feed logic: Properly integrate and document the form feed logic.
+* [The developer] Add dropdown: Include a dropdown menu for state selection in the order form.
+* [The developer] Implement conditional logic: Add support for conditional logic within the form builder.
+* [The developer] Enable multi-product offers: Develop the functionality to add multi-product offers from the product catalog to forms.
+* [The developer] Add phone validation: Implement phone number format validation to prevent incorrect submissions.
+* [The developer] Demo package selection: Demonstrate the package selection and offer creation process.
+* [The developer] Add term explainers: Create tooltips or explanations for special technical terms like SKU.
+* [The developer] Fix inventory visibility: Fix the inventory view to correctly display individual product variants.
+* [The developer] Demo bundle creation: Demonstrate the workflow for creating cross-product bundles.
+* [The developer] Update expense visualization: Improve the visual interface and reporting for the expense list.
+* [The developer] Enable expense editing: Enable manual editing for auto-filled expense entries.
+* [The developer] Configure invoice branding: Ensure that all generated invoices include the correct business branding details.
+
+
+
+
+Details
+* Prototype Overview and Order Intake Context: Toheeb Yusuf reviewed the developer's prototype, noting the screen's left side (number track) and right side (feature spec) (00:00:01). While tabs and general orders were previously covered, Toheeb Yusuf highlighted that order intake and order sources remained unaddressed. Toheeb Yusuf requested that the developer examine how orders enter the system and how attribution maps back to order funnels (00:00:44).
+  
+
+* Storefront and Customer-Facing Order Form Configuration: Toheeb Yusuf explained that customer-facing order forms share an underlying mechanism with storefront checkouts and abandoned cart recovery (00:01:06). Utilizing a form builder, users can configure feeds, funnel names, subbrands, form statuses, and thank-you page loading texts, though specific date dropdowns are currently missing (00:02:02) (00:03:11). Toheeb Yusuf assigned the developer to create a special documentation tab explaining funnel name attribution, form settings, and missing interface elements (00:02:38) (00:04:35).
+* Conditional Logic, Product Offers, and Validation in Forms: Toheeb Yusuf identified that several form features are missing, including conditional logic, multi-product offers, and the ability to add offers created from the product catalog (00:07:07) (00:08:57). Toheeb Yusuf specified that phone number formats must be validated to block junk or bot submissions based on geographic requirements, and noted that pricing is server-authoritative and cannot be edited by customers (00:08:12) (00:10:09). Toheeb Yusuf required the developer to build these missing capabilities and implement post-submit redirect options (00:07:41) (00:08:57).
+  
+
+* Abandoned Cart Mechanics and Recovery Operations: Toheeb Yusuf detailed that incomplete forms with captured phone numbers are classified as abandoned carts, whereas entries lacking phone numbers cannot be captured or followed up on (00:12:53) (00:13:34). Abandoned carts currently lack funnel, offer, and source filters (00:13:12). Automated WhatsApp recovery messages operate via a messaging layer, but carts remain immediately accessible for Customer Recovery Service staff even before messaging is connected (00:13:34). Toheeb Yusuf instructed the developer to add missing source filters and ensure carts flow into the normal order pipeline upon recovery (00:13:12) (00:14:20).
+* Customer Recovery Service Follow-Up Tracking and Response Timing: Toheeb Yusuf reviewed Customer Recovery Service follow-up workflows, where personnel manually chase and convert abandoned carts after automated messages deploy (00:14:48) (00:15:49). The system records the time elapsed from customer landing to Customer Recovery Service action as a key performance signal to measure team responsiveness. Toheeb Yusuf asked the developer to clarify how timing metrics apply to both abandoned transactions and normal orders, ensuring performance tracking aligns with the feature specification (00:15:09) (00:16:34).
+  
+
+* Product Catalog Foundations, Naming, and Categories: Toheeb Yusuf outlined the product catalog as the universal data backbone for inventory, storefronts, orders, and media buyers (00:19:25). The product model requires a name, category, and base cost price (00:19:49). Toheeb Yusuf created a test product named "absorbent" with a product image and emphasized that technical terms like Stock Keeping Unit—defined as a unique internal code assigned by a business to a specific product variant—require user-facing explainers for vendors (00:20:11).
+  
+
+* Product Variants, Inventory Tracking, and Pricing Issues: Toheeb Yusuf discussed product variants such as medium and long sizes, testing a postpartum belt with variants sharing a sales price of 65,000 and cost price of 12,500 (00:23:32) (00:25:54). Toheeb Yusuf tested receiving stock of 200 units for large and 150 units for extra large at a 12,500 unit cost (00:29:11). However, Toheeb Yusuf discovered that individual variants fail to reflect properly in the inventory view, showing only aggregate parent totals rather than separate variant stocks. Toheeb Yusuf mandated that the developer fix inventory visibility for multi-price variants (00:28:47) (00:30:21).
+  
+
+* Product Offer Types, Bundles, and Inventory Reconciliation: Toheeb Yusuf examined offer types, distinguishing between quantity tiers (e.g., minimal quantity of 1 at 65,000 price and 12,500 unit cost) and cross-product bundles (e.g., combining a mat and a postpartum belt) where each item deducts from its own inventory upon delivery (00:31:30) (00:34:10). Toheeb Yusuf stressed that unit counts must reconcile across orders, inventory, cost of goods, and performance, ensuring free units in buy-one-get-one offers properly reduce inventory and affect profit margins (00:38:20). Toheeb Yusuf stated they require a developer demonstration on how to configure offers using package selections (00:35:27).
+  
+
+* Expense Management Hub, Attribution, and Double Counting Prevention: Toheeb Yusuf explained expenses as a financial hub encompassing four categories, including media buyer ad spend, contractor pay, waybills (tested with a 5,000 entry), failed deliveries, and agent costs (00:41:56) (00:43:43). Toheeb Yusuf emphasized that cost of goods and delivery fees are excluded from expenses to prevent double-counting (00:47:19). Advertising expenses require mandatory product and offer attribution to calculate Customer Acquisition Cost and Return on Ad Spend accurately, while overhead costs like rent and salaries cannot be split meaningfully (00:47:52). Toheeb Yusuf noted that auto-filled expenses are currently not editable, and instructed the developer to fix expense report visuals and attribution filters (00:42:52) (00:43:43).
+  
+
+* Invoicing Generation and Branding Requirements: Toheeb Yusuf established that invoicing is deliberately not automatic and must be generated on request using shortcuts from an order. Toheeb Yusuf instructed that all generated invoices must correctly incorporate proper branding details (00:49:37).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+Sep 11, 2026
+Meeting Sep 11, 2026 at 12:33 UTC - Transcript
+00:00:01
+
+
+Toheeb Yusuf: All right. So, this is a meeting um between me um and myself. This is a meeting between me and myself. And in this meeting, I want to make sure that my web developer um my developer has like we have a prototype of what he has done over here. So, I'm going to share my screen.
+
+
+
+
+00:00:21
+
+
+Toheeb Yusuf: We have a prototype of what he has done over here. So, we have two sides of the screen. Um the right side and the left side. So the feature spec which is what is on the right side and then the number track which is what is on the left side which is what is already done and we've gone through most of the features but we are doing a continuation from where we stopped.
+
+
+
+
+00:00:44
+
+
+Toheeb Yusuf: So we've talked about the orers the tabs and all and every other feature. So now we want to address the order intake. We want to address the order intake right. So how does order come into the I think it will also help with the source of the order that we have left on discuss from the previous meeting.
+
+
+
+
+00:01:06
+
+
+Toheeb Yusuf: So these three features are the front end of or others are created before they reach the other page. A customer fill the form if they do not finish it becomes an abandoned cat and the CRS follows up to recovery. They share the same underlying mechanism as the store fund checker. both collect customer information and other details which is why abandoned card captures works for both several of those lean on the messaging layer which is documented separately the messaging layer because what happens if something does not happen and it's and the capabilities name light up fully once messaging
+
+
+
+
+00:01:37
+
+
+Toheeb Yusuf: is connected but the features are not blocked so the other forms which is the number one right it is locked so how does the other form how does it work so it works in a specific way so we our own order form, right? So the builder order form is is a builder for the customerf facing order form the standalone direct counterpart to the full storefront checkout.
+
+
+
+
+00:02:02
+
+
+Toheeb Yusuf: It is the real form builder not the big sele basically what we use to build our form. basically what we use to build our form and we have seven feet. We have um we have different feeds of it as you can see on the left side. um there's a token then we can attach a funnel name to it basically which dictates the source of I think this dictates the source of the form but you might correct me again tell the developer to refer to part one that already has a
+
+
+
+
+00:02:38
+
+
+Toheeb Yusuf: document for to be able to understand maybe we are saying the same thing here maybe this is how we attribute a source to where the orders are coming from the funnel particular where the others are coming from. Not really the um the platform. The platform is a different ball game which comes in for in form of when we record the ad spend and also um and also it can be linked to this but I need the developer to find a solution basically and explain it.
+
+
+
+
+00:03:11
+
+
+Toheeb Yusuf: This is should be in a special tab of explaining to-do by the developer. Explaining to do explaining to do which is basically the funnel name in the form in the form is what? So basically is what? So how do we make sure that stays in line? So if you have a form then you have the funnel name and then the subbrand which is an optional filter tag the form status then you know what happens after um what happens after they submit their form then we have a
+
+
+
+
+00:03:52
+
+
+Toheeb Yusuf: thank you page submit button what should be their loading text and we can add you know that's the settings right integrations um basically the the way it works which is like a a a test of an explanation. It needs to be properly explained. Uh we need it to be properly placed and explained right. So the feed so adding feed means that you can add um other bump right you can add other bump um let's see we can add several feed we can add selection
+
+
+
+
+00:04:35
+
+
+Toheeb Yusuf: feed you can add a dropdown okay state okay that means we can add a dropown is there a dropown Is there a drop down for this date? We need there to be a drop down. So stuff that missing, we need there to be a drop down in the form. Drop down in the form. All right.
+
+
+
+
+00:05:01
+
+
+Toheeb Yusuf: So we still do a lot of optimizations to the form to make it better. But making sure we have this is the first important step. we deform. The first important step we deform the first um important step we deform. So that's very very very important. Right? So um so let's go through the the way it was stated in the feature feature spec right.
+
+
+
+
+00:06:04
+
+
+Toheeb Yusuf: So we need to be also other forms but that will be discussed much much later right that will be the last bit of things that he has to address that are not probably in this feature spec so let's this um a builder for the storefront form builder configure fit logic can post submit behavior perform so basically handles that handles that and has a lot of has some feed and it has some logic right though it's missing it's missing some detailed logic but it has some logic and some
+
+
+
+
+00:06:38
+
+
+Toheeb Yusuf: feed right share get the sharable link or end code so we can share it and use it on our website. Build, edit, form, set marks, set fields, mark each required, optional, choose which formal it fits. Basically, you can build each form, make it optional or required or what not as the case may be. As the case may be, right?
+
+
+
+
+00:07:07
+
+
+Toheeb Yusuf: Conditional ID. Sure, I feed based on answer. Um, this is missing currently. Um this is missing currently in our form but it's something conditional logic conditional logic is missing currently multi product offer more than one product or an add-on. All right. So, while building the form, we need to be able to we need to be able to add an offer, right?
+
+
+
+
+00:07:41
+
+
+Toheeb Yusuf: We need to be able to add an offer, which is the offer from the product. We cannot add the offer from the product, right? So, adding the offer that we created from the product is still missing. It's still missing. We cannot add. So this the missing that I keep saying should be in a very detailed tab of what the developer has to explain of what the developer has to explain.
+
+
+
+
+00:08:12
+
+
+Toheeb Yusuf: Right? So the missing tab the missing tab is basically me telling the developer what to do or what he has to do essentially. So um multi product offer more than one product or another bomb which fits the upsell right just like I said if a C if like we are trying to do an order bomb as well right so um we need that to be done validation phone number format there has to be a format for phone number so that it works there has to be a format for phone number which is um the usual required by the by the um by the state or
+
+
+
+
+00:08:57
+
+
+Toheeb Yusuf: country which you know which blocks junk or B submissions on submit show a thank you page to a page or redirect to a custom URL with feed values possible for example a WhatsApp link or a personalized thank you upsell page basically this is already also there um no form bu there's no form a completed submissions become a new on the others page tags so invalid require feed in your validation So what are the locks?
+
+
+
+
+00:09:28
+
+
+Toheeb Yusuf: A completed forms becomes a new order on the others page start with the funnel it came from. Yes the form page the form package selector reviews offers that were created on the product. It does not define them. Offers are built once on the product. C product each form select which of that product offer to review.
+
+
+
+
+00:09:46
+
+
+Toheeb Yusuf: The same product offer can appear on different form revealing its own choosing subset. basically essentially what I said about offer and this is why offer is different from the funnel/buffer/source discussion that we had earlier in the previous meeting. You have to make sure the develop de developer understands this in that special explanation to developer. Right?
+
+
+
+
+00:10:09
+
+
+Toheeb Yusuf: So the there has to be a package selection which just selects the offer that we've created in the past from the product page and is not here. Pricing is server authoritative. The form cannot be edited by the customers to change the price. It comes from the that one is normal. The form supports conditional logic, multi product order bump.
+
+
+
+
+00:10:33
+
+
+Toheeb Yusuf: Basically, we should be able to add multiple product and a redirect or confirmation depending on how we want our form to look like message and all. location on the form can write the delivery the trying to time to delivery configuration location on the form right so this is for storefront this is really not for the cash on delivery abandon transaction abandon cat how does it work so we have to now go through the abandoned cat and explain how it works so that's what is next so everything about the form that is missing we mentioned it so far and the developer has to build you know so that
+
+
+
+
+00:11:10
+
+
+Toheeb Yusuf: he can have a full understanding of what is needed to complete this. It's awesome. So the abandoned cards, let's go to the right side. The way it works is a form or a check out customer started but did not finish. These are recovery opportunities. Often a phone number and a product is a norm for a CRS to call and close the sale.
+
+
+
+
+00:12:53
+
+
+Toheeb Yusuf: So abandon card list started but not completed with the partial details captured. View cart. Open an abandoned cart. See what the customer enter before dropping off. Recover. Call the customer. Complete the cart into an order. Filter by phoneail. Product date and status depending on the form they fill.
+
+
+
+
+00:13:12
+
+
+Toheeb Yusuf: So, we should be able to see the phone that they came from, right? Is not there. It's missing the abandoned cat. It's missing the abandoned cat. phoneail that they came from. Like we said, funnel/offer/source is not seen in the abandoned cards, right? We should be able to filter by that.
+
+
+
+
+00:13:34
+
+
+Toheeb Yusuf: We should be able to filter by that, right? So, we should have some filter by state, by status, um all status basically are they converted or not converted date. So once we have an abandoned cat the list appears here and the details that the customer feel right locked through road a started but not unfinished but unfinished form is an abandoned car save with whatever details were enter contact details does not enter if there's no phone number there's nothing to follow up on so it's not captured as a cat on abandonment an auto WhatsApp recovery message fires without the messaging layer once connected So that is very important.
+
+
+
+
+00:14:20
+
+
+Toheeb Yusuf: That is very important. Before messaging is connected, the card still appears for the CRS to work by and this feature is not blocked. This feature is not blocked. Blocked through recovering a card turns into a normal order that flows through the entire pipeline. Right? So once a order is there, a card is there, it can be recovered and the customer added to orders as a full order and then the status change to converted or not depending on if the customer buys or not.
+
+
+
+
+00:14:48
+
+
+Toheeb Yusuf: Follow-ups. Follow-ups. Let's look at the rules here. So the CRL is passed to The CRS task is this for chasing recovery recovery orders and a measure of how far the CRS acts. After the auto message go out, a CRS personally follows up, convert the customer or not, and tab tracks how quickly they move.
+
+
+
+
+00:15:09
+
+
+Toheeb Yusuf: Followup list, right? So let's look at it. So what must be there? So the developer has to know that the followup has to be adjusted to fit what is in this in this particular in this particular feature spec right I feel like it doesn't match but let's go through it and see if it does match but the CRS has to know the followup must match feature spec All right.
+
+
+
+
+00:15:49
+
+
+Toheeb Yusuf: Follow up. This so screen followup list cat and others need sending a human chase with followup timing and CRM. The CRM clicks follow up to personally chase and abandon cat after the auto message. Convert not converted. Filter by CRS by phone by product of course by date. Awaiting followup. An abandoned card is waiting for the CRS to follow up.
+
+
+
+
+00:16:13
+
+
+Toheeb Yusuf: Timing is running. Basically, we look at how fast the followed up. The CRS has acted. The timing the time to act is recorded. Resolve converted into an order or max not converted. Basically, that is just like an extension of the abandoned card to see how fast the CRS is responding to followup.
+
+
+
+
+00:16:34
+
+
+Toheeb Yusuf: Right? But a question for the developer which is a very important question is how does this related to the timing how do how do that relate to measuring how fast CRS follows up on even the orders they get normally that are not abandon transaction. How does the CRS timing get measured for normal transaction? Normal orders for normal orders.
+
+
+
+
+00:17:21
+
+
+Toheeb Yusuf: So the T measures the CRF following how fast from the C landing at least to CS acting it is a surface CR performance signal so I can see who is quick and who is slow to chase recoverable money basically I need I need this to be explained this particular dash it doesn't it's not explainable ro and a CRS work on their own confirm decision an automated followup message on WhatsApp is on abandonment loss through the shared The layer discuss when that layer is worked.
+
+
+
+
+00:17:53
+
+
+Toheeb Yusuf: The capability is now is named now. So the full picture is visible but the intake features are not blocked waiting on it. Before messaging is connected cards go straight to the CRS followup list. Confirm decision. Other forms and storefront check out are distinct features but function effectively the same way. Even a prepaid store customer fees and information on time.
+
+
+
+
+00:18:15
+
+
+Toheeb Yusuf: They share the they share the collect customer order details mechanism. So abandon cat capture works for both. It works for the storefront as well. Does the abandon it must work for the storefront must work for the storefront essentially product and finances. Um we've we've looked at we've looked at that. Um the followup has to be explained like I said by the developer.
+
+
+
+
+00:18:56
+
+
+Toheeb Yusuf: So we go to product and finances. The product catalog and the money features are read from it. The governing principle. So we come here into product. The governing principle of this princ the governing principle of this group as as everywhere else in number trap is that each business on what works for them. The capabilities and other offer type window are many configured per product not a fixed structure in post for everyone.
+
+
+
+
+00:19:25
+
+
+Toheeb Yusuf: Product the catalog references everything references the product is the definition of a thing. Inventory transfer the units are product list under the storefront app in the navigation but the product data is universal. The order form the storefront inventories orders performance and the media buyers track they all read from it. It is the shared spine of the whole app.
+
+
+
+
+00:19:49
+
+
+Toheeb Yusuf: Essentially the product lives everywhere that it should live. My question does that happen? We've not gone through but most of the ones we've gone through it does shows there. So the product mode product is the parent is the parent name category and a base cost price. Category groups the catalog and drives preing. Right?
+
+
+
+
+00:20:11
+
+
+Toheeb Yusuf: So basically we need to have a category for product right and it drives the filtering. So the product name. So let's create a test product. Um we are going to create absorbent. Okay. So we are going to create. So we are going to create we are creating a test product to see.
+
+
+
+
+00:20:48
+
+
+Toheeb Yusuf: Um then add a product image. Yes, very important. add a product image. So let's see if you can add a sample image just for the product image optimization is part that's too much for the developer. So the school the um SKU so it has to be explained. There has to be an explainer on things that people might not usually understand.
+
+
+
+
+00:22:02
+
+
+Toheeb Yusuf: Um a an average vendor might not understand the meaning of an SKU. There has to be an explainer an explainer for terms for special terms. EG SKU there has to be an explainer for special times eg SKU. Okay, so let's go back. So SKU is stock keeping unit basically right so it's a stock keeping unit um so let's let me explain what it means a unique code assign my business to a specific product right so what is an SKU internal
+
+
+
+
+00:22:59
+
+
+Toheeb Yusuf: code basically um variant specific every unique size has its own SKU basically every unique variant has its own SKU right so It's optional but it should be explained. So normal. All right. This is a normal product. Let's go through you know the the feature spec before we continue here because some things might be off.
+
+
+
+
+00:23:32
+
+
+Toheeb Yusuf: So the product name category and the base cost price category groups the product catalog and drive featuring variant size color or similar each variant carried its own cost price sales price and inventory line basically and rows of appearance for combined performance. These are those boats. same cause variant a belt in L XL different cause variant medium units with medium um in medium and very long different cause variants.
+
+
+
+
+00:24:07
+
+
+Toheeb Yusuf: So we need to be able to have that variant must when you have a variant there has to be a a change there has to be this is not arranged properly. This does not fit into this proper categorization. The product model does not fit what the feature spec explained properly 100%. It does in a way but it doesn't in the 100%.
+
+
+
+
+00:24:42
+
+
+Toheeb Yusuf: And why is that? Because we can have variants that of the same price and variants of different prices. So if we have variants of different prices, how do we note that? How do we make sure that that is well explained? For example, the medium and the long math that is of different size. How do we how do we how do we even add the variants when we just click variant capabilities?
+
+
+
+
+00:25:06
+
+
+Toheeb Yusuf: Okay, it has variant but then we cannot fill in the variants bundles. Okay, what's the bundle? Like it is just it's just there and is useless. It should open up the explanation for what each of these things means in full detail which it does not at present. It does not at present. So it's difficult to be able to to it's difficult to be able to have your product well explained and well detailed in a way that works for the business model.
+
+
+
+
+00:25:38
+
+
+Toheeb Yusuf: Right? to offers named price package of the product the sellable unit on on the form which is like the package that they are going to be. We cannot create that yet. A product can have many offers running at once because this is marketing a business 10 different offers and angles on the same product. Offer types.
+
+
+
+
+00:25:54
+
+
+Toheeb Yusuf: But before we get to offer type for this product we are creating it has a it has a sales price of um 65,000. It has a cost price of 12,500. 12,500 and um low threshold should be 10. Capabilities varants. It has varants, right? It has different variants. It has different variants. So if we create product, how do we record the variance in the inventory?
+
+
+
+
+00:26:33
+
+
+Toheeb Yusuf: like to be able to see that this product this product has um this variance in the inventory which is exactly this. Let me show an example of what that means from this side. Um, is an example of what that means from this site. All right. Good. which is this variant. Medium, very long, long um difference, medium, different, very long difference.
+
+
+
+
+00:27:26
+
+
+Toheeb Yusuf: And this variant has different prices. But this variance, we have large, we have the XL, extra large, we have the XXL, we have the 3XL, and even the 4XL. So, and for this variance, for postpartum belts, the prices are the same. So, it needs to be workable. It's not currently workable, but let's see.
+
+
+
+
+00:27:52
+
+
+Toheeb Yusuf: We click here. Um, if you click here, so we can deactivate products, receive stock, manage variant. So, if you manage variants, so variant one, we have the L, right? The SKU, the sales price is the same thing 5,000. The cost price is the same thing, 12,500. So, let's see if this sorted it.
+
+
+
+
+00:28:17
+
+
+Toheeb Yusuf: And I'm just hallucinating. So, we have the Excel. Um, we have the same thing 65,000 and we have this um 12,500. I think this solves it. But let's just let's just try let's just so we say variant. So, let's see how it appears now. So we have two variants for this right.
+
+
+
+
+00:28:47
+
+
+Toheeb Yusuf: We have two variants for this. So if you go to inventory, does it show both variants? Does it show both variants? Three in one belt. It shows only one variant. All right. So if you go back to product, if you go back to product and we receive stock and we receive 200 pieces.
+
+
+
+
+00:29:11
+
+
+Toheeb Yusuf: So we can predict okay which variance we received and then we received unit cost is still we said it cost um 12,500. Yeah. So okay let's see. We received the L stock. So, let's receive the XL. Let's receive the Excel 150 the same price, 500 and receive stock. Okay, this is too slow by the way.
+
+
+
+
+00:29:53
+
+
+Toheeb Yusuf: So, let's go back to inventory. So we have 350 post bottom belt but the variant is not reflecting. So it is fillable from the looks of it. You can separate it from from the looks of it. You can have several variants record several prices for the variants from the looks of it. You can have that.
+
+
+
+
+00:30:21
+
+
+Toheeb Yusuf: You can have that. But you cannot what we cannot do is we cannot um we cannot we cannot see it in inventory. Right? So we cannot see the variance in the inventory. You cannot see it in the inventory which is in this case should be very visible right you cannot see it in the inventory we have two variants here and we cannot see it in inventory and it's important that we should be able to see it and I think we could
+
+
+
+
+00:31:04
+
+
+Toheeb Yusuf: create the price I could change the price for different variants so I will not need to go over that for the math but it's is very very much needed to be able to see it from the inventory so now let's Um, edit product. This is it. Um, let's um let's let's um create the offers now.
+
+
+
+
+00:31:30
+
+
+Toheeb Yusuf: So, let's create the offers. So, we have four offers quantity here. Same product, different quantity. Each set at its own price. Cross product bundle. The basket own different product. Eg buy this, buy that, buy that. On delivery, each product deducts from its own inventory and add its own unit and add its own cost.
+
+
+
+
+00:31:58
+
+
+Toheeb Yusuf: Each product deducts from its own inventory. So cross product bundle. We can cross two products together. Basically, we can cross two products together as a bundle. Right? You can cross two products together as a bundle. And when it is being delivered, each of them removes from the inventory. For example, if we mix mat and postpartum bed together as a bundle in an offer and we sell it and then it gets delivered to a customer, one belt, one mat, one best, one m, one absorbent mat, one belt should be deducted from the inventory normally basically cross
+
+
+
+
+00:32:33
+
+
+Toheeb Yusuf: product bundle and it should be visible like in the offer and how we create it. It should be very seamless just like something like this, right? Um just like something like this. All right. So um 3 in one postpartum belt multiplied bundle this has both offers which is one the quantity tier this is it cross product bundle free physical book if this was a different product then this is just free on delivery is um it's just an addition which is not necessary but this is these are two different products and then each quantity has its own price.
+
+
+
+
+00:33:49
+
+
+Toheeb Yusuf: So this is two offers in one product. Single price, one unit price. The simplest offer on storefront or buy this, get this for free. Buy one, get two for free. Right? Buy one, get two for free or cross product bundle. Buy postpartum bed, get free, get free absorbent math. It is cross product bundle.
+
+
+
+
+00:34:10
+
+
+Toheeb Yusuf: And we should not mix it with buy this, get this for free. There are two different parts. So let's try to create. How do we beat exactly both kinds of offers? All right. So offer type label. So by so all variance all variance right quantity t quantity t minimal quantity one price 65,000 unit cost is 12,500 Right.
+
+
+
+
+00:35:27
+
+
+Toheeb Yusuf: Add of us. How do we make this work? I don't understand it. So, it has to be explained. Now we talked about something that is missing but I need part of what I need the explain the explain and demo how to use the offers that comes with the package. with the package selection basically I need the developer to demo that for me right so I will not waste time here because I I don't understand it fully so I need it demoed for me right so
+
+
+
+
+00:36:15
+
+
+Toheeb Yusuf: um screens product list the catalog retrieable by product record name label product builder creator You know create products or edit and add offers to capabilities varants and up each toggle on product in any combination working on both the cod form and the store front. Add offers any of the four offer types of the product. Add as many as the marketing add course price and stock line.
+
+
+
+
+00:36:48
+
+
+Toheeb Yusuf: Filter by category, subbrand and time frame. Empty, no product, performance unit sold and or performance of the product. We need to see performance of the product, right? We need to be able to see performance of the product as well. So, um that's the status she's active or not and actions. Okay. So um locked rules locked rules each business struggled on its capacity on the capabilities and offer types that works for them.
+
+
+
+
+00:37:23
+
+
+Toheeb Yusuf: So we need to examine all of the offer types. Nothing here is for a single a simple single price product and a multi offer bundle product above value configurations of the same builder. A product is the definition of a name category cost variance and offers. Inventory tracks where the product units are product show the total holding but does not hold a separate stock number.
+
+
+
+
+00:37:42
+
+
+Toheeb Yusuf: There's one stock truth in inventory. Every variant carries its own cost price, sales price and inventory line and rose up to a parent product for reporting. Performance can be viewed per variant or for the old parent family. That is currently what is missing that I mentioned earlier. A product can have many offers at once.
+
+
+
+
+00:38:03
+
+
+Toheeb Yusuf: I need that demo from the offers are created on the product and the offer form and storefront which reviews the offers to select. They do not redefine them basically. So that is missing. Locked rule. Another locked rule. The accord. The three unit counts in an offer must reconcile across order.
+
+
+
+
+00:38:20
+
+
+Toheeb Yusuf: Inventory. Cost of goods and performance. A buy one get one free offer moves two units on the board. Even though the customer pays one price. A few unit is the real cost. Product lives under the storefront tab. But the data is universal. read across the whole I've including the media bias and tracking tiny parts these are lot to I've mentioned and one has been missing so far and I need a demo variant and offer are independent axis on a form a customer
+
+
+
+
+00:38:51
+
+
+Toheeb Yusuf: can pick an offer and a variant separately a postpartum bear choose the pack and then choose the size they must not be modeled as same thing. The buy get off where they root and it keep the free unit are the real unit the deduct from the inventory account in cost of good. If the board recorded only the paid unit margin would be overstated on every bundle expenses.
+
+
+
+
+00:39:22
+
+
+Toheeb Yusuf: So we talked about expenses earlier. So this is where we look at expenses. Expenses. So we are done with product and we have what is missing and what the developer has to do. Take note of that. Expenses locked new for launch the money house up basically. Expenses is where all money out convert.
+
+
+
+
+00:41:56
+
+
+Toheeb Yusuf: It is a hub not a standalone piece. Some expenses flow automatically from other features carrying the attribution which we measured in part one of the meeting and the rest are enter directly. The critical the critical part is avoiding double counting. Cost already deducted inside a power order profit calculation never reappear here. Cost already deducted inside a power order profit calculation never reappear here.
+
+
+
+
+00:42:26
+
+
+Toheeb Yusuf: The feeders ad spend four sources can flow. Ad spend from media buyers basically um contractor pay um from the media team. W fuse from way use bills um fail delivery and agent cost from wallet into operational cost with no order to absorb them. Direct entry recorded by and screens. Expense list. Money out in four categories.
+
+
+
+
+00:42:52
+
+
+Toheeb Yusuf: Futrible with ROI and lower split. Expense reports. The visual read. This display is not good enough. August. Record expense direct entry by category and subcategory. Record expense amount category subcategory brand and a note. Edit and auto feed expense. The attribution from media buyer is inherited. All of them are editable.
+
+
+
+
+00:43:16
+
+
+Toheeb Yusuf: Under any of the four parents custom to the business, you can add a subcategory. Filter by category, subcategory, brand, feature, product, platform, and time frame. There's no expense, no expense yet. Lo money is the money. Expense is the money out of. So, let's do a way bill. Let's see if it flows into expense.
+
+
+
+
+00:43:43
+
+
+Toheeb Yusuf: Let's try that. But because he should Okay. So, 5,000 will be few. I'm expecting that in expense. Let's go. It's auto filled which is good. We feel 5,000. That is good. That is good. Um but there's no filter to check um to check for like and there's no experience report but that came in that is good right and We have the four categories and you can add expense and
+
+
+
+
+00:45:00
+
+
+Toheeb Yusuf: pick a category right um subcategory if it's marketing you know um if it's advertising meta ads Google ads Tik Tok ads you know basically and um you can put the offer name again this is where it is important that it is the funnel not the offer so the interchangeable in the expense. The interchangeable details cause a problem or funnel offer source caused a misunderstanding.
+
+
+
+
+00:45:52
+
+
+Toheeb Yusuf: So it is not offer. All right. It is not the offer name that you put. It is the funnel that it came from. Right? Basically, it is the funnel that it came from. What funnel did it come from? And when we record ad budget from the media buyers, that's already should be a part of it.
+
+
+
+
+00:46:12
+
+
+Toheeb Yusuf: Is the funnel the source. Where is that? Is it coming from not offer name over here? Right? because this is looking at the offer from the product which is a different thing from the interchangeable um usage of offers funnel and source offers on product is completely different right so we should not mix both of them so locked rules so that is that is um that is missing over here and you know the pro proper visual of this expenses is not correct so but let's look at the loss from future spec.
+
+
+
+
+00:46:52
+
+
+Toheeb Yusuf: Let's look at what else could be could be missing. Expense is the money out of some expense flow in automatically like all of this. The rest are enter directly. Every automatic fee can also be entered manually. So this now auto it came in automatically right. So we can edit it. This is not editable.
+
+
+
+
+00:47:19
+
+
+Toheeb Yusuf: It is not editable. Right. It is not editable. Auto field expenses are not editable. All fixed categories. Yes. No double counting. Anything already deducted in a par profit in a par profit in a per order profit calculation never appears as an expense line. Cost of good delivery fee.
+
+
+
+
+00:47:52
+
+
+Toheeb Yusuf: They are not expenses. They already there. only cost with no other to absorb them become expenses. Advertising is isolated. So never matches a business ROI. Product/offer attribution requirement varies by category for advertising. It is mandatory aspect without knowing a product and the offer is useless for CPA and ROS for marketing should be present was made for a specific product basically right recording for for some marketing
+
+
+
+
+00:48:25
+
+
+Toheeb Yusuf: and and um advertising what product is it done for it needs to be there is it is important for professional it is optional rent and salaries are general provider that cannot be split across product meaningfully. Auto feed expense car attribution and it is always editable. It is not right now for the for the web developer to know.
+
+
+
+
+00:48:51
+
+
+Toheeb Yusuf: The expense report gives a visual read of spending by category and over time feable by every attribution key and time frame tiny parts. The all principle is what keep the profits clean because I spend and everything converges here with the attribution the droid accounting all the same categorized money there's no second conflicting expense number anywhere attribution varies by category that if forcing rent to attribute to a single product will produce many less numbers not forcing aspect would break CPA and the requirement isn't strict exactly where it matters So we should be able to see our spend per product per brand uh per
+
+
+
+
+00:49:37
+
+
+Toheeb Yusuf: per funnel offer source as the case may be. Generate, send and record invoices. Invoicing. So we are now in invoicing. Generate, send and record invoice. Invoicing is deliberately not automatic generated on request with shortcut from an order and it should properly carry the branding details. Invoicing must carry branding details.
+
+
+
+
+Transcription ended after 00:52:02
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

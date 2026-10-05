@@ -15,6 +15,7 @@ interface OrderItemDto {
   id: string;
   orderId: string;
   productId: string;
+  variantId: string | null;
   quantity: number;
   unitPriceAtSubmission: string;
   unitCostAtSubmission: string;
@@ -54,6 +55,7 @@ interface OrderDto {
   csr: { id: string; fullName: string | null; email: string | null } | null;
   agent: { id: number; name: string } | null;
   productNames: Record<string, string>;
+  variantNames: Record<string, string>;
 }
 
 function itemFromDto(dto: OrderItemDto): CustomerOrderItem {
@@ -61,6 +63,7 @@ function itemFromDto(dto: OrderItemDto): CustomerOrderItem {
     id: dto.id,
     order_id: dto.orderId,
     product_id: dto.productId,
+    variant_id: dto.variantId,
     quantity: dto.quantity,
     unit_price_at_submission: Number(dto.unitPriceAtSubmission),
     unit_cost_at_submission: Number(dto.unitCostAtSubmission),
@@ -109,6 +112,7 @@ function orderFromDto(dto: OrderDto, organizationId: string): CustomerOrderWithR
     form: null,
     agent: dto.agent,
     productNames: dto.productNames,
+    variantNames: dto.variantNames,
   };
 }
 

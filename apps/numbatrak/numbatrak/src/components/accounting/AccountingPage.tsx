@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import { PageLayout } from "../layout/PageLayout";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import {
+  downloadAccountingExport,
   fetchAccountingReport,
   fetchSubBrands,
   type AccountingReport,
@@ -25,6 +27,7 @@ export function AccountingPage() {
   const [dateTo, setDateTo] = useState("");
   const [subBrand, setSubBrand] = useState("");
   const [tab, setTab] = useState<"pnl" | "cash">("pnl");
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     if (!currentOrganization) return;
@@ -56,6 +59,22 @@ export function AccountingPage() {
     { key: "cash", label: "Cash Position" },
   ];
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await downloadAccountingExport({
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        subBrand: subBrand || undefined,
+      });
+    } catch (e) {
+      console.error("Failed to export accounting data", e);
+      alert(e instanceof Error ? e.message : "Failed to export accounting data");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <PageLayout>
       <div className="space-y-6">
@@ -85,6 +104,13 @@ export function AccountingPage() {
               </select>
             </div>
           )}
+          <button
+            onClick={() => void handleExport()}
+            disabled={exporting || !report}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm border border-border rounded hover:bg-accent disabled:opacity-50"
+          >
+            <Download size={14} /> {exporting ? "Exporting..." : "Export CSV"}
+          </button>
         </div>
 
         {/* Tabs */}
@@ -105,7 +131,7 @@ export function AccountingPage() {
         ) : !report ? (
           <p className="text-muted-foreground">No data available</p>
         ) : tab === "pnl" ? (
-          <PnLView report={report} />
+          <PnLView report={report} onViewCash={() => setTab("cash")} />
         ) : (
           <CashView report={report} />
         )}
@@ -114,8 +140,8 @@ export function AccountingPage() {
   );
 }
 
-function PnLView({ report }: { report: AccountingReport }) {
-  const { pnl } = report;
+function PnLView({ report, onViewCash }: { report: AccountingReport; onViewCash: () => void }) {
+  const { pnl, cash_position } = report;
   const brandEntries = Object.entries(pnl.revenue.by_sub_brand).sort((a, b) => b[1] - a[1]);
 
   return (
@@ -127,6 +153,26 @@ function PnLView({ report }: { report: AccountingReport }) {
         <MetricCard label="Gross Profit" value={currency(pnl.gross_profit)} />
         <MetricCard label="Net Profit" value={currency(pnl.net_profit)} className={pnl.net_profit < 0 ? "text-red-600" : "text-green-600"} />
       </div>
+
+      {cash_position.outstanding_cod > 0 && (
+        <div className="flex items-center justify-between gap-4 border border-amber-300/50 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
+          <div className="text-sm">
+            <span className="font-semibold text-amber-700 dark:text-amber-400">
+              {currency(cash_position.outstanding_cod)} of this revenue is uncollected COD
+            </span>
+            <span className="text-muted-foreground">
+              {" "}— still sitting with delivery agents, not yet remitted. Revenue and profit above are accrual
+              (earned on delivery); see the Cash Position tab for what's actually been collected.
+            </span>
+          </div>
+          <button
+            onClick={onViewCash}
+            className="shrink-0 px-3 py-1.5 text-xs font-medium border border-amber-400 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+          >
+            View Cash Position
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <MetricCard label="Orders Delivered" value={pnl.order_count.toLocaleString()} />

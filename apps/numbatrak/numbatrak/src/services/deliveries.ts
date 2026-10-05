@@ -10,7 +10,7 @@ interface DeliveryDto {
   csr: string | null;
   agentId: number | null;
   agentName: string | null;
-  status: "Waybilled" | "Delivered";
+  status: "Waybilled" | "PickedUp" | "Delivered";
   productId: string | null;
   productName: string | null;
   quantity: number;
@@ -62,7 +62,7 @@ export async function createDelivery(input: {
   date: string;
   csr?: string | null;
   agent_id?: number | null;
-  status: "Waybilled" | "Delivered";
+  status: "Waybilled" | "PickedUp" | "Delivered";
   /** `products.id` (UUID) */
   product_id: string;
   quantity: number;
@@ -90,6 +90,18 @@ export async function createDelivery(input: {
 }
 
 /**
+ * Confirms a waybilled line has actually been picked up by its destination
+ * agent - the moment the agent's stock is finally credited. Staff/CSR
+ * action, not something the delivery agent triggers themselves.
+ */
+export async function confirmWaybillPickup(deliveryId: number): Promise<Delivery> {
+  const dto = await apiRequest<DeliveryDto>(`/org/numbatrak/deliveries/${deliveryId}/confirm-pickup`, {
+    method: "POST",
+  });
+  return deliveryFromDto(dto);
+}
+
+/**
  * Update an existing delivery. Metadata-only - editing never adjusts the
  * stock ledger, matching the source app exactly.
  */
@@ -99,7 +111,7 @@ export async function updateDelivery(
     date?: string;
     csr?: string | null;
     agent_id?: number | null;
-    status?: "Waybilled" | "Delivered";
+    status?: "Waybilled" | "PickedUp" | "Delivered";
     product_id?: string;
     quantity?: number;
     cost?: number;
@@ -159,7 +171,7 @@ export interface MonthlySummaryQueryOptions {
   productId?: number | string;
   /** Free-text CSR as stored on `deliveries.csr` */
   csrText?: string;
-  status?: "Waybilled" | "Delivered";
+  status?: "Waybilled" | "PickedUp" | "Delivered";
   subBrand?: string;
   location?: "all" | "lagos" | "outside_lagos";
 }

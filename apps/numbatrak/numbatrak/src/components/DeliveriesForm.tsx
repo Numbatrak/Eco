@@ -8,6 +8,7 @@ import { SuccessNotification } from "./agents/SuccessNotification";
 import {
   updateDelivery,
   removeDelivery,
+  confirmWaybillPickup,
 } from "../services/deliveries";
 import { intakeWaybill, intakeDeliveryRecord } from "../services/waybillIntake";
 import { usePermissions } from "../hooks/usePermissions";
@@ -174,6 +175,22 @@ export default function DeliveriesForm() {
     setOpen(true);
   };
 
+  const handleConfirmPickup = async (deliveryId: number) => {
+    try {
+      setLocalError(null);
+      await confirmWaybillPickup(deliveryId);
+      setSuccess("Pickup confirmed — agent stock updated.");
+      invalidateStoreCache(deliveriesStore, currentOrganization?.id || null);
+      await refetchDeliveries();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error("Error confirming pickup:", err);
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to confirm pickup. Please try again."
+      );
+    }
+  };
+
   const handleDeleteDelivery = async (deliveryId: number) => {
     if (!(await confirmDelete(confirm, "delivery"))) return;
 
@@ -310,6 +327,7 @@ export default function DeliveriesForm() {
             error={localError || error}
             onEdit={canUpdate ? handleStartEdit : () => {}}
             onDelete={canDelete ? handleDeleteDelivery : () => {}}
+            onConfirmPickup={canUpdate ? handleConfirmPickup : undefined}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             sortOrder={sortOrder}

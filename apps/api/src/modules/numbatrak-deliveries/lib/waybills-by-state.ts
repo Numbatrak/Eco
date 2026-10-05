@@ -15,7 +15,9 @@ export async function fetchWaybillsByState(
 ): Promise<NumbatrakWaybillByState[]> {
   const conditions = [
     eq(numbatrakDeliveries.organizationId, organizationId),
-    eq(numbatrakDeliveries.status, "Waybilled"),
+    // Outstanding = not yet confirmed Delivered - includes PickedUp, not just
+    // the initial Waybilled booking state.
+    inArray(numbatrakDeliveries.status, ["Waybilled", "PickedUp"]),
   ];
   if (query.dateFrom) conditions.push(gte(numbatrakDeliveries.date, query.dateFrom));
   if (query.dateTo) conditions.push(lte(numbatrakDeliveries.date, query.dateTo));

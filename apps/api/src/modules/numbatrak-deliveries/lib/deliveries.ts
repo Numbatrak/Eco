@@ -221,11 +221,14 @@ export async function fetchMonthlySummary(
     const monthIndex = new Date(row.date).getMonth();
     const cost = Number(row.cost);
     const fee = Number(row.waybillingFee ?? 0);
-    if (row.status === "Waybilled") {
+    if (row.status === "Delivered") {
+      months[monthIndex]!.delivered += cost;
+    } else {
+      // Waybilled or PickedUp - stock is out of the warehouse but not yet
+      // confirmed delivered, so it still counts toward the outstanding
+      // "waybilled" bucket for the balance calc below.
       months[monthIndex]!.waybilled += cost;
       months[monthIndex]!.waybillFee += fee;
-    } else if (row.status === "Delivered") {
-      months[monthIndex]!.delivered += cost;
     }
   }
   for (const m of months) m.balance = m.waybilled - m.delivered;

@@ -5,6 +5,7 @@ import { ErrorAlert } from "../agents/ErrorAlert";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
+import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -28,6 +29,7 @@ export type AdjustStockFormValues = {
   variant_id: string | null;
   quantity: number;
   notes: string;
+  flag_as_loss: boolean;
 };
 
 interface AdjustStockDialogProps {
@@ -59,6 +61,7 @@ export function AdjustStockDialog({
   const [variantId, setVariantId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
+  const [flagAsLoss, setFlagAsLoss] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const holders = useMemo(() => filterStockHolders(agents), [agents]);
@@ -82,6 +85,7 @@ export function AdjustStockDialog({
     setVariantId("");
     setQuantity("");
     setNotes("");
+    setFlagAsLoss(false);
     setLocalError(null);
   }, [open, activeProducts]);
 
@@ -123,6 +127,7 @@ export function AdjustStockDialog({
         variant_id: variantId || null,
         quantity: qty,
         notes: notes.trim(),
+        flag_as_loss: flagAsLoss,
       });
       onOpenChange(false);
     } catch (err: unknown) {
@@ -138,7 +143,7 @@ export function AdjustStockDialog({
         <BrandedDialogHero
           icon={<AlertTriangle className="h-7 w-7" aria-hidden />}
           title="Mark damaged / missing"
-          description="Records shrinkage on the stock ledger — does not post to expenses"
+          description="Records shrinkage on the stock ledger — optionally flag as a loss expense"
         />
 
         <div className="dialog-body-scroll max-h-standard p-6">
@@ -253,6 +258,14 @@ export function AdjustStockDialog({
                 placeholder="Describe what happened…"
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={flagAsLoss}
+                onCheckedChange={(checked) => setFlagAsLoss(checked === true)}
+              />
+              Flag as loss (posts a cost-price × quantity expense for this agent)
+            </label>
 
             <div className="flex justify-end gap-3 pt-2 border-t border-border">
               <Button

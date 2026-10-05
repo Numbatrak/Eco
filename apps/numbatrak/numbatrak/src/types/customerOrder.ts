@@ -51,6 +51,7 @@ export interface CustomerOrderItem {
   id: string;
   order_id: string;
   product_id: string;
+  variant_id: string | null;
   quantity: number;
   unit_price_at_submission: number;
   unit_cost_at_submission: number;
@@ -66,6 +67,7 @@ export interface CustomerOrderWithRelations extends CustomerOrder {
   form?: { id: string; name: string } | null;
   agent?: { id: number; name: string } | null;
   productNames?: Record<string, string>;
+  variantNames?: Record<string, string>;
 }
 
 export interface CustomerOrderFilters {

@@ -5,6 +5,7 @@ import { fetchDashboardSummary } from "./summary.js";
 import { sendEmail } from "../../auth/lib/email.js";
 import { findOrgOwnerEmail } from "../../../lib/org-owner.js";
 import { getOrCreateNotificationSettings } from "./notification-settings.js";
+import { getLowStockCells, type LowStockCell } from "../../numbatrak-inventory/lib/movements.js";
 
 /** Comma-separated additional recipients -> a clean list of non-empty, trimmed addresses. */
 function parseAdditionalRecipients(value: string | null): string[] {
@@ -38,7 +39,26 @@ function formatCurrency(value: number): string {
   return `₦${Math.round(value).toLocaleString("en-NG")}`;
 }
 
-function buildEmailBody(orgName: string, label: string, summary: Awaited<ReturnType<typeof fetchDashboardSummary>>): string {
+function buildLowStockSection(cells: LowStockCell[]): string {
+  if (cells.length === 0) return "";
+  const rows = cells
+    .map(
+      (c) =>
+        `<tr><td style="padding:4px 12px 4px 0;">${c.productName}${c.variantName ? ` (${c.variantName})` : ""} — ${c.agentName}</td><td style="padding:4px 0;font-weight:600;color:#b45309;">${c.quantityOnHand} on hand (threshold ${c.threshold})</td></tr>`,
+    )
+    .join("");
+  return `
+    <h3 style="margin:20px 0 4px;">Low stock</h3>
+    <table cellspacing="0" cellpadding="0">${rows}</table>
+  `;
+}
+
+function buildEmailBody(
+  orgName: string,
+  label: string,
+  summary: Awaited<ReturnType<typeof fetchDashboardSummary>>,
+  lowStockCells: LowStockCell[],
+): string {
   const m = summary.businessMetrics;
   const l = summary.lossMetrics;
   const row = (name: string, value: string) =>
@@ -58,6 +78,7 @@ function buildEmailBody(orgName: string, label: string, summary: Awaited<ReturnT
       ${row("Undelivered orders", String(l.undeliveredCount))}
       ${row("Would-be sales (undelivered)", formatCurrency(l.wouldBeSales))}
     </table>
+    ${buildLowStockSection(lowStockCells)}
   `.trim();
 }
 
@@ -103,7 +124,8 @@ export async function runDailySummaryEmails(db: Database, log: FastifyBaseLogger
 
       const [org] = await db.select({ name: organization.name }).from(organization).where(eq(organization.id, organizationId)).limit(1);
       const summary = await fetchDashboardSummary(db, organizationId, { dateFrom, dateTo });
-      const body = buildEmailBody(org?.name ?? "Your business", label, summary);
+      const lowStockCells = await getLowStockCells(db, organizationId);
+      const body = buildEmailBody(org?.name ?? "Your business", label, summary, lowStockCells);
       for (const recipient of recipients) {
         await sendEmail(log, { to: recipient, subject: `Daily summary — ${label}`, body });
       }

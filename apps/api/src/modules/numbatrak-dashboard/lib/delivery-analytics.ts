@@ -96,12 +96,13 @@ export async function fetchDeliveryAnalyticsHeadline(
   let waybilledCount = 0;
   let deliveredCount = 0;
   for (const row of rows) {
-    if (row.status === "Waybilled") {
-      waybilledValue += row.cost;
-      waybilledCount += 1;
-    } else if (row.status === "Delivered") {
+    if (row.status === "Delivered") {
       deliveredValue += row.cost;
       deliveredCount += 1;
+    } else {
+      // Waybilled or PickedUp - still outstanding, not yet confirmed delivered.
+      waybilledValue += row.cost;
+      waybilledCount += 1;
     }
   }
 
@@ -135,12 +136,13 @@ function bucketRows(
       waybilledCount: 0,
       deliveredCount: 0,
     };
-    if (row.status === "Waybilled") {
-      bucket.waybilledValue += row.cost;
-      bucket.waybilledCount += 1;
-    } else if (row.status === "Delivered") {
+    if (row.status === "Delivered") {
       bucket.deliveredValue += row.cost;
       bucket.deliveredCount += 1;
+    } else {
+      // Waybilled or PickedUp - still outstanding, not yet confirmed delivered.
+      bucket.waybilledValue += row.cost;
+      bucket.waybilledCount += 1;
     }
     buckets.set(key, bucket);
   }

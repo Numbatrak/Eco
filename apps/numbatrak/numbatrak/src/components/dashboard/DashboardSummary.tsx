@@ -291,7 +291,7 @@ export function DashboardSummary({
               onExplain={openExplainer("average_delivery_fee")}
             />
             <KPICard
-              title="Profit Per Order"
+              title="Profit Per Order (after ad spend)"
               value={formatCurrency(m.profitPerOrder)}
               subtitle="AOV − Real CPA − COGS − delivery"
               icon={TrendingUp}

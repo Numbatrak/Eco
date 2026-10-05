@@ -46,7 +46,7 @@ export function DeliveryDialog({
   const [date, setDate] = useState("");
   const [csr, setCsr] = useState("");
   const [agentId, setAgentId] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<"Waybilled" | "Delivered">("Delivered");
+  const [status, setStatus] = useState<"Waybilled" | "PickedUp" | "Delivered">("Delivered");
   const [productId, setProductId] = useState<string | undefined>(undefined);
   const [quantity, setQuantity] = useState("1");
   const [cost, setCost] = useState("0");
@@ -159,7 +159,7 @@ export function DeliveryDialog({
                 <Select
                   value={status}
                   onValueChange={(value) =>
-                    setStatus(value as "Waybilled" | "Delivered")
+                    setStatus(value as "Waybilled" | "PickedUp" | "Delivered")
                   }
                 >
                   <SelectTrigger id="status" className="w-full max-w-none">
@@ -167,6 +167,7 @@ export function DeliveryDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Delivered">Delivered</SelectItem>
+                    <SelectItem value="PickedUp">Picked up</SelectItem>
                     <SelectItem value="Waybilled">Waybilled</SelectItem>
                   </SelectContent>
                 </Select>

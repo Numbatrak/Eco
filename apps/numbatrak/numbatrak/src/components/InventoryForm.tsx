@@ -177,6 +177,7 @@ export default function InventoryForm() {
         variant_id: values.variant_id,
         quantity: values.quantity,
         notes: values.notes,
+        flag_as_loss: values.flag_as_loss,
       });
       setSuccess(
         values.movement_type === "damaged"

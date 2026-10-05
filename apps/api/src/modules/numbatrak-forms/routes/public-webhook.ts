@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { findActiveFormByToken, submitFormOrder } from "../lib/intake.js";
 import { verifyFormWebhookSecret } from "../lib/forms.js";
-import { flattenElementorPayload, resolveContactFields, resolveItems } from "../lib/elementor.js";
+import { flattenElementorPayload, resolveContactFields, resolveItems, resolveTrackingLinkCode } from "../lib/elementor.js";
 import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
 import type { NumbatrakFormFieldMapping } from "@platform/shared-types";
 
@@ -56,6 +56,7 @@ export default async function publicNumbatrakFormWebhookRoutes(app: FastifyInsta
       const flat = flattenElementorPayload(request.body);
       const fieldValues = resolveContactFields(flat, mapping.contactFields ?? {});
       const items = resolveItems(flat, mapping, form.schema);
+      const trackingLinkCode = resolveTrackingLinkCode(flat, mapping);
 
       try {
         const result = await submitFormOrder(
@@ -66,6 +67,7 @@ export default async function publicNumbatrakFormWebhookRoutes(app: FastifyInsta
             items,
             source: "elementor",
             pageUrl: null,
+            trackingLinkCode,
           },
           request.log,
         );

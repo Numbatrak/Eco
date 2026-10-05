@@ -53,6 +53,8 @@ export interface SubmitFormOrderInput {
   pageUrl?: string | null;
   offerName?: string | null;
   packageName?: string | null;
+  /** Explicit tracking-link code — wins over parsing `?tl=` out of pageUrl. */
+  trackingLinkCode?: string | null;
 }
 
 /**
@@ -178,7 +180,7 @@ export async function submitFormOrder(
     // Tracking-link attribution: a bad/missing/inactive `tl` code just means
     // no attribution, never a failed submission - this is best-effort
     // marketing data, not a required field.
-    const trackingLinkCode = extractTrackingLinkCode(input.pageUrl);
+    const trackingLinkCode = input.trackingLinkCode ?? extractTrackingLinkCode(input.pageUrl);
     const resolvedTrackingLink = trackingLinkCode
       ? await findActiveTrackingLinkByCode(tx, form.organizationId, trackingLinkCode)
       : null;

@@ -44,6 +44,7 @@ interface FormResponseTableProps {
     sub_brand?: string;
     funnel_name?: string;
     tracking_link_id?: string;
+    needs_state?: boolean;
   };
   onFilterChange?: (filters: {
     status?: string;
@@ -55,6 +56,7 @@ interface FormResponseTableProps {
     sub_brand?: string;
     funnel_name?: string;
     tracking_link_id?: string;
+    needs_state?: boolean;
   }) => void;
   /** When provided, a form dropdown is shown and filter tags use these names */
   formOptions?: { id: string; name: string }[];
@@ -389,6 +391,25 @@ export function FormResponseTable({
             </Select>
           )}
           {onFilterChange && (
+            <button
+              type="button"
+              onClick={() =>
+                onFilterChange({
+                  ...filters,
+                  needs_state: filters.needs_state ? undefined : true,
+                })
+              }
+              className={`shrink-0 px-3 py-1.5 rounded-md border text-sm font-medium transition-colors ${
+                filters.needs_state
+                  ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                  : "border-border bg-background text-muted-foreground hover:text-foreground"
+              }`}
+              title="Show only orders missing a state/location"
+            >
+              Needs state
+            </button>
+          )}
+          {onFilterChange && (
             <>
               <DateInput
                 value={filters.date_from ?? ""}
@@ -417,6 +438,7 @@ export function FormResponseTable({
           filters.agent_id != null ||
           filters.sub_brand ||
           filters.funnel_name ||
+          filters.needs_state ||
           filters.date_from ||
           filters.date_to) && (
           <div className="form-response-active-filters">
@@ -482,6 +504,17 @@ export function FormResponseTable({
                 Sub-brand: {filters.sub_brand}
                 <button
                   onClick={() => handleFilterRemove("sub_brand")}
+                  className="form-response-filter-remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.needs_state && (
+              <span className="form-response-filter-tag">
+                Needs state
+                <button
+                  onClick={() => handleFilterRemove("needs_state")}
                   className="form-response-filter-remove"
                 >
                   <X className="w-3 h-3" />

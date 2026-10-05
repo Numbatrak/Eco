@@ -1,0 +1,212 @@
+﻿Please rate the new Quick notes tab by taking a short survey.
+Meeting Sep 11, 2026 at 13:31 UTC
+
+
+Sep 11, 2026
+
+
+App review detailing manual invoicing and broken advertising subsystems with planned core fixes.
+
+
+Invoicing System Logic
+* Invoices are generated manually via requests or order shortcuts rather than automatically.
+* Revenue recording occurs at delivery to avoid double counting sales.
+
+
+Media Buyer Advertising Subsystem
+* The subsystem manages creative production, contractor payments, ad spend logs, and performance measurement.
+* Attribution hierarchy flows from Goal to Brand, then Product, Offer, and finally Platform.
+* Critical functions including the production tab, payment tracking, and ad catalogs are currently non-functional.
+
+
+Development Roadmap and Priorities
+* Development focus is restricted to Expenses, Products, Invoicing, and Media Buyer subsystems for the current version.
+* Customer Management and Storefront modules will be addressed after the completion of the primary system components.
+
+
+Next steps
+* [The developer] Fix Invoicing Emails: Ensure an automated email is sent to customers upon successful order completion. Include the invoice in this messaging layer notification.
+* [The developer] Fix Media Buyer Tab: Repair the functionality of the advertising subsystem to ensure creative production and payment logging work correctly. Restore access to the production tab, payment tracking, and ad catalog.
+* [The developer] Model Dashboard: Reconstruct the dashboard model based on the provided specifications. Align the data visualization with the required advertising attribution hierarchy.
+
+
+
+
+
+
+Want to see more? View the full notes
+Tip: You can always access your full notes from the left sidebar.
+
+
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+Sep 11, 2026
+Meeting Sep 11, 2026 at 13:31 UTC
+Meeting records Transcript 
+
+
+
+
+Summary
+App review detailing manual invoicing and broken advertising subsystems with planned core fixes.
+
+App and Invoicing Review
+App review identified missing expense visibility and manual invoicing workflows.
+
+Media Buyer Subsystem
+Attribution hierarchy established for creative production and ad spend tracking.
+
+System Failures and Phases
+Non-functional media buyer features require remodeling before version 1 core updates.
+
+
+
+
+Next steps
+* [The developer] Fix Invoicing Emails: Ensure an automated email is sent to customers upon successful order completion. Include the invoice in this messaging layer notification.
+* [The developer] Fix Media Buyer Tab: Repair the functionality of the advertising subsystem to ensure creative production and payment logging work correctly. Restore access to the production tab, payment tracking, and ad catalog.
+* [The developer] Model Dashboard: Reconstruct the dashboard model based on the provided specifications. Align the data visualization with the required advertising attribution hierarchy.
+
+
+
+
+Details
+* Expenses and Products Review Context: Toheeb Yusuf notes that they are reviewing the current state of the app built by the developer by comparing it against the feature spec document (00:00:44) (00:01:28). Toheeb Yusuf discusses missing elements and visibility issues regarding expenses, as well as previously covered product details, operating on the premise of documenting these points for the developer in case prior recordings are lost (00:01:08).
+* Invoicing Functionality and Revenue Tracking: Toheeb Yusuf explains that invoices are generated manually via requests, forms, or order shortcuts rather than being auto-created for every single order (00:06:05). Toheeb Yusuf specifies that customers must receive an email—and a WhatsApp message once the messaging layer is connected—upon successful order completion, and because invoicing is manual, orders are not recorded as separate sales until they are delivered to prevent double-counting revenue (00:07:42).
+* Media Buyer Subsystem and Attribution Hierarchy: Toheeb Yusuf outlines the media buyer advertising subsystem, which handles creative production, contractor payments, ad spend logging, and performance tracking (00:09:33). Toheeb Yusuf details that the system operates across a clear attribution hierarchy flowing from goas to brand, product, offer, and platform, and notes that creative production logs one row per batch of creatives made by media buyers to feed into video ad catalogs and payment workflows (00:27:25).
+* Media Buyer Subsystem Failures and Future System Phases: Toheeb Yusuf reports that the media buyers tab is entirely non-functional, specifically stating that the production tab, payment features, add catalogs, spend targets, and reviews do not work at all and need to be fixed and remodeled on the dashboard (00:28:58). Toheeb Yusuf outlines that version one corrections will subsequently address customer management and storefronts only after the initial core systems are fully resolved (00:30:25).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+Sep 11, 2026
+Meeting Sep 11, 2026 at 13:31 UTC - Transcript
+00:00:44
+
+
+Toheeb Yusuf: So I was recording as you know um for the developer for number track um looking at what has been done on number track comparing it to the feature spec document that we have on my screen and um I don't know when I got cut off but I got cut off but I don't know where I got cut off but I definitely definitely got cut off.
+
+
+
+
+00:01:08
+
+
+Toheeb Yusuf: So this is a continuation. I don't know if what I had has been saved and I'll get the notes. I hope so. But um I'm just going to continue from where I stop because I'm also telling myself. So if I don't get the notes, I'll just you know use myself as an explanation for the developer.
+
+
+
+
+00:01:28
+
+
+Toheeb Yusuf: But I hope I do get the notes. There are some important tabs that the developer has to know so as to fix it. So uh we talked about the expenses yet some things that are missing and some things that has to be fixed and all some things that are not visible on the expenses. The way it was said on the on the um feature spec and the way it is on the app that the developer has built um thus far.
+
+
+
+
+00:01:58
+
+
+Toheeb Yusuf: So we are comparing and looking at them and trying to solve them. So um that's where we were before we before then we had products you know talking about products and all. I really hope it was it was captured. I really hope so. But if it was not let's move forward. I'm ready.
+
+
+
+
+00:06:05
+
+
+Toheeb Yusuf: So we are going to start from or continue from the invoicing. Who's your iPhone? So we are at invoicing and that's where we stop. So we are going to continue from there. So invoices are generated the feature spec invoices are generated manually. So the log rules but we also said that you know they should be generated on order from others like basically but the log invoices are generated malar request or form and order via a shortcut they are not auto created every order.
+
+
+
+
+00:07:42
+
+
+Toheeb Yusuf: However, there should be an email for every invoice that is generated for for every customers that buy. They should get an email on successful completion of an order. They receive their invoice via the messaging layer which is the email or the WhatsApp once connected the messaging layer because invoicing is manual. It does not record the order as a separate sale.
+
+
+
+
+00:08:02
+
+
+Toheeb Yusuf: The order already counts once deliver this avoids double counting revenue. So that is it for invoicing and we are going to be rolling next to we're going to be rolling we are going to be rolling next to um media buyer to be rolling next to the media buyers. All right, we are going to be rolling next to the media bias which is um the entire advertising sub system.
+
+
+
+
+00:08:57
+
+
+Toheeb Yusuf: Right. So, We done here delivery done here products done here we are going to come to the storefront much later we done here staff management so we are marketing the media buyers and settings so we are marketing so we are going to be you know talking about the media buyers over here and we are going to be reviewing everything that the media media buying team needs to be able to to do.
+
+
+
+
+00:09:33
+
+
+Toheeb Yusuf: So we are going to start from the feature spec that we have listed and we are going to go into what has already been built to find the gaps, what needs to be improved, what needs to change and what needs to be better. s***. So, the media buyers The media buyer is the entire advertising subsystem basically where the creative is produced.
+
+
+
+
+00:27:03
+
+
+Toheeb Yusuf: The contractors are paid ad spends are logged performance is measured is one of the most important part of the product because the source of the ad spend numbers that drive and rewards everywhere else. It has two connected sides. The creative production side making and paying for art and the performance side rolling and mentioning them. section etc to the ad running businesses.
+
+
+
+
+00:27:25
+
+
+Toheeb Yusuf: A business that run simply simply will not populate it. The attribution spine everything in the media buyer keys of one attribution hierarchy from goas to find brand and product then offer then platform. The offer again like is related to the threedimensional um problem that we have with offers which is offers source funnel which is like the same thing which is different from the offers in the product right let's spend and revenue be tracked at any level of a brand one product across all brand one offer versus another one offer versus versus one class one versus another.
+
+
+
+
+00:28:10
+
+
+Toheeb Yusuf: So we need a clear explanation of clear explanation of of how to use them. The same offer object defined on the product funnel offer treated as one thing. An angle level nance is carried by add creative instead one creative production. What does it production log which is one row per batch of creatives be made by media by creative style assign and right mark creating a part flows into the video add catalogs and operate the payment piece
+
+
+
+
+00:28:58
+
+
+Toheeb Yusuf: teams and contact payments basically in the production tab. So you can add a badge. You can add a badge. Add a badge. Basically the media bias production tab doesn't work well. production tab does not work well. Doesn't work at all. Um, the team should be inside the production tab.
+
+
+
+
+00:29:45
+
+
+Toheeb Yusuf: Doesn't work as well. payment doesn't work. Add catalog doesn't work. Spend basically not just spend the target which is where you have the it doesn't work. Reviews something like reviews. It doesn't work. The media buyer doesn't work. The media buyers tab doesn't work at all. Doesn't work at all.
+
+
+
+
+00:30:25
+
+
+Toheeb Yusuf: Needs to be fixed. the media buyer does not work at at all. Right? So you need to you need to come back and model what's on the dashboard. Then the customer management we are going to are going to address that much much later after we address after we do this first part of the entire system and we are going to come to the customer management and we are going to come to the storefront which is after we address this first four ones and that would be it for for version one of the correction that is going to be made then we come to the customer management And then we finalize with um we do the storefront and um yeah we'll take it from there.
+
+
+
+
+Transcription ended after 00:31:59
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

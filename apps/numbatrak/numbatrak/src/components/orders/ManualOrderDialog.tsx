@@ -355,6 +355,17 @@ export function ManualOrderDialog({
                           ))}
                         </SelectContent>
                       </Select>
+                      {line.product_id && (() => {
+                        const selectedProduct = activeProducts.find(
+                          (p) => p.id === line.product_id
+                        );
+                        return selectedProduct ? (
+                          <p className="text-xs text-muted-foreground">
+                            Price: ₦{(selectedProduct.base_price ?? 0).toLocaleString("en-NG")}{" "}
+                            · Cost: ₦{(selectedProduct.cost_price ?? 0).toLocaleString("en-NG")}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                     <div className="dialog-form-field space-y-2 w-24 shrink-0">
                       <Label className="dialog-field-label text-xs">Qty</Label>

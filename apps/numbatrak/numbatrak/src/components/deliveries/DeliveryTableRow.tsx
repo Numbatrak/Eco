@@ -1,5 +1,5 @@
 import { DeliveryWithRelations } from "../../types/delivery";
-import { Pencil, Trash2, Clock, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, Clock, CheckCircle2, Truck } from "lucide-react";
 import { getMonthName } from "../../services/deliveries";
 import "./DeliveryTable.css";
 
@@ -8,6 +8,7 @@ interface DeliveryTableRowProps {
   index: number;
   onEdit: (delivery: DeliveryWithRelations) => void;
   onDelete: (deliveryId: number) => void;
+  onConfirmPickup?: (deliveryId: number) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
@@ -17,6 +18,7 @@ export function DeliveryTableRow({
   index,
   onEdit,
   onDelete,
+  onConfirmPickup,
   canEdit = true,
   canDelete = true,
 }: DeliveryTableRowProps) {
@@ -40,6 +42,7 @@ export function DeliveryTableRow({
   const month = getMonthName(delivery.date);
   const status = delivery.status;
   const isDelivered = status === "Delivered";
+  const isPickedUp = status === "PickedUp";
   const isWaybilled = status === "Waybilled";
 
   return (
@@ -54,11 +57,20 @@ export function DeliveryTableRow({
         {delivery.csr || <span className="delivery-table-empty-value">N/A</span>}
       </td>
       <td className="delivery-table-cell">
-        <span className={`delivery-table-status-badge ${isDelivered ? "delivered" : "waybilled"}`}>
+        <span
+          className={`delivery-table-status-badge ${
+            isDelivered ? "delivered" : isPickedUp ? "picked-up" : "waybilled"
+          }`}
+        >
           {isDelivered ? (
             <>
               <CheckCircle2 className="delivery-table-status-icon" />
               Delivered
+            </>
+          ) : isPickedUp ? (
+            <>
+              <Truck className="delivery-table-status-icon" />
+              Picked up
             </>
           ) : (
             <>
@@ -87,6 +99,15 @@ export function DeliveryTableRow({
       <td className="delivery-table-cell text-right">
         {(canEdit || canDelete) && (
           <div className="delivery-table-actions">
+            {isWaybilled && onConfirmPickup && canEdit && (
+              <button
+                onClick={() => onConfirmPickup(delivery.id)}
+                className="delivery-table-action-button"
+                title="Confirm the agent has picked this up"
+              >
+                <Truck className="delivery-table-action-icon" />
+              </button>
+            )}
             {canEdit && (
               <button
                 onClick={() => onEdit(delivery)}

@@ -164,6 +164,12 @@ export function StaffDialog({
                 </label>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Check every role this person performs — access is the combined
+              (union) of all checked roles. Managers only see their own
+              team&apos;s orders/dashboard data; set that scope with the
+              Manager field below.
+            </p>
           </div>
 
           <div className="space-y-2">

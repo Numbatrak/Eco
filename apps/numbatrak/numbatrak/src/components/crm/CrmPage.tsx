@@ -122,7 +122,16 @@ export function CrmPage() {
     }
     const order = await fetchCustomerOrderById(complaint.order_id, currentOrganization?.id ?? null);
     setResolveOrderItems(
-      order ? order.items.map((item) => ({ productId: item.product_id, label: order.productNames[item.product_id] ?? item.product_id })) : [],
+      order
+        ? order.items.map((item) => {
+            const productLabel = order.productNames?.[item.product_id] ?? item.product_id;
+            const variantLabel = item.variant_id ? order.variantNames?.[item.variant_id] : null;
+            return {
+              productId: item.product_id,
+              label: variantLabel ? `${productLabel} — ${variantLabel}` : productLabel,
+            };
+          })
+        : [],
     );
   }
 

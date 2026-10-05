@@ -220,6 +220,7 @@ export const numbatrakOrderItemSchema = z.object({
   id: z.string().uuid(),
   orderId: z.string().uuid(),
   productId: z.string().uuid(),
+  variantId: z.string().uuid().nullable(),
   quantity: z.number().int(),
   unitPriceAtSubmission: z.string(),
   unitCostAtSubmission: z.string(),
@@ -264,6 +265,7 @@ export const numbatrakOrderSchema = z.object({
   csr: z.object({ id: z.string(), fullName: z.string().nullable(), email: z.string().nullable() }).nullable(),
   agent: z.object({ id: z.number(), name: z.string() }).nullable(),
   productNames: z.record(z.string(), z.string()),
+  variantNames: z.record(z.string(), z.string()),
 });
 export type NumbatrakOrder = z.infer<typeof numbatrakOrderSchema>;
 
@@ -515,7 +517,7 @@ export type AddNumbatrakRemittanceNetOffRequest = z.infer<typeof addNumbatrakRem
 
 // ---------- deliveries / waybills ----------
 
-export const numbatrakDeliveryStatusSchema = z.enum(["Waybilled", "Delivered"]);
+export const numbatrakDeliveryStatusSchema = z.enum(["Waybilled", "PickedUp", "Delivered"]);
 export type NumbatrakDeliveryStatus = z.infer<typeof numbatrakDeliveryStatusSchema>;
 
 export const numbatrakDeliverySchema = z.object({
@@ -1105,6 +1107,9 @@ export const numbatrakFormFieldMappingSchema = z.object({
   productField: z.string().trim().min(1).optional(),
   // Elementor answer value -> this form's schema.fields[].radioOptions[].id.
   valueToOptionId: z.record(z.string(), z.string()).default({}),
+  // Elementor field id/title carrying a tracking-link code (a hidden field
+  // the merchant hardcodes per-form), independent of pageUrl's `?tl=` param.
+  trackingLinkCodeField: z.string().trim().min(1).optional(),
 });
 export type NumbatrakFormFieldMapping = z.infer<typeof numbatrakFormFieldMappingSchema>;
 
@@ -1197,6 +1202,10 @@ export const submitPublicNumbatrakFormRequestSchema = z.object({
   pageUrl: z.string().trim().nullable().optional(),
   offerName: z.string().trim().nullable().optional(),
   packageName: z.string().trim().nullable().optional(),
+  // Explicit tracking-link code, independent of parsing `?tl=` out of
+  // pageUrl - lets WPForms/Elementor/Fluent Forms attribute an order to a
+  // tracking link even when they don't carry a real page URL.
+  trackingLinkCode: z.string().trim().nullable().optional(),
 });
 export type SubmitPublicNumbatrakFormRequest = z.infer<typeof submitPublicNumbatrakFormRequestSchema>;
 
@@ -1291,6 +1300,7 @@ export const createNumbatrakShrinkageMovementRequestSchema = z.object({
   variantId: z.string().uuid().nullable().optional(),
   quantity: z.number().int().positive(),
   notes: z.string().trim().min(1),
+  flagAsLoss: z.boolean().optional(),
 });
 export type CreateNumbatrakShrinkageMovementRequest = z.infer<typeof createNumbatrakShrinkageMovementRequestSchema>;
 

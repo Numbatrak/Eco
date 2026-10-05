@@ -178,7 +178,11 @@ export function DeliveryAnalyticsFiltersBar({
               <Label className="text-xs text-muted-foreground">Status</Label>
               <Select
                 value={filters.status ?? "all"}
-                onValueChange={(v) => patch({ status: v === "Waybilled" || v === "Delivered" ? v : "all" })}
+                onValueChange={(v) =>
+                  patch({
+                    status: v === "Waybilled" || v === "PickedUp" || v === "Delivered" ? v : "all",
+                  })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -186,6 +190,7 @@ export function DeliveryAnalyticsFiltersBar({
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="Waybilled">Waybilled</SelectItem>
+                  <SelectItem value="PickedUp">Picked up</SelectItem>
                   <SelectItem value="Delivered">Delivered</SelectItem>
                 </SelectContent>
               </Select>

@@ -129,6 +129,7 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
             pageUrl: body.pageUrl,
             offerName: body.offerName,
             packageName: body.packageName,
+            trackingLinkCode: body.trackingLinkCode,
           },
           request.log,
         );

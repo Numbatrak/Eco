@@ -183,6 +183,13 @@
       "when": 1790693891000,
       "tag": "0025_wandering_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791214578400,
+      "tag": "0026_numbatrak_delivery_picked_up_status",
+      "breakpoints": true
     }
   ]
 }

@@ -75,6 +75,8 @@ export interface FieldMapping {
   productField?: string;
   /** Elementor answer value -> this form's schema.fields[].radioOptions[].id. */
   valueToOptionId: Record<string, string>;
+  /** Elementor/Fluent Forms field id/title carrying a tracking-link code. */
+  trackingLinkCodeField?: string;
 }
 
 export interface Form {

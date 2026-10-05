@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { PageLayout } from "../layout/PageLayout";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -13,7 +14,6 @@ import {
   awardSotm,
   markLinePaid,
   fetchMyEarnings,
-  upsertPayStructure,
   overridePayrollLine,
   setManualAdjustment,
   fetchPayrollLineTrace,
@@ -23,10 +23,9 @@ import {
   type MyEarnings,
   type PayrollTrace,
 } from "../../services/payroll";
-import { PayStructureDialog, type PayStructureFormValues } from "./PayStructureDialog";
 import { PayrollLineEditDialog, type PayrollLineEditValues } from "./PayrollLineEditDialog";
 import { PayrollTraceDialog } from "./PayrollTraceDialog";
-import { DollarSign, Play, Check, Star, AlertTriangle, PenLine, FileSearch, Plus, Lock, Unlock } from "lucide-react";
+import { DollarSign, Play, Check, Star, AlertTriangle, PenLine, FileSearch, Settings, Lock, Unlock } from "lucide-react";
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -46,16 +45,10 @@ export function PayrollPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [payrollRun, setPayrollRun] = useState<PayrollRun | null>(null);
   const [structures, setStructures] = useState<PayStructure[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [myEarnings, setMyEarnings] = useState<MyEarnings | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [togglingPeriod, setTogglingPeriod] = useState(false);
-
-  const [structureDialogOpen, setStructureDialogOpen] = useState(false);
-  const [editingStructure, setEditingStructure] = useState<PayStructure | null>(null);
-  const [structureSaving, setStructureSaving] = useState(false);
-  const [structureError, setStructureError] = useState<string | null>(null);
 
   const [lineDialogOpen, setLineDialogOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<PayrollLine | null>(null);
@@ -90,14 +83,9 @@ export function PayrollPage() {
           bank_account_name: record?.bank_account_name ?? "",
         });
       } else {
-        const [s, r, staffList] = await Promise.all([
-          fetchPayStructures(),
-          fetchPayrollRun(month),
-          fetchStaff(currentOrganization.id),
-        ]);
+        const [s, r] = await Promise.all([fetchPayStructures(), fetchPayrollRun(month)]);
         setStructures(s);
         setPayrollRun(r);
-        setStaff(staffList);
       }
     } catch (err) {
       console.error("Failed to load payroll data", err);
@@ -171,32 +159,6 @@ export function PayrollPage() {
       setBankError(err instanceof Error ? err.message : "Failed to save bank details.");
     } finally {
       setBankSaving(false);
-    }
-  };
-
-  const openNewStructure = () => {
-    setEditingStructure(null);
-    setStructureError(null);
-    setStructureDialogOpen(true);
-  };
-
-  const openEditStructure = (s: PayStructure) => {
-    setEditingStructure(s);
-    setStructureError(null);
-    setStructureDialogOpen(true);
-  };
-
-  const handleSaveStructure = async (values: PayStructureFormValues) => {
-    setStructureSaving(true);
-    setStructureError(null);
-    try {
-      await upsertPayStructure(values);
-      await load();
-    } catch (err) {
-      setStructureError(err instanceof Error ? err.message : "Failed to save pay structure.");
-      throw err;
-    } finally {
-      setStructureSaving(false);
     }
   };
 
@@ -318,16 +280,6 @@ export function PayrollPage() {
 
   return (
     <PageLayout>
-      <PayStructureDialog
-        open={structureDialogOpen}
-        onOpenChange={setStructureDialogOpen}
-        structure={editingStructure}
-        staff={staff}
-        saving={structureSaving}
-        error={structureError}
-        onSubmit={handleSaveStructure}
-      />
-
       <PayrollLineEditDialog
         open={lineDialogOpen}
         onOpenChange={setLineDialogOpen}
@@ -433,55 +385,20 @@ export function PayrollPage() {
         </div>
       )}
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium text-foreground">Pay Structures ({structures.length})</h2>
-          {canManage && (
-            <button
-              onClick={openNewStructure}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted"
-            >
-              <Plus className="w-4 h-4" />
-              Add pay structure
-            </button>
-          )}
+      <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-border bg-card">
+        <div className="text-sm text-muted-foreground">
+          {structures.length > 0
+            ? `${structures.length} pay structure${structures.length === 1 ? "" : "s"} configured`
+            : "No pay structures configured yet"}
         </div>
-        {structures.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {structures.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => canManage && openEditStructure(s)}
-                className={`text-left p-4 rounded-lg border border-border bg-card ${canManage ? "hover:border-primary cursor-pointer" : "cursor-default"}`}
-              >
-                <div className="font-medium text-foreground mb-2">
-                  {s.scope_type === "role" ? `Role: ${s.role}` : `Staff: ${s.staff_name ?? s.staff_id}`}
-                </div>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  {s.base_salary_enabled && <div>Base: {formatCurrency(s.base_salary_amount)}</div>}
-                  {s.commission_enabled && (
-                    <div>
-                      Commission: {s.commission_basis === "flat_per_order" ? formatCurrency(s.commission_rate) + "/order" : s.commission_rate + "%"}
-                      {s.commission_gate_enabled && ` (gate: ${s.commission_gate_threshold_percent}% delivery rate)`}
-                    </div>
-                  )}
-                  {s.upsell_bonus_enabled && <div>Upsell: {formatCurrency(s.upsell_bonus_amount)}/upsell</div>}
-                  {s.sotm_bonus_enabled && <div>SOTM: {formatCurrency(s.sotm_bonus_amount)}</div>}
-                  {s.manager_bonus_enabled && (
-                    <div>
-                      Manager: {formatCurrency(s.manager_bonus_amount)}
-                      {s.manager_gate_enabled && ` (gate: ${s.manager_gate_team_ratio_percent}% of team @ ${s.manager_gate_kpi_threshold_percent}% KPI)`}
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 text-center text-muted-foreground border border-dashed border-border rounded-lg text-sm">
-            No pay structures set — add one per role or staff member to start paying people through Payroll.
-          </div>
+        {canManage && (
+          <Link
+            to="/organization-settings"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <Settings className="w-4 h-4" />
+            Manage pay structures in Settings
+          </Link>
         )}
       </div>
     </PageLayout>

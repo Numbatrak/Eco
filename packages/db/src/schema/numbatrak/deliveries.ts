@@ -1,8 +1,10 @@
 // Numbatrak domain: the "Waybills" feature (route /waybills, backed by
 // `DeliveriesForm` per docs/PHASE-CURRENT-STABILIZATION.md §5). Source table
-// is `public.deliveries` - logistics status (Waybilled/Delivered) tracking
-// stock movement into/out of an agent's holding, distinct from an order's own
-// delivery status.
+// is `public.deliveries` - logistics status (Waybilled/PickedUp/Delivered)
+// tracking stock movement into/out of an agent's holding, distinct from an
+// order's own delivery status. PickedUp (added later) defers the agent's
+// stock credit from waybill-booking time to actual pickup confirmation - see
+// numbatrak-deliveries/lib/waybills.ts::confirmWaybillPickup.
 //
 // Excluded from this schema (see migration report): `public.waybills` (a
 // separate table with its own bigint id, `waybill_number`, `eta`,
@@ -68,7 +70,7 @@ export const numbatrakDeliveries = pgTable(
     index("numbatrak_deliveries_waybill_batch_idx")
       .on(table.organizationId, table.waybillBatchId)
       .where(sql`${table.waybillBatchId} IS NOT NULL`),
-    check("numbatrak_deliveries_status_chk", sql`${table.status} IN ('Waybilled', 'Delivered')`),
+    check("numbatrak_deliveries_status_chk", sql`${table.status} IN ('Waybilled', 'PickedUp', 'Delivered')`),
     check("numbatrak_deliveries_quantity_chk", sql`${table.quantity} > 0`),
     check("numbatrak_deliveries_cost_chk", sql`${table.cost} >= 0`),
     check("numbatrak_deliveries_waybilling_fee_chk", sql`${table.waybillingFee} >= 0`),

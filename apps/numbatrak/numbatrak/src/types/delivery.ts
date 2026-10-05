@@ -3,7 +3,7 @@ export interface Delivery {
   date: string; // ISO date string
   csr: string | null;
   agent_id: number | null;
-  status: "Waybilled" | "Delivered";
+  status: "Waybilled" | "PickedUp" | "Delivered";
   /** `products.id` (UUID in greenfield schemas) */
   product_id: string;
   quantity: number;

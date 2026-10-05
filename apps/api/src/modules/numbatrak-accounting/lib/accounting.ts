@@ -158,6 +158,46 @@ export async function getAccountingReport(
   };
 }
 
+function csvCell(value: unknown): string {
+  const s = value === null || value === undefined ? "" : String(value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export async function exportAccountingCsv(
+  db: Database,
+  organizationId: string,
+  query: { dateFrom?: string; dateTo?: string; subBrand?: string },
+): Promise<string> {
+  const { pnl, cashPosition } = await getAccountingReport(db, organizationId, query);
+
+  const rows: [string, string | number][] = [
+    ["Total Revenue", pnl.revenue.total],
+    ...Object.entries(pnl.revenue.bySubBrand).map(
+      ([brand, amount]): [string, string | number] => [`Revenue — ${brand}`, amount],
+    ),
+    ["Cost of Goods Sold", pnl.cogs],
+    ["Gross Profit", pnl.grossProfit],
+    ["Operational Expenses", pnl.expenses.operational],
+    ["Building Expenses", pnl.expenses.building],
+    ["Marketing Expenses", pnl.expenses.marketing],
+    ["Advertising Expenses", pnl.expenses.advertising],
+    ["Agent Expenses", pnl.expenses.agent],
+    ["Total Expenses", pnl.expenses.total],
+    ["Net Profit", pnl.netProfit],
+    ["Order Count", pnl.orderCount],
+    ["Average Order Value", pnl.avgOrderValue],
+    ["Profit Margin %", pnl.profitMargin.toFixed(2)],
+    ["Cash — Total Earned (accrual)", cashPosition.totalEarned],
+    ["Cash — Total Collected", cashPosition.totalCollected],
+    ["Cash — Outstanding COD", cashPosition.outstandingCod],
+    ["Cash — Collection Rate %", cashPosition.collectionRate.toFixed(2)],
+  ];
+
+  const header = "metric,value";
+  const body = rows.map(([metric, value]) => `${csvCell(metric)},${csvCell(value)}`);
+  return [header, ...body].join("\n");
+}
+
 export async function listSubBrands(db: Database, organizationId: string): Promise<string[]> {
   const rows = await db
     .selectDistinct({ subBrand: numbatrakCustomerOrders.subBrand })

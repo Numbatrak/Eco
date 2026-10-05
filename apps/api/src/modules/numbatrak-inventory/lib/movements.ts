@@ -18,6 +18,7 @@ import type {
 } from "@platform/shared-types";
 import { getAgentProductOnHand, getOrgStockGrid } from "../../../lib/numbatrak-stock.js";
 import { parseLocations } from "../../numbatrak-agents/lib/agents.js";
+import { getOrCreateInventorySettings } from "./inventory-settings.js";
 
 export type StockMovementRow = typeof numbatrakStockMovements.$inferSelect;
 
@@ -183,6 +184,73 @@ export async function getStockGrid(
   };
 }
 
+export interface LowStockCell {
+  agentName: string;
+  productName: string;
+  variantName: string | null;
+  quantityOnHand: number;
+  threshold: number;
+}
+
+/**
+ * Cells from the stock grid whose on-hand quantity has crossed at or below
+ * its effective low-stock threshold (per-product override, falling back to
+ * the org default) - same effective-threshold rule as StockGrid.tsx's
+ * isLowStock. Used to feed the daily-summary email's low-stock section.
+ */
+export async function getLowStockCells(db: Database, organizationId: string): Promise<LowStockCell[]> {
+  const cells = await getOrgStockGrid(db, organizationId);
+  if (cells.length === 0) return [];
+
+  const settings = await getOrCreateInventorySettings(db, organizationId);
+
+  const agentIds = [...new Set(cells.map((c) => c.agentId))];
+  const productIds = [...new Set(cells.map((c) => c.productId))];
+  const variantIds = [...new Set(cells.map((c) => c.variantId).filter((id): id is string => id != null))];
+
+  const [agents, products, variants] = await Promise.all([
+    db
+      .select({ id: numbatrakAgents.id, name: numbatrakAgents.name })
+      .from(numbatrakAgents)
+      .where(and(eq(numbatrakAgents.organizationId, organizationId), inArray(numbatrakAgents.id, agentIds))),
+    db
+      .select({ id: numbatrakProducts.id, name: numbatrakProducts.name, lowStockThreshold: numbatrakProducts.lowStockThreshold })
+      .from(numbatrakProducts)
+      .where(and(eq(numbatrakProducts.organizationId, organizationId), inArray(numbatrakProducts.id, productIds))),
+    variantIds.length > 0
+      ? db
+          .select({ id: numbatrakProductVariants.id, name: numbatrakProductVariants.name })
+          .from(numbatrakProductVariants)
+          .where(inArray(numbatrakProductVariants.id, variantIds))
+      : Promise.resolve([]),
+  ]);
+
+  const agentById = new Map(agents.map((a) => [a.id, a]));
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const variantById = new Map(variants.map((v) => [v.id, v]));
+
+  const result: LowStockCell[] = [];
+  for (const cell of cells) {
+    const agent = agentById.get(cell.agentId);
+    const product = productById.get(cell.productId);
+    if (!agent || !product) continue;
+
+    const threshold = product.lowStockThreshold ?? settings.defaultLowStockThreshold;
+    if (threshold == null || threshold <= 0) continue;
+    if (cell.quantityOnHand > threshold) continue;
+
+    result.push({
+      agentName: agent.name,
+      productName: product.name,
+      variantName: cell.variantId != null ? (variantById.get(cell.variantId)?.name ?? null) : null,
+      quantityOnHand: cell.quantityOnHand,
+      threshold,
+    });
+  }
+
+  return result;
+}
+
 export async function listMovements(
   db: Database,
   organizationId: string,
@@ -313,6 +381,45 @@ export async function createShrinkage(
     })
     .returning();
   if (!row) throw new Error("Failed to create shrinkage movement");
+
+  // Opt-in: staff can flag damaged/missing stock as a real loss, which posts
+  // an agent-scope expense at cost price x quantity. Unflagged shrinkage
+  // stays ledger-only (no expense), matching prior behavior.
+  if (input.flagAsLoss) {
+    const costPrice = input.variantId
+      ? (
+          await db
+            .select({ costPrice: numbatrakProductVariants.costPrice })
+            .from(numbatrakProductVariants)
+            .where(eq(numbatrakProductVariants.id, input.variantId))
+        )[0]?.costPrice
+      : (
+          await db
+            .select({ costPrice: numbatrakProducts.costPrice })
+            .from(numbatrakProducts)
+            .where(eq(numbatrakProducts.id, input.productId))
+        )[0]?.costPrice;
+
+    const amount = Number(costPrice ?? 0) * input.quantity;
+    if (amount > 0) {
+      await db
+        .insert(numbatrakUnifiedExpenses)
+        .values({
+          organizationId,
+          scope: "agent",
+          category: "operational",
+          subcategory: input.movementType === "damaged" ? "damaged_stock_loss" : "missing_stock_loss",
+          amount: String(amount),
+          agentId: input.fromAgentId,
+          productId: input.productId,
+          note: `${input.movementType === "damaged" ? "Damaged" : "Missing"} stock flagged as loss — movement #${row.id}`,
+          sourceType: "stock_shrinkage_loss",
+          sourceId: row.id,
+        })
+        .onConflictDoNothing();
+    }
+  }
+
   const [full] = await attachNames(db, [row]);
   return full!;
 }

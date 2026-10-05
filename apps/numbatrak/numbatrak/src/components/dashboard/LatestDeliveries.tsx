@@ -8,7 +8,7 @@ import { CardListSkeleton } from "../ui/LoadingState";
 interface LatestDelivery {
   id: number;
   date: string;
-  status: "Waybilled" | "Delivered";
+  status: "Waybilled" | "PickedUp" | "Delivered";
   product: string;
   agent: string;
   quantity: number;

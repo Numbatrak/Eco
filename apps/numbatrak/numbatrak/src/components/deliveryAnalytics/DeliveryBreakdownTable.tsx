@@ -5,14 +5,37 @@ import {
   DeliveryAnalyticsFilters,
   DeliveryBreakdownRow,
   fetchDeliveryBreakdownByProduct,
+  fetchDeliveryBreakdownByAgent,
+  fetchDeliveryBreakdownByCsr,
 } from "../../services/deliveryAnalytics";
 import { useOrganization } from "../../contexts/OrganizationContext";
 
+export type DeliveryBreakdownGroupBy = "product" | "agent" | "csr";
+
+const GROUP_BY_LABEL: Record<DeliveryBreakdownGroupBy, string> = {
+  product: "Product",
+  agent: "Agent",
+  csr: "CSR",
+};
+
+const GROUP_BY_FETCHER: Record<
+  DeliveryBreakdownGroupBy,
+  typeof fetchDeliveryBreakdownByProduct
+> = {
+  product: fetchDeliveryBreakdownByProduct,
+  agent: fetchDeliveryBreakdownByAgent,
+  csr: fetchDeliveryBreakdownByCsr,
+};
+
 interface DeliveryBreakdownTableProps {
   filters: DeliveryAnalyticsFilters;
+  groupBy?: DeliveryBreakdownGroupBy;
 }
 
-export function DeliveryBreakdownTable({ filters }: DeliveryBreakdownTableProps) {
+export function DeliveryBreakdownTable({
+  filters,
+  groupBy = "product",
+}: DeliveryBreakdownTableProps) {
   const { currentOrganization } = useOrganization();
   const [rows, setRows] = useState<DeliveryBreakdownRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +50,8 @@ export function DeliveryBreakdownTable({ filters }: DeliveryBreakdownTableProps)
     (async () => {
       setLoading(true);
       try {
-        const data = await fetchDeliveryBreakdownByProduct(currentOrganization.id, filters);
+        const fetcher = GROUP_BY_FETCHER[groupBy];
+        const data = await fetcher(currentOrganization.id, filters);
         if (!cancel) setRows(data);
       } catch (e) {
         console.error(e);
@@ -39,14 +63,18 @@ export function DeliveryBreakdownTable({ filters }: DeliveryBreakdownTableProps)
     return () => {
       cancel = true;
     };
-  }, [currentOrganization?.id, filters]);
+  }, [currentOrganization?.id, filters, groupBy]);
+
+  const columnLabel = GROUP_BY_LABEL[groupBy];
 
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-foreground">Product stock report</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {columnLabel} stock report
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Waybilled vs delivered stock value and balance, by product.
+          Waybilled vs delivered stock value and balance, by {columnLabel.toLowerCase()}.
         </p>
       </div>
 
@@ -65,7 +93,7 @@ export function DeliveryBreakdownTable({ filters }: DeliveryBreakdownTableProps)
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                    Product
+                    {columnLabel}
                   </th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">
                     Waybilled

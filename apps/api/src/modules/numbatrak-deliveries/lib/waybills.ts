@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import { numbatrakDeliveries, numbatrakStockMovements, numbatrakUnifiedExpenses, type Database } from "@platform/db";
 import type { CreateNumbatrakWaybillBatchRequest, NumbatrakDelivery } from "@platform/shared-types";
 import { randomUUID } from "node:crypto";
@@ -59,6 +60,12 @@ export async function createWaybillBatch(
       if (!delivery) throw new Error("Failed to create delivery row for waybill line");
       rows.push(delivery);
 
+      // toAgentId is deliberately null here, not line.agentId - the agent's
+      // stock isn't credited until they actually confirm pickup
+      // (confirmWaybillPickup below). getAgentProductOnHand/getOrgStockGrid
+      // both only count a 'waybill_to_agent' row's credit side when
+      // to_agent_id IS NOT NULL, so this still correctly debits the
+      // warehouse immediately while crediting no one yet.
       await tx.insert(numbatrakStockMovements).values({
         organizationId,
         movementType: "waybill_to_agent",
@@ -66,7 +73,7 @@ export async function createWaybillBatch(
         variantId: line.variantId ?? null,
         quantity: line.quantity,
         fromAgentId: warehouse.id,
-        toAgentId: line.agentId,
+        toAgentId: null,
         waybillBatchId: batchId,
         legacyDeliveryId: delivery.id,
         cost: String(line.cost),
@@ -96,4 +103,55 @@ export async function createWaybillBatch(
   });
 
   return attachRelations(db, deliveryRows);
+}
+
+/**
+ * Confirms a waybill line has actually been picked up by its destination
+ * agent - the moment the agent's stock is finally credited (see the
+ * toAgentId: null note in createWaybillBatch above). Staff/CSR-triggered
+ * (e.g. after a phone/WhatsApp confirmation from the agent), not the agent
+ * self-serving it. Rejects if the delivery isn't currently "Waybilled" -
+ * this also makes the operation safe to retry/double-call: a second
+ * confirm-pickup on an already-PickedUp or Delivered row is a no-op error,
+ * never a double credit.
+ */
+export async function confirmWaybillPickup(
+  db: Database,
+  organizationId: string,
+  deliveryId: number,
+): Promise<NumbatrakDelivery> {
+  const updated = await db.transaction(async (tx) => {
+    const [delivery] = await tx
+      .select()
+      .from(numbatrakDeliveries)
+      .where(and(eq(numbatrakDeliveries.organizationId, organizationId), eq(numbatrakDeliveries.id, deliveryId)))
+      .limit(1);
+    if (!delivery) throw new Error("Delivery not found");
+    if (delivery.status !== "Waybilled") {
+      throw new Error(`Cannot confirm pickup - delivery status is "${delivery.status}", expected "Waybilled"`);
+    }
+    if (delivery.agentId == null) throw new Error("Delivery has no destination agent");
+
+    const [row] = await tx
+      .update(numbatrakDeliveries)
+      .set({ status: "PickedUp" })
+      .where(and(eq(numbatrakDeliveries.organizationId, organizationId), eq(numbatrakDeliveries.id, deliveryId)))
+      .returning();
+    if (!row) throw new Error("Failed to update delivery status");
+
+    await tx
+      .update(numbatrakStockMovements)
+      .set({ toAgentId: delivery.agentId })
+      .where(
+        and(
+          eq(numbatrakStockMovements.organizationId, organizationId),
+          eq(numbatrakStockMovements.legacyDeliveryId, deliveryId),
+        ),
+      );
+
+    return row;
+  });
+
+  const [full] = await attachRelations(db, [updated]);
+  return full!;
 }

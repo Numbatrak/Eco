@@ -73,7 +73,7 @@ function CopyField({ value, label, onCopy, mono = true }: { value: string; label
   );
 }
 
-/** WPForms/Elementor order-intake setup - see Part A/B of the integration plan for why the two are handled so differently. */
+/** WPForms/Fluent Forms/Elementor order-intake setup - WPForms and Fluent Forms both post a merchant-authored JSON template straight to the public /submit endpoint; Elementor's webhook can't be reshaped, so it gets its own endpoint + field-mapping UI instead. */
 export function IntegrationsPanel({
   formId,
   formToken,
@@ -120,6 +120,26 @@ export function IntegrationsPanel({
         ? radioOptions[0].products.map((p) => ({ productId: p.product_id, quantity: p.quantity }))
         : [{ productId: "<product-uuid>", quantity: 1 }],
       source: "wpforms",
+      trackingLinkCode: "<tracking-link-code, if this form is tied to one — see Tracking Links>",
+    },
+    null,
+    2,
+  );
+
+  const fluentFormsTemplate = JSON.stringify(
+    {
+      fieldValues: {
+        customer_name: "{inputs.names.first_name} {inputs.names.last_name}",
+        phone: "{inputs.phone}",
+        whatsapp: "{inputs.phone}",
+        address: "{inputs.address}",
+        state: "{inputs.state}",
+      },
+      items: radioOptions[0]?.products?.length
+        ? radioOptions[0].products.map((p) => ({ productId: p.product_id, quantity: p.quantity }))
+        : [{ productId: "<product-uuid>", quantity: 1 }],
+      source: "fluentforms",
+      trackingLinkCode: "<tracking-link-code, if this form is tied to one — see Tracking Links>",
     },
     null,
     2,
@@ -216,6 +236,56 @@ export function IntegrationsPanel({
       </IntegrationCard>
 
       <IntegrationCard
+        icon={<Braces className="w-4 h-4" />}
+        title="Fluent Forms"
+        tagline="Uses the Webhook feed (Fluent Forms Pro) — no setup needed on our side."
+      >
+        <Step number={1} title="Add a Webhook feed">
+          <p className="text-xs text-muted-foreground">
+            Edit your Fluent Forms form, go to <strong>Settings &amp; Integrations → Webhook</strong>, and add a new
+            webhook feed (requires Fluent Forms Pro).
+          </p>
+        </Step>
+
+        <Step number={2} title="Paste the request URL">
+          <CopyField value={submitUrl} label="Request URL" onCopy={onCopy} />
+          <p className="text-xs text-muted-foreground">
+            Set <strong>Request Method</strong> to <strong>POST</strong> and <strong>Request Format</strong> to{" "}
+            <strong>JSON</strong>.
+          </p>
+        </Step>
+
+        <Step number={3} title="Paste the request body template">
+          <div className="flex items-start gap-2">
+            <pre className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs overflow-x-auto whitespace-pre">
+              {fluentFormsTemplate}
+            </pre>
+            <button
+              type="button"
+              className="btn-secondary shrink-0"
+              onClick={() => onCopy(fluentFormsTemplate, "JSON template")}
+              title="Copy JSON template"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Replace each {"{inputs.field_name}"} smart tag with your own field names — use Fluent Forms' own smart tag
+            picker in the webhook body editor to insert the right one for each field. Like WPForms, Fluent Forms has
+            no concept of our product catalog, so the <code className="font-mono">items</code> array must be
+            hardcoded to real product IDs, which works best for single-product or fixed-quantity forms.
+          </p>
+        </Step>
+
+        <Step number={4} title="Save and test">
+          <p className="text-xs text-muted-foreground">
+            Save the feed, then submit a test entry on your live form. The order (or an abandoned cart, if no items
+            resolved) should appear in Numbatrak within a few seconds.
+          </p>
+        </Step>
+      </IntegrationCard>
+
+      <IntegrationCard
         icon={<Webhook className="w-4 h-4" />}
         title="Elementor Pro"
         tagline="Always sends a fixed payload — map its fields to your form below."
@@ -289,6 +359,21 @@ export function IntegrationsPanel({
                   placeholder="Elementor field id or title holding the package choice"
                   className="form-input text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="form-label text-xs">Tracking-link code field (optional)</label>
+                <input
+                  type="text"
+                  value={mapping.trackingLinkCodeField ?? ""}
+                  onChange={(e) => setMapping((prev) => ({ ...prev, trackingLinkCodeField: e.target.value }))}
+                  placeholder="A hidden field id/title carrying a tracking-link code, if this form uses one"
+                  className="form-input text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add a hidden field to your Elementor form with the code from a Tracking Link you generated, so
+                  orders from this form get attributed correctly.
+                </p>
               </div>
 
               {radioOptions.length > 0 && (

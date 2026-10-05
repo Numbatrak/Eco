@@ -184,7 +184,7 @@ export function FormResponseTableRow({
     delivery_address: response.field_values?.delivery_address ?? response.delivery_address ?? undefined,
   });
 
-  const netProfit = isCompletedOrder
+  const grossProfit = isCompletedOrder
     ? (response.profit ?? 0)
     : potentialOrderProfit(response.items, response.delivery_fee);
   const profitLabel = isCompletedOrder ? "" : " (potential)";
@@ -250,7 +250,12 @@ export function FormResponseTableRow({
         </td>
         <td className="form-response-table-cell">
           {displayLocation || (
-            <span className="form-response-table-empty-value">N/A</span>
+            <span
+              className="text-xs font-medium text-amber-600 dark:text-amber-400"
+              title="No state/location on record — needs manual assignment"
+            >
+              Needs state
+            </span>
           )}
         </td>
         <td className="form-response-table-cell">
@@ -301,9 +306,9 @@ export function FormResponseTableRow({
           )}
         </td>
         <td className="form-response-table-cell text-right font-semibold">
-          {isCompletedOrder || netProfit !== 0 ? (
-            <span className={netProfit >= 0 ? "text-primary" : "text-destructive"}>
-              {formatCurrency(netProfit)}
+          {isCompletedOrder || grossProfit !== 0 ? (
+            <span className={grossProfit >= 0 ? "text-primary" : "text-destructive"}>
+              {formatCurrency(grossProfit)}
               {profitLabel && (
                 <span className="text-xs text-muted-foreground ml-1">
                   {profitLabel}
@@ -460,10 +465,10 @@ export function FormResponseTableRow({
                         </span>
                         <span
                           className={`font-bold ${
-                            netProfit >= 0 ? "text-primary" : "text-destructive"
+                            grossProfit >= 0 ? "text-primary" : "text-destructive"
                           }`}
                         >
-                          {formatCurrency(netProfit)}
+                          {formatCurrency(grossProfit)}
                         </span>
                       </div>
                       {isCompletedOrder && response.profit != null && (

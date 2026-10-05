@@ -4,7 +4,7 @@ import { apiRequest } from "../lib/apiClient";
 import { DateFilter, resolveDateRange } from "../utils/dateRange";
 import type { DeliveryRateByLocation } from "./dashboard";
 
-export type DeliveryLogisticsStatus = "Waybilled" | "Delivered";
+export type DeliveryLogisticsStatus = "Waybilled" | "PickedUp" | "Delivered";
 export type DeliveryLocationFilter = "all" | "lagos" | "outside_lagos";
 
 export type DeliveryAnalyticsFilters = {

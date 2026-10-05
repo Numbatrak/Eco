@@ -72,7 +72,8 @@ export async function fetchDeliveryRateByLocation(
     if (row.status === "Delivered") {
       entry.delivered += 1;
       overallDelivered += 1;
-    } else if (row.status === "Waybilled") {
+    } else {
+      // Waybilled or PickedUp - still outstanding, not yet confirmed delivered.
       entry.waybilled += 1;
       overallWaybilled += 1;
     }

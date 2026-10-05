@@ -9,7 +9,7 @@ Until the **Staff Management** suite (spec §7–11) ships with multi-role union
 | App role (`UserRole`) | Spec role | Data scope (orders, dashboard, follow-ups) |
 |----------------------|-----------|---------------------------------------------|
 | Customer Relations | CRS | **Own** — only their assigned orders and follow-ups |
-| Manager | Manager | **Team** — team view (today: org-wide operational data; team hierarchy when HR lands) |
+| Manager | Manager | **Team** — scoped to direct reports via `staff.managerId` (see `resolveCallerStaffScope` in `apps/api/src/modules/numbatrak-staff/lib/staff.ts`) |
 | Admin | Admin | **Org + money** — all orders, expenses, wallet, dashboard KPIs |
 | Owner | Founder | **Org + money** — same as Admin plus member/role management |
 
@@ -32,16 +32,11 @@ When adding a gated action:
 2. Apply `orderDataScope()` / `csrScopeFilter()` on **queries**, not only UI hiding.
 3. RLS remains the security boundary on Supabase tables.
 
-## Future: multi-role union (Phase Next)
+## Multi-role union (shipped)
 
-Spec rule: staff hold one **primary** role plus optional **extra** roles; access is the **union** of all roles held.
+Spec rule: staff hold one **primary** role plus optional **extra** roles; access is the **union** of all roles held. This is implemented — see the `numbatrakStaff` table (`primaryRole`/`extraRoles`) and the role checkboxes in `src/components/staff/StaffDialog.tsx`.
 
-When Staff (§7) ships:
-
-- Extend `organization_members` or link to `staff` records.
-- Replace single `role` string with role set.
-- Update `getPermissions()` to merge permission matrices.
-- Wire Media → Media Buyers nav; Accountant → wallet oversight notifications.
+Remaining follow-up: wire Media → Media Buyers nav; Accountant → wallet oversight notifications.
 
 ## Dashboard widget visibility (current)
 

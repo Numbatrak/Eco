@@ -1,6 +1,6 @@
 "use client";
 
-import { apiRequest } from "../lib/apiClient";
+import { apiRequest, API_BASE_URL } from "../lib/apiClient";
 
 interface PnLDto {
   revenue: { total: number; bySubBrand: Record<string, number> };
@@ -101,4 +101,29 @@ export async function fetchAccountingReport(params?: {
 export async function fetchSubBrands(): Promise<string[]> {
   const { subBrands } = await apiRequest<{ subBrands: string[] }>("/org/numbatrak/accounting/sub-brands");
   return subBrands;
+}
+
+export async function downloadAccountingExport(params?: {
+  dateFrom?: string;
+  dateTo?: string;
+  subBrand?: string;
+}): Promise<void> {
+  const searchParams = new URLSearchParams();
+  if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+  if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
+  if (params?.subBrand) searchParams.set("subBrand", params.subBrand);
+  const qs = searchParams.toString();
+  const res = await fetch(`${API_BASE_URL}/org/numbatrak/accounting/export${qs ? `?${qs}` : ""}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Export failed (${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "accounting-export.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

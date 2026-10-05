@@ -20,6 +20,7 @@ interface DeliveryTableProps {
   error: string | null;
   onEdit: (delivery: DeliveryWithRelations) => void;
   onDelete: (deliveryId: number) => void;
+  onConfirmPickup?: (deliveryId: number) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   sortOrder: "asc" | "desc";
@@ -43,6 +44,7 @@ export function DeliveryTable({
   error,
   onEdit,
   onDelete,
+  onConfirmPickup,
   searchQuery,
   onSearchChange,
   sortOrder,
@@ -217,6 +219,7 @@ export function DeliveryTable({
                   index={index}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onConfirmPickup={onConfirmPickup}
                   canEdit={canEdit}
                   canDelete={canDelete}
                 />

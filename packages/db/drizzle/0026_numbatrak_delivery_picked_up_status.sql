@@ -1,0 +1,2 @@
+ALTER TABLE "numbatrak_deliveries" DROP CONSTRAINT "numbatrak_deliveries_status_chk";--> statement-breakpoint
+ALTER TABLE "numbatrak_deliveries" ADD CONSTRAINT "numbatrak_deliveries_status_chk" CHECK ("numbatrak_deliveries"."status" IN ('Waybilled', 'PickedUp', 'Delivered'));

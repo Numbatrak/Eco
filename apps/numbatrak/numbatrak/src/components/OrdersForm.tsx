@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { FormResponseDialog } from "./formResponses/FormResponseDialog";
 import { FormResponseTable } from "./formResponses/FormResponseTable";
 import { ManualOrderDialog, ManualOrderFormValues } from "./orders/ManualOrderDialog";
+import { FailedDeliveryDialog } from "./orders/FailedDeliveryDialog";
 import { SuccessNotification } from "./agents/SuccessNotification";
 import { AugmentedFormResponse } from "../utils/customerOrderAdapters";
 import { usePermissions } from "../hooks/usePermissions";
@@ -65,6 +66,7 @@ export default function OrdersForm() {
     useState<FormResponseWithItems | null>(null);
   const [saving, setSaving] = useState(false);
   const [manualSaving, setManualSaving] = useState(false);
+  const [failedDeliveryDialogOpen, setFailedDeliveryDialogOpen] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -313,25 +315,21 @@ export default function OrdersForm() {
 
   const handleQuickFailed = async () => {
     if (!editingResponse) return;
-    const ok = await confirm({
-      title: "Mark failed delivery?",
-      description:
-        "This sets status to failed and records a failed-delivery expense using the delivery fee.",
-      confirmLabel: "Mark failed",
-      destructive: true,
-    });
-    if (!ok) return;
+    setFailedDeliveryDialogOpen(true);
+  };
 
+  const handleConfirmFailedDelivery = async (expenseAmount: number) => {
+    if (!editingResponse) return;
     setSaving(true);
     setLocalError(null);
     try {
-      await markOrderFailedDelivery(editingResponse);
+      await markOrderFailedDelivery(editingResponse, { expenseAmount });
+      setFailedDeliveryDialogOpen(false);
       setSuccess("Order marked as failed delivery.");
       await refreshAfterAction();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setLocalError(err.message || "Failed to mark failed delivery.");
-      throw err;
     } finally {
       setSaving(false);
     }
@@ -450,6 +448,9 @@ export default function OrdersForm() {
       if (filters.funnel_name && response.funnel_name !== filters.funnel_name) {
         return false;
       }
+      if (filters.needs_state && response.state) {
+        return false;
+      }
 
       return true;
     })
@@ -533,6 +534,19 @@ export default function OrdersForm() {
         onMarkFailed={canUpdate ? handleQuickFailed : undefined}
         onAddUpsell={canUpdate ? handleAddUpsell : undefined}
         trackingLinkOptions={trackingLinkOptions}
+      />
+
+      <FailedDeliveryDialog
+        open={failedDeliveryDialogOpen}
+        onOpenChange={setFailedDeliveryDialogOpen}
+        defaultAmount={
+          editingResponse
+            ? (editingResponse.order_cost ?? 0) + (editingResponse.delivery_fee ?? 0)
+            : 0
+        }
+        saving={saving}
+        error={localError}
+        onConfirm={handleConfirmFailedDelivery}
       />
 
       <ManualOrderDialog

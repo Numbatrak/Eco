@@ -131,4 +131,6 @@ export interface FormResponseFilters {
   funnel_name?: string;
   offer_name?: string;
   tracking_link_id?: string;
+  /** Client-only filter — orders with no state/location on record, needing manual assignment */
+  needs_state?: boolean;
 }

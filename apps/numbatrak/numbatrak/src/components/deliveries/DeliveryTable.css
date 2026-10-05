@@ -368,6 +368,12 @@
   border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
+.delivery-table-status-badge.picked-up {
+  background-color: color-mix(in srgb, #f59e0b 15%, var(--card));
+  color: #b45309;
+  border: 1px solid color-mix(in srgb, #f59e0b 30%, var(--border));
+}
+
 .delivery-table-status-icon {
   width: 14px;
   height: 14px;

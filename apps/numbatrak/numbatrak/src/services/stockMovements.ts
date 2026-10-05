@@ -136,6 +136,7 @@ export async function createShrinkageMovement(input: {
   quantity: number;
   notes: string;
   occurred_at?: string;
+  flag_as_loss?: boolean;
 }): Promise<{ id: string }> {
   const dto = await apiRequest<StockMovementDto>("/org/numbatrak/inventory/adjust", {
     method: "POST",
@@ -146,6 +147,7 @@ export async function createShrinkageMovement(input: {
       variantId: input.variant_id ?? null,
       quantity: input.quantity,
       notes: input.notes.trim(),
+      flagAsLoss: input.flag_as_loss,
     },
   });
   return { id: dto.id };

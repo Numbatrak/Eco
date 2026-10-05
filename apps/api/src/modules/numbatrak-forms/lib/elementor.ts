@@ -55,6 +55,15 @@ export function resolveContactFields(
   return fieldValues;
 }
 
+/** Reads the merchant-mapped tracking-link code field, if configured. */
+export function resolveTrackingLinkCode(
+  flat: Record<string, string>,
+  mapping: NumbatrakFormFieldMapping,
+): string | null {
+  if (!mapping.trackingLinkCodeField) return null;
+  return flat[mapping.trackingLinkCodeField]?.trim() || null;
+}
+
 interface RadioOptionProduct {
   product_id?: string;
   quantity?: number;
