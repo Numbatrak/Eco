@@ -226,7 +226,7 @@ export function DashboardSummary({
         />
         <KPICard
           title="Total Products"
-          value={m.totalDistinctProducts.toLocaleString()}
+          value={(m.totalDistinctProducts ?? 0).toLocaleString()}
           subtitle="Distinct products on orders this period"
           icon={Package}
           color="indigo"
