@@ -2,10 +2,19 @@ import { Table, TableBody } from "../ui/table";
 import { Form } from "../../types/form";
 import { Search, ArrowUp, ArrowDown, Edit, Trash2, Copy, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "../ui/button";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { TablePagination } from "../ui/TablePagination";
 import { LoadingState } from "../ui/LoadingState";
+
+const WEBSITE_PLUGIN_NAMES: Record<string, string> = { "fluent-forms": "Fluent Forms", elementor: "Elementor" };
+
+/** Forms connected from the business's own website (Form Integrations), not built here. */
+function websitePlugin(form: Form): string | null {
+  const provider = (form.schema as { external?: { provider?: unknown } } | null)?.external?.provider;
+  return typeof provider === "string" ? (WEBSITE_PLUGIN_NAMES[provider] ?? "Website") : null;
+}
 
 interface FormTableProps {
   forms: Form[];
@@ -34,6 +43,7 @@ export function FormTable({
   canEdit = true,
   canDelete = true,
 }: FormTableProps) {
+  const navigate = useNavigate();
   const filteredForms = forms.filter((form) =>
     form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     form.form_token.toLowerCase().includes(searchQuery.toLowerCase())
@@ -163,7 +173,9 @@ export function FormTable({
               </td>
             </tr>
           ) : (
-            paginatedItems.map((form) => (
+            paginatedItems.map((form) => {
+              const plugin = websitePlugin(form);
+              return (
               <tr
                 key={form.id}
                 className="border-b border-border hover:bg-accent/50 transition-colors"
@@ -187,9 +199,11 @@ export function FormTable({
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">{form.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono mt-1">
-                        {form.form_token}
-                      </div>
+                      {plugin ? (
+                        <div className="text-xs text-muted-foreground mt-1">Website form · {plugin}</div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground font-mono mt-1">{form.form_token}</div>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -209,15 +223,21 @@ export function FormTable({
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(`[crm_form form="${form.form_token}"]`)}
-                    className="text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Copy className="w-3 h-3 mr-1" />
-                    Copy Shortcode
-                  </Button>
+                  {plugin ? (
+                    <Link to="/form-integrations" className="text-xs text-primary underline">
+                      Set up in Form Integrations
+                    </Link>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(`[crm_form form="${form.form_token}"]`)}
+                      className="text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Shortcode
+                    </Button>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
@@ -225,7 +245,9 @@ export function FormTable({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(form)}
+                        // Website forms are set up on the website, not in the builder.
+                        onClick={() => (plugin ? navigate("/form-integrations") : onEdit(form))}
+                        title={plugin ? "Set up in Form Integrations" : "Edit form"}
                         className="text-primary hover:text-primary-foreground hover:bg-primary bg-primary/10"
                       >
                         <Edit className="w-4 h-4" />
@@ -244,7 +266,8 @@ export function FormTable({
                   </div>
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TableBody>
       </Table>

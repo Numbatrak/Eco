@@ -1,7 +1,9 @@
 import { randomBytes } from "node:crypto";
 import type { FastifyBaseLogger } from "fastify";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import {
+  numbatrakAbandonedCarts,
+  numbatrakCustomerOrders,
   numbatrakFormIntakeSettings,
   numbatrakForms,
   numbatrakProductOffers,
@@ -11,7 +13,6 @@ import {
 } from "@platform/db";
 import type { PublicFormLineItem, SubmitPublicNumbatrakFormResult } from "@platform/shared-types";
 import { extractTrackingLinkCode } from "../../numbatrak-crm/lib/attribution.js";
-import { findActiveTrackingLinkByCode } from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { submitFormOrder, type IntakeTarget } from "./intake.js";
 import { buildSubmittedData, detectFields, extractOfferId, flattenSubmission } from "./payload.js";
 
@@ -128,8 +129,101 @@ export async function resolveOfferFromAnswer(
 export interface OrgIntakeInput {
   provider: IntakeProvider;
   body: unknown;
-  /** Optional `?funnel=` on the address, for forms not tied to a tracking link. */
-  funnel?: string | null;
+}
+
+/** Marker in a form's schema for a form that lives on the business's website, not in the builder. */
+export interface ExternalFormMarker {
+  provider: IntakeProvider;
+}
+
+export function externalFormProvider(schema: unknown): IntakeProvider | null {
+  const external = (schema as { external?: { provider?: unknown } } | null)?.external;
+  const provider = typeof external?.provider === "string" ? external.provider : null;
+  return provider && isIntakeProvider(provider) ? provider : null;
+}
+
+export interface ExternalForm {
+  id: string;
+  name: string;
+  provider: IntakeProvider;
+  createdAt: string | null;
+}
+
+/** Website forms connected through Form Integrations, newest first. */
+export async function listExternalForms(db: Database, organizationId: string): Promise<ExternalForm[]> {
+  const rows = await db
+    .select({
+      id: numbatrakForms.id,
+      name: numbatrakForms.name,
+      schema: numbatrakForms.schema,
+      createdAt: numbatrakForms.createdAt,
+    })
+    .from(numbatrakForms)
+    .where(and(eq(numbatrakForms.organizationId, organizationId), sql`${numbatrakForms.schema} ? 'external'`))
+    .orderBy(desc(numbatrakForms.createdAt));
+  return rows.flatMap((r) => {
+    const provider = externalFormProvider(r.schema);
+    return provider ? [{ id: r.id, name: r.name, provider, createdAt: r.createdAt?.toISOString() ?? null }] : [];
+  });
+}
+
+export class DuplicateFormNameError extends Error {}
+
+/**
+ * Registers a website form as a NumbaTrak form, so it's a funnel everywhere
+ * (dashboard Funnel filter, reports, tracking links) and gets its own
+ * webhook address. The name is the funnel's name, so it must be unique
+ * among the business's forms (ignoring case and extra spaces).
+ */
+export async function createExternalForm(
+  db: Database,
+  organizationId: string,
+  input: { name: string; provider: IntakeProvider },
+): Promise<ExternalForm> {
+  const name = input.name.trim().replace(/\s+/g, " ");
+  if (!name) throw new Error("Give the form a name");
+  if (name.length > 120) throw new Error("Keep the name under 120 characters");
+
+  const [clash] = await db
+    .select({ id: numbatrakForms.id })
+    .from(numbatrakForms)
+    .where(
+      and(
+        eq(numbatrakForms.organizationId, organizationId),
+        sql`lower(${numbatrakForms.name}) = lower(${name})`,
+      ),
+    )
+    .limit(1);
+  if (clash) throw new DuplicateFormNameError(`You already have a form called "${name}". Pick another name.`);
+
+  const marker: ExternalFormMarker = { provider: input.provider };
+  const [row] = await db
+    .insert(numbatrakForms)
+    .values({
+      organizationId,
+      name,
+      funnelName: name,
+      formToken: `form_live_${randomBytes(16).toString("hex")}`,
+      schema: { fields: [], external: marker },
+      active: true,
+    })
+    .returning({ id: numbatrakForms.id, name: numbatrakForms.name, createdAt: numbatrakForms.createdAt });
+  if (!row) throw new Error("Failed to create form");
+  return { id: row.id, name: row.name, provider: input.provider, createdAt: row.createdAt?.toISOString() ?? null };
+}
+
+export class UnknownIntakeFormError extends Error {}
+
+/** The website form a webhook address points at; must be this org's, active, and a website form. */
+export async function findExternalForm(db: Database, organizationId: string, formId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(formId)) return null;
+  const [form] = await db
+    .select()
+    .from(numbatrakForms)
+    .where(and(eq(numbatrakForms.id, formId), eq(numbatrakForms.organizationId, organizationId)))
+    .limit(1);
+  if (!form || !form.active || !externalFormProvider(form.schema)) return null;
+  return form;
 }
 
 /**
@@ -141,7 +235,7 @@ export interface OrgIntakeInput {
  */
 export async function submitOrgIntake(
   db: Database,
-  organizationId: string,
+  form: IntakeTarget & { id: string },
   input: OrgIntakeInput,
   logger?: FastifyBaseLogger,
 ): Promise<SubmitPublicNumbatrakFormResult & { offerMatched: boolean }> {
@@ -155,6 +249,7 @@ export async function submitOrgIntake(
     Object.values(flat).find((v) => extractOfferId(v) !== null) ??
     fields.package ??
     null;
+  const organizationId = form.organizationId;
   const offer = await resolveOfferFromAnswer(db, organizationId, packageAnswer);
 
   const quantity = Math.min(Math.max(Number.parseInt(fields.quantity ?? "", 10) || 1, 1), 100);
@@ -162,31 +257,11 @@ export async function submitOrgIntake(
     ? [{ productId: offer.productId, quantity, variantId: offer.variantId, offerId: offer.id }]
     : [];
 
-  const funnel = input.funnel?.trim() || null;
-  let target: IntakeTarget = {
-    id: null,
-    organizationId,
-    name: funnel ?? offer?.productName ?? "Website form",
-    funnelName: funnel ?? offer?.productName ?? null,
-    subBrand: null,
-    schema: {},
-  };
-
   // No hidden tl field? The page address the plugin reports (Elementor's
-  // meta.page_url, a referrer...) may still carry ?tl=.
+  // meta.page_url, a referrer...) may still carry ?tl=. A link made for a
+  // different form is ignored by submitFormOrder, so ads stay per funnel.
   const pageUrl = Object.values(flat).find((v) => /^https?:\/\//i.test(v) && extractTrackingLinkCode(v)) ?? null;
   const code = fields.trackingLinkCode?.trim() || extractTrackingLinkCode(pageUrl) || null;
-  if (code) {
-    const link = await findActiveTrackingLinkByCode(db, organizationId, code);
-    if (link?.formId) {
-      const [form] = await db
-        .select()
-        .from(numbatrakForms)
-        .where(and(eq(numbatrakForms.id, link.formId), eq(numbatrakForms.organizationId, organizationId)))
-        .limit(1);
-      if (form) target = form;
-    }
-  }
 
   const fieldValues: Record<string, unknown> = {
     customer_name: fields.name,
@@ -200,7 +275,7 @@ export async function submitOrgIntake(
 
   const result = await submitFormOrder(
     db,
-    target,
+    form,
     {
       fieldValues,
       items,
@@ -216,4 +291,101 @@ export async function submitOrgIntake(
     logger,
   );
   return { ...result, offerMatched: offer !== null };
+}
+
+export interface RecentSubmission {
+  kind: "order" | "abandoned_cart";
+  id: string;
+  formId: string | null;
+  customerName: string | null;
+  /** The offer it was matched to (orders), or the raw package answer (carts). */
+  packageName: string | null;
+  provider: string | null;
+  receivedAt: string | null;
+}
+
+/**
+ * The latest website submissions (anything saved with submitted details),
+ * newest first - lets the setup walkthrough show "your test entry arrived".
+ * An entry that landed as an abandoned cart usually means the package
+ * wasn't recognised or a needed field was missing.
+ */
+export async function listRecentSubmissions(
+  db: Database,
+  organizationId: string,
+  options: { formId?: string | null; limit?: number } = {},
+): Promise<RecentSubmission[]> {
+  const limit = options.limit ?? 5;
+  const formId = options.formId ?? null;
+  const providerOf = (data: unknown) =>
+    data && typeof data === "object" && typeof (data as { provider?: unknown }).provider === "string"
+      ? (data as { provider: string }).provider
+      : null;
+
+  const [orders, carts] = await Promise.all([
+    db
+      .select({
+        id: numbatrakCustomerOrders.id,
+        formId: numbatrakCustomerOrders.formId,
+        customerName: numbatrakCustomerOrders.customerName,
+        offerName: numbatrakCustomerOrders.offerName,
+        submittedData: numbatrakCustomerOrders.submittedData,
+        createdAt: numbatrakCustomerOrders.createdAt,
+      })
+      .from(numbatrakCustomerOrders)
+      .where(
+        and(
+          eq(numbatrakCustomerOrders.organizationId, organizationId),
+          isNotNull(numbatrakCustomerOrders.submittedData),
+          ...(formId ? [eq(numbatrakCustomerOrders.formId, formId)] : []),
+        ),
+      )
+      .orderBy(desc(numbatrakCustomerOrders.createdAt))
+      .limit(limit),
+    db
+      .select({
+        id: numbatrakAbandonedCarts.id,
+        formId: numbatrakAbandonedCarts.formId,
+        customerName: numbatrakAbandonedCarts.customerName,
+        selectedPackage: numbatrakAbandonedCarts.selectedPackage,
+        submittedData: numbatrakAbandonedCarts.submittedData,
+        createdAt: numbatrakAbandonedCarts.createdAt,
+        convertedToOrder: numbatrakAbandonedCarts.convertedToOrder,
+      })
+      .from(numbatrakAbandonedCarts)
+      .where(
+        and(
+          eq(numbatrakAbandonedCarts.organizationId, organizationId),
+          isNotNull(numbatrakAbandonedCarts.submittedData),
+          ...(formId ? [eq(numbatrakAbandonedCarts.formId, formId)] : []),
+        ),
+      )
+      .orderBy(desc(numbatrakAbandonedCarts.createdAt))
+      .limit(limit),
+  ]);
+
+  const rows: RecentSubmission[] = [
+    ...orders.map((o) => ({
+      kind: "order" as const,
+      id: o.id,
+      formId: o.formId,
+      customerName: o.customerName,
+      packageName: o.offerName,
+      provider: providerOf(o.submittedData),
+      receivedAt: o.createdAt?.toISOString() ?? null,
+    })),
+    // A converted cart already shows up as its order.
+    ...carts
+      .filter((c) => !c.convertedToOrder)
+      .map((c) => ({
+        kind: "abandoned_cart" as const,
+        id: c.id,
+        formId: c.formId,
+        customerName: c.customerName,
+        packageName: c.selectedPackage,
+        provider: providerOf(c.submittedData),
+        receivedAt: c.createdAt?.toISOString() ?? null,
+      })),
+  ];
+  return rows.sort((a, b) => (b.receivedAt ?? "").localeCompare(a.receivedAt ?? "")).slice(0, limit);
 }
