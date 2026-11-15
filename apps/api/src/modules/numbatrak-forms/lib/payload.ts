@@ -1,6 +1,6 @@
 /**
  * Turns whatever a website form plugin posts (Fluent Forms, Elementor,
- * WPForms, a hand-rolled fetch...) into something NumbatTrak can read without
+ * WPForms, a hand-rolled fetch...) into something NumbaTrak can read without
  * the business mapping fields one by one: the body is flattened into
  * "label -> value" pairs, then each field we care about is picked out by
  * its usual names (case, spaces, dashes and underscores ignored).
@@ -170,7 +170,7 @@ export function detectFields(flat: Record<string, string>): Partial<Record<Detec
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 /**
- * Pulls a NumbatTrak offer ID out of a package answer. The option values we
+ * Pulls a NumbaTrak offer ID out of a package answer. The option values we
  * hand out look like `off_<uuid>`, but a plugin may send the label alongside
  * it ("Buy 2 Get 2 Free | off_<uuid>"), so any UUID inside the text counts.
  */

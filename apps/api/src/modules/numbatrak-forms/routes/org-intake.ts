@@ -19,7 +19,7 @@ function intakeRateLimitPerMinute(): number {
 /**
  * The org-wide form intake address: one webhook URL a business pastes into
  * any Fluent Forms / Elementor form on any of its sites, instead of one per
- * NumbatTrak form. The token in the path is the secret (same model as a
+ * NumbaTrak form. The token in the path is the secret (same model as a
  * Zapier catch-hook); it's rotated from the Form integrations page.
  * Server-to-server only, so no CORS opt-out; errors are real 4xxs so the
  * plugin's webhook log tells the business what to fix.
@@ -54,7 +54,7 @@ export default async function orgIntakeRoutes(app: FastifyInstance): Promise<voi
       const db = app.getDb();
       const organizationId = await findOrgByIntakeToken(db, intakeToken);
       if (!organizationId) {
-        return reply.code(404).send({ error: "This intake address isn't active. Copy the current one from NumbatTrak." });
+        return reply.code(404).send({ error: "This intake address isn't active. Copy the current one from NumbaTrak." });
       }
 
       try {
