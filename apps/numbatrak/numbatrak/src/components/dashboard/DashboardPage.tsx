@@ -29,7 +29,6 @@ import {
   fetchDashboardFilterOptions,
   fetchLossMetrics,
   LossMetrics,
-  EMPTY_LOSS_METRICS,
   type DashboardMetricsScope,
 } from "../../services/dashboardMetrics";
 import { Form } from "../../types/form";
@@ -61,7 +60,9 @@ export function DashboardPage() {
   );
 
   const [filterValues, setFilterValues] = useState<DashboardFilterValues>({
-    dateFilter: { type: "all" },
+    // Last 30 days, not all time: a lifetime average blends launch week into
+    // every figure and describes no decision anyone can act on.
+    dateFilter: { type: "last_30_days" },
     formId: null,
     csrId: null,
     funnelName: null,
@@ -87,6 +88,13 @@ export function DashboardPage() {
   const [trackingLinkOptions, setTrackingLinkOptions] = useState<DashboardTrackingLinkOption[]>([]);
   const [lossMetrics, setLossMetrics] = useState<LossMetrics | null>(null);
   const [lossLoading, setLossLoading] = useState(false);
+  // Separate from "no loss data": a failed request must not render as ₦0 lost.
+  const [lossError, setLossError] = useState(false);
+  // Bumped by the loss panel's Retry button to re-run the effect below.
+  const [lossReloadToken, setLossReloadToken] = useState(0);
+  // Previous-period figures were already being fetched for the alert engine and
+  // then discarded. Lifted into state so the summary can show deltas too.
+  const [priorMetrics, setPriorMetrics] = useState<BusinessPerformanceMetrics | null>(null);
   const [dashboardAlerts, setDashboardAlerts] = useState<DashboardAlert[]>([]);
   const [performanceMetrics, setPerformanceMetrics] =
     useState<BusinessPerformanceMetrics | null>(null);
@@ -240,6 +248,7 @@ export function DashboardPage() {
     (async () => {
       try {
         setLossLoading(true);
+        setLossError(false);
         const { startDate, endDate } = resolveDateRange(filterValues.dateFilter);
         const loss = await fetchLossMetrics(
           currentOrganization.id,
@@ -250,7 +259,10 @@ export function DashboardPage() {
         if (!cancelled) setLossMetrics(loss);
       } catch (e) {
         console.error("Error loading loss metrics:", e);
-        if (!cancelled) setLossMetrics(EMPTY_LOSS_METRICS);
+        if (!cancelled) {
+          setLossError(true);
+          setLossMetrics(null);
+        }
       } finally {
         if (!cancelled) setLossLoading(false);
       }
@@ -258,7 +270,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentOrganization, canViewAnalytics, filterValues.dateFilter, metricsScope]);
+  }, [currentOrganization, canViewAnalytics, filterValues.dateFilter, metricsScope, lossReloadToken]);
 
   useEffect(() => {
     if (!currentOrganization || !canViewAnalytics || !performanceMetrics) {
@@ -268,18 +280,19 @@ export function DashboardPage() {
     let cancelled = false;
     (async () => {
       const thresholds = await loadDashboardAlertThresholds(currentOrganization.id);
-      const priorMetrics = await fetchPriorPeriodMetrics(
+      const prior = await fetchPriorPeriodMetrics(
         currentOrganization.id,
         filterValues.dateFilter,
         metricsScope
       );
       if (!cancelled) {
+        setPriorMetrics(prior);
         setDashboardAlerts(
           computeDashboardAlerts({
             metrics: performanceMetrics,
             loss: lossMetrics,
             thresholds,
-            priorMetrics,
+            priorMetrics: prior,
             includeBusinessRoi: filterValues.viewMode === "business",
           })
         );
@@ -336,15 +349,11 @@ export function DashboardPage() {
 
   return (
     <PageLayout>
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          {currentOrganization
-            ? `Dashboard - ${currentOrganization.name}`
-            : "Dashboard"}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Overview of your organisation&apos;s performance
-        </p>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
+        {currentOrganization && (
+          <span className="text-sm text-muted-foreground">{currentOrganization.name}</span>
+        )}
       </div>
 
       <DashboardFilters
@@ -406,24 +415,25 @@ export function DashboardPage() {
         <DashboardAlertsBanner alerts={dashboardAlerts} />
       )}
 
-      <section>
+      <section className="space-y-3">
         <DashboardSummary
           dateFilter={filterValues.dateFilter}
           scope={metricsScope}
           viewMode={filterValues.viewMode}
           onMetricsLoaded={setPerformanceMetrics}
+          priorMetrics={priorMetrics}
         />
-      </section>
 
-      {canViewAnalytics && filterValues.viewMode === "business" && (
-        <section>
+        {canViewAnalytics && filterValues.viewMode === "business" && (
           <LossPanel
             metrics={lossMetrics}
             loading={lossLoading}
+            error={lossError}
+            onRetry={() => setLossReloadToken((t) => t + 1)}
             formatCurrency={formatCurrency}
           />
-        </section>
-      )}
+        )}
+      </section>
 
       {canViewAnalytics && (
         <section>

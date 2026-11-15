@@ -4,10 +4,14 @@ import { DEFAULT_DASHBOARD_ALERT_THRESHOLDS } from "../constants/dashboardAlerts
 
 export type { HealthBand };
 
+// Text colours, not fill colours. #10b981/amber-500/red-500 are only ~2.2-3.8:1
+// against a white card, so they fail WCAG AA wherever they're used as type;
+// these darker variants clear 4.5:1 in light mode and the dark theme keeps the
+// bright values. Fills (bars, dots, borders) still use the originals.
 const HEALTH_TEXT: Record<HealthBand, string> = {
-  green: "text-emerald-500",
-  amber: "text-amber-500",
-  red: "text-red-500",
+  green: "text-primary-text",
+  amber: "text-warn-text",
+  red: "text-danger-text",
 };
 
 const HEALTH_BORDER: Record<HealthBand, string> = {

@@ -80,8 +80,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       });
     }
 
+    // `btn-primary` is a hand-written stylesheet rule where every declaration is
+    // !important, including `width: 100%` and a hard-coded green background. It
+    // was being applied to EVERY button, so `variant="outline" | "ghost" |
+    // "secondary" | "link" | "destructive"` had no effect at all - 45 of the 67
+    // call sites were silently rendering as full-width primary buttons.
+    // Scoped to the variant it was actually written for; default buttons are
+    // unchanged, every other variant now renders as intended.
     return (
-      <button className={cn("btn-primary", buttonClasses)} ref={ref} {...props}>
+      <button
+        className={cn(variant === "default" && "btn-primary", buttonClasses)}
+        ref={ref}
+        {...props}
+      >
         {children}
       </button>
     );

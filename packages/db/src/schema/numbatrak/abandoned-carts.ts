@@ -9,6 +9,7 @@ import { boolean, date, index, integer, jsonb, numeric, pgTable, text, timestamp
 import { organization } from "../../auth-schema.js";
 import { numbatrakForms } from "./forms.js";
 import { numbatrakCustomerOrders } from "./orders.js";
+import { numbatrakTrackingLinks } from "./tracking-links.js";
 
 export const numbatrakAbandonedCarts = pgTable(
   "numbatrak_abandoned_carts",
@@ -65,6 +66,17 @@ export const numbatrakAbandonedCarts = pgTable(
     funnelName: text("funnel_name"),
     offerName: text("offer_name"),
     subBrand: text("sub_brand"),
+    // Ad attribution. Mirrors the denormalized snapshot on
+    // numbatrak_customer_orders (orders.ts) rather than relying on the FK
+    // alone, for the same reason: editing or deleting a tracking link later
+    // must not rewrite which buyer/platform a historical cart came from.
+    // Resolved from `?tl=<code>` at intake, so a cart abandoned mid-funnel
+    // still tells you whose traffic it was.
+    trackingLinkId: uuid("tracking_link_id").references(() => numbatrakTrackingLinks.id, {
+      onDelete: "set null",
+    }),
+    platform: text("platform"),
+    mediaBuyerName: text("media_buyer_name"),
   },
   (table) => [
     index("numbatrak_abandoned_carts_abandoned_at_idx").on(table.abandonedAt),
@@ -78,5 +90,14 @@ export const numbatrakAbandonedCarts = pgTable(
     index("numbatrak_abandoned_carts_offer_idx")
       .on(table.organizationId, table.offerName)
       .where(sql`${table.offerName} IS NOT NULL`),
+    index("numbatrak_abandoned_carts_tracking_link_idx")
+      .on(table.organizationId, table.trackingLinkId)
+      .where(sql`${table.trackingLinkId} IS NOT NULL`),
+    index("numbatrak_abandoned_carts_media_buyer_idx")
+      .on(table.organizationId, table.mediaBuyerName)
+      .where(sql`${table.mediaBuyerName} IS NOT NULL`),
+    index("numbatrak_abandoned_carts_platform_idx")
+      .on(table.organizationId, table.platform)
+      .where(sql`${table.platform} IS NOT NULL`),
   ],
 );

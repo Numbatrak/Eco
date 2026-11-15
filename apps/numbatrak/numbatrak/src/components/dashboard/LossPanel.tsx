@@ -6,6 +6,7 @@ import {
   PackageX,
   Megaphone,
   Truck,
+  RefreshCw,
 } from "lucide-react";
 import {
   LossMetrics,
@@ -18,12 +19,17 @@ type BreakdownKey = "status" | "location" | "agent" | "product";
 interface LossPanelProps {
   metrics: LossMetrics | null;
   loading?: boolean;
+  /** True when the fetch failed. Distinct from "no losses" — see the render below. */
+  error?: boolean;
+  onRetry?: () => void;
   formatCurrency: (value: number) => string;
 }
 
 export function LossPanel({
   metrics,
   loading,
+  error,
+  onRetry,
   formatCurrency,
 }: LossPanelProps) {
   const m = metrics ?? EMPTY_LOSS_METRICS;
@@ -61,6 +67,31 @@ export function LossPanel({
               <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-border">
+        <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
+          <div>
+            <p className="text-sm font-medium text-foreground">Couldn&apos;t load what you&apos;re losing</p>
+            <p className="text-sm text-muted-foreground">
+              These figures are unknown, not zero.
+            </p>
+          </div>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </button>
+          )}
         </CardContent>
       </Card>
     );
@@ -244,7 +275,7 @@ function LossBreakdownRow({
       <span className="font-medium text-foreground truncate">{label}</span>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-muted-foreground">{count}</span>
-        <span className="text-amber-600 dark:text-amber-400 font-medium tabular-nums">{amount}</span>
+        <span className="text-warn-text font-medium tabular-nums">{amount}</span>
       </div>
     </div>
   );
@@ -267,7 +298,7 @@ function LossStat({
         <Icon className="w-4 h-4" />
         <span className="text-xs font-medium">{label}</span>
         {hint && (
-          <span className="text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400">
+          <span className="text-[10px] uppercase tracking-wide text-warn-text">
             ({hint})
           </span>
         )}

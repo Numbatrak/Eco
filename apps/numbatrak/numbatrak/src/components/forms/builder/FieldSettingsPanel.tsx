@@ -1,45 +1,49 @@
-import { ArrowLeft, List, Plus, Trash2 } from "lucide-react";
-import { Product, ProductOffer, ProductVariant } from "../../../types/product";
-import { FormField, RadioOption, RadioOptionProduct } from "../../../types/form";
-import { isRequiredField } from "../../../utils/formValidation";
+import { ArrowLeft, List, Lock, Plus, Trash2 } from "lucide-react";
+import { FormField } from "../../../types/form";
+import { PackageCatalog, PackageChoice } from "../../../utils/formPackages";
+import { isRequiredField, getFieldLockReasons } from "../../../utils/formValidation";
+import { generateSelectOptionNaming } from "../../../utils/formSchemaUtils";
 import { RadioGroupOptionsEditor } from "./RadioGroupOptionsEditor";
 import { OrderBumpEditor } from "./OrderBumpEditor";
 import { getFieldIcon } from "./fieldIcons";
+import { FIELD_TYPE_LABELS, fieldTypeLabel } from "./fieldTypes";
+
+/** Order the type picker lists field types in: customer details, then ordering. */
+const FIELD_TYPE_ORDER: FormField["type"][] = [
+  "text",
+  "email",
+  "phone",
+  "number",
+  "textarea",
+  "select",
+  "state",
+  "radio-group",
+  "order-bump",
+];
 
 interface ProductsContext {
-  products: Product[];
-  offersByProduct: Record<string, ProductOffer[]>;
-  variantsByProduct: Record<string, ProductVariant[]>;
   productsLoading: boolean;
+  /** Every active offer, as a pickable package. */
+  packageCatalog: PackageCatalog;
 }
 
-interface RadioGroupHandlers {
-  expandedRadioOptions: Set<string>;
-  onToggleExpand: (optionId: string) => void;
+interface PackageHandlers {
   onAddOption: (fieldIndex: number) => void;
-  onUpdateOption: (fieldIndex: number, optionIndex: number, updates: Partial<RadioOption>) => void;
   onRemoveOption: (fieldIndex: number, optionIndex: number) => void;
-  onAddProduct: (fieldIndex: number, optionIndex: number) => void;
-  onUpdateProduct: (
-    fieldIndex: number,
-    optionIndex: number,
-    productIndex: number,
-    updates: Partial<RadioOptionProduct>
-  ) => void;
-  onRemoveProduct: (fieldIndex: number, optionIndex: number, productIndex: number) => void;
-  onApplyOffer: (fieldIndex: number, optionIndex: number, offerId: string | null) => void;
+  onChoosePackage: (fieldIndex: number, optionIndex: number, choice: PackageChoice | null) => void;
+  onChooseBumpPackage: (fieldIndex: number, choice: PackageChoice | null) => void;
 }
 
 interface FieldSettingsPanelProps {
   field: FormField;
   fieldIndex: number;
   allFields: FormField[];
-  onUpdateField: (index: number, updates: Partial<FormField>) => void;
+  onUpdateField: (index: number, updates: Partial<FormField>, coalesceKey?: string | null) => void;
   onRemoveField: (index: number) => void;
   onClose: () => void;
   onError: (message: string) => void;
   productsContext: ProductsContext;
-  radioGroupHandlers: RadioGroupHandlers;
+  packageHandlers: PackageHandlers;
 }
 
 function SelectOptionsEditor({
@@ -49,14 +53,18 @@ function SelectOptionsEditor({
 }: {
   field: FormField;
   fieldIndex: number;
-  onUpdateField: (index: number, updates: Partial<FormField>) => void;
+  onUpdateField: (index: number, updates: Partial<FormField>, coalesceKey?: string | null) => void;
 }) {
   const options = field.options ?? [];
 
   const updateOption = (optIndex: number, updates: Partial<{ value: string; label: string }>) => {
     const next = [...options];
     next[optIndex] = { ...next[optIndex], ...updates };
-    onUpdateField(fieldIndex, { options: next });
+    onUpdateField(
+      fieldIndex,
+      { options: next },
+      `select:${field.id}:${optIndex}:${Object.keys(updates).join(",")}`,
+    );
   };
 
   return (
@@ -69,9 +77,7 @@ function SelectOptionsEditor({
         <button
           type="button"
           onClick={() =>
-            onUpdateField(fieldIndex, {
-              options: [...options, { value: `option_${options.length + 1}`, label: `Option ${options.length + 1}` }],
-            })
+            onUpdateField(fieldIndex, { options: [...options, generateSelectOptionNaming(options)] }, null)
           }
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg transition-all"
         >
@@ -101,7 +107,9 @@ function SelectOptionsEditor({
               />
               <button
                 type="button"
-                onClick={() => onUpdateField(fieldIndex, { options: options.filter((_, i) => i !== optIndex) })}
+                onClick={() =>
+                  onUpdateField(fieldIndex, { options: options.filter((_, i) => i !== optIndex) }, null)
+                }
                 className="btn-icon btn-icon-danger"
               >
                 <Trash2 className="w-4 h-4" />
@@ -124,9 +132,15 @@ export function FieldSettingsPanel({
   onClose,
   onError,
   productsContext,
-  radioGroupHandlers,
+  packageHandlers,
 }: FieldSettingsPanelProps) {
-  const required = isRequiredField(field);
+  const required = isRequiredField(field, allFields);
+  const lockReasons = getFieldLockReasons(field, allFields);
+  const lockHint = required
+    ? `Every order form needs a field for the ${lockReasons
+        .map((r) => r.label)
+        .join(" and ")}, and this is the only one.`
+    : undefined;
 
   return (
     <div className="space-y-5">
@@ -136,11 +150,15 @@ export function FieldSettingsPanel({
         </button>
         <div className="field-badge">
           {getFieldIcon(field.type)}
-          <span>{field.type.toUpperCase().replace("-", " ")}</span>
+          <span>{fieldTypeLabel(field.type)}</span>
         </div>
         {required && (
-          <div className="field-badge bg-blue-100 text-blue-800 border-blue-300 ml-auto" title="Required for order processing">
-            SYSTEM
+          <div
+            className="field-badge bg-blue-100 text-blue-800 border-blue-300 ml-auto"
+            title={lockHint}
+          >
+            <Lock className="w-3 h-3" />
+            <span>Always needed</span>
           </div>
         )}
         <button
@@ -148,71 +166,91 @@ export function FieldSettingsPanel({
           onClick={() => onRemoveField(fieldIndex)}
           disabled={required}
           className={`btn-icon ${required ? "cursor-not-allowed opacity-40" : "btn-icon-danger"} ${required ? "" : "ml-auto"}`}
-          title={required ? "Required fields can't be deleted, only moved" : "Delete field"}
+          title={required ? lockHint : `Delete "${field.label || field.name}"`}
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
+      {required && <p className="field-lock-note">{lockHint}</p>}
+
       <div>
-        <label className="form-label text-xs">
-          Field Type {required && <span title="Locked for required system fields">🔒</span>}
+        <label className="form-label text-xs" htmlFor={`${field.id}-type`}>
+          Field type {required && <Lock className="inline w-3 h-3 align-[-1px]" aria-hidden />}
         </label>
         <select
+          id={`${field.id}-type`}
           value={field.type}
           onChange={(e) => {
             if (required) {
-              onError("Cannot change field type for required system fields. This field type is needed for order processing.");
+              onError(`${lockHint} Its type has to stay as it is so orders come through correctly.`);
               return;
             }
             onUpdateField(fieldIndex, { type: e.target.value as FormField["type"] });
           }}
           className={`form-input text-sm ${required ? "bg-muted cursor-not-allowed" : ""}`}
           disabled={required}
+          title={required ? lockHint : undefined}
         >
-          <option value="text">Text</option>
-          <option value="email">Email</option>
-          <option value="phone">Phone</option>
-          <option value="number">Number</option>
-          <option value="textarea">Textarea</option>
-          <option value="select">Select</option>
-          <option value="state">State</option>
-          <option value="radio-group">Radio Group</option>
-          <option value="order-bump">Order Bump</option>
+          {FIELD_TYPE_ORDER.map((type) => (
+            <option key={type} value={type}>
+              {FIELD_TYPE_LABELS[type]}
+            </option>
+          ))}
         </select>
       </div>
 
-      <label className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border-2 border-border cursor-pointer hover:bg-accent transition-colors">
+      {/* A locked field is required by definition - showing an editable
+          "Required" box let merchants make First Name optional while it stayed
+          undeletable, which is incoherent and breaks order intake. */}
+      <label
+        className={`flex items-start gap-2 px-3 py-2 bg-muted rounded-lg border-2 border-border transition-colors ${
+          required ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:bg-accent"
+        }`}
+        title={required ? "Required for every order form" : undefined}
+      >
         <input
           type="checkbox"
-          checked={field.required}
+          checked={required ? true : field.required}
+          disabled={required}
           onChange={(e) => onUpdateField(fieldIndex, { required: e.target.checked })}
-          className="w-4 h-4"
+          className="w-4 h-4 mt-0.5"
         />
-        <span className="text-sm font-semibold text-foreground">Required</span>
+        <span>
+          <span className="text-sm font-semibold text-foreground block">
+            Customers must fill this in
+          </span>
+          {required && (
+            <span className="text-xs text-muted-foreground">Required for every order form</span>
+          )}
+        </span>
       </label>
 
       <div>
-        <label className="form-label text-xs">Label</label>
+        <label className="form-label text-xs" htmlFor={`${field.id}-label`}>
+          Label customers see
+        </label>
         <input
+          id={`${field.id}-label`}
           type="text"
           value={field.label}
           onChange={(e) => onUpdateField(fieldIndex, { label: e.target.value })}
-          placeholder="Field Label"
+          placeholder="e.g. Your full name"
           className="form-input text-sm"
         />
       </div>
 
       <div>
-        <label className="form-label text-xs">
-          Name {required && <span title="Locked for required system fields">🔒</span>}
+        <label className="form-label text-xs" htmlFor={`${field.id}-name`}>
+          Answer key {required && <Lock className="inline w-3 h-3 align-[-1px]" aria-hidden />}
         </label>
         <input
+          id={`${field.id}-name`}
           type="text"
           value={field.name}
           onChange={(e) => {
             if (required) {
-              onError("Cannot change field name for required system fields. This field name is needed for order processing.");
+              onError(`${lockHint} Its answer key has to stay as it is so orders come through correctly.`);
               return;
             }
             onUpdateField(fieldIndex, { name: e.target.value });
@@ -220,13 +258,21 @@ export function FieldSettingsPanel({
           placeholder="field_name"
           className={`form-input text-sm font-mono ${required ? "bg-muted cursor-not-allowed" : ""}`}
           disabled={required}
+          title={required ? lockHint : undefined}
+          aria-describedby={`${field.id}-name-help`}
         />
+        <p id={`${field.id}-name-help`} className="text-xs text-muted-foreground mt-1">
+          The key this answer is saved under. Changing it can break integrations already pointing at it.
+        </p>
       </div>
 
       {field.type !== "radio-group" && field.type !== "order-bump" && field.type !== "select" && field.type !== "state" && (
         <div>
-          <label className="form-label text-xs">Placeholder</label>
+          <label className="form-label text-xs" htmlFor={`${field.id}-placeholder`}>
+            Hint text inside the box
+          </label>
           <input
+            id={`${field.id}-placeholder`}
             type="text"
             value={field.placeholder || ""}
             onChange={(e) => onUpdateField(fieldIndex, { placeholder: e.target.value })}
@@ -237,8 +283,11 @@ export function FieldSettingsPanel({
       )}
 
       <div>
-        <label className="form-label text-xs">Show when field</label>
+        <label className="form-label text-xs" htmlFor={`${field.id}-showwhen`}>
+          Only show this field when
+        </label>
         <select
+          id={`${field.id}-showwhen`}
           value={field.showWhen?.fieldName ?? ""}
           onChange={(e) => {
             const fieldName = e.target.value;
@@ -262,8 +311,11 @@ export function FieldSettingsPanel({
       </div>
       {field.showWhen?.fieldName && (
         <div>
-          <label className="form-label text-xs">Equals value</label>
+          <label className="form-label text-xs" htmlFor={`${field.id}-equals`}>
+            ...is exactly
+          </label>
           <input
+            id={`${field.id}-equals`}
             type="text"
             value={field.showWhen.equals}
             onChange={(e) =>
@@ -279,7 +331,13 @@ export function FieldSettingsPanel({
 
       {field.type === "order-bump" && (
         <div className="pt-4 border-t-2 border-border">
-          <OrderBumpEditor field={field} fieldIndex={fieldIndex} products={productsContext.products} onUpdateField={onUpdateField} />
+          <OrderBumpEditor
+            field={field}
+            fieldIndex={fieldIndex}
+            catalog={productsContext.packageCatalog}
+            productsLoading={productsContext.productsLoading}
+            onChoosePackage={packageHandlers.onChooseBumpPackage}
+          />
         </div>
       )}
 
@@ -288,11 +346,11 @@ export function FieldSettingsPanel({
           <RadioGroupOptionsEditor
             field={field}
             fieldIndex={fieldIndex}
-            products={productsContext.products}
-            offersByProduct={productsContext.offersByProduct}
-            variantsByProduct={productsContext.variantsByProduct}
+            catalog={productsContext.packageCatalog}
             productsLoading={productsContext.productsLoading}
-            {...radioGroupHandlers}
+            onAddOption={packageHandlers.onAddOption}
+            onRemoveOption={packageHandlers.onRemoveOption}
+            onChoosePackage={packageHandlers.onChoosePackage}
           />
         </div>
       )}

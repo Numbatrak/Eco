@@ -9,7 +9,7 @@ interface PageLayoutProps {
 export function PageLayout({ children, className = "" }: PageLayoutProps) {
   return (
     <section
-      className={`p-6 md:p-8 flex flex-col gap-6 min-h-screen bg-background ${className}`.trim()}
+      className={`p-6 md:p-8 flex flex-col gap-6 min-h-screen w-full min-w-0 bg-background ${className}`.trim()}
     >
       {children}
     </section>

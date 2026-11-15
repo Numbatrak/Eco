@@ -143,7 +143,7 @@ export function AbandonedCarts({ formId }: AbandonedCartsProps) {
                     <span className="truncate text-sm font-semibold uppercase tracking-tight text-foreground">
                       {cart.customer_name}
                     </span>
-                    <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-500">
+                    <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-primary-text">
                       {formatCurrency(cart.sales_price)}
                     </span>
                   </div>

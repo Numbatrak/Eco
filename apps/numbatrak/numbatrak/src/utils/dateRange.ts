@@ -1,6 +1,11 @@
 export type DateFilterType =
   | "all"
   | "today"
+  // Rolling windows. Unlike "this_week"/"this_month" these are unambiguous -
+  // they don't depend on which day the week starts or how far into the month
+  // you are, so period-over-period comparison is like-for-like.
+  | "last_7_days"
+  | "last_30_days"
   | "this_week"
   | "this_month"
   | "custom";
@@ -32,6 +37,17 @@ export function resolveDateRange(dateFilter?: DateFilter): {
         today.getTime() + 24 * 60 * 60 * 1000 - 1
       ).toISOString();
       break;
+    case "last_7_days":
+    case "last_30_days": {
+      const days = dateFilter.type === "last_7_days" ? 7 : 30;
+      // Inclusive of today, so "7d" spans today plus the six days before it.
+      const start = new Date(today);
+      start.setDate(today.getDate() - (days - 1));
+      start.setHours(0, 0, 0, 0);
+      startDate = start.toISOString();
+      endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+      break;
+    }
     case "this_week": {
       const dayOfWeek = today.getDay();
       const startOfWeek = new Date(today);

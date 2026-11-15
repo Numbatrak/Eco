@@ -9,7 +9,6 @@ import {
   ProductOfferType,
   ProductVariant,
   ProductWithDetails,
-  computeBuyXGetYUnits,
 } from "../../types/product";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -18,10 +17,13 @@ import { useConfirm, confirmDelete } from "../../contexts/ConfirmContext";
 import { formatNaira } from "../../utils/currency";
 import { Tag, Plus, Trash2, X, Package } from "lucide-react";
 import { sanitizeIntegerInput, sanitizeDecimalInput } from "../../utils/numericInput";
+import { OfferPreview } from "./OfferPreview";
+import { QuantityTierEditor, QuantityTier, tierLabel } from "./QuantityTierEditor";
 
 const OFFER_TYPE_DESCRIPTIONS: Record<ProductOfferType, string> = {
   single: "One unit at a fixed price — the simplest offer.",
-  quantity_tier: "A fixed quantity at its own total price (e.g. 3 units for a set price).",
+  quantity_tier:
+    "The same product at several quantities, each with its own set price \u2014 1 for \u20a610,000, 2 for \u20a618,000, 4 for \u20a635,000. Each tier is sold as its own option.",
   bundle: "Combines this product with one or more other products as one sellable package — each component still deducts from its own inventory.",
   buy_x_get_y: "Buy X units, get Y extra units free — the free units still count toward inventory and cost of goods.",
 };
@@ -35,6 +37,8 @@ interface OfferFormData {
   unit_cost: number;
   variant_id: string;
   bundle_items: ProductOfferBundleItem[];
+  /** Quantity-tier only: one rung per sellable quantity. Expanded into one offer row each on save. */
+  tiers: QuantityTier[];
 }
 
 interface OffersDialogProps {
@@ -65,6 +69,7 @@ const defaultEntry = (): OfferFormData => ({
   unit_cost: 0,
   variant_id: "",
   bundle_items: [],
+  tiers: [{ quantity: 1, price: 0 }],
 });
 
 export function OffersDialog({
@@ -153,26 +158,48 @@ export function OffersDialog({
     e.preventDefault();
     if (!product) return;
 
-    const toSave = entries
-      .filter((entry) => entry.label.trim())
-      .map((entry) => ({
+    const toSave = entries.flatMap((entry) => {
+      const base = {
         product_id: product.id,
         variant_id: entry.variant_id || null,
         offer_type: entry.offer_type,
-        label: entry.label.trim(),
-        min_quantity: entry.min_quantity || 1,
-        free_quantity:
-          entry.offer_type === "buy_x_get_y" ? entry.free_quantity : 0,
-        bundle_items:
-          entry.offer_type === "bundle"
-            ? entry.bundle_items.filter((item) => item.product_id)
-            : null,
-        price: entry.price,
         unit_cost: entry.unit_cost,
         starts_at: null,
         ends_at: null,
-        display_order: 0,
-      }));
+      };
+
+      // A quantity-tier ladder is one input but many sellable offers: each rung
+      // becomes its own row, so the pricing engine reads it exactly as it would
+      // three separately-created tiers. Labels are generated ("2 for N") rather
+      // than typed, which is what keeps a ladder consistent.
+      if (entry.offer_type === "quantity_tier") {
+        return entry.tiers
+          .filter((tier) => tier.quantity > 0 && tier.price > 0)
+          .map((tier, i) => ({
+            ...base,
+            label: entry.label.trim() ? `${entry.label.trim()} \u2014 ${tierLabel(tier)}` : tierLabel(tier),
+            min_quantity: tier.quantity,
+            free_quantity: 0,
+            bundle_items: null,
+            price: tier.price,
+            display_order: i,
+          }));
+      }
+
+      if (!entry.label.trim()) return [];
+      return [
+        {
+          ...base,
+          label: entry.label.trim(),
+          min_quantity: entry.min_quantity || 1,
+          free_quantity: entry.offer_type === "buy_x_get_y" ? entry.free_quantity : 0,
+          bundle_items:
+            entry.offer_type === "bundle" ? entry.bundle_items.filter((item) => item.product_id) : null,
+          price: entry.price,
+          display_order: 0,
+        },
+      ];
+    });
 
     if (toSave.length === 0) return;
     await onSave(toSave);
@@ -203,10 +230,6 @@ export function OffersDialog({
               </h3>
               <div className="space-y-2">
                 {offers.map((offer) => {
-                  const accordPreview =
-                    offer.offer_type === "buy_x_get_y"
-                      ? computeBuyXGetYUnits(1, offer.min_quantity, offer.free_quantity)
-                      : null;
                   return (
                     <div
                       key={offer.id}
@@ -241,13 +264,20 @@ export function OffersDialog({
                             {offer.active ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        {accordPreview && (
-                          <div className="sm:col-span-4 text-xs text-muted-foreground">
-                            Accord (1 bundle): {accordPreview.quantity_paid} paid +{" "}
-                            {accordPreview.free_quantity} free ={" "}
-                            {accordPreview.true_unit_count} units shipped/COGS
-                          </div>
-                        )}
+                        <div className="sm:col-span-4">
+                          <OfferPreview
+                            offer={{
+                              offer_type: offer.offer_type,
+                              min_quantity: offer.min_quantity,
+                              free_quantity: offer.free_quantity,
+                              price: offer.price,
+                              unit_cost: offer.unit_cost,
+                              bundle_items: offer.bundle_items ?? [],
+                            }}
+                            allProducts={allProducts}
+                            compact
+                          />
+                        </div>
                       </div>
                       <div className="flex shrink-0 gap-1">
                         <button
@@ -309,15 +339,19 @@ export function OffersDialog({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1 sm:col-span-2">
                     <Label className="text-xs font-medium text-muted-foreground">
-                      Label
+                      {entry.offer_type === "quantity_tier" ? "Ladder name (optional)" : "Label"}
                     </Label>
                     <Input
                       value={entry.label}
                       onChange={(e) =>
                         handleUpdateEntry(index, "label", e.target.value)
                       }
-                      placeholder="e.g. Buy 2 Get 1 Free"
-                      required
+                      placeholder={
+                        entry.offer_type === "quantity_tier"
+                          ? "Leave blank to name each tier automatically"
+                          : "e.g. Buy 2 Get 1 Free"
+                      }
+                      required={entry.offer_type !== "quantity_tier"}
                     />
                   </div>
                   <div className="space-y-1">
@@ -370,11 +404,10 @@ export function OffersDialog({
                       </select>
                     </div>
                   )}
-                  {(entry.offer_type === "quantity_tier" ||
-                    entry.offer_type === "buy_x_get_y") && (
+                  {entry.offer_type === "buy_x_get_y" && (
                     <div className="space-y-1">
                       <Label className="text-xs font-medium text-muted-foreground">
-                        {entry.offer_type === "buy_x_get_y" ? "Buy (X)" : "Min qty"}
+                        Buy (X)
                       </Label>
                       <Input
                         type="text"
@@ -403,6 +436,7 @@ export function OffersDialog({
                       />
                     </div>
                   )}
+                  {entry.offer_type !== "quantity_tier" && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium text-muted-foreground">
                       {entry.offer_type === "buy_x_get_y"
@@ -419,6 +453,7 @@ export function OffersDialog({
                       required
                     />
                   </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs font-medium text-muted-foreground">
                       Unit cost (₦)
@@ -533,29 +568,31 @@ export function OffersDialog({
                       </div>
                     )}
 
-                    {entry.bundle_items.length > 0 &&
-                      (() => {
-                        const totalCost = entry.bundle_items.reduce((sum, item) => {
-                          const p = allProducts.find((ap) => ap.id === item.product_id);
-                          return sum + (p?.cost_price ?? 0) * (item.quantity || 1);
-                        }, 0);
-                        const profit = (entry.price || 0) - totalCost;
-                        return (
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            <span>Total cost: {formatNaira(totalCost)}</span>
-                            <span
-                              className={
-                                profit >= 0
-                                  ? "font-semibold text-emerald-600"
-                                  : "font-semibold text-destructive"
-                              }
-                            >
-                              Profit: {formatNaira(profit)}
-                            </span>
-                          </div>
-                        );
-                      })()}
                   </div>
+                )}
+
+                {entry.offer_type === "quantity_tier" ? (
+                  <QuantityTierEditor
+                    tiers={entry.tiers}
+                    unitCost={entry.unit_cost}
+                    onChange={(tiers) => {
+                      const updated = [...entries];
+                      updated[index] = { ...updated[index], tiers };
+                      setEntries(updated);
+                    }}
+                  />
+                ) : (
+                  <OfferPreview
+                    offer={{
+                      offer_type: entry.offer_type,
+                      min_quantity: entry.min_quantity,
+                      free_quantity: entry.free_quantity,
+                      price: entry.price,
+                      unit_cost: entry.unit_cost,
+                      bundle_items: entry.bundle_items,
+                    }}
+                    allProducts={allProducts}
+                  />
                 )}
               </div>
             ))}

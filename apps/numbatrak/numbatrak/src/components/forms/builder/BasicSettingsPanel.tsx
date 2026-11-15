@@ -12,7 +12,8 @@ interface BasicSettingsPanelProps {
   active: boolean;
   onActiveChange: (value: boolean) => void;
   schema: FormSchema;
-  onSchemaChange: (updates: Partial<FormSchema>) => void;
+  /** `coalesceKey` groups rapid edits to the same setting into one undo step. */
+  onSchemaChange: (updates: Partial<FormSchema>, coalesceKey?: string | null) => void;
 }
 
 /** Form name/token/funnel/sub-brand/status/confirmation/submit-button settings — the "Settings" tab. */
@@ -127,7 +128,7 @@ export function BasicSettingsPanel({
                       message: schema.confirmation?.message ?? "Thank you for your order. We'll be in touch soon.",
                       redirectUrl: schema.confirmation?.redirectUrl ?? "",
                     },
-                  })
+                  }, null)
                 }
                 className="form-input text-sm"
               >
@@ -149,7 +150,7 @@ export function BasicSettingsPanel({
                           redirectUrl: e.target.value,
                           message: schema.confirmation?.message,
                         },
-                      })
+                      }, "settings:confirmation.redirectUrl")
                     }
                     placeholder="https://example.com/thank-you?phone={{phone}}"
                     className="form-input text-sm"
@@ -167,7 +168,7 @@ export function BasicSettingsPanel({
                           message: e.target.value,
                           redirectUrl: schema.confirmation?.redirectUrl,
                         },
-                      })
+                      }, "settings:confirmation.message")
                     }
                     rows={2}
                     className="form-input text-sm"
@@ -192,7 +193,7 @@ export function BasicSettingsPanel({
               onChange={(e) =>
                 onSchemaChange({
                   submitButton: { text: e.target.value, loadingText: schema.submitButton?.loadingText },
-                })
+                }, "settings:submitButton.text")
               }
               placeholder="Submit Order"
               className="form-input"
@@ -206,7 +207,7 @@ export function BasicSettingsPanel({
               onChange={(e) =>
                 onSchemaChange({
                   submitButton: { text: schema.submitButton?.text ?? "Submit Order", loadingText: e.target.value },
-                })
+                }, "settings:submitButton.loadingText")
               }
               placeholder="Processing..."
               className="form-input"

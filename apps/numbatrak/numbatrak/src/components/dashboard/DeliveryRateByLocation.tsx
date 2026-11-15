@@ -142,13 +142,13 @@ export function DeliveryRateByLocationComponent({
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Delivered</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-semibold text-primary-text">
                       {item.deliveredCount.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Waybilled</span>
-                    <span className="font-semibold text-amber-600 dark:text-amber-400">
+                    <span className="font-semibold text-warn-text">
                       {item.waybilledCount.toLocaleString()}
                     </span>
                   </div>

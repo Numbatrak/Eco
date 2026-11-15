@@ -23,7 +23,7 @@ export function DashboardAlertsBanner({ alerts }: DashboardAlertsBannerProps) {
       <div className="flex items-start gap-2">
         <AlertTriangle
           className={`w-5 h-5 shrink-0 mt-0.5 ${
-            hasRed ? "text-red-500" : "text-amber-500"
+            hasRed ? "text-danger-text" : "text-warn-text"
           }`}
         />
         <div className="flex-1 min-w-0 space-y-2">

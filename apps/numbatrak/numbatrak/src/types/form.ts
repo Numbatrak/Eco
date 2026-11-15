@@ -8,7 +8,18 @@ export interface RadioOptionProduct {
   variant_id?: string | null;
 }
 
-// Radio group option
+/**
+ * One choice in a package picker (and the shape an order bump uses too).
+ *
+ * Packages are defined once as product offers under Products; a form only
+ * picks one. `source` records which era an option comes from:
+ *  - "offer": owned by a product offer. title/price/products are mirrored from
+ *    it and are read-only in the builder.
+ *  - undefined (or "manual"): built by hand before packages moved to Products.
+ *    Still renders and still takes orders, but is shown locked, because its
+ *    shape can't be expressed as a single offer and must not be rewritten
+ *    underneath a live form.
+ */
 export interface RadioOption {
   id: string;
   title: string;
@@ -17,6 +28,8 @@ export interface RadioOption {
   products: RadioOptionProduct[];
   /** Default offer for all lines in this package (line-level offer_id wins) */
   offer_id?: string | null;
+  /** Where this option's definition lives. Absent on options saved before packages moved to Products. */
+  source?: "offer" | "manual";
 }
 
 /** Show field only when another field equals a value */

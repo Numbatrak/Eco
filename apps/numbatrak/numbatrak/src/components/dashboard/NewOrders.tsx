@@ -128,7 +128,7 @@ export function NewOrders({ formId, csrId }: NewOrdersProps) {
                     <span className="font-semibold text-foreground text-sm truncate uppercase tracking-tight">
                       {order.customer_name}
                     </span>
-                    <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-bold text-primary-text bg-emerald-500/10 px-1.5 py-0.5 rounded">
                       {formatCurrency(order.sales_price)}
                     </span>
                   </div>

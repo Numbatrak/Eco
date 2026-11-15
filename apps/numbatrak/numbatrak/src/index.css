@@ -37,6 +37,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Text-safe variants of the semantic colours. The fill values (#10b981,
+     amber-500, red-500) stay as-is for bars, dots and borders, where WCAG
+     contrast minimums don't apply; these are their readable counterparts
+     for anything that is actually text. */
+  --color-primary-text: var(--primary-text);
+  --color-warn-text: var(--warn-text);
+  --color-danger-text: var(--danger-text);
 }
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
@@ -1015,7 +1022,7 @@
   --font-size: 16px;
   --radius: 0.75rem;
   /* Numbatrak light: white + Midnight text + Emerald accent */
-  --background: #ffffff;
+  --background: #f6f8f8;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -1026,7 +1033,10 @@
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #94a3b8;
+  --muted-foreground: #5b6b7c;
+  --primary-text: #047857;
+  --warn-text: #a16207;
+  --danger-text: #b91c1c;
   --accent: #ecfdf5;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
@@ -1060,6 +1070,9 @@
   --secondary-foreground: #ffffff;
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
+  --primary-text: #34d399;
+  --warn-text: #fbbf24;
+  --danger-text: #f87171;
   --accent: #334155;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;

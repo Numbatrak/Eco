@@ -1,6 +1,6 @@
-import { FormEvent, useRef, useState, useEffect } from "react";
+import { FormEvent, useRef, useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Plus, Download, Copy } from "lucide-react";
+import { ArrowLeft, Save, Plus, Download, Copy, Redo2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
@@ -20,9 +20,27 @@ import { fetchProducts } from "../../services/products";
 import { fetchOffersForProducts } from "../../services/productOffers";
 import { fetchVariantsForProducts } from "../../services/productVariants";
 import { Product, ProductOffer, ProductVariant } from "../../types/product";
-import { FormField, FormSchema, RadioOption, RadioOptionProduct, FieldMapping } from "../../types/form";
-import { validateFormSchema, isRequiredField, getDefaultRequiredFields, ensureRequiredFields } from "../../utils/formValidation";
+import { FormField, RadioOptionProduct, FieldMapping } from "../../types/form";
+import {
+  validateFormSchema,
+  describeFieldLock,
+  getDefaultRequiredFields,
+  ensureRequiredFields,
+} from "../../utils/formValidation";
+import {
+  createId,
+  generateFieldNaming,
+  generateCopyNaming,
+  generateOptionNaming,
+} from "../../utils/formSchemaUtils";
+import {
+  buildPackageCatalog,
+  applyPackageToOption,
+  createEmptyPackageOption,
+  PackageChoice,
+} from "../../utils/formPackages";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { useIsDesktop } from "../../hooks/useMediaQuery";
 import { PageLayout } from "../layout/PageLayout";
 import { LoadingState } from "../ui/LoadingState";
 import { FormCanvas } from "./builder/FormCanvas";
@@ -30,13 +48,10 @@ import { FieldPalette } from "./builder/FieldPalette";
 import { FieldSettingsPanel } from "./builder/FieldSettingsPanel";
 import { BasicSettingsPanel } from "./builder/BasicSettingsPanel";
 import { IntegrationsPanel } from "./builder/IntegrationsPanel";
+import { useSchemaHistory } from "./builder/schemaHistory";
+import { FIELD_TYPE_LABELS } from "./builder/fieldTypes";
 
 const EMPTY_FIELD_MAPPING: FieldMapping = { contactFields: {}, valueToOptionId: {} };
-
-/** True for a blank title or the auto-generated "Option N" default - i.e. one an offer selection is still free to fill in. */
-function isPlaceholderOptionTitle(title: string): boolean {
-  return !title.trim() || /^Option \d+$/.test(title.trim());
-}
 
 export default function FormBuilderPage() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -50,13 +65,25 @@ export default function FormBuilderPage() {
   const [variantsByProduct, setVariantsByProduct] = useState<Record<string, ProductVariant[]>>({});
   const [productsLoading, setProductsLoading] = useState(false);
 
-  const [expandedRadioOptions, setExpandedRadioOptions] = useState<Set<string>>(new Set());
   const [formName, setFormName] = useState("");
   const [formToken, setFormToken] = useState("");
   const [subBrand, setSubBrand] = useState("");
   const [funnelName, setFunnelName] = useState("");
   const [active, setActive] = useState(true);
-  const [schema, setSchema] = useState<FormSchema>({
+  // Every schema edit goes through this - see schemaHistory.ts. `commitSchema`
+  // records an undo step (coalescing rapid edits to the same property);
+  // `replaceSchema` applies an edit the app made on the user's behalf without
+  // polluting their undo history.
+  const {
+    schema,
+    commitSchema,
+    replaceSchema,
+    resetSchema,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useSchemaHistory({
     fields: [],
     submitButton: { text: "Submit Order", loadingText: "Processing..." },
   });
@@ -64,6 +91,7 @@ export default function FormBuilderPage() {
   const [fieldMapping, setFieldMapping] = useState<FieldMapping>(EMPTY_FIELD_MAPPING);
   const [hasWebhookSecret, setHasWebhookSecret] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [railTab, setRailTab] = useState<"add" | "edit">("add");
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -72,8 +100,26 @@ export default function FormBuilderPage() {
   const isEditMode = !!id;
   const mode: "create" | "edit" = isEditMode ? "edit" : "create";
 
+  // Drives whether the field settings live in the side rail or in a sheet.
+  // Read as a media query rather than a CSS class so the sheet is never
+  // *mounted* on desktop - an open Radix dialog still renders its overlay,
+  // locks body scroll and traps focus even when its content is display:none.
+  const isDesktop = useIsDesktop();
+
+  const selectField = (id: string) => {
+    setSelectedFieldId(id);
+    setRailTab("edit");
+  };
+
   const selectedFieldIndex = schema.fields.findIndex((f) => f.id === selectedFieldId);
   const selectedField = selectedFieldIndex >= 0 ? schema.fields[selectedFieldIndex] : null;
+
+  // Undo, a reconciliation sweep or a delete can remove the selected field.
+  useEffect(() => {
+    if (selectedFieldId && !schema.fields.some((f) => f.id === selectedFieldId)) {
+      setSelectedFieldId(null);
+    }
+  }, [schema.fields, selectedFieldId]);
 
   const saveDisabledReason = saving
     ? null
@@ -90,6 +136,11 @@ export default function FormBuilderPage() {
     setTimeout(() => setError(null), 3000);
   };
 
+  // The catalog sweep below runs on catalog changes, not schema changes, so
+  // it reads the live schema through a ref rather than closing over a stale one.
+  const schemaRef = useRef(schema);
+  schemaRef.current = schema;
+
   useEffect(() => {
     if (currentOrganization) {
       loadProducts();
@@ -103,7 +154,7 @@ export default function FormBuilderPage() {
       const token = generateFormToken();
       setFormToken(token);
       const defaultFields = getDefaultRequiredFields();
-      setSchema({
+      resetSchema({
         fields: defaultFields,
         submitButton: { text: "Submit Order", loadingText: "Processing..." },
       });
@@ -127,8 +178,9 @@ export default function FormBuilderPage() {
       }
     }
 
-    setSchema((prev) => {
-      if (!prev.fields?.length) return prev;
+    {
+      const prev = schemaRef.current;
+      if (!prev.fields?.length) return;
       let didChange = false;
 
       const cleanProducts = (lines: RadioOptionProduct[]): RadioOptionProduct[] =>
@@ -157,7 +209,11 @@ export default function FormBuilderPage() {
         if (field.type === "radio-group" && field.radioOptions) {
           const radioOptions = field.radioOptions.map((option) => {
             let opt = option;
-            if (option.offer_id && !activeOfferIds.has(option.offer_id)) {
+            // An offer-backed option IS its package - nulling the offer would
+            // quietly turn it into an option that takes money for nothing. Leave
+            // it pointing at the missing offer; the picker surfaces that the
+            // package is gone and asks for another.
+            if (option.offer_id && !activeOfferIds.has(option.offer_id) && option.source !== "offer") {
               didChange = true;
               opt = { ...opt, offer_id: null };
             }
@@ -174,7 +230,7 @@ export default function FormBuilderPage() {
         if (field.type === "order-bump" && field.orderBump) {
           const bump = field.orderBump;
           let nextBump = bump;
-          if (bump.offer_id && !activeOfferIds.has(bump.offer_id)) {
+          if (bump.offer_id && !activeOfferIds.has(bump.offer_id) && bump.source !== "offer") {
             didChange = true;
             nextBump = { ...nextBump, offer_id: null };
           }
@@ -184,10 +240,10 @@ export default function FormBuilderPage() {
         return field;
       });
 
-      if (!didChange) return prev;
-      return { ...prev, fields: cleanedFields };
-    });
-  }, [products, offersByProduct, variantsByProduct]);
+      // Not the user's edit, so it must not land on their undo stack.
+      if (didChange) replaceSchema({ ...prev, fields: cleanedFields });
+    }
+  }, [products, offersByProduct, variantsByProduct, replaceSchema]);
 
   const loadProducts = async () => {
     if (!currentOrganization) return;
@@ -222,7 +278,8 @@ export default function FormBuilderPage() {
         setFunnelName(form.funnel_name ?? "");
         setActive(form.active);
         const schemaWithRequired = ensureRequiredFields(form.schema);
-        setSchema(schemaWithRequired);
+        // Loading is the new baseline - there is nothing to undo back past it.
+        resetSchema(schemaWithRequired);
         setFieldMapping(form.field_mapping ?? EMPTY_FIELD_MAPPING);
         setHasWebhookSecret(form.has_webhook_secret ?? false);
       } else {
@@ -234,18 +291,6 @@ export default function FormBuilderPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleRadioOption = (optionId: string) => {
-    setExpandedRadioOptions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(optionId)) {
-        newSet.delete(optionId);
-      } else {
-        newSet.add(optionId);
-      }
-      return newSet;
-    });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -266,14 +311,30 @@ export default function FormBuilderPage() {
 
     const validation = validateFormSchema(schema);
     if (!validation.isValid) {
-      setError(
-        `Form is missing required fields:\n${validation.missingFields.map((f) => `• ${f}`).join("\n")}\n\n` +
-          `Every form must include: First Name, Last Name, WhatsApp Number, Phone Number, State, Address, and Package selection.`
-      );
+      const parts: string[] = [];
+
+      if (validation.missingFields.length > 0) {
+        parts.push(
+          `This form can't take orders yet — it still needs:\n${validation.missingFields
+            .map((f) => `• ${f}`)
+            .join("\n")}`,
+        );
+      }
+
+      // Two fields sharing an answer key silently merge their answers, so this
+      // blocks the save. Existing forms are never auto-renamed - the merchant
+      // chooses which one to change, because integrations may point at either.
+      if (validation.duplicateNames.length > 0) {
+        parts.push(
+          `Two fields can't share an answer key:\n${validation.duplicateNames
+            .map((d) => `• "${d.name}" is used by ${d.labels.map((l) => `"${l}"`).join(" and ")}`)
+            .join("\n")}\n` +
+            `Open each one and give it a different answer key.`,
+        );
+      }
+
+      setError(parts.join("\n\n"));
       return;
-    }
-    if (validation.warnings.length > 0) {
-      console.warn("Form validation warnings:", validation.warnings);
     }
 
     try {
@@ -310,13 +371,20 @@ export default function FormBuilderPage() {
     }
   };
 
-  const addField = (fieldType: FormField["type"] = "text") => {
-    const fieldCount = schema.fields.length;
+  /**
+   * Insert a field at `index` (default: append). Dragging a palette entry onto
+   * a gap in the canvas supplies an index; clicking one does not.
+   */
+  const insertField = (fieldType: FormField["type"] = "text", index?: number) => {
+    // Names and labels are checked against the whole schema rather than
+    // derived from its length: `fields.length + 1` repeats a name as soon as
+    // anything has been deleted, and `name` is the key submissions arrive under.
+    const naming = generateFieldNaming(schema.fields, `${FIELD_TYPE_LABELS[fieldType]} Field`);
     const baseField: Partial<FormField> = {
-      id: `field_${Date.now()}`,
+      id: createId("field"),
       type: fieldType,
-      label: `${fieldType === "radio-group" ? "Radio Group" : fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field ${fieldCount + 1}`,
-      name: `field_${fieldCount + 1}`,
+      label: naming.label,
+      name: naming.name,
       required: false,
     };
 
@@ -328,9 +396,13 @@ export default function FormBuilderPage() {
       newField = {
         ...baseField,
         type: "order-bump",
-        label: "Order Bump",
-        name: `order_bump_${fieldCount + 1}`,
-        orderBump: { id: `bump_${Date.now()}`, title: "Add extra item", value: "order_bump", price: 0, products: [] },
+        orderBump: {
+          id: createId("bump"),
+          title: "Add extra item",
+          value: "order_bump",
+          price: 0,
+          products: [],
+        },
       } as FormField;
     } else if (fieldType === "select") {
       newField = { ...baseField, type: "select", options: [], placeholder: "" } as FormField;
@@ -340,21 +412,69 @@ export default function FormBuilderPage() {
       newField = { ...baseField, type: fieldType, placeholder: "" } as FormField;
     }
 
-    setSchema({ ...schema, fields: [...schema.fields, newField] });
+    const at = index === undefined ? schema.fields.length : Math.max(0, Math.min(index, schema.fields.length));
+    const nextFields = [...schema.fields];
+    nextFields.splice(at, 0, newField);
+    commitSchema({ ...schema, fields: nextFields });
     setSelectedFieldId(newField.id);
+    setRailTab("edit");
     setMobilePaletteOpen(false);
   };
 
-  const updateField = (index: number, updates: Partial<FormField>) => {
+  /** Click-to-add from the palette always appends. */
+  const addField = (fieldType: FormField["type"] = "text") => insertField(fieldType);
+
+  const duplicateField = (index: number) => {
+    const source = schema.fields[index];
+    if (!source) return;
+    // A duplicate must not inherit the original's id or `name` - `name` is the
+    // key submissions arrive under, so two fields sharing one would collide.
+    const naming = generateCopyNaming(schema.fields, source);
+    const copy = {
+      ...structuredClone(source),
+      id: createId("field"),
+      name: naming.name,
+      label: naming.label,
+    } as FormField;
+    if (copy.type === "radio-group" && copy.radioOptions) {
+      copy.radioOptions = copy.radioOptions.map((o) => ({ ...o, id: createId("option") }));
+    }
+    if (copy.type === "order-bump" && copy.orderBump) {
+      copy.orderBump = { ...copy.orderBump, id: createId("bump") };
+    }
+    const nextFields = [...schema.fields];
+    nextFields.splice(index + 1, 0, copy);
+    commitSchema({ ...schema, fields: nextFields });
+    setSelectedFieldId(copy.id);
+    setRailTab("edit");
+  };
+
+  /**
+   * Patch one field.
+   *
+   * `coalesceKey` groups rapid repeated edits into a single undo step:
+   *  - omitted: derive a key from the property names, so typing in a label
+   *    collapses but switching type then editing the label does not;
+   *  - a string: use that key, for callers that patch one property through a
+   *    shared container (an order bump's title and price both patch `orderBump`);
+   *  - `null`: never coalesce - for structural edits like adding or removing
+   *    an option, each of which deserves its own undo step.
+   */
+  const updateField = (
+    index: number,
+    updates: Partial<FormField>,
+    coalesceKey?: string | null,
+  ) => {
     const newFields = [...schema.fields];
     const currentField = newFields[index];
+    if (!currentField) return;
 
     if (updates.type === "radio-group" && currentField.type !== "radio-group") {
       updates.radioOptions = updates.radioOptions || [];
     }
     if (updates.type === "order-bump" && currentField.type !== "order-bump") {
       updates.orderBump = updates.orderBump || {
-        id: `bump_${Date.now()}`,
+        id: createId("bump"),
         title: "Add extra item",
         value: "order_bump",
         price: 0,
@@ -367,25 +487,31 @@ export default function FormBuilderPage() {
     }
 
     newFields[index] = { ...currentField, ...updates };
-    setSchema({ ...schema, fields: newFields });
+    const key =
+      coalesceKey === null
+        ? undefined
+        : (coalesceKey ?? `field:${currentField.id}:${Object.keys(updates).sort().join(",")}`);
+    commitSchema({ ...schema, fields: newFields }, key);
   };
 
   const removeField = async (index: number) => {
     const field = schema.fields[index];
+    if (!field) return;
 
-    if (isRequiredField(field)) {
-      setError(
-        `Cannot delete required field "${field.label}". Required fields (First Name, Last Name, WhatsApp Number, Phone Number, State, Address, Package) cannot be deleted but can be moved.`
-      );
-      setTimeout(() => setError(null), 5000);
+    // Only the *last* field covering a requirement is locked, and the message
+    // names that field and that requirement rather than listing all seven.
+    const lockReason = describeFieldLock(field, schema.fields);
+    if (lockReason) {
+      setError(lockReason);
+      setTimeout(() => setError(null), 8000);
       return;
     }
 
     if (
       !(await confirm({
-        title: "Remove field?",
-        description: `Remove "${field.label}" from this form? Unsaved changes are not saved until you click Save.`,
-        confirmLabel: "Remove",
+        title: `Remove "${field.label || field.name}"?`,
+        description: "You can undo this straight after. Nothing is live until you save the form.",
+        confirmLabel: "Remove field",
         destructive: true,
       }))
     ) {
@@ -393,130 +519,95 @@ export default function FormBuilderPage() {
     }
 
     const newFields = schema.fields.filter((_, i) => i !== index);
-    setSchema({ ...schema, fields: newFields });
+    commitSchema({ ...schema, fields: newFields });
     if (selectedFieldId === field.id) setSelectedFieldId(null);
   };
 
   const moveField = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= schema.fields.length || fromIndex === toIndex) return;
     const newFields = [...schema.fields];
     const [removed] = newFields.splice(fromIndex, 1);
     newFields.splice(toIndex, 0, removed);
-    setSchema({ ...schema, fields: newFields });
+    commitSchema({ ...schema, fields: newFields });
   };
 
   const addRadioOption = (fieldIndex: number) => {
     const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group") return;
+    if (field?.type !== "radio-group") return;
 
-    const newOption: RadioOption = {
-      id: `option_${Date.now()}`,
-      title: `Option ${(field.radioOptions?.length || 0) + 1}`,
-      value: `option_${(field.radioOptions?.length || 0) + 1}`,
-      price: 0,
-      products: [],
-    };
+    const existing = field.radioOptions ?? [];
+    // The answer value is what a submission carries and what the Elementor
+    // mapping keys on, so it has to be unique within the field even after
+    // options have been deleted. It is set once here and never changes.
+    const naming = generateOptionNaming(existing);
+    const option = createEmptyPackageOption(naming.value);
 
-    updateField(fieldIndex, { radioOptions: [...(field.radioOptions || []), newOption] });
-  };
-
-  const updateRadioOption = (fieldIndex: number, optionIndex: number, updates: Partial<RadioOption>) => {
-    const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
-
-    const newOptions = [...field.radioOptions];
-    newOptions[optionIndex] = { ...newOptions[optionIndex], ...updates };
-    updateField(fieldIndex, { radioOptions: newOptions });
+    updateField(fieldIndex, { radioOptions: [...existing, option] }, null);
   };
 
   const removeRadioOption = async (fieldIndex: number, optionIndex: number) => {
     const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
+    if (field?.type !== "radio-group" || !field.radioOptions) return;
 
     const option = field.radioOptions[optionIndex];
+    if (!option) return;
+
+    const name = option.title || option.value;
     if (
       !(await confirm({
-        title: "Remove option?",
-        description: `Remove "${option.title || option.value}" from this radio group?`,
-        confirmLabel: "Remove",
+        title: `Remove "${name}"?`,
+        description: "Customers will no longer be able to choose this package. The package itself stays in Products.",
+        confirmLabel: "Remove package",
         destructive: true,
       }))
     ) {
       return;
     }
 
-    const newOptions = field.radioOptions.filter((_, i) => i !== optionIndex);
-    updateField(fieldIndex, { radioOptions: newOptions });
+    updateField(
+      fieldIndex,
+      { radioOptions: field.radioOptions.filter((_, i) => i !== optionIndex) },
+      null,
+    );
   };
 
-  const addProductToRadioOption = (fieldIndex: number, optionIndex: number) => {
-    const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
-
-    const option = field.radioOptions[optionIndex];
-    const newProduct: RadioOptionProduct = { product_id: "", quantity: 1 };
-
-    updateRadioOption(fieldIndex, optionIndex, { products: [...option.products, newProduct] });
-  };
-
-  const updateRadioOptionProduct = (
+  /**
+   * Point one of a picker's choices at a package.
+   *
+   * The option's id and answer value survive untouched - a saved form's
+   * submissions and its Elementor value->option mapping are both keyed on
+   * them, so swapping the package must not invalidate either.
+   */
+  const choosePackageForOption = (
     fieldIndex: number,
     optionIndex: number,
-    productIndex: number,
-    updates: Partial<RadioOptionProduct>
+    choice: PackageChoice | null,
   ) => {
     const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
-
+    if (field?.type !== "radio-group" || !field.radioOptions) return;
     const option = field.radioOptions[optionIndex];
-    const newProducts = [...option.products];
-    const merged = { ...newProducts[productIndex], ...updates };
+    if (!option) return;
 
-    if (updates.product_id !== undefined && updates.product_id !== merged.product_id) {
-      merged.offer_id = null;
-      merged.variant_id = null;
-    }
+    const next = choice
+      ? applyPackageToOption(option, choice)
+      : { ...option, source: "offer" as const, offer_id: null, products: [], title: "", price: 0 };
 
-    newProducts[productIndex] = merged;
-
-    const optionUpdates: Partial<RadioOption> = { products: newProducts };
-    if (updates.offer_id && isPlaceholderOptionTitle(option.title)) {
-      for (const list of Object.values(offersByProduct)) {
-        const offer = list.find((o) => o.id === updates.offer_id && o.active);
-        if (offer) {
-          optionUpdates.title = offer.label;
-          break;
-        }
-      }
-    }
-
-    updateRadioOption(fieldIndex, optionIndex, optionUpdates);
+    const radioOptions = [...field.radioOptions];
+    radioOptions[optionIndex] = next;
+    updateField(fieldIndex, { radioOptions }, null);
   };
 
-  const applyOfferToRadioOption = (fieldIndex: number, optionIndex: number, offerId: string | null) => {
+  /** Same, for the optional checkout add-on. */
+  const choosePackageForBump = (fieldIndex: number, choice: PackageChoice | null) => {
     const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
-    const option = field.radioOptions[optionIndex];
-    const updates: Partial<RadioOption> = { offer_id: offerId || null };
-    if (offerId) {
-      for (const list of Object.values(offersByProduct)) {
-        const offer = list.find((o) => o.id === offerId && o.active);
-        if (offer) {
-          updates.price = offer.price;
-          if (isPlaceholderOptionTitle(option.title)) updates.title = offer.label;
-          break;
-        }
-      }
-    }
-    updateRadioOption(fieldIndex, optionIndex, updates);
-  };
+    if (field?.type !== "order-bump" || !field.orderBump) return;
 
-  const removeProductFromRadioOption = (fieldIndex: number, optionIndex: number, productIndex: number) => {
-    const field = schema.fields[fieldIndex];
-    if (field.type !== "radio-group" || !field.radioOptions) return;
+    const bump = field.orderBump;
+    const next = choice
+      ? applyPackageToOption(bump, choice)
+      : { ...bump, source: "offer" as const, offer_id: null, products: [], title: "", price: 0 };
 
-    const option = field.radioOptions[optionIndex];
-    const newProducts = option.products.filter((_, i) => i !== productIndex);
-    updateRadioOption(fieldIndex, optionIndex, { products: newProducts });
+    updateField(fieldIndex, { orderBump: next }, null);
   };
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -540,19 +631,43 @@ export default function FormBuilderPage() {
     }
   };
 
-  const radioGroupHandlers = {
-    expandedRadioOptions,
-    onToggleExpand: toggleRadioOption,
+  const packageHandlers = {
     onAddOption: addRadioOption,
-    onUpdateOption: updateRadioOption,
     onRemoveOption: removeRadioOption,
-    onAddProduct: addProductToRadioOption,
-    onUpdateProduct: updateRadioOptionProduct,
-    onRemoveProduct: removeProductFromRadioOption,
-    onApplyOffer: applyOfferToRadioOption,
+    onChoosePackage: choosePackageForOption,
+    onChooseBumpPackage: choosePackageForBump,
   };
 
-  const productsContext = { products, offersByProduct, variantsByProduct, productsLoading };
+  // Every active offer in the catalog, as a pickable package. Derived from
+  // data already loaded, so the picker costs no extra request.
+  const packageCatalog = useMemo(
+    () => buildPackageCatalog(products, offersByProduct, variantsByProduct),
+    [products, offersByProduct, variantsByProduct],
+  );
+
+  const productsContext = { productsLoading, packageCatalog };
+
+  // A package picker with no packages to pick is a dead end, so the palette
+  // says so up front rather than handing over a field that can't be finished.
+  const noPackagesReason =
+    !productsLoading && packageCatalog.choices.length === 0
+      ? "You haven't set up any packages yet. A package is the offer or bundle customers choose — create one under Products, then add this field."
+      : undefined;
+  const paletteUnavailable = noPackagesReason
+    ? { "radio-group": noPackagesReason, "order-bump": noPackagesReason }
+    : {};
+
+  const explainUnavailable = (_type: FormField["type"], reason: string) => {
+    toast("Set up a package first", {
+      description: reason,
+      duration: 8000,
+      action: {
+        label: "Open Products",
+        // New tab on purpose - navigating away would lose unsaved work.
+        onClick: () => window.open("/products", "_blank", "noopener"),
+      },
+    });
+  };
 
   const fieldSettingsPanel = selectedField && (
     <FieldSettingsPanel
@@ -564,7 +679,7 @@ export default function FormBuilderPage() {
       onClose={() => setSelectedFieldId(null)}
       onError={showTransientError}
       productsContext={productsContext}
-      radioGroupHandlers={radioGroupHandlers}
+      packageHandlers={packageHandlers}
     />
   );
 
@@ -583,6 +698,29 @@ export default function FormBuilderPage() {
                 <div>
                   <h1 className="form-builder-title">{mode === "create" ? "Create New Form" : "Edit Form"}</h1>
                   <p className="form-builder-subtitle hidden sm:block">Build a custom form for order collection</p>
+                </div>
+                <div className="h-8 w-px bg-border hidden sm:block" />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={undo}
+                    disabled={!canUndo}
+                    className="btn-icon"
+                    title="Undo"
+                    aria-label="Undo"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={redo}
+                    disabled={!canRedo}
+                    className="btn-icon"
+                    title="Redo"
+                    aria-label="Redo"
+                  >
+                    <Redo2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -648,24 +786,71 @@ export default function FormBuilderPage() {
                     <FormCanvas
                       fields={schema.fields}
                       selectedFieldId={selectedFieldId}
-                      onSelectField={setSelectedFieldId}
+                      onSelectField={selectField}
                       onMoveField={moveField}
                       onRemoveField={removeField}
+                      onDuplicateField={duplicateField}
+                      onInsertAt={(index, type) => insertField(type ?? "text", index)}
                     />
                   </div>
-                  <div className="builder-panel-col hidden lg:block">
-                    {selectedField ? fieldSettingsPanel : <FieldPalette onAddField={addField} />}
-                  </div>
+                  {/* Both the palette and the field settings stay reachable. The
+                      rail used to swap one for the other on selection, so adding
+                      a second field meant deselecting the first.
+
+                      Rendered only on desktop - below `lg` the same panel lives
+                      in a sheet, and mounting both at once would duplicate every
+                      input id and label in the DOM. */}
+                  {isDesktop && (
+                    <div className="builder-panel-col flex">
+                      <div className="builder-rail-tabs" role="tablist">
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={railTab === "add"}
+                          onClick={() => setRailTab("add")}
+                          className={`builder-rail-tab ${railTab === "add" ? "builder-rail-tab-active" : ""}`}
+                        >
+                          Add field
+                        </button>
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={railTab === "edit"}
+                          onClick={() => setRailTab("edit")}
+                          disabled={!selectedField}
+                          title={selectedField ? undefined : "Pick a field on the left to edit it"}
+                          className={`builder-rail-tab ${railTab === "edit" ? "builder-rail-tab-active" : ""}`}
+                        >
+                          Edit field
+                        </button>
+                      </div>
+                      <div className="builder-rail-body">
+                        {railTab === "edit" && selectedField ? (
+                          fieldSettingsPanel
+                        ) : railTab === "edit" ? (
+                          <p className="builder-rail-empty">Select a field on the left to edit it.</p>
+                        ) : (
+                          <FieldPalette
+                          onAddField={addField}
+                          unavailable={paletteUnavailable}
+                          onUnavailable={explainUnavailable}
+                        />
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setMobilePaletteOpen(true)}
-                  className="mobile-add-field-fab lg:hidden"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Field
-                </button>
+                {!isDesktop && (
+                  <button
+                    type="button"
+                    onClick={() => setMobilePaletteOpen(true)}
+                    className="mobile-add-field-fab"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Field
+                  </button>
+                )}
               </TabsContent>
 
               <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
@@ -681,7 +866,9 @@ export default function FormBuilderPage() {
                   active={active}
                   onActiveChange={setActive}
                   schema={schema}
-                  onSchemaChange={(updates) => setSchema({ ...schema, ...updates })}
+                  onSchemaChange={(updates, coalesceKey) =>
+                    commitSchema({ ...schema, ...updates }, coalesceKey ?? undefined)
+                  }
                 />
               </TabsContent>
 
@@ -788,25 +975,40 @@ export default function FormBuilderPage() {
         )}
       </div>
 
-      <Sheet open={mobilePaletteOpen} onOpenChange={setMobilePaletteOpen}>
-        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto lg:hidden">
-          <SheetHeader>
-            <SheetTitle>Add a field</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <FieldPalette onAddField={addField} />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Mobile only. `lg:hidden` on the content was not enough: Radix renders
+          the overlay, locks body scroll and traps focus whenever the dialog is
+          open, so on desktop selecting a field dimmed the whole page behind an
+          invisible panel. Gate the mount, not the visibility. */}
+      {!isDesktop && (
+        <>
+          <Sheet open={mobilePaletteOpen} onOpenChange={setMobilePaletteOpen}>
+            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Add a field</SheetTitle>
+              </SheetHeader>
+              <div className="px-4 pb-6">
+                <FieldPalette
+                  onAddField={addField}
+                  unavailable={paletteUnavailable}
+                  onUnavailable={explainUnavailable}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
 
-      <Sheet open={!!selectedField} onOpenChange={(open: boolean) => !open && setSelectedFieldId(null)}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto lg:hidden">
-          <SheetHeader>
-            <SheetTitle>Edit field</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">{fieldSettingsPanel}</div>
-        </SheetContent>
-      </Sheet>
+          <Sheet
+            open={!!selectedField}
+            onOpenChange={(open: boolean) => !open && setSelectedFieldId(null)}
+          >
+            <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Edit field</SheetTitle>
+              </SheetHeader>
+              <div className="px-4 pb-6">{fieldSettingsPanel}</div>
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
     </PageLayout>
   );
 }

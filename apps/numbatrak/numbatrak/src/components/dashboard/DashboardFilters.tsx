@@ -33,10 +33,12 @@ import type { DashboardViewMode } from "../../types/dashboardFilters";
 import { ORDER_STATUS_SELECT_OPTIONS, orderStatusLabel } from "../../constants/orderStatus";
 
 const FILTER_OPTIONS: { label: string; value: DateFilterType }[] = [
-  { label: "All Time", value: "all" },
   { label: "Today", value: "today" },
-  { label: "This Week", value: "this_week" },
-  { label: "This Month", value: "this_month" },
+  { label: "7d", value: "last_7_days" },
+  { label: "30d", value: "last_30_days" },
+  { label: "MTD", value: "this_month" },
+  // Stays reachable until Batch 2 moves it inside the Custom range picker.
+  { label: "All Time", value: "all" },
 ];
 
 export type DashboardFilterValues = {
@@ -280,7 +282,7 @@ export function DashboardFilters({
 
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5">
+            <Button variant="outline" size="sm" className="h-10 gap-1.5">
               <SlidersHorizontal className="w-4 h-4" />
               Filters
               {chips.length > 0 && (
