@@ -1,5 +1,5 @@
 /**
- * Gutenberg Block for CRM Form Embed
+ * Gutenberg Block for Numbatrak Forms
  * 
  * Optional: Only loads if Gutenberg is available
  */
@@ -11,7 +11,7 @@
     const { __ } = wp.i18n;
 
     registerBlockType('crm-form-embed/form', {
-        title: __('CRM Form', 'crm-form-embed'),
+        title: __('Numbatrak Form', 'crm-form-embed'),
         icon: 'feedback',
         category: 'embed',
         attributes: {
@@ -52,7 +52,7 @@
                     wp.element.createElement('div', {
                         style: { marginBottom: '10px' }
                     },
-                        wp.element.createElement('strong', null, __('CRM Form', 'crm-form-embed'))
+                        wp.element.createElement('strong', null, __('Numbatrak Form', 'crm-form-embed'))
                     ),
                     formToken ? (
                         wp.element.createElement('div', {

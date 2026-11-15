@@ -2,8 +2,9 @@ import type { FastifyInstance } from "fastify";
 import { submitPublicNumbatrakFormRequestSchema } from "@platform/shared-types";
 import { extractProductIdsFromSchema, fetchProductNames } from "../lib/public-form.js";
 import { findActiveFormByToken, submitFormOrder } from "../lib/intake.js";
-import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
+import { checkRateLimitOrAllow } from "../../auth/lib/rate-limit.js";
 import { isHoneypotTriggered } from "../lib/validation.js";
+import { buildSubmittedData, flattenSubmission } from "../lib/payload.js";
 
 const NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -54,11 +55,10 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
     "/public/numbatrak/forms/:formToken",
     { config: { cors: false } },
     async (request, reply) => {
-      const redis = app.getRedis();
-      const rate = await checkAndIncrementRateLimit(redis, `numbatrak-form:ip:${request.ip}`, {
+      const rate = await checkRateLimitOrAllow(() => app.getRedis(), `numbatrak-form:ip:${request.ip}`, {
         limit: numbatrakFormRateLimitPerMinute(),
         windowSeconds: NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS,
-      });
+      }, request.log);
       if (!rate.allowed) {
         return reply.code(429).send({ error: "Too many requests. Please try again shortly." });
       }
@@ -89,11 +89,10 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
     "/public/numbatrak/forms/:formToken/submit",
     { config: { cors: false } },
     async (request, reply) => {
-      const redis = app.getRedis();
-      const rate = await checkAndIncrementRateLimit(redis, `numbatrak-form:ip:${request.ip}`, {
+      const rate = await checkRateLimitOrAllow(() => app.getRedis(), `numbatrak-form:ip:${request.ip}`, {
         limit: numbatrakFormRateLimitPerMinute(),
         windowSeconds: NUMBATRAK_FORM_RATE_LIMIT_WINDOW_SECONDS,
-      });
+      }, request.log);
       if (!rate.allowed) {
         return reply.code(429).send({ error: "Too many requests. Please try again shortly." });
       }
@@ -130,6 +129,11 @@ export default async function publicNumbatrakFormRoutes(app: FastifyInstance): P
             offerName: body.offerName,
             packageName: body.packageName,
             trackingLinkCode: body.trackingLinkCode,
+            // Line items are our own product IDs, not something the customer typed.
+            submittedData: buildSubmittedData(
+              body.source ?? "form",
+              flattenSubmission({ ...(request.body as Record<string, unknown>), items: undefined }),
+            ),
           },
           request.log,
         );

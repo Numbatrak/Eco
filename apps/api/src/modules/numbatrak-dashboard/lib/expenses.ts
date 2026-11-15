@@ -7,7 +7,7 @@ function num(v: string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function withinRange(dateStr: string, startDate?: string, endDate?: string): boolean {
+export function withinRange(dateStr: string, startDate?: string, endDate?: string): boolean {
   if (startDate && dateStr < startDate) return false;
   if (endDate && dateStr > endDate) return false;
   return true;

@@ -69,12 +69,12 @@ export function resolveDateRange(dateFilter?: DateFilter): {
     }
     case "custom":
       if (dateFilter.startDate) {
-        const customStart = new Date(dateFilter.startDate);
+        const customStart = parseLocalDay(dateFilter.startDate);
         customStart.setHours(0, 0, 0, 0);
         startDate = customStart.toISOString();
       }
       if (dateFilter.endDate) {
-        const customEnd = new Date(dateFilter.endDate);
+        const customEnd = parseLocalDay(dateFilter.endDate);
         customEnd.setHours(23, 59, 59, 999);
         endDate = customEnd.toISOString();
       }
@@ -94,4 +94,14 @@ export function withinDateRange(
   if (startDate && d < new Date(startDate)) return false;
   if (endDate && d > new Date(endDate)) return false;
   return true;
+}
+
+/**
+ * "2026-11-01" as that calendar day in local time. `new Date("2026-11-01")`
+ * is UTC midnight, which west of UTC is still the previous local day - so a
+ * custom range would silently start a day early there.
+ */
+function parseLocalDay(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value);
 }

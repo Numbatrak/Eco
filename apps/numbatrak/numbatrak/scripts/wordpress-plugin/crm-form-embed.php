@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: CRM Form Embed
- * Plugin URI: https://mail9ja.vercel.app
- * Description: Embed dynamic CRM forms in WordPress using form tokens. Minimal plugin that loads external SDK.
- * Version: 1.1.0
- * Author: Your Company
- * Author URI: https://mail9ja.vercel.app
+ * Plugin Name: Numbatrak Forms
+ * Plugin URI: https://numbatrak.africa/
+ * Description: Embed your Numbatrak order forms on WordPress pages with a shortcode or block.
+ * Version: 1.2.1
+ * Author: Numbatrak
+ * Author URI: https://numbatrak.africa/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: crm-form-embed
@@ -18,9 +18,12 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('CRM_FORM_EMBED_VERSION', '1.1.0');
+define('CRM_FORM_EMBED_VERSION', '1.2.1');
 define('CRM_FORM_EMBED_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CRM_FORM_EMBED_PLUGIN_URL', plugin_dir_url(__FILE__));
+// Where forms send orders when the API Base URL setting is left empty.
+// Points at the Numbatrak dev API for now.
+define('CRM_FORM_EMBED_DEFAULT_API_URL', 'https://api-dev.numbatrak.com');
 define('CRM_FORM_EMBED_UPDATE_URL', 'https://app.numbatrak.io/wordpress-plugin/update-manifest.json');
 
 /**
@@ -58,7 +61,7 @@ class CRM_Form_Embed {
     public function activate() {
         // Set default options
         $defaults = array(
-            'api_base_url' => '',
+            'api_base_url' => CRM_FORM_EMBED_DEFAULT_API_URL,
             'embed_js_url' => 'https://app.numbatrak.io/embed.js',
             'embed_css_url' => 'https://app.numbatrak.io/embed.css',
         );
@@ -106,7 +109,10 @@ class CRM_Form_Embed {
      * page load - WP calls this filter far more often than once a day.
      */
     private function get_remote_manifest() {
-        $cached = get_transient('crm_form_embed_remote_manifest');
+        // Dashboard -> Updates -> "Check again" adds force-check=1: skip the
+        // cache then, so a new release shows up as soon as an admin asks.
+        $force = is_admin() && isset($_GET['force-check']);
+        $cached = $force ? false : get_transient('crm_form_embed_remote_manifest');
         if (false !== $cached) {
             return $cached;
         }
@@ -173,7 +179,7 @@ class CRM_Form_Embed {
         }
 
         return (object) array(
-            'name' => 'CRM Form Embed',
+            'name' => 'Numbatrak Forms',
             'slug' => dirname(plugin_basename(__FILE__)),
             'version' => $manifest->version,
             'download_link' => $manifest->download_url,
@@ -207,7 +213,7 @@ class CRM_Form_Embed {
         
         // Check if SDK URLs are configured
         if (empty($settings['embed_js_url'])) {
-            return '<p style="color: red;">Error: Embed SDK URL not configured. Please configure in Settings → CRM Form Embed</p>';
+            return '<p style="color: red;">Error: Embed SDK URL not configured. Please configure in Settings → Numbatrak Forms</p>';
         }
         
         // Build container HTML
@@ -221,7 +227,7 @@ class CRM_Form_Embed {
         );
         
         // Add inline script to configure SDK
-        $api_base_url = !empty($settings['api_base_url']) ? esc_js($settings['api_base_url']) : '';
+        $api_base_url = esc_js(!empty($settings['api_base_url']) ? $settings['api_base_url'] : CRM_FORM_EMBED_DEFAULT_API_URL);
         $debug = defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false';
 
         $html .= '<script>';
@@ -316,8 +322,8 @@ class CRM_Form_Embed {
      */
     public function add_admin_menu() {
         add_options_page(
-            __('CRM Form Embed Settings', 'crm-form-embed'),
-            __('CRM Form Embed', 'crm-form-embed'),
+            __('Numbatrak Forms Settings', 'crm-form-embed'),
+            __('Numbatrak Forms', 'crm-form-embed'),
             'manage_options',
             'crm-form-embed',
             array($this, 'render_settings_page')
@@ -436,7 +442,7 @@ class CRM_Form_Embed {
                 <code>[crm_form form="form_live_98Fh3ksd"]</code>
                 
                 <h3 style="margin-top: 20px;"><?php _e('Gutenberg Block', 'crm-form-embed'); ?></h3>
-                <p><?php _e('Search for "CRM Form" in the block inserter.', 'crm-form-embed'); ?></p>
+                <p><?php _e('Search for "Numbatrak Form" in the block inserter.', 'crm-form-embed'); ?></p>
                 
                 <h3 style="margin-top: 20px;"><?php _e('PHP', 'crm-form-embed'); ?></h3>
                 <p><?php _e('Use in your theme templates:', 'crm-form-embed'); ?></p>
@@ -472,14 +478,14 @@ class CRM_Form_Embed {
      */
     public function render_api_base_url_field() {
         $settings = get_option('crm_form_embed_settings', array());
-        $value = isset($settings['api_base_url']) ? $settings['api_base_url'] : '';
+        $value = !empty($settings['api_base_url']) ? $settings['api_base_url'] : CRM_FORM_EMBED_DEFAULT_API_URL;
         ?>
         <input type="url"
                name="crm_form_embed_settings[api_base_url]"
                value="<?php echo esc_attr($value); ?>"
                class="regular-text"
-               placeholder="https://api.yourcrm.com">
-        <p class="description"><?php _e('The base URL of your CRM API (no trailing slash). The SDK calls /public/numbatrak/forms/{token} on this host.', 'crm-form-embed'); ?></p>
+               placeholder="<?php echo esc_attr(CRM_FORM_EMBED_DEFAULT_API_URL); ?>">
+        <p class="description"><?php _e('Where your forms send orders. Leave as it is unless Numbatrak gives you a different address.', 'crm-form-embed'); ?></p>
         <?php
     }
     

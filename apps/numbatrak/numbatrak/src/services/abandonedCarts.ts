@@ -74,6 +74,9 @@ interface CartDto {
   funnelName: string | null;
   offerName: string | null;
   subBrand: string | null;
+  trackingLinkId: string | null;
+  platform: string | null;
+  mediaBuyerName: string | null;
   note: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -115,6 +118,9 @@ function cartFromDto(dto: CartDto): AbandonedCartWithRelations {
     funnel_name: dto.funnelName,
     offer_name: dto.offerName,
     sub_brand: dto.subBrand,
+    tracking_link_id: dto.trackingLinkId ?? null,
+    platform: dto.platform ?? null,
+    media_buyer_name: dto.mediaBuyerName ?? null,
     note: dto.note,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,

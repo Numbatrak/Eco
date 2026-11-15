@@ -176,6 +176,8 @@ export function computeBusinessPerformanceMetrics(input: {
 // module header comment re: byte-for-byte pure-function port).
 const UNSPECIFIED_LOCATION = "Unspecified";
 const UNASSIGNED_AGENT_LABEL = "Unassigned";
+const NO_FORM_LABEL = "No form";
+const DELETED_FORM_LABEL = "Deleted form";
 
 export function computeLossMetrics(input: {
   orders: MetricsOrderRow[];
@@ -191,8 +193,11 @@ export function computeLossMetrics(input: {
   /** Order-line rows for the byProduct breakdown - optional/defaults to
    * empty for the same reason `agents` is optional. */
   productItemRows?: ProductLossItemRow[];
+  /** Form id -> name, for the by-funnel breakdown (a funnel is a form).
+   * Fetched by the caller for the formIds on `orders`. */
+  forms?: Array<{ id: string; name: string }>;
 }): NumbatrakLossMetrics {
-  const { orders, adSpend, failedDeliveryCost, startDate, endDate, agents = [], productItemRows = [] } = input;
+  const { orders, adSpend, failedDeliveryCost, startDate, endDate, agents = [], productItemRows = [], forms = [] } = input;
 
   const generated = orders.filter((o) => isGeneratedOrder(o) && inGeneratedPeriod(o, startDate, endDate));
   const undelivered = generated.filter((o) => !isDeliveredOrder(o));
@@ -252,9 +257,27 @@ export function computeLossMetrics(input: {
     }
   }
 
+  // A funnel is a form: group by the order's form, the same thing the
+  // dashboard's Funnel filter selects on.
+  const formNameById = new Map(forms.map((f) => [f.id, f.name]));
+  const funnelMap = new Map<string, { formId: string | null; label: string; count: number; wouldBeSales: number }>();
+  for (const row of undelivered) {
+    const formId = row.formId ?? null;
+    const key = formId ?? "";
+    const existing = funnelMap.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.wouldBeSales += row.orderRevenue;
+    } else {
+      const label = formId ? (formNameById.get(formId) ?? DELETED_FORM_LABEL) : NO_FORM_LABEL;
+      funnelMap.set(key, { formId, label, count: 1, wouldBeSales: row.orderRevenue });
+    }
+  }
+
   const byLocation = [...locationMap.values()].sort((a, b) => b.count - a.count);
+  const byFunnel = [...funnelMap.values()].sort((a, b) => b.count - a.count);
   const byAgent = [...agentMap.values()].sort((a, b) => b.count - a.count);
   const byProduct = computeProductLossBreakdown(productItemRows, startDate, endDate);
 
-  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus, byLocation, byAgent, byProduct };
+  return { undeliveredCount, wouldBeSales, allocatedAdSpend, failedDeliveryCost, byStatus, byLocation, byAgent, byFunnel, byProduct };
 }

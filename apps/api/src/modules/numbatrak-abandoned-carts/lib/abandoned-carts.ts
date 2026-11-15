@@ -10,6 +10,13 @@ import { pickLeastBusyCsr } from "../../numbatrak-follow-ups/lib/csr-assignment.
 
 export type AbandonedCartRow = typeof numbatrakAbandonedCarts.$inferSelect;
 
+/** The resolved tracking link a cart's visit came through, if any. */
+export interface CartAttribution {
+  id: string;
+  platform: string;
+  mediaBuyerName: string;
+}
+
 export function serializeCart(row: AbandonedCartRow): NumbatrakAbandonedCart {
   return {
     id: row.id,
@@ -46,6 +53,9 @@ export function serializeCart(row: AbandonedCartRow): NumbatrakAbandonedCart {
     funnelName: row.funnelName,
     offerName: row.offerName,
     subBrand: row.subBrand,
+    trackingLinkId: row.trackingLinkId,
+    platform: row.platform,
+    mediaBuyerName: row.mediaBuyerName,
     note: row.note,
     createdAt: row.createdAt?.toISOString() ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
@@ -140,6 +150,11 @@ export async function createCart(
   db: Database,
   organizationId: string,
   input: CreateNumbatrakAbandonedCartRequest,
+  // Separate from `input` on purpose: attribution is only ever stamped from a
+  // server-resolved tracking link, never from a client-supplied payload.
+  attribution: CartAttribution | null = null,
+  // Server-side only, like attribution: the raw website-form submission.
+  extra: { submittedData?: unknown } = {},
 ): Promise<AbandonedCartRow> {
   const now = new Date();
   const abandonedAt = input.abandonedAt ? new Date(input.abandonedAt) : now;
@@ -171,6 +186,10 @@ export async function createCart(
       funnelName: input.funnelName ?? null,
       offerName: input.offerName ?? null,
       subBrand: input.subBrand ?? null,
+      trackingLinkId: attribution?.id ?? null,
+      platform: attribution?.platform ?? null,
+      mediaBuyerName: attribution?.mediaBuyerName ?? null,
+      submittedData: extra.submittedData ?? null,
       abandonedAt,
       orderDate: abandonedAt.toISOString().split("T")[0],
       orderMonth: monthName(abandonedAt),

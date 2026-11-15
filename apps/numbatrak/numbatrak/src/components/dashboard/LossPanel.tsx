@@ -1,20 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  LucideIcon,
-  AlertTriangle,
-  TrendingDown,
-  PackageX,
-  Megaphone,
-  Truck,
-  RefreshCw,
-} from "lucide-react";
+import { type ReactNode } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import {
   LossMetrics,
   EMPTY_LOSS_METRICS,
 } from "../../services/dashboardMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-
-type BreakdownKey = "status" | "location" | "agent" | "product";
 
 interface LossPanelProps {
   metrics: LossMetrics | null;
@@ -23,7 +13,12 @@ interface LossPanelProps {
   error?: boolean;
   onRetry?: () => void;
   formatCurrency: (value: number) => string;
+  /** Orders generated in the same scope, for the "96 / 246" headline. */
+  totalOrdersGenerated?: number | null;
 }
+
+/** How many rows each breakdown column shows before "+N more". */
+const TOP_ROWS = 4;
 
 export function LossPanel({
   metrics,
@@ -31,29 +26,9 @@ export function LossPanel({
   error,
   onRetry,
   formatCurrency,
+  totalOrdersGenerated,
 }: LossPanelProps) {
   const m = metrics ?? EMPTY_LOSS_METRICS;
-
-  const breakdownOptions = useMemo(
-    () =>
-      (
-        [
-          { key: "status", label: "By status", count: m.byStatus.length },
-          { key: "location", label: "By location", count: m.byLocation.length },
-          { key: "agent", label: "By agent", count: m.byAgent.length },
-          { key: "product", label: "By product", count: m.byProduct.length },
-        ] satisfies { key: BreakdownKey; label: string; count: number }[]
-      ).filter((o) => o.count > 0),
-    [m.byStatus.length, m.byLocation.length, m.byAgent.length, m.byProduct.length]
-  );
-
-  const [activeBreakdown, setActiveBreakdown] = useState<BreakdownKey | null>(null);
-
-  useEffect(() => {
-    if (activeBreakdown && !breakdownOptions.some((o) => o.key === activeBreakdown)) {
-      setActiveBreakdown(null);
-    }
-  }, [activeBreakdown, breakdownOptions]);
 
   if (loading) {
     return (
@@ -105,6 +80,13 @@ export function LossPanel({
     return null;
   }
 
+  // Ad spend burnt on these orders plus what the failed deliveries cost, per
+  // undelivered order - the true price of each order that didn't land.
+  const realCostPerFailed =
+    m.undeliveredCount > 0 ? (m.allocatedAdSpend + m.failedDeliveryCost) / m.undeliveredCount : null;
+  const shareOf = (count: number) =>
+    m.undeliveredCount > 0 ? `${Math.round((count / m.undeliveredCount) * 100)}%` : "\u2014";
+
   return (
     <Card className="border-amber-500/30 bg-amber-500/5">
       <CardHeader className="pb-3">
@@ -113,197 +95,140 @@ export function LossPanel({
           What you&apos;re losing
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Undelivered orders in the selected period and related costs
+          Orders that didn&apos;t deliver in the selected period, and what they cost. Follows every filter.
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
           <LossStat
-            icon={PackageX}
-            label="Undelivered orders"
-            value={m.undeliveredCount.toLocaleString()}
+            label="orders not delivered"
+            value={
+              totalOrdersGenerated
+                ? `${m.undeliveredCount.toLocaleString()} / ${totalOrdersGenerated.toLocaleString()}`
+                : m.undeliveredCount.toLocaleString()
+            }
+            danger
           />
+          <LossStat label="would-be sales" value={formatCurrency(m.wouldBeSales)} />
+          <LossStat label="ad spend on them" value={formatCurrency(m.allocatedAdSpend)} estimated />
+          <LossStat label="failed-delivery cost" value={formatCurrency(m.failedDeliveryCost)} />
           <LossStat
-            icon={TrendingDown}
-            label="Would-be sales"
-            value={formatCurrency(m.wouldBeSales)}
-          />
-          <LossStat
-            icon={Megaphone}
-            label="Allocated ad spend"
-            value={formatCurrency(m.allocatedAdSpend)}
-            hint="Estimated"
-          />
-          <LossStat
-            icon={Truck}
-            label="Failed delivery cost"
-            value={formatCurrency(m.failedDeliveryCost)}
+            label="real cost per failed order"
+            value={realCostPerFailed == null ? "\u2014" : formatCurrency(realCostPerFailed)}
+            title="(ad spend on them + failed-delivery cost) ÷ orders not delivered"
+            danger
           />
         </div>
 
-        {breakdownOptions.length > 0 && (
-          <div>
-            <div className="flex flex-wrap gap-1.5">
-              {breakdownOptions.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() =>
-                    setActiveBreakdown((prev) => (prev === option.key ? null : option.key))
-                  }
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                    activeBreakdown === option.key
-                      ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            {activeBreakdown === "status" && (
-              <div className="mt-3">
-                <LossBreakdownSection title="By status">
-                  {m.byStatus.map((row) => (
-                    <LossBreakdownRow
-                      key={row.status}
-                      label={row.label}
-                      count={row.count}
-                      amount={formatCurrency(row.wouldBeSales)}
-                    />
-                  ))}
-                </LossBreakdownSection>
-              </div>
-            )}
-
-            {activeBreakdown === "location" && (
-              <div className="mt-3">
-                <LossBreakdownSection title="By location">
-                  {m.byLocation.map((row) => (
-                    <LossBreakdownRow
-                      key={row.location}
-                      label={row.label}
-                      count={row.count}
-                      amount={formatCurrency(row.wouldBeSales)}
-                    />
-                  ))}
-                </LossBreakdownSection>
-              </div>
-            )}
-
-            {activeBreakdown === "agent" && (
-              <div className="mt-3">
-                <LossBreakdownSection title="By agent">
-                  {m.byAgent.map((row) => (
-                    <LossBreakdownRow
-                      key={row.agentId ?? "unassigned"}
-                      label={row.label}
-                      count={row.count}
-                      amount={formatCurrency(row.wouldBeSales)}
-                    />
-                  ))}
-                </LossBreakdownSection>
-              </div>
-            )}
-
-            {activeBreakdown === "product" && (
-              <div className="mt-3">
-                <LossBreakdownSection
-                  title="Cost of failed orders by product"
-                  subtitle="Undelivered units × average delivered sale price"
-                >
-                  {m.byProduct.map((row) => (
-                    <LossBreakdownRow
-                      key={row.productId}
-                      label={row.productName}
-                      count={`${row.undeliveredQuantity} units`}
-                      amount={formatCurrency(row.costOfFailedOrders)}
-                      title={
-                        row.averageSalesPrice === 0
-                          ? "No delivered sales this period - price basis unavailable"
-                          : `${row.undeliveredQuantity} undelivered × ${formatCurrency(row.averageSalesPrice)} avg`
-                      }
-                    />
-                  ))}
-                </LossBreakdownSection>
-              </div>
-            )}
-          </div>
-        )}
+        {/* auto-fit: four columns as in the spec, five when products are present. */}
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+          <LossBreakdownColumn
+            title="By location"
+            rows={m.byLocation.map((r) => ({
+              key: r.location,
+              label: r.label,
+              value: shareOf(r.count),
+              title: `${r.count} orders · ${formatCurrency(r.wouldBeSales)} would-be sales`,
+            }))}
+          />
+          <LossBreakdownColumn
+            title="By agent"
+            rows={m.byAgent.map((r) => ({
+              key: String(r.agentId ?? "unassigned"),
+              label: r.label,
+              value: shareOf(r.count),
+              title: `${r.count} orders · ${formatCurrency(r.wouldBeSales)} would-be sales`,
+            }))}
+          />
+          <LossBreakdownColumn
+            title="By funnel"
+            rows={(m.byFunnel ?? []).map((r) => ({
+              key: r.formId ?? "no-form",
+              label: r.label,
+              value: shareOf(r.count),
+              title: `${r.count} orders · ${formatCurrency(r.wouldBeSales)} would-be sales`,
+            }))}
+          />
+          <LossBreakdownColumn
+            title="By reason"
+            rows={m.byStatus.map((r) => ({
+              key: r.status,
+              label: r.label,
+              value: r.count.toLocaleString(),
+              title: `${formatCurrency(r.wouldBeSales)} would-be sales`,
+            }))}
+          />
+          {m.byProduct.length > 0 && (
+          <LossBreakdownColumn
+            title="By product"
+            rows={m.byProduct.map((r) => ({
+              key: r.productId,
+              label: r.productName,
+              value: formatCurrency(r.costOfFailedOrders),
+              title:
+                r.averageSalesPrice === 0
+                  ? `${r.undeliveredQuantity} units · no delivered sales this period, so no price basis`
+                  : `${r.undeliveredQuantity} undelivered units × ${formatCurrency(r.averageSalesPrice)} average price`,
+            }))}
+          />
+          )}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function LossBreakdownSection({
+function LossBreakdownColumn({
   title,
-  subtitle,
-  children,
+  rows,
 }: {
   title: string;
-  subtitle?: string;
-  children: ReactNode;
+  rows: { key: string; label: string; value: ReactNode; title?: string }[];
 }) {
+  const shown = rows.slice(0, TOP_ROWS);
+  const hidden = rows.length - shown.length;
   return (
-    <div>
-      <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-      {subtitle && <p className="text-xs text-muted-foreground mb-2">{subtitle}</p>}
-      <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function LossBreakdownRow({
-  label,
-  count,
-  amount,
-  title,
-}: {
-  label: string;
-  count: number | string;
-  amount: string;
-  title?: string;
-}) {
-  return (
-    <div
-      className="flex items-center justify-between gap-4 px-3 py-2 text-sm bg-background"
-      title={title}
-    >
-      <span className="font-medium text-foreground truncate">{label}</span>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className="text-muted-foreground">{count}</span>
-        <span className="text-warn-text font-medium tabular-nums">{amount}</span>
-      </div>
+    <div className="rounded-lg border border-border bg-card p-3">
+      <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
+      {shown.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nothing to show</p>
+      ) : (
+        <ul className="space-y-1">
+          {shown.map((row) => (
+            <li key={row.key} className="flex items-center justify-between gap-3 text-sm" title={row.title}>
+              <span className="truncate text-foreground/80">{row.label}</span>
+              <span className="shrink-0 font-semibold tabular-nums text-foreground">{row.value}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {hidden > 0 && <p className="mt-1.5 text-[11px] text-muted-foreground">+{hidden} more</p>}
     </div>
   );
 }
 
 function LossStat({
-  icon: Icon,
   label,
   value,
-  hint,
+  estimated,
+  danger,
+  title,
 }: {
-  icon: LucideIcon;
   label: string;
   value: string;
-  hint?: string;
+  estimated?: boolean;
+  danger?: boolean;
+  title?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-        <Icon className="w-4 h-4" />
-        <span className="text-xs font-medium">{label}</span>
-        {hint && (
-          <span className="text-[10px] uppercase tracking-wide text-warn-text">
-            ({hint})
-          </span>
+    <div className="rounded-lg border border-border bg-card p-3 text-center" title={title}>
+      <p className={`text-lg font-semibold tabular-nums ${danger ? "text-danger-text" : "text-foreground"}`}>
+        {value}
+        {estimated && (
+          <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-warn-text">est</span>
         )}
-      </div>
-      <p className="text-xl font-semibold text-foreground font-metric">{value}</p>
+      </p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }

@@ -373,6 +373,9 @@ export const numbatrakAbandonedCartSchema = z.object({
   funnelName: z.string().nullable(),
   offerName: z.string().nullable(),
   subBrand: z.string().nullable(),
+  trackingLinkId: z.string().uuid().nullable(),
+  platform: z.string().nullable(),
+  mediaBuyerName: z.string().nullable(),
   note: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
@@ -966,6 +969,15 @@ export const numbatrakLossAgentBreakdownSchema = z.object({
 });
 export type NumbatrakLossAgentBreakdown = z.infer<typeof numbatrakLossAgentBreakdownSchema>;
 
+/** Undelivered orders grouped by funnel, i.e. by the order's form (null = no form). */
+export const numbatrakLossFunnelBreakdownSchema = z.object({
+  formId: z.string().nullable(),
+  label: z.string(),
+  count: z.number(),
+  wouldBeSales: z.number(),
+});
+export type NumbatrakLossFunnelBreakdown = z.infer<typeof numbatrakLossFunnelBreakdownSchema>;
+
 /**
  * Per-product loss: undeliveredQuantity (total units of this product sitting
  * in undelivered orders in the period) × averageSalesPrice (quantity-
@@ -992,6 +1004,7 @@ export const numbatrakLossMetricsSchema = z.object({
   byStatus: z.array(numbatrakLossStatusBreakdownSchema),
   byLocation: z.array(numbatrakLossLocationBreakdownSchema),
   byAgent: z.array(numbatrakLossAgentBreakdownSchema),
+  byFunnel: z.array(numbatrakLossFunnelBreakdownSchema),
   byProduct: z.array(numbatrakLossProductBreakdownSchema),
 });
 export type NumbatrakLossMetrics = z.infer<typeof numbatrakLossMetricsSchema>;
@@ -1032,6 +1045,9 @@ export const numbatrakFunnelBreakdownRowSchema = z.object({
   revenue: z.number(),
   cost: z.number(),
   profit: z.number(),
+  // Ad spend recorded against tracking links with this buyer + platform +
+  // offer in the period. 0 when none was recorded.
+  spend: z.number(),
   averageOrderValue: z.number(),
 });
 export type NumbatrakFunnelBreakdownRow = z.infer<typeof numbatrakFunnelBreakdownRowSchema>;
@@ -1169,10 +1185,47 @@ export type NumbatrakFormWebhookSecret = z.infer<typeof numbatrakFormWebhookSecr
 
 // ---------- tracking links (media buyer + platform + funnel/offer) ----------
 // A merchant-generated link used to attribute orders back to the specific
-// ad/media-buyer/platform that drove them. The public form URL
-// (numbatrak_forms.site_url) gets a `?tl=<code>` param appended; submitting
-// through that URL stamps trackingLinkId/platform/mediaBuyerName onto the
-// resulting order (see submitFormOrder in numbatrak-forms/lib/intake.ts).
+// ad/media-buyer/platform that drove them. A `?tl=<code>` param is appended to
+// the landing page URL; submitting through it stamps
+// trackingLinkId/platform/mediaBuyerName onto the resulting order or abandoned
+// cart (see submitFormOrder in numbatrak-forms/lib/intake.ts).
+// One link = one form, optionally narrowed to one offer/package on it.
+
+export const numbatrakMediaBuyerSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  active: z.boolean(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type NumbatrakMediaBuyer = z.infer<typeof numbatrakMediaBuyerSchema>;
+
+export const createNumbatrakMediaBuyerRequestSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+export type CreateNumbatrakMediaBuyerRequest = z.infer<typeof createNumbatrakMediaBuyerRequestSchema>;
+
+export const updateNumbatrakMediaBuyerRequestSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  active: z.boolean().optional(),
+});
+export type UpdateNumbatrakMediaBuyerRequest = z.infer<typeof updateNumbatrakMediaBuyerRequestSchema>;
+
+/**
+ * Landing-page URL for a tracking link. Accepts "shop.com/page" (https is
+ * assumed) and rejects anything that isn't http(s), so a pasted
+ * "javascript:" string can never become the copyable ad link.
+ */
+const trackingLinkPageUrlSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .transform((v) => (/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? v : `https://${v}`))
+  // http(s) scheme, a dotted host, no whitespace anywhere.
+  .refine(
+    (v) => /^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?([/?#]\S*)?$/i.test(v),
+    "Enter the page address, e.g. shop.com/product-page",
+  );
 
 export const numbatrakTrackingLinkSchema = z.object({
   id: z.string().uuid(),
@@ -1180,10 +1233,16 @@ export const numbatrakTrackingLinkSchema = z.object({
   formName: z.string().nullable(),
   offerId: z.string().nullable(),
   offerLabel: z.string().nullable(),
+  // Null only on links created before the buyer list existed and not yet backfilled.
+  mediaBuyerId: z.string().uuid().nullable(),
   mediaBuyerName: z.string(),
   platform: z.string(),
   label: z.string().nullable(),
   code: z.string(),
+  // The landing page as entered; null = fall back to the form's site URL.
+  pageUrl: z.string().nullable(),
+  // Ready-to-paste ad link: page + ?tl=<code> + UTM tags. Null when neither
+  // the link nor its form has a page URL.
   url: z.string().nullable(),
   active: z.boolean(),
   orderCount: z.number().int(),
@@ -1194,25 +1253,46 @@ export type NumbatrakTrackingLink = z.infer<typeof numbatrakTrackingLinkSchema>;
 
 export const createNumbatrakTrackingLinkRequestSchema = z.object({
   formId: z.string().uuid(),
+  // Narrows the link to one offer/package on that form; omit for the whole form.
   offerId: z.string().trim().nullable().optional(),
   offerLabel: z.string().trim().nullable().optional(),
-  mediaBuyerName: z.string().trim().min(1),
+  // Picked from the managed buyer list - never free text.
+  mediaBuyerId: z.string().uuid(),
   platform: z.string().trim().min(1),
   label: z.string().trim().nullable().optional(),
+  pageUrl: trackingLinkPageUrlSchema.nullable().optional(),
+  // Optional caller-chosen code; must already be a slug ([a-z0-9-]). When
+  // omitted one is derived from media buyer + platform (+ label).
+  code: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(60)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Code may only contain lowercase letters, digits and single hyphens")
+    .optional(),
 });
 export type CreateNumbatrakTrackingLinkRequest = z.infer<typeof createNumbatrakTrackingLinkRequestSchema>;
 
 export const updateNumbatrakTrackingLinkRequestSchema = z.object({
-  mediaBuyerName: z.string().trim().min(1).optional(),
+  // Another offer on the link's own form, or null for the whole form. The
+  // form itself and the code can't change - both are baked into live ads.
+  offerId: z.string().trim().nullable().optional(),
+  offerLabel: z.string().trim().nullable().optional(),
+  mediaBuyerId: z.string().uuid().optional(),
   platform: z.string().trim().min(1).optional(),
   label: z.string().trim().nullable().optional(),
+  pageUrl: trackingLinkPageUrlSchema.nullable().optional(),
   active: z.boolean().optional(),
 });
 export type UpdateNumbatrakTrackingLinkRequest = z.infer<typeof updateNumbatrakTrackingLinkRequestSchema>;
 
 export const listNumbatrakTrackingLinksQuerySchema = z.object({
   formId: z.string().uuid().optional(),
-  active: z.coerce.boolean().optional(),
+  // Same Boolean("false") trap as the abandoned-carts list query.
+  active: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
 });
 export type ListNumbatrakTrackingLinksQuery = z.infer<typeof listNumbatrakTrackingLinksQuerySchema>;
 

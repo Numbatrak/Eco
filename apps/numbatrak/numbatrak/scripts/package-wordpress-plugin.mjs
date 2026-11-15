@@ -47,7 +47,7 @@ const previousManifest = existsSync(manifestPath)
   : null;
 
 const manifest = {
-  name: "CRM Form Embed",
+  name: "Numbatrak Forms",
   slug: pluginSlug,
   version,
   download_url: downloadUrl,
@@ -59,7 +59,7 @@ const manifest = {
       "Embed Numbatrak order-intake forms on WordPress via [crm_form form=\"TOKEN\"].",
     changelog:
       previousManifest && previousManifest.version !== version
-        ? `<h4>${version}</h4><ul><li>See plugin source for details.</li></ul>${previousManifest.sections?.changelog ?? ""}`
+        ? `<h4>${version}</h4><ul><li>${process.env.PLUGIN_CHANGELOG ?? "See plugin source for details."}</li></ul>${previousManifest.sections?.changelog ?? ""}`
         : previousManifest?.sections?.changelog ?? `<h4>${version}</h4><ul><li>Initial self-hosted release.</li></ul>`,
   },
 };

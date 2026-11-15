@@ -6,6 +6,30 @@
  */
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
+/**
+ * The dev API - where merchants' WordPress sites send orders for now.
+ * Switch this (or set VITE_PUBLIC_API_URL) when a production API exists.
+ */
+const DEV_API_URL = "https://api-dev.numbatrak.com";
+
+function isLocalAddress(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host.endsWith(".localhost") || host.endsWith(".test");
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * The API address merchants paste into WordPress, Fluent Forms, Elementor...
+ * Never a local address: a merchant's website can't reach a developer's
+ * machine, so running the app locally (VITE_API_URL=localhost) must not hand
+ * out a localhost URL. Override with VITE_PUBLIC_API_URL.
+ */
+export const PUBLIC_API_BASE_URL: string =
+  import.meta.env.VITE_PUBLIC_API_URL ?? (isLocalAddress(API_BASE_URL) ? DEV_API_URL : API_BASE_URL);
+
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;

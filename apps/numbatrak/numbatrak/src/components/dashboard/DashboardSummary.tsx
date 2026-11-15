@@ -25,11 +25,12 @@ import { MetricExplainerDialog } from "./MetricExplainerDialog";
 import type { MetricExplainerKey } from "../../constants/metricExplainers";
 
 /**
- * Three tiers, most-decisive first:
- *   1. Verdict  — did this period make money, and how did it add up
- *   2. Funnel   — did the orders actually land (the COD make-or-break)
- *   3. Ratios   — efficiency check numbers, dense and scannable
- * Everything a reader doesn't decide on sits in the context line at the foot.
+ * Laid out after the dashboard spec (numbatrak_dashboard_spec_exact.html):
+ *   1. Hero      — total profit on delivered orders, with ROAS and delivery rate
+ *   2. Core      — the per-order metrics as a tile grid
+ *   3. Profit    — AOV − CPA − COGS − delivery = profit per order, as bars
+ *   4. Business  — (business view only) ROAS vs Business ROI, and every expense
+ * The loss panel and the per-funnel table sit below, in DashboardPage.
  */
 
 interface DashboardSummaryProps {
@@ -40,12 +41,6 @@ interface DashboardSummaryProps {
   /** Same metrics over the immediately preceding window; null when the range has no "previous". */
   priorMetrics?: BusinessPerformanceMetrics | null;
 }
-
-const HEALTH_DOT: Record<HealthBand, string> = {
-  green: "bg-emerald-500",
-  amber: "bg-amber-500",
-  red: "bg-red-500",
-};
 
 /** Em-dash, used wherever a figure is genuinely unknown rather than zero. */
 const NO_VALUE = "\u2014";
@@ -135,115 +130,140 @@ function Caption({ children }: { children: ReactNode }) {
   );
 }
 
-/** One cell of the dense ratio rail. Becomes a button when it has an explainer. */
-function Stat({
+/** Section heading with a hairline rule, as in the dashboard spec. */
+function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <h2 className="shrink-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{children}</h2>
+      <span className="h-px flex-1 bg-border" aria-hidden />
+      {aside}
+    </div>
+  );
+}
+
+/** One tile in the core-metrics grid. Becomes a button when it has an explainer. */
+function MetricTile({
   label,
   value,
+  secondary,
   hint,
   band,
+  emphasis,
   onExplain,
   delta,
 }: {
   label: string;
   value: string;
+  /** Smaller figure after the value, e.g. "/ ₦8.1k" platform CPA. */
+  secondary?: string;
   hint?: string;
   band?: HealthBand | null;
+  emphasis?: boolean;
   onExplain?: () => void;
   delta?: ReactNode;
 }) {
   const body = (
     <>
-      <Caption>{label}</Caption>
-      <span className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span
           className={`text-xl font-semibold leading-none tabular-nums ${
-            band ? healthTextClass(band) : "text-foreground"
+            band ? healthTextClass(band) : emphasis ? "text-primary-text" : "text-foreground"
           }`}
         >
           {value}
         </span>
+        {secondary && <span className="text-xs font-medium tabular-nums text-muted-foreground">{secondary}</span>}
         {delta}
       </span>
-      {hint && (
-        <span className="mt-1 block truncate text-[11px] text-muted-foreground">{hint}</span>
-      )}
+      <span className="mt-1.5 block text-xs text-foreground/80">{label}</span>
+      {hint && <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{hint}</span>}
     </>
   );
+  const tone = band
+    ? band === "red"
+      ? "border-red-500/30 bg-red-500/5"
+      : band === "amber"
+        ? "border-amber-500/30 bg-amber-500/5"
+        : "border-border bg-card"
+    : emphasis
+      ? "border-primary/30 bg-primary/5"
+      : "border-border bg-card";
+  const className = `group relative min-w-0 rounded-xl border p-3.5 text-left ${tone}`;
 
-  if (!onExplain) {
-    return <div className="min-w-[8.5rem] flex-1 bg-card p-3.5">{body}</div>;
-  }
-
+  if (!onExplain) return <div className={className}>{body}</div>;
   return (
     <button
       type="button"
       onClick={onExplain}
       aria-label={`${label} — how this is calculated`}
-      className="group relative min-w-[8.5rem] flex-1 cursor-pointer bg-card p-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      className={`${className} cursor-pointer transition-colors hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
     >
-      {band && (
-        <span
-          className={`absolute right-3 top-3.5 h-1.5 w-1.5 rounded-full ${HEALTH_DOT[band]}`}
-          aria-hidden
-        />
-      )}
-      <Info className="absolute bottom-3 right-3 h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      <Info className="absolute right-3 top-3 h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
       {body}
     </button>
   );
 }
 
-/** One term in the profit equation. */
-function Term({
-  op,
-  label,
-  value,
-  emphasis,
-  onExplain,
-  delta,
-}: {
-  op?: string;
-  label: string;
-  value: string;
-  emphasis?: boolean;
-  onExplain?: () => void;
-  delta?: ReactNode;
-}) {
-  const Tag = onExplain ? "button" : "div";
+/** Compact naira for chart labels: ₦32.1k, ₦1.4M. */
+function compactNaira(value: number): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "−" : "";
+  if (abs >= 1_000_000) return `${sign}₦${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2)}M`;
+  if (abs >= 1_000) return `${sign}₦${(abs / 1_000).toFixed(1)}k`;
+  return `${sign}₦${Math.round(abs)}`;
+}
+
+type ProfitBar = { label: string; value: number; barClass: string; op?: string };
+
+/**
+ * AOV − Real CPA − COGS − Delivery = Profit per order, as bars scaled to AOV.
+ * A negative profit draws no bar; its label turns red instead.
+ */
+function ProfitBars({ bars }: { bars: ProfitBar[] }) {
+  const max = Math.max(...bars.map((b) => Math.abs(b.value)), 1);
   return (
-    <>
-      {op && (
-        <span className="shrink-0 self-center text-base text-muted-foreground" aria-hidden>
-          {op}
-        </span>
-      )}
-      <Tag
-        {...(onExplain
-          ? { type: "button" as const, onClick: onExplain, "aria-label": `${label} — how this is calculated` }
-          : {})}
-        className={`min-w-0 rounded-lg px-2.5 py-1.5 text-left ${
-          emphasis ? "bg-primary/10 ring-1 ring-inset ring-primary/30" : ""
-        } ${onExplain ? "transition-colors hover:bg-muted" : ""}`}
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div
+        className="flex items-end gap-1 sm:gap-2"
+        role="img"
+        aria-label={bars.map((b) => `${b.op ?? ""} ${b.label} ${compactNaira(b.value)}`).join(", ")}
       >
-        <Caption>{label}</Caption>
-        <span className="mt-0.5 flex items-baseline gap-1.5">
-          <span
-            className={`whitespace-nowrap text-[15px] font-semibold tabular-nums ${
-              emphasis ? "text-primary-text" : "text-foreground"
-            }`}
-          >
-            {value}
-          </span>
-          {delta}
-        </span>
-      </Tag>
-    </>
+        {bars.map((bar) => (
+          <div key={bar.label} className="flex min-w-0 flex-1 items-end gap-1 sm:gap-2">
+            {bar.op && (
+              <span className="mb-8 shrink-0 text-sm text-muted-foreground" aria-hidden>
+                {bar.op}
+              </span>
+            )}
+            <div className="flex min-w-0 flex-1 flex-col items-center">
+              <span
+                className={`mb-1 whitespace-nowrap text-xs font-semibold tabular-nums ${
+                  bar.value < 0 ? "text-danger-text" : "text-foreground"
+                }`}
+              >
+                {compactNaira(bar.value)}
+              </span>
+              <div className="flex h-28 w-full items-end">
+                <div
+                  className={`w-full rounded-t-md ${bar.barClass}`}
+                  style={{ height: `${Math.max((Math.max(bar.value, 0) / max) * 100, bar.value > 0 ? 3 : 0)}%` }}
+                />
+              </div>
+              <span className="mt-1.5 truncate text-[11px] text-muted-foreground">{bar.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
+/** Stable default: a fresh `{}` per render would re-trigger the load effect forever. */
+const NO_SCOPE: DashboardMetricsScope = {};
+
 export function DashboardSummary({
   dateFilter,
-  scope = {},
+  scope = NO_SCOPE,
   viewMode = "business",
   onMetricsLoaded,
   priorMetrics = null,
@@ -360,7 +380,6 @@ export function DashboardSummary({
   );
 
   const undelivered = Math.max(m.totalOrdersGenerated - m.totalOrdersDelivered, 0);
-  const deliveredPct = m.totalOrdersGenerated > 0 ? (m.totalOrdersDelivered / m.totalOrdersGenerated) * 100 : 0;
 
   // Which denominators actually exist this period. Every ratio below is gated on
   // one of these so an empty period shows "—" rather than a fabricated zero.
@@ -380,248 +399,232 @@ export function DashboardSummary({
     "= Total profit": naira(m.totalProfit),
   };
 
+  const roiPct = hasInvestment ? `${(m.businessRoi * 100).toFixed(0)}%` : NO_VALUE;
+  const expenseRows = [
+    { label: "Advertising", amount: m.adSpend },
+    { label: "Product cost (delivered)", amount: m.totalCogs },
+    { label: "Delivery", amount: m.totalDeliveryFees },
+    { label: "Operational & other", amount: m.totalNonAdExpenses },
+  ];
+  const expenseTotal = expenseRows.reduce((sum, r) => sum + r.amount, 0);
+  const shareOfRevenue = (amount: number) =>
+    m.totalDeliveredSales > 0 ? `${((amount / m.totalDeliveredSales) * 100).toFixed(0)}%` : NO_VALUE;
+
+  const profitBars: ProfitBar[] = [
+    { label: "AOV", value: m.averageOrderValue, barClass: "bg-foreground/25" },
+    ...(hasAdSpend ? [{ op: "−", label: "Real CPA", value: m.realCpa, barClass: "bg-red-500/70" }] : []),
+    { op: "−", label: "COGS", value: m.averageCogs, barClass: "bg-amber-500/70" },
+    { op: "−", label: "Delivery", value: m.averageDeliveryFee, barClass: "bg-sky-500/70" },
+    { op: "=", label: "Profit / order", value: m.profitPerOrder, barClass: "bg-emerald-500" },
+  ];
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {canViewExpenses && !hasAdSpend && m.totalOrdersGenerated > 0 && (
         <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-xs text-muted-foreground">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          No ad spend recorded for this period — CPA and ROAS are hidden. Profit still reflects
-          delivered order economics.
+          No ad spend recorded for this period — CPA and ROAS don&apos;t apply. The profit picture still shows.
         </p>
       )}
 
-      {/* ---------- TIER 1 · the verdict ---------- */}
+      {/* ---------- Hero · total profit ---------- */}
       {canViewExpenses && (
-        <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
-          <div className="border-b border-border p-5 lg:border-b-0 lg:border-r">
-            <Caption>Total profit · delivered</Caption>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 rounded-xl border border-border bg-card p-5">
+          <div className="min-w-0">
+            <Caption>Total profit · delivered orders</Caption>
             {/* Deliberately --foreground, not health-tinted: at this size the figure
-                does not need colour to be prominent, and the green it used to carry
-                was 2.54:1 on a white card. Health now rides the delta chip. */}
+                does not need colour to be prominent. Health rides the delta chip. */}
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <p className="text-[2.25rem] font-semibold leading-none tabular-nums text-foreground">
                 {hasDelivered ? naira(m.totalProfit) : NO_VALUE}
               </p>
-              <DeltaChip
-                current={m.totalProfit}
-                previous={priorMetrics?.totalProfit}
-                enabled={hasActivity}
-              />
+              <DeltaChip current={m.totalProfit} previous={priorMetrics?.totalProfit} enabled={hasActivity} />
             </div>
-            {hasDelivered ? (
-              <>
-                <p className="mt-2.5 text-sm text-muted-foreground">
-                  {m.totalOrdersDelivered.toLocaleString()} delivered order
-                  {m.totalOrdersDelivered === 1 ? "" : "s"} ·{" "}
-                  <span className="font-medium text-foreground">
-                    {nairaOrDash(m.profitPerOrder, hasDelivered)}
-                  </span>{" "}
-                  each
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  on {naira(m.totalDeliveredSales)} of delivered sales
-                </p>
-              </>
-            ) : (
-              <p className="mt-2.5 text-sm text-muted-foreground">
-                {hasGenerated
-                  ? "No orders delivered in this period yet."
-                  : "No orders in this period yet."}
-              </p>
-            )}
-          </div>
-
-          <div className="min-w-0 p-5">
-            <Caption>How it adds up, per order</Caption>
-            <div className="mt-2.5 flex flex-wrap items-stretch gap-x-1 gap-y-2">
-              <Term
-                label="AOV"
-                value={nairaOrDash(m.averageOrderValue, hasDelivered)}
-                onExplain={openExplainer("average_order_value")}
-                delta={
-                  <DeltaChip
-                    current={m.averageOrderValue}
-                    previous={priorMetrics?.averageOrderValue}
-                    enabled={hasDelivered}
-                  />
-                }
-              />
-              {hasAdSpend && (
-                <Term
-                  op="−"
-                  label="Real CPA"
-                  value={nairaOrDash(m.realCpa, hasDelivered)}
-                  onExplain={openExplainer("real_cpa")}
-                />
+            <p className="mt-2.5 text-sm text-muted-foreground">
+              {hasDelivered ? (
+                <>
+                  profit per order{" "}
+                  <span className="font-medium text-foreground">{naira(m.profitPerOrder)}</span> ×{" "}
+                  {m.totalOrdersDelivered.toLocaleString()} delivered
+                </>
+              ) : hasGenerated ? (
+                "No orders delivered in this period yet."
+              ) : (
+                "No orders in this period yet."
               )}
-              <Term
-                op="−"
-                label="COGS"
-                value={nairaOrDash(m.averageCogs, hasDelivered)}
-                onExplain={openExplainer("average_cogs")}
-              />
-              <Term
-                op="−"
-                label="Delivery"
-                value={nairaOrDash(m.averageDeliveryFee, hasDelivered)}
-                onExplain={openExplainer("average_delivery_fee")}
-              />
-              <Term
-                op="="
-                label="Profit per order"
-                value={nairaOrDash(m.profitPerOrder, hasDelivered)}
-                emphasis
-                onExplain={openExplainer("profit_per_order")}
-              />
-              <Term
-                op="×"
-                label="Delivered"
-                value={m.totalOrdersDelivered.toLocaleString()}
-                onExplain={openExplainer("orders_delivered")}
-              />
-            </div>
+            </p>
           </div>
-        </div>
-      )}
-
-      {/* ---------- TIER 2 · the funnel ---------- */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-          <div>
-            <Caption>Delivery rate</Caption>
-            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-              <p
-                className={`text-[1.75rem] font-semibold leading-none tabular-nums ${
+          <div className="flex gap-6">
+            {hasAdSpend && (
+              <button type="button" onClick={openExplainer("roas")} className="text-right">
+                <span className={`block text-2xl font-semibold leading-none tabular-nums ${healthTextClass(roasHealth ?? "green")}`}>
+                  {ratio(m.roas, hasAdSpend)}
+                </span>
+                <span className="mt-1 block text-[11px] text-muted-foreground">ROAS</span>
+              </button>
+            )}
+            <button type="button" onClick={openExplainer("delivery_rate")} className="text-right">
+              <span
+                className={`block text-2xl font-semibold leading-none tabular-nums ${
                   hasGenerated ? healthTextClass(rateBand) : "text-muted-foreground"
                 }`}
               >
                 {percentOrDash(m.deliveryRate, hasGenerated)}
-              </p>
-              {/* A rate moves in percentage POINTS, never percent. */}
-              <DeltaChip
-                current={m.deliveryRate}
-                previous={priorMetrics?.deliveryRate}
-                unit="points"
-                enabled={hasGenerated}
-              />
-            </div>
+              </span>
+              <span className="mt-1 block text-[11px] text-muted-foreground">delivery rate</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={openExplainer("delivery_rate")}
-            className="rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            How is this calculated?
-          </button>
         </div>
+      )}
 
-        <div
-          className="mt-3.5 flex h-2.5 w-full overflow-hidden rounded-full bg-muted"
-          role="img"
-          aria-label={
-            hasGenerated
-              ? `${m.totalOrdersDelivered} of ${m.totalOrdersGenerated} orders delivered`
-              : "No orders in this period"
-          }
-        >
-          {/* With zero generated orders the amber flex-1 segment used to fill the
-              whole track, which reads as "everything failed". Leave it empty. */}
-          {hasGenerated && (
-            <>
-              <div
-                className="h-full bg-emerald-500 transition-all"
-                style={{ width: `${Math.min(deliveredPct, 100)}%` }}
-              />
-              <div className="h-full flex-1 bg-amber-500/60" />
-            </>
-          )}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
-          <button
-            type="button"
-            onClick={openExplainer("orders_generated")}
-            className="flex items-center gap-1.5 rounded px-1 -mx-1 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <span className="font-semibold tabular-nums text-foreground">
-              {m.totalOrdersGenerated.toLocaleString()}
-            </span>
-            generated
-          </button>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-            <span className="font-semibold tabular-nums text-foreground">
-              {m.totalOrdersDelivered.toLocaleString()}
-            </span>
-            delivered
-          </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-amber-500/60" aria-hidden />
-            <span className="font-semibold tabular-nums text-foreground">
-              {undelivered.toLocaleString()}
-            </span>
-            still out
-          </span>
-        </div>
-      </div>
-
-      {/* ---------- TIER 3 · efficiency ratios ---------- */}
-      {canViewExpenses && (
-        <div className="flex flex-wrap gap-px overflow-hidden rounded-xl border border-border bg-border">
-          {hasAdSpend && (
-            <Stat
-              label="ROAS"
-              value={ratio(m.roas, hasAdSpend)}
-              hint="Delivered revenue ÷ ad spend"
-              band={roasHealth}
-              onExplain={openExplainer("roas")}
-              delta={
-                <DeltaChip current={m.roas} previous={priorMetrics?.roas} enabled={hasAdSpend} />
-              }
-            />
-          )}
-          {isBusinessView && (
-            <Stat
-              label="Business ROI"
-              value={ratio(m.businessRoi, hasInvestment)}
-              hint="Net ÷ total investment"
-              band={roiHealth}
-              onExplain={openExplainer("business_roi")}
-            />
-          )}
-          {hasAdSpend && (
-            <>
-              <Stat
-                label="Platform CPA"
-                value={nairaOrDash(m.platformCpa, hasGenerated)}
-                hint="Ad spend ÷ generated"
-                onExplain={openExplainer("platform_cpa")}
-              />
-              <Stat
-                label="Real CPA"
-                value={nairaOrDash(m.realCpa, hasDelivered)}
-                hint={
-                  m.cpaGap > 0 ? `${naira(m.cpaGap)} worse than platform` : "Ad spend ÷ delivered"
-                }
-                band={cpaHealth}
-                onExplain={openExplainer("real_cpa")}
-              />
-            </>
-          )}
-          <Stat
-            label="Ad spend"
-            value={naira(m.adSpend)}
-            onExplain={openExplainer("ad_spend")}
+      {/* ---------- The core metrics ---------- */}
+      <section className="space-y-2.5">
+        <SectionTitle>The core metrics</SectionTitle>
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          <MetricTile
+            label="Orders generated"
+            value={m.totalOrdersGenerated.toLocaleString()}
+            onExplain={openExplainer("orders_generated")}
+            delta={<DeltaChip current={m.totalOrdersGenerated} previous={priorMetrics?.totalOrdersGenerated} enabled={hasActivity} />}
           />
-          {isBusinessView && m.totalNonAdExpenses > 0 && (
-            <Stat
-              label="Other expenses"
-              value={naira(m.totalNonAdExpenses)}
-              hint="Non-ad operational costs"
-              onExplain={openExplainer("other_expenses")}
-            />
+          <MetricTile
+            label="Orders delivered"
+            value={m.totalOrdersDelivered.toLocaleString()}
+            hint={undelivered > 0 ? `${undelivered.toLocaleString()} still out` : undefined}
+            onExplain={openExplainer("orders_delivered")}
+          />
+          <MetricTile
+            label="Delivery rate"
+            value={percentOrDash(m.deliveryRate, hasGenerated)}
+            hint="delivered ÷ generated"
+            band={hasGenerated ? rateBand : null}
+            onExplain={openExplainer("delivery_rate")}
+            /* A rate moves in percentage POINTS, never percent. */
+            delta={<DeltaChip current={m.deliveryRate} previous={priorMetrics?.deliveryRate} unit="points" enabled={hasGenerated} />}
+          />
+          {canViewExpenses && (
+            <>
+              <MetricTile
+                label="AOV · delivered"
+                value={nairaOrDash(m.averageOrderValue, hasDelivered)}
+                hint="sales ÷ delivered"
+                onExplain={openExplainer("average_order_value")}
+                delta={<DeltaChip current={m.averageOrderValue} previous={priorMetrics?.averageOrderValue} enabled={hasDelivered} />}
+              />
+              <MetricTile
+                label="Real / Platform CPA"
+                value={hasAdSpend ? nairaOrDash(m.realCpa, hasDelivered) : NO_VALUE}
+                secondary={hasAdSpend && hasGenerated ? `/ ${compactNaira(m.platformCpa)}` : undefined}
+                hint={hasAdSpend ? (m.cpaGap > 0 ? `gap ${compactNaira(m.cpaGap)} hidden` : "ad spend ÷ delivered") : "no ad spend recorded"}
+                band={hasAdSpend && hasDelivered ? cpaHealth : null}
+                onExplain={openExplainer("real_cpa")}
+                delta={<DeltaChip current={m.realCpa} previous={priorMetrics?.realCpa} lowerIsBetter enabled={hasAdSpend && hasDelivered} />}
+              />
+              <MetricTile
+                label="Avg COGS · delivered"
+                value={nairaOrDash(m.averageCogs, hasDelivered)}
+                hint="bundles counted"
+                onExplain={openExplainer("average_cogs")}
+              />
+              <MetricTile
+                label="Avg delivery fee"
+                value={nairaOrDash(m.averageDeliveryFee, hasDelivered)}
+                onExplain={openExplainer("average_delivery_fee")}
+              />
+              <MetricTile
+                label="Profit per order"
+                value={nairaOrDash(m.profitPerOrder, hasDelivered)}
+                hint="AOV − CPA − COGS − delivery"
+                emphasis
+                onExplain={openExplainer("profit_per_order")}
+              />
+            </>
           )}
         </div>
+      </section>
+
+      {canViewExpenses && hasDelivered && <ProfitBars bars={profitBars} />}
+
+      {/* ---------- Business-level only: ROAS vs ROI, and every expense ---------- */}
+      {canViewExpenses && isBusinessView && (
+        <>
+          <section className="space-y-2.5">
+            <SectionTitle aside={<span className="text-[11px] text-muted-foreground">never merged</span>}>
+              ROAS vs Business ROI
+            </SectionTitle>
+            <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={openExplainer("roas")}
+                className="border-b border-border p-4 text-left transition-colors hover:bg-muted/50 sm:border-b-0 sm:border-r"
+              >
+                <span className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-semibold tabular-nums ${roasHealth ? healthTextClass(roasHealth) : "text-foreground"}`}>
+                    {ratio(m.roas, hasAdSpend)}
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">ROAS · the ads</span>
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {hasAdSpend
+                    ? `${compactNaira(m.totalDeliveredSales)} delivered ÷ ${compactNaira(m.adSpend)} ad spend`
+                    : "No ad spend recorded"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={openExplainer("business_roi")}
+                className="p-4 text-left transition-colors hover:bg-muted/50"
+              >
+                <span className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-semibold tabular-nums ${roiHealth ? healthTextClass(roiHealth) : "text-foreground"}`}>
+                    {roiPct}
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">Business ROI · the business</span>
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {hasInvestment
+                    ? `${compactNaira(m.netProfitAfterAllExpenses)} net profit ÷ ${compactNaira(m.totalInvestment)} spent`
+                    : "No spend recorded"}
+                </span>
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ROAS measures the ads on their own. Business ROI takes every expense into account, so the gap
+              between the two is your operating cost.
+            </p>
+          </section>
+
+          <section className="space-y-2.5">
+            <SectionTitle aside={<span className="text-[11px] text-muted-foreground">4 categories</span>}>
+              All expenses
+            </SectionTitle>
+            <div className="overflow-x-auto rounded-xl border border-border bg-card">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="px-4 py-2.5 font-medium">Category</th>
+                    <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+                    <th className="px-4 py-2.5 text-right font-medium">% of revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenseRows.map((row) => (
+                    <tr key={row.label} className="border-b border-border">
+                      <td className="px-4 py-2.5 text-foreground">{row.label}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums text-foreground">{naira(row.amount)}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{shareOfRevenue(row.amount)}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-semibold">
+                    <td className="px-4 py-2.5 text-foreground">Total</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-foreground">{naira(expenseTotal)}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-foreground">{shareOfRevenue(expenseTotal)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
       )}
 
       <MetricExplainerDialog

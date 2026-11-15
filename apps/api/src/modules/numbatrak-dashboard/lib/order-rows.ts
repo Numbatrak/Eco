@@ -13,6 +13,8 @@ export interface MetricsOrderRow {
   deliveryFee: number;
   profit: number;
   agentId: number | null;
+  /** For the loss panel's by-funnel (= by-form) breakdown. Optional so hand-built test rows needn't set it. */
+  formId?: string | null;
 }
 
 function num(v: string | null): number {
@@ -69,6 +71,7 @@ export async function fetchOrderRows(
       deliveryFee: numbatrakCustomerOrders.deliveryFee,
       profit: numbatrakCustomerOrders.profit,
       agentId: numbatrakCustomerOrders.agentId,
+      formId: numbatrakCustomerOrders.formId,
     })
     .from(numbatrakCustomerOrders)
     .where(and(...conditions));
@@ -83,6 +86,7 @@ export async function fetchOrderRows(
     deliveryFee: num(r.deliveryFee),
     profit: num(r.profit),
     agentId: r.agentId,
+    formId: r.formId,
   }));
 
   if (!scope.status) return mapped;

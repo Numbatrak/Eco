@@ -121,6 +121,13 @@ export async function convertCartToOrder(db: Database, organizationId: string, c
       funnelName: cart.funnelName ?? linkedForm?.funnelName ?? linkedForm?.name ?? null,
       offerName: cart.offerName ?? cart.selectedPackage ?? null,
       subBrand: cart.subBrand ?? linkedForm?.subBrand ?? null,
+      // Carry the cart's ad attribution over so a recovered cart still
+      // credits the media buyer whose traffic it was.
+      trackingLinkId: cart.trackingLinkId,
+      platform: cart.platform,
+      mediaBuyerName: cart.mediaBuyerName,
+      // Keep what the customer originally sent visible on the recovered order.
+      submittedData: cart.submittedData,
       moneyReceivedBy: "agent_collected",
     })
     .returning();

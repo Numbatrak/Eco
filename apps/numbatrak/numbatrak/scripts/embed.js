@@ -33,6 +33,70 @@
     DEBUG: true,
   };
 
+  // ============================================
+  // TRACKING-LINK ATTRIBUTION
+  // ============================================
+  // An ad's URL carries `?tl=<code>` (a NumbaTrak Tracking Link). Visitors
+  // don't always order on the page the ad opened - funnels span several
+  // pages, people click around, or come back later - and once they leave that
+  // page the code is gone from the address bar. So the code is remembered for
+  // this visitor and sent with every submission.
+  // - The latest ad clicked wins (a new `?tl=` replaces the stored one).
+  // - Kept for 7 days, then forgotten, so a visitor who returns much later
+  //   on their own isn't credited to an old ad.
+  // - Storage can be blocked (private mode, strict browsers); then we fall
+  //   back to the current URL only, never failing the form.
+  const TRACKING_PARAM = "tl";
+  const TRACKING_STORAGE_KEY = "numbatrak_tracking_link";
+  const TRACKING_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+  function readTrackingCodeFromUrl() {
+    try {
+      const code = new URLSearchParams(window.location.search).get(TRACKING_PARAM);
+      return code && code.trim() ? code.trim().toLowerCase() : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function rememberTrackingCode(code) {
+    try {
+      window.localStorage.setItem(TRACKING_STORAGE_KEY, JSON.stringify({ code, savedAt: Date.now() }));
+    } catch (e) {
+      // Storage unavailable - the URL fallback still covers single-page funnels.
+    }
+  }
+
+  function readRememberedTrackingCode() {
+    try {
+      const raw = window.localStorage.getItem(TRACKING_STORAGE_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved.code !== "string" || typeof saved.savedAt !== "number") return null;
+      if (Date.now() - saved.savedAt > TRACKING_TTL_MS) {
+        window.localStorage.removeItem(TRACKING_STORAGE_KEY);
+        return null;
+      }
+      return saved.code;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** The code to credit this submission to: the current URL's, else the remembered one. */
+  function getTrackingLinkCode() {
+    const fromUrl = readTrackingCodeFromUrl();
+    if (fromUrl) {
+      rememberTrackingCode(fromUrl);
+      return fromUrl;
+    }
+    return readRememberedTrackingCode();
+  }
+
+  // Capture on load, so the code survives even if the visitor navigates away
+  // before the form is ever touched.
+  getTrackingLinkCode();
+
   // Canonical Nigerian states list for "state" fields - keep in sync with
   // apps/numbatrak/numbatrak/src/constants/nigeriaStates.ts
   const NIGERIA_STATES = [
@@ -273,6 +337,7 @@
             offerName: this.selectedOfferTitle || null,
             source: "embed",
             pageUrl: window.location.href,
+            trackingLinkCode: getTrackingLinkCode(),
           }),
         },
       ).catch((err) => {
@@ -365,6 +430,7 @@
               offerName: orderData.offer_name || null,
               source: "wordpress",
               pageUrl: window.location.href,
+              trackingLinkCode: getTrackingLinkCode(),
             }),
           },
         );

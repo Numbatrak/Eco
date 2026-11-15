@@ -1,6 +1,6 @@
 <?php
 /**
- * Uninstall script for CRM Form Embed plugin
+ * Uninstall script for Numbatrak Forms plugin
  * 
  * This file is executed when the plugin is deleted from WordPress
  */

@@ -34,6 +34,10 @@ export interface AbandonedCart {
   funnel_name?: string | null;
   offer_name?: string | null;
   sub_brand?: string | null;
+  // Ad attribution resolved from `?tl=<code>` at intake.
+  tracking_link_id?: string | null;
+  platform?: string | null;
+  media_buyer_name?: string | null;
   note: string | null;
   created_at: string | null;
   updated_at: string | null;

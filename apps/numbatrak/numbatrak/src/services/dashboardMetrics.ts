@@ -80,6 +80,14 @@ export type LossAgentBreakdown = {
   wouldBeSales: number;
 };
 
+/** Undelivered orders by funnel - a funnel is a form (formId null = no form). */
+export type LossFunnelBreakdown = {
+  formId: string | null;
+  label: string;
+  count: number;
+  wouldBeSales: number;
+};
+
 export type LossProductBreakdown = {
   productId: string;
   productName: string;
@@ -101,6 +109,8 @@ export type LossMetrics = {
   byStatus: LossStatusBreakdown[];
   byLocation: LossLocationBreakdown[];
   byAgent: LossAgentBreakdown[];
+  /** Missing from an API that predates it - read as empty. */
+  byFunnel?: LossFunnelBreakdown[];
   byProduct: LossProductBreakdown[];
 };
 
@@ -136,6 +146,7 @@ export const EMPTY_LOSS_METRICS: LossMetrics = {
   byStatus: [],
   byLocation: [],
   byAgent: [],
+  byFunnel: [],
   byProduct: [],
 };
 
@@ -233,7 +244,11 @@ export type FunnelBreakdownRow = {
   orderCount: number;
   revenue: number;
   cost: number;
+  /** Order profit: revenue − product cost − delivery, before ad spend. */
   profit: number;
+  /** Ad spend recorded against tracking links with this buyer + platform +
+   * offer. Missing from an API that predates it - read as 0. */
+  spend?: number;
   averageOrderValue: number;
 };
 

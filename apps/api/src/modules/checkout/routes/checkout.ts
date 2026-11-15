@@ -10,7 +10,7 @@ import {
 import { clearCartTokenCookie } from "../../cart/lib/cart-cookie.js";
 import { findPaymentSettings } from "../../payments/lib/payment-settings-store.js";
 import { buildProvider } from "../../payments/lib/provider-factory.js";
-import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
+import { checkRateLimitOrAllow } from "../../auth/lib/rate-limit.js";
 import { createPendingOrder, setOrderPaymentReference, markOrderPaid } from "../lib/orders.js";
 import { buildCheckoutCallbackUrl } from "../lib/callback-url.js";
 import {
@@ -34,11 +34,10 @@ export default async function checkoutRoutes(app: FastifyInstance): Promise<void
   app.post<{ Params: { subdomain: string } }>(
     "/public/sites/:subdomain/checkout",
     async (request, reply) => {
-      const redis = app.getRedis();
-      const rate = await checkAndIncrementRateLimit(redis, `checkout:ip:${request.ip}`, {
+      const rate = await checkRateLimitOrAllow(() => app.getRedis(), `checkout:ip:${request.ip}`, {
         limit: checkoutRateLimitPerMinute(),
         windowSeconds: CHECKOUT_RATE_LIMIT_WINDOW_SECONDS,
-      });
+      }, request.log);
       if (!rate.allowed) {
         return reply
           .code(429)

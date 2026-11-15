@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
   CalendarDays,
-  FileText,
   UserCircle2,
   SlidersHorizontal,
   GitBranch,
@@ -37,16 +36,20 @@ const FILTER_OPTIONS: { label: string; value: DateFilterType }[] = [
   { label: "7d", value: "last_7_days" },
   { label: "30d", value: "last_30_days" },
   { label: "MTD", value: "this_month" },
-  // Stays reachable until Batch 2 moves it inside the Custom range picker.
   { label: "All Time", value: "all" },
 ];
+
+const shortDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+/** "2026-11-01" -> "1 Nov", read as a local calendar date (not UTC midnight). */
+function formatDay(ymd: string): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return y && m && d ? shortDate.format(new Date(y, m - 1, d)) : ymd;
+}
 
 export type DashboardFilterValues = {
   dateFilter: DateFilter;
   formId: string | null;
   csrId: string | null;
-  funnelName: string | null;
-  subBrand: string | null;
   offerName: string | null;
   agentId: number | null;
   status: string | null;
@@ -68,8 +71,6 @@ interface DashboardFiltersProps {
   onCustomDateApply: () => void;
   onFormChange: (formId: string | null) => void;
   onCsrChange: (csrId: string | null) => void;
-  onFunnelChange: (funnel: string | null) => void;
-  onSubBrandChange: (subBrand: string | null) => void;
   onOfferChange: (offer: string | null) => void;
   onAgentChange: (agentId: number | null) => void;
   onStatusChange: (status: string | null) => void;
@@ -80,8 +81,6 @@ interface DashboardFiltersProps {
   forms: Form[];
   csrUsers: UserProfile[];
   agents: Agent[];
-  funnelNames: string[];
-  subBrands: string[];
   offerNames: string[];
   platforms: string[];
   mediaBuyerNames: string[];
@@ -101,8 +100,6 @@ export function DashboardFilters({
   onCustomDateApply,
   onFormChange,
   onCsrChange,
-  onFunnelChange,
-  onSubBrandChange,
   onOfferChange,
   onAgentChange,
   onStatusChange,
@@ -113,8 +110,6 @@ export function DashboardFilters({
   forms,
   csrUsers,
   agents,
-  funnelNames,
-  subBrands,
   offerNames,
   platforms,
   mediaBuyerNames,
@@ -124,11 +119,13 @@ export function DashboardFilters({
   showViewToggle = false,
 }: DashboardFiltersProps) {
   const [open, setOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  // ISO yyyy-mm-dd strings compare correctly as text.
+  const customRangeInvalid = Boolean(customStartDate && customEndDate && customStartDate > customEndDate);
+  const isCustom = values.dateFilter.type === "custom" && values.dateFilter.startDate && values.dateFilter.endDate;
 
   const formSelectValue = values.formId ?? "all";
   const csrSelectValue = values.csrId ?? "all";
-  const funnelSelectValue = values.funnelName ?? "all";
-  const subBrandSelectValue = values.subBrand ?? "all";
   const offerSelectValue = values.offerName ?? "all";
   const agentSelectValue =
     values.agentId != null ? String(values.agentId) : "all";
@@ -152,16 +149,10 @@ export function DashboardFilters({
       });
     }
     if (values.formId) {
-      list.push({ key: "form", label: selectedForm?.name ?? "Product", onClear: () => onFormChange(null) });
+      list.push({ key: "form", label: selectedForm?.name ?? "Funnel", onClear: () => onFormChange(null) });
     }
     if (values.csrId) {
       list.push({ key: "csr", label: selectedCsr ? formatCsrSelectLabel(selectedCsr) : "CSR", onClear: () => onCsrChange(null) });
-    }
-    if (values.funnelName) {
-      list.push({ key: "funnel", label: values.funnelName, onClear: () => onFunnelChange(null) });
-    }
-    if (values.subBrand) {
-      list.push({ key: "subBrand", label: values.subBrand, onClear: () => onSubBrandChange(null) });
     }
     if (values.offerName) {
       list.push({ key: "offer", label: values.offerName, onClear: () => onOfferChange(null) });
@@ -190,8 +181,6 @@ export function DashboardFilters({
     values.dateFilter,
     values.formId,
     values.csrId,
-    values.funnelName,
-    values.subBrand,
     values.offerName,
     values.agentId,
     values.status,
@@ -205,8 +194,6 @@ export function DashboardFilters({
     onDateFilterChange,
     onFormChange,
     onCsrChange,
-    onFunnelChange,
-    onSubBrandChange,
     onOfferChange,
     onAgentChange,
     onStatusChange,
@@ -219,8 +206,6 @@ export function DashboardFilters({
     onDateFilterChange("all");
     onFormChange(null);
     onCsrChange(null);
-    onFunnelChange(null);
-    onSubBrandChange(null);
     onOfferChange(null);
     onAgentChange(null);
     onStatusChange(null);
@@ -248,6 +233,60 @@ export function DashboardFilters({
               {label}
             </button>
           ))}
+          <Popover open={customOpen} onOpenChange={setCustomOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer
+                  ${isCustom ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                {isCustom
+                  ? `${formatDay(values.dateFilter.startDate!)} – ${formatDay(values.dateFilter.endDate!)}`
+                  : "Custom"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[min(92vw,20rem)] p-4 flex flex-col gap-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custom date range</span>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  From
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    max={customEndDate || undefined}
+                    onChange={(e) => onCustomStartDateChange(e.target.value)}
+                    className="min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  To
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    min={customStartDate || undefined}
+                    onChange={(e) => onCustomEndDateChange(e.target.value)}
+                    className="min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+              </div>
+              {customRangeInvalid && (
+                <p className="text-xs text-danger-text">The start date is after the end date.</p>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                disabled={!customStartDate || !customEndDate || customRangeInvalid}
+                onClick={() => {
+                  onCustomDateApply();
+                  setCustomOpen(false);
+                }}
+                className="self-start"
+              >
+                Apply
+              </Button>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {showViewToggle && (
@@ -298,54 +337,18 @@ export function DashboardFilters({
           >
             <div className="flex flex-col gap-2">
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                <CalendarDays className="w-3.5 h-3.5" />
-                Custom date range
-              </span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => onCustomStartDateChange(e.target.value)}
-                  aria-label="Start date"
-                  title="Start date"
-                  className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
-                />
-                <span className="text-muted-foreground text-sm">to</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => onCustomEndDateChange(e.target.value)}
-                  aria-label="End date"
-                  title="End date"
-                  className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
-                />
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                disabled={!customStartDate || !customEndDate}
-                onClick={onCustomDateApply}
-                className="self-start"
-              >
-                Apply date range
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                <FileText className="w-3.5 h-3.5" />
-                Product
+                <GitBranch className="w-3.5 h-3.5" />
+                Funnel
               </span>
               <Select
                 value={formSelectValue}
                 onValueChange={(v) => onFormChange(v === "all" ? null : v)}
               >
-                <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by product">
-                  <SelectValue placeholder="All products" />
+                <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by funnel">
+                  <SelectValue placeholder="All funnels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All products</SelectItem>
+                  <SelectItem value="all">All funnels</SelectItem>
                   {forms.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
                       {f.name}
@@ -382,50 +385,6 @@ export function DashboardFilters({
 
             {showExtendedFilters && (
               <>
-                {funnelNames.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      <GitBranch className="w-3.5 h-3.5" />
-                      Funnel
-                    </span>
-                    <Select value={funnelSelectValue} onValueChange={(v) => onFunnelChange(v === "all" ? null : v)}>
-                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by funnel">
-                        <SelectValue placeholder="All funnels" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All funnels</SelectItem>
-                        {funnelNames.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {subBrands.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      <Tag className="w-3.5 h-3.5" />
-                      Sub-brand
-                    </span>
-                    <Select value={subBrandSelectValue} onValueChange={(v) => onSubBrandChange(v === "all" ? null : v)}>
-                      <SelectTrigger className="w-full border-border bg-background" aria-label="Filter by sub-brand">
-                        <SelectValue placeholder="All sub-brands" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All sub-brands</SelectItem>
-                        {subBrands.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 {offerNames.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">

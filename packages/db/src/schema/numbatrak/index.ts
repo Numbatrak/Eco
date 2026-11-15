@@ -44,8 +44,8 @@ import {
   numbatrakProductOffers,
   numbatrakProductPriceHistory,
 } from "./products.js";
-import { numbatrakForms, numbatrakFormProducts } from "./forms.js";
-import { numbatrakTrackingLinks } from "./tracking-links.js";
+import { numbatrakForms, numbatrakFormProducts, numbatrakFormIntakeSettings } from "./forms.js";
+import { numbatrakTrackingLinks, numbatrakMediaBuyers } from "./tracking-links.js";
 import {
   numbatrakFormResponses,
   numbatrakFormResponseItems,
@@ -112,6 +112,7 @@ export const numbatrakSchema = {
   numbatrakForms,
   numbatrakFormProducts,
   numbatrakTrackingLinks,
+  numbatrakMediaBuyers,
   numbatrakFormResponses,
   numbatrakFormResponseItems,
   numbatrakCustomerOrders,
@@ -159,4 +160,5 @@ export const numbatrakSchema = {
   numbatrakDeliveryAgentSettings,
   numbatrakNotificationSettings,
   numbatrakApiKeys,
+  numbatrakFormIntakeSettings,
 };

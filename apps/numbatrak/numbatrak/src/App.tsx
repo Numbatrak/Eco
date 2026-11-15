@@ -37,6 +37,7 @@ const StaffDetailPage = lazy(() => import("./components/staff/StaffDetailPage"))
 const PayrollPage = lazy(() => import("./components/payroll/PayrollPage").then((m) => ({ default: m.PayrollPage })));
 const OrderAssignmentPage = lazy(() => import("./components/order-assignment/OrderAssignmentPage").then((m) => ({ default: m.OrderAssignmentPage })));
 const MediaBuyersPage = lazy(() => import("./components/media-buyers/MediaBuyersPage").then((m) => ({ default: m.MediaBuyersPage })));
+const FormIntegrationsPage = lazy(() => import("./pages/FormIntegrationsPage").then((m) => ({ default: m.FormIntegrationsPage })));
 const TrackingLinksPage = lazy(() => import("./components/trackingLinks/TrackingLinksPage").then((m) => ({ default: m.TrackingLinksPage })));
 const CrmPage = lazy(() => import("./components/crm/CrmPage").then((m) => ({ default: m.CrmPage })));
 const AccountingPage = lazy(() => import("./components/accounting/AccountingPage").then((m) => ({ default: m.AccountingPage })));
@@ -499,6 +500,7 @@ function AppContent() {
                 <Route path="/order-assignment" element={<OrderAssignmentPage />} />
                 <Route path="/media-buyers" element={<MediaBuyersPage />} />
                 <Route path="/tracking-links" element={<TrackingLinksPage />} />
+                <Route path="/form-integrations" element={<FormIntegrationsPage />} />
                 <Route path="/crm" element={<CrmPage />} />
                 <Route
                   path="/integrations"

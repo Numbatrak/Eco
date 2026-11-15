@@ -103,6 +103,8 @@ export interface Form {
   sub_brand?: string | null;
   /** Optional funnel label; defaults to form name in order intake */
   funnel_name?: string | null;
+  /** Page the form is embedded on, when known - prefills new tracking links. */
+  site_url?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   field_mapping: FieldMapping;

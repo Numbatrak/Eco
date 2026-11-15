@@ -1,13 +1,13 @@
 {
-  "name": "CRM Form Embed",
+  "name": "Numbatrak Forms",
   "slug": "crm-form-embed",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "download_url": "https://app.numbatrak.io/wordpress-plugin/crm-form-embed.zip",
   "requires": "5.6",
   "tested": "6.6",
-  "last_updated": "2026-08-31",
+  "last_updated": "2026-11-15",
   "sections": {
     "description": "Embed Numbatrak order-intake forms on WordPress via [crm_form form=\"TOKEN\"].",
-    "changelog": "<h4>1.1.0</h4><ul><li>Initial self-hosted release.</li></ul>"
+    "changelog": "<h4>1.2.1</h4><ul><li>Forms send orders to the Numbatrak dev API by default.</li></ul><h4>1.2.0</h4><ul><li>Renamed to Numbatrak Forms.</li></ul><h4>1.1.0</h4><ul><li>Initial self-hosted release.</li></ul>"
   }
 }

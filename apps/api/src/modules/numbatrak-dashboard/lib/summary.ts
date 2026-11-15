@@ -1,5 +1,6 @@
 import { inArray } from "drizzle-orm";
-import { numbatrakAgents, type Database } from "@platform/db";
+import { and, eq } from "drizzle-orm";
+import { numbatrakAgents, numbatrakForms, type Database } from "@platform/db";
 import type { DashboardScopeQuery, NumbatrakDashboardSummary } from "@platform/shared-types";
 import { fetchOrderRows, fetchProductLossItemRows } from "./order-rows.js";
 import { fetchExpenseTotals, fetchFailedDeliveryCost } from "./expenses.js";
@@ -30,6 +31,16 @@ export async function fetchDashboardSummary(
           .where(inArray(numbatrakAgents.id, agentIds))
       : [];
 
+  // Form names for the losses' by-funnel breakdown, same pattern as agents.
+  const formIds = [...new Set(orders.map((o) => o.formId).filter((id): id is string => id != null))];
+  const forms =
+    formIds.length > 0
+      ? await db
+          .select({ id: numbatrakForms.id, name: numbatrakForms.name })
+          .from(numbatrakForms)
+          .where(and(eq(numbatrakForms.organizationId, organizationId), inArray(numbatrakForms.id, formIds)))
+      : [];
+
   const businessMetrics = computeBusinessPerformanceMetrics({
     orders,
     productItemRows,
@@ -47,6 +58,7 @@ export async function fetchDashboardSummary(
     endDate: scope.dateTo,
     agents,
     productItemRows,
+    forms,
   });
 
   return { businessMetrics, lossMetrics };

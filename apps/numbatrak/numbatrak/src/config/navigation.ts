@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Package,
   FileEdit,
+  Webhook,
   ShoppingCart,
   MessageSquare,
   FileText,
@@ -84,6 +85,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         label: "Order Forms",
         icon: FileEdit,
         path: "/forms",
+        requiredPermission: { resource: "forms", action: "canView" },
+      },
+      {
+        id: "form-integrations",
+        label: "Form Integrations",
+        icon: Webhook,
+        path: "/form-integrations",
         requiredPermission: { resource: "forms", action: "canView" },
       },
       {

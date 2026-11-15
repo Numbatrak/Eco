@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Copy, RefreshCw, Webhook, Braces, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { FormSchema, FieldMapping, RadioOption } from "../../../types/form";
-import { API_BASE_URL } from "../../../lib/apiClient";
+import { PUBLIC_API_BASE_URL } from "../../../lib/apiClient";
 
 interface IntegrationsPanelProps {
   /** null before the form has ever been saved - Elementor mapping needs a real form id to PATCH. */
@@ -73,6 +73,41 @@ function CopyField({ value, label, onCopy, mono = true }: { value: string; label
   );
 }
 
+function TemplateBlock({ template, onCopy }: { template: string; onCopy: (text: string, label: string) => void }) {
+  return (
+    <div className="flex items-start gap-2">
+      <pre className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs overflow-x-auto whitespace-pre">{template}</pre>
+      <button type="button" className="btn-secondary shrink-0" onClick={() => onCopy(template, "Request body")} title="Copy">
+        <Copy className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+/** How to pass the ad's tracking code (?tl=...) through a hidden field. */
+function TrackingHint({ setup }: { setup: ReactNode }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      <strong className="text-foreground">To see which media buyer each order came from:</strong> {setup} Leave it
+      out and orders still come in, just without a media buyer.
+    </p>
+  );
+}
+
+function ProductsHint({ hasProducts }: { hasProducts: boolean }) {
+  return hasProducts ? (
+    <p className="text-xs text-muted-foreground">
+      The products are filled in from your first package. Every order from this form will be for those products, so
+      this suits forms that sell one fixed package.
+    </p>
+  ) : (
+    <p className="text-xs text-warn-text">
+      This form has no package with products yet. Add one on the Fields tab first, so the products can be filled in
+      here for you.
+    </p>
+  );
+}
+
 /** WPForms/Fluent Forms/Elementor order-intake setup - WPForms and Fluent Forms both post a merchant-authored JSON template straight to the public /submit endpoint; Elementor's webhook can't be reshaped, so it gets its own endpoint + field-mapping UI instead. */
 export function IntegrationsPanel({
   formId,
@@ -90,8 +125,10 @@ export function IntegrationsPanel({
   const [revealedSecret, setRevealedSecret] = useState<string | null>(null);
 
   const radioOptions = collectRadioOptions(schema);
-  const submitUrl = `${API_BASE_URL}/public/numbatrak/forms/${formToken}/submit`;
-  const webhookUrl = `${API_BASE_URL}/public/numbatrak/forms/${formToken}/webhook/elementor`;
+  // Always the live address: these get pasted into the merchant's website,
+  // which can never reach localhost (see PUBLIC_API_BASE_URL).
+  const submitUrl = `${PUBLIC_API_BASE_URL}/public/numbatrak/forms/${formToken}/submit`;
+  const webhookUrl = `${PUBLIC_API_BASE_URL}/public/numbatrak/forms/${formToken}/webhook/elementor`;
 
   const valueForOption = (optionId: string): string =>
     Object.entries(mapping.valueToOptionId).find(([, v]) => v === optionId)?.[0] ?? "";
@@ -107,6 +144,13 @@ export function IntegrationsPanel({
     });
   };
 
+  // Products come from the form's first package; without one there's nothing
+  // real to put in the template, and the panel says so instead of showing a
+  // placeholder id a merchant might paste as-is.
+  const templateItems = radioOptions[0]?.products?.length
+    ? radioOptions[0].products.map((p) => ({ productId: p.product_id, quantity: p.quantity }))
+    : null;
+
   const wpFormsTemplate = JSON.stringify(
     {
       fieldValues: {
@@ -116,11 +160,9 @@ export function IntegrationsPanel({
         address: '{field_id="3"}',
         state: '{field_id="4"}',
       },
-      items: radioOptions[0]?.products?.length
-        ? radioOptions[0].products.map((p) => ({ productId: p.product_id, quantity: p.quantity }))
-        : [{ productId: "<product-uuid>", quantity: 1 }],
+      items: templateItems ?? [],
       source: "wpforms",
-      trackingLinkCode: "<tracking-link-code, if this form is tied to one — see Tracking Links>",
+      trackingLinkCode: '{field_id="5"}',
     },
     null,
     2,
@@ -135,11 +177,9 @@ export function IntegrationsPanel({
         address: "{inputs.address}",
         state: "{inputs.state}",
       },
-      items: radioOptions[0]?.products?.length
-        ? radioOptions[0].products.map((p) => ({ productId: p.product_id, quantity: p.quantity }))
-        : [{ productId: "<product-uuid>", quantity: 1 }],
+      items: templateItems ?? [],
       source: "fluentforms",
-      trackingLinkCode: "<tracking-link-code, if this form is tied to one — see Tracking Links>",
+      trackingLinkCode: '{inputs.tl}',
     },
     null,
     2,
@@ -149,9 +189,9 @@ export function IntegrationsPanel({
     try {
       setSavingMapping(true);
       await onSaveMapping(mapping);
-      toast.success("Elementor mapping saved");
+      toast.success("Saved");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save mapping");
+      toast.error(err?.message || "Couldn't save");
     } finally {
       setSavingMapping(false);
     }
@@ -163,7 +203,7 @@ export function IntegrationsPanel({
       const secret = await onRotateSecret();
       setRevealedSecret(secret);
     } catch (err: any) {
-      toast.error(err?.message || "Failed to generate webhook secret");
+      toast.error(err?.message || "Couldn't create the secret key");
     } finally {
       setRotating(false);
     }
@@ -172,65 +212,62 @@ export function IntegrationsPanel({
   return (
     <div className="form-section space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-base font-bold text-foreground">Order intake integrations</h1>
+        <h1 className="text-base font-bold text-foreground">Get orders from your WordPress form</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Accept orders from forms built in other WordPress page builders, without embedding our script. Pick whichever
-          plugin you're already using below.
+          Already have an order form built with WPForms, Fluent Forms or Elementor? Connect it here and every order
+          lands in NumbaTrak automatically. Follow the steps for the one you use.
         </p>
       </div>
 
       <IntegrationCard
         icon={<Braces className="w-4 h-4" />}
         title="WPForms"
-        tagline="Uses the Webhooks addon — no setup needed on our side."
+        tagline="Needs WPForms Pro (for its Webhooks add-on)."
       >
-        <Step number={1} title="Install the Webhooks addon">
+        <Step number={1} title="Turn on Webhooks">
           <p className="text-xs text-muted-foreground">
-            In your WordPress admin, go to <strong>WPForms → Addons</strong>, find <strong>Webhooks</strong>, and click
-            Install &amp; Activate (included with WPForms Pro and above).
+            In WordPress, go to <strong>WPForms → Addons</strong>, find <strong>Webhooks</strong> and click{" "}
+            <strong>Install &amp; Activate</strong>.
           </p>
         </Step>
 
-        <Step number={2} title="Open this form's Webhooks settings">
+        <Step number={2} title="Add a webhook to your form">
           <p className="text-xs text-muted-foreground">
-            Edit your WPForms form, go to <strong>Settings → Webhooks</strong>, and click <strong>Add New</strong>.
+            Open your form in WPForms, go to <strong>Settings → Webhooks</strong> and click <strong>Add New</strong>.
           </p>
         </Step>
 
-        <Step number={3} title="Paste the request URL">
-          <CopyField value={submitUrl} label="Request URL" onCopy={onCopy} />
+        <Step number={3} title="Paste this address">
+          <CopyField value={submitUrl} label="Address" onCopy={onCopy} />
           <p className="text-xs text-muted-foreground">
-            Set <strong>Request Format</strong> to <strong>JSON</strong> and <strong>Request Method</strong> to{" "}
-            <strong>POST</strong>.
+            Put it in the <strong>Request URL</strong> box. Then set <strong>Request Method</strong> to{" "}
+            <strong>POST</strong> and <strong>Request Format</strong> to <strong>JSON</strong>.
           </p>
         </Step>
 
-        <Step number={4} title="Paste the request body template">
-          <div className="flex items-start gap-2">
-            <pre className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs overflow-x-auto whitespace-pre">
-              {wpFormsTemplate}
-            </pre>
-            <button
-              type="button"
-              className="btn-secondary shrink-0"
-              onClick={() => onCopy(wpFormsTemplate, "JSON template")}
-              title="Copy JSON template"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-          </div>
+        <Step number={4} title="Paste this into the request body">
+          <TemplateBlock template={wpFormsTemplate} onCopy={onCopy} />
           <p className="text-xs text-muted-foreground">
-            Replace each {'{field_id="N"}'} smart tag with your own field IDs — hover a field in the WPForms builder to
-            see its ID, then use WPForms' smart tag picker to insert it. WPForms has no concept of our product catalog,
-            so the <code className="font-mono">items</code> array must be hardcoded to real product IDs, which works
-            best for single-product or fixed-quantity forms.
+            Each <code className="font-mono">{'{field_id="1"}'}</code> stands for one of your form&apos;s fields. Swap
+            the number for your own field&apos;s number (hover over a field in the WPForms builder to see it): name,
+            phone, address and state, in that order.
           </p>
+          <TrackingHint
+            setup={
+              <>
+                Add a <strong>Hidden Field</strong> to your form and set its default value to{" "}
+                <code className="font-mono">{'{query_var key="tl"}'}</code>. Then put that field&apos;s number in{" "}
+                <code className="font-mono">{'{field_id="5"}'}</code> above.
+              </>
+            }
+          />
+          <ProductsHint hasProducts={templateItems != null} />
         </Step>
 
-        <Step number={5} title="Save and test">
+        <Step number={5} title="Save and send a test order">
           <p className="text-xs text-muted-foreground">
-            Save the webhook, then submit a test entry on your live WordPress form. The order (or an abandoned cart, if
-            no items resolved) should appear in Numbatrak within a few seconds.
+            Save, then place a test order on your website. It should show up in NumbaTrak within a few seconds. If
+            the package didn&apos;t come through, it shows under abandoned carts instead.
           </p>
         </Step>
       </IntegrationCard>
@@ -238,49 +275,45 @@ export function IntegrationsPanel({
       <IntegrationCard
         icon={<Braces className="w-4 h-4" />}
         title="Fluent Forms"
-        tagline="Uses the Webhook feed (Fluent Forms Pro) — no setup needed on our side."
+        tagline="Needs Fluent Forms Pro (for webhooks)."
       >
-        <Step number={1} title="Add a Webhook feed">
+        <Step number={1} title="Add a webhook to your form">
           <p className="text-xs text-muted-foreground">
-            Edit your Fluent Forms form, go to <strong>Settings &amp; Integrations → Webhook</strong>, and add a new
-            webhook feed (requires Fluent Forms Pro).
+            Open your form in Fluent Forms, go to <strong>Settings &amp; Integrations → Webhook</strong> and add a new
+            webhook.
           </p>
         </Step>
 
-        <Step number={2} title="Paste the request URL">
-          <CopyField value={submitUrl} label="Request URL" onCopy={onCopy} />
+        <Step number={2} title="Paste this address">
+          <CopyField value={submitUrl} label="Address" onCopy={onCopy} />
           <p className="text-xs text-muted-foreground">
-            Set <strong>Request Method</strong> to <strong>POST</strong> and <strong>Request Format</strong> to{" "}
-            <strong>JSON</strong>.
+            Put it in the <strong>Request URL</strong> box. Then set <strong>Request Method</strong> to{" "}
+            <strong>POST</strong> and <strong>Request Format</strong> to <strong>JSON</strong>.
           </p>
         </Step>
 
-        <Step number={3} title="Paste the request body template">
-          <div className="flex items-start gap-2">
-            <pre className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs overflow-x-auto whitespace-pre">
-              {fluentFormsTemplate}
-            </pre>
-            <button
-              type="button"
-              className="btn-secondary shrink-0"
-              onClick={() => onCopy(fluentFormsTemplate, "JSON template")}
-              title="Copy JSON template"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-          </div>
+        <Step number={3} title="Paste this into the request body">
+          <TemplateBlock template={fluentFormsTemplate} onCopy={onCopy} />
           <p className="text-xs text-muted-foreground">
-            Replace each {"{inputs.field_name}"} smart tag with your own field names — use Fluent Forms' own smart tag
-            picker in the webhook body editor to insert the right one for each field. Like WPForms, Fluent Forms has
-            no concept of our product catalog, so the <code className="font-mono">items</code> array must be
-            hardcoded to real product IDs, which works best for single-product or fixed-quantity forms.
+            Each <code className="font-mono">{"{inputs.…}"}</code> stands for one of your form&apos;s fields. If your
+            fields are named differently, swap them using the field picker next to the request body.
           </p>
+          <TrackingHint
+            setup={
+              <>
+                Add a <strong>Hidden Field</strong> named <code className="font-mono">tl</code> whose default value
+                takes <code className="font-mono">tl</code> from the page address (in Fluent Forms that&apos;s{" "}
+                <code className="font-mono">{"{get.tl}"}</code>).
+              </>
+            }
+          />
+          <ProductsHint hasProducts={templateItems != null} />
         </Step>
 
-        <Step number={4} title="Save and test">
+        <Step number={4} title="Save and send a test order">
           <p className="text-xs text-muted-foreground">
-            Save the feed, then submit a test entry on your live form. The order (or an abandoned cart, if no items
-            resolved) should appear in Numbatrak within a few seconds.
+            Save, then place a test order on your website. It should show up in NumbaTrak within a few seconds. If
+            the package didn&apos;t come through, it shows under abandoned carts instead.
           </p>
         </Step>
       </IntegrationCard>
@@ -288,21 +321,21 @@ export function IntegrationsPanel({
       <IntegrationCard
         icon={<Webhook className="w-4 h-4" />}
         title="Elementor Pro"
-        tagline="Always sends a fixed payload — map its fields to your form below."
+        tagline="Needs Elementor Pro. Tell us which of your fields is which, below."
       >
         {!formId ? (
           <Step number={1} title="Save this form first">
             <p className="text-xs text-muted-foreground">
-              Elementor's webhook needs a saved form to generate a URL and secret for. Click <strong>Save Form</strong>{" "}
-              above, then come back to this tab.
+              Click <strong>Save Form</strong> above, then come back here. We need a saved form to create your
+              connection details.
             </p>
           </Step>
         ) : (
           <>
-            <Step number={1} title="Generate a webhook secret">
+            <Step number={1} title="Create your secret key">
               <div className="flex items-center gap-2">
                 <code className="flex-1 px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">
-                  {revealedSecret ?? (hasWebhookSecret ? "Configured — rotate to view" : "Not generated yet")}
+                  {revealedSecret ?? (hasWebhookSecret ? "Already set up. Make a new one to see it." : "Not created yet")}
                 </code>
                 {revealedSecret && (
                   <button
@@ -316,22 +349,23 @@ export function IntegrationsPanel({
                 )}
                 <button type="button" className="btn-secondary shrink-0" onClick={() => void handleRotate()} disabled={rotating}>
                   <RefreshCw className={`w-4 h-4 ${rotating ? "animate-spin" : ""}`} />
-                  {hasWebhookSecret ? "Rotate" : "Generate"}
+                  {hasWebhookSecret ? "Make a new one" : "Create"}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Keep this secret handy for step 4 below — rotating replaces it immediately and the old value stops
-                working.
+                It works like a password, so only your form can send orders here. You&apos;ll need it in step 4.
+                Making a new one stops the old one working straight away.
               </p>
             </Step>
 
-            <Step number={2} title="Copy the webhook URL">
-              <CopyField value={webhookUrl} label="Webhook URL" onCopy={onCopy} />
+            <Step number={2} title="Copy this address">
+              <CopyField value={webhookUrl} label="Address" onCopy={onCopy} />
             </Step>
 
-            <Step number={3} title="Map your Elementor fields">
+            <Step number={3} title="Tell us which field is which">
               <p className="text-xs text-muted-foreground mb-1">
-                Enter the field ID or title exactly as it appears in your Elementor form for each role below.
+                For each box, type the name (or ID) of the matching field in your Elementor form, spelled exactly the
+                same.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CONTACT_FIELD_ROLES.map(([key, label]) => (
@@ -343,7 +377,7 @@ export function IntegrationsPanel({
                       onChange={(e) =>
                         setMapping((prev) => ({ ...prev, contactFields: { ...prev.contactFields, [key]: e.target.value } }))
                       }
-                      placeholder="Elementor field id or title"
+                      placeholder="e.g. name"
                       className="form-input text-sm"
                     />
                   </div>
@@ -351,37 +385,44 @@ export function IntegrationsPanel({
               </div>
 
               <div>
-                <label className="form-label text-xs">Package/product field</label>
+                <label className="form-label text-xs">Package field</label>
                 <input
                   type="text"
                   value={mapping.productField ?? ""}
                   onChange={(e) => setMapping((prev) => ({ ...prev, productField: e.target.value }))}
-                  placeholder="Elementor field id or title holding the package choice"
+                  placeholder="The field where customers pick a package"
                   className="form-input text-sm"
                 />
               </div>
 
               <div>
-                <label className="form-label text-xs">Tracking-link code field (optional)</label>
+                <label className="form-label text-xs">Tracking field (optional)</label>
                 <input
                   type="text"
                   value={mapping.trackingLinkCodeField ?? ""}
                   onChange={(e) => setMapping((prev) => ({ ...prev, trackingLinkCodeField: e.target.value }))}
-                  placeholder="A hidden field id/title carrying a tracking-link code, if this form uses one"
+                  placeholder="e.g. tl"
                   className="form-input text-sm"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Add a hidden field to your Elementor form with the code from a Tracking Link you generated, so
-                  orders from this form get attributed correctly.
-                </p>
+                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                  <p>
+                    Shows which media buyer&apos;s ad each order came from. In Elementor, add a{" "}
+                    <strong>Hidden</strong> field called <code>tl</code>. For its <em>Default Value</em>, click the
+                    dynamic tags icon, choose <strong>Request Parameter</strong>, set the type to{" "}
+                    <strong>GET</strong> and the name to <code>tl</code>. Then type <code>tl</code> here.
+                  </p>
+                  <p>
+                    Don&apos;t type a code into that field yourself. Every order would then be credited to the same
+                    buyer.
+                  </p>
+                </div>
               </div>
 
               {radioOptions.length > 0 && (
                 <div>
-                  <label className="form-label text-xs">Package answer values</label>
+                  <label className="form-label text-xs">Package choices</label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    For each package option, enter the exact answer text Elementor will send when that option is
-                    chosen.
+                    Next to each package, type the option exactly as it reads in your Elementor form.
                   </p>
                   <div className="space-y-2">
                     {radioOptions.map((option) => (
@@ -393,7 +434,7 @@ export function IntegrationsPanel({
                           type="text"
                           value={valueForOption(option.id)}
                           onChange={(e) => setValueForOption(option.id, e.target.value)}
-                          placeholder="Exact Elementor answer value"
+                          placeholder="As written in Elementor"
                           className="form-input text-sm flex-1"
                         />
                       </div>
@@ -408,25 +449,27 @@ export function IntegrationsPanel({
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    Save mapping
+                    Save
                   </>
                 )}
               </button>
             </Step>
 
-            <Step number={4} title="Add the webhook action in Elementor">
+            <Step number={4} title="Connect it in Elementor">
               <p className="text-xs text-muted-foreground">
-                Edit your Elementor form → <strong>Actions After Submit</strong> → add <strong>Webhook</strong> → paste
-                the URL from step 2. Then add your secret either as a custom header named{" "}
-                <code className="font-mono">x-numbatrak-webhook-secret</code>, or by appending{" "}
-                <code className="font-mono">?secret=your-secret</code> to the URL.
+                Open your Elementor form, go to <strong>Actions After Submit</strong> and add{" "}
+                <strong>Webhook</strong>. Paste the address from step 2, then add{" "}
+                <code className="font-mono">?secret=</code> and your secret key from step 1 to the end of it:
               </p>
+              <code className="block px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">
+                {webhookUrl}?secret=<span className="text-muted-foreground">your-secret-key</span>
+              </code>
             </Step>
 
-            <Step number={5} title="Test it">
+            <Step number={5} title="Send a test order">
               <p className="text-xs text-muted-foreground">
-                Submit the live Elementor form and confirm the order (or abandoned cart, if the package didn't resolve)
-                shows up in Numbatrak.
+                Place a test order on your website. It should show up in NumbaTrak within a few seconds. If the
+                package didn&apos;t come through, it shows under abandoned carts instead.
               </p>
             </Step>
           </>

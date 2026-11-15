@@ -1,0 +1,1 @@
+ALTER TABLE "numbatrak_tracking_links" ADD COLUMN "page_url" text;

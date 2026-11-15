@@ -69,3 +69,20 @@ export const numbatrakFormProducts = pgTable(
     check("numbatrak_form_products_pricing_mode_chk", sql`${table.pricingMode} IN ('fixed', 'selectable')`),
   ],
 );
+
+// One per org: the secret token in the org-wide form intake address
+// (/public/numbatrak/intake/:token/:provider). Unlike a per-form token this
+// one works for any Fluent Forms / Elementor form on any of the org's sites;
+// the package field carries a Numbatrak offer ID instead of a form option.
+export const numbatrakFormIntakeSettings = pgTable(
+  "numbatrak_form_intake_settings",
+  {
+    organizationId: text("organization_id")
+      .primaryKey()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+  },
+  (table) => [uniqueIndex("numbatrak_form_intake_settings_token_unique_idx").on(table.token)],
+);

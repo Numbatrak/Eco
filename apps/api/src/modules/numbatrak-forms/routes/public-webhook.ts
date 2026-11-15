@@ -2,8 +2,9 @@ import type { FastifyInstance } from "fastify";
 import { findActiveFormByToken, submitFormOrder } from "../lib/intake.js";
 import { verifyFormWebhookSecret } from "../lib/forms.js";
 import { flattenElementorPayload, resolveContactFields, resolveItems, resolveTrackingLinkCode } from "../lib/elementor.js";
-import { checkAndIncrementRateLimit } from "../../auth/lib/rate-limit.js";
+import { checkRateLimitOrAllow } from "../../auth/lib/rate-limit.js";
 import type { NumbatrakFormFieldMapping } from "@platform/shared-types";
+import { buildSubmittedData, flattenSubmission, parseUrlEncodedBody } from "../lib/payload.js";
 
 const NUMBATRAK_FORM_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -25,14 +26,22 @@ function numbatrakFormWebhookRateLimitPerMinute(): number {
  * field mapping rather than needing to avoid tipping off an attacker.
  */
 export default async function publicNumbatrakFormWebhookRoutes(app: FastifyInstance): Promise<void> {
+  // Elementor's webhook posts form data, not JSON. Scoped to this plugin.
+  app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_req, body, done) => {
+    try {
+      done(null, parseUrlEncodedBody(body as string));
+    } catch (err) {
+      done(err as Error, undefined);
+    }
+  });
+
   app.post<{ Params: { formToken: string }; Querystring: { secret?: string } }>(
     "/public/numbatrak/forms/:formToken/webhook/elementor",
     async (request, reply) => {
-      const redis = app.getRedis();
-      const rate = await checkAndIncrementRateLimit(redis, `numbatrak-form-webhook:ip:${request.ip}`, {
+      const rate = await checkRateLimitOrAllow(() => app.getRedis(), `numbatrak-form-webhook:ip:${request.ip}`, {
         limit: numbatrakFormWebhookRateLimitPerMinute(),
         windowSeconds: NUMBATRAK_FORM_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS,
-      });
+      }, request.log);
       if (!rate.allowed) {
         return reply.code(429).send({ error: "Too many requests. Please try again shortly." });
       }
@@ -68,6 +77,7 @@ export default async function publicNumbatrakFormWebhookRoutes(app: FastifyInsta
             source: "elementor",
             pageUrl: null,
             trackingLinkCode,
+            submittedData: buildSubmittedData("elementor", flattenSubmission(request.body)),
           },
           request.log,
         );

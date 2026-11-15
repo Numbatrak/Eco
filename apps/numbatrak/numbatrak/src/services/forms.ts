@@ -31,6 +31,7 @@ function dtoToForm(dto: FormDto, organizationId: string | null): Form {
     active: dto.active,
     sub_brand: dto.subBrand,
     funnel_name: dto.funnelName,
+    site_url: dto.siteUrl ?? null,
     created_at: dto.createdAt,
     updated_at: dto.updatedAt,
     field_mapping: dto.fieldMapping ?? EMPTY_FIELD_MAPPING,

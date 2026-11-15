@@ -14,4 +14,16 @@ export default async function orderDetailRoutes(app: FastifyInstance): Promise<v
       return reply.send(full!);
     },
   );
+
+  // Kept off the order list/detail payloads: it can be large and is only
+  // opened on demand from the order.
+  app.get<{ Params: { orderId: string } }>(
+    "/org/numbatrak/orders/:orderId/submitted-details",
+    { preHandler: app.requireOrgPermission({ numbatrakOrders: ["view"] }) },
+    async (request, reply) => {
+      const order = await findOrderForOrg(app.getDb(), request.activeOrganizationId!, request.params.orderId);
+      if (!order) return reply.status(404).send({ error: "Order not found" });
+      return reply.send({ submittedData: order.submittedData ?? null });
+    },
+  );
 }

@@ -6,6 +6,7 @@ import {
   numbatrakForms,
   numbatrakProducts,
   type Database,
+  type Queryable,
 } from "@platform/db";
 import type { PublicFormLineItem, SubmitPublicNumbatrakFormResult } from "@platform/shared-types";
 import { getNextAssignedUser, getNextAssignedAgentForState } from "../../numbatrak-orders/lib/assignment.js";
@@ -13,13 +14,25 @@ import { createCart } from "../../numbatrak-abandoned-carts/lib/abandoned-carts.
 import { autoCreateFollowUpForOrder } from "../../numbatrak-follow-ups/lib/follow-ups.js";
 import { findOrCreateCustomer } from "../../numbatrak-crm/lib/crm.js";
 import { parseAttributionSource, extractTrackingLinkCode } from "../../numbatrak-crm/lib/attribution.js";
-import { findActiveTrackingLinkByCode } from "../../numbatrak-tracking-links/lib/tracking-links.js";
+import {
+  findActiveTrackingLinkByCode,
+  trackingLinkAppliesToForm,
+} from "../../numbatrak-tracking-links/lib/tracking-links.js";
 import { getDeliveryFeeForLocation } from "../../numbatrak-delivery-fees/lib/delivery-fees.js";
 import { validateSubmissionAgainstSchema } from "./validation.js";
 import { resolveLinePricing, resolveBundleComponentLines } from "./offer-pricing.js";
 import { consumeFifoLots } from "./inventory-consumption.js";
 
 export type FormRow = typeof numbatrakForms.$inferSelect;
+
+/**
+ * Where an order is filed. Usually a real form; the org-wide intake address
+ * (lib/org-intake.ts) has no form when no tracking link names one, so `id`
+ * can be null there and the order is filed under the business alone.
+ */
+export type IntakeTarget = Pick<FormRow, "organizationId" | "name" | "funnelName" | "subBrand" | "schema"> & {
+  id: string | null;
+};
 
 export async function findActiveFormByToken(db: Database, formToken: string): Promise<FormRow | null> {
   const [row] = await db.select().from(numbatrakForms).where(eq(numbatrakForms.formToken, formToken)).limit(1);
@@ -55,6 +68,44 @@ export interface SubmitFormOrderInput {
   packageName?: string | null;
   /** Explicit tracking-link code — wins over parsing `?tl=` out of pageUrl. */
   trackingLinkCode?: string | null;
+  /** The raw submission as received, shown under "Submitted details" on the order. */
+  submittedData?: unknown;
+  /** Customer's note from the website form, copied onto the order. */
+  notes?: string | null;
+  /**
+   * Skip checking fieldValues against the form builder's own fields. For
+   * outside form plugins, whose field names never match the builder's.
+   */
+  skipSchemaValidation?: boolean;
+}
+
+/**
+ * Tracking-link attribution: a bad/missing/inactive `tl` code just means no
+ * attribution, never a failed submission - this is best-effort marketing
+ * data, not a required field. Shared by the order and abandoned-cart paths so
+ * a visitor who leaves mid-funnel is still credited to the right buyer.
+ */
+async function resolveTrackingLinkForSubmission(
+  db: Queryable,
+  form: IntakeTarget,
+  input: SubmitFormOrderInput,
+  logger?: FastifyBaseLogger,
+) {
+  const code = input.trackingLinkCode ?? extractTrackingLinkCode(input.pageUrl);
+  if (!code) return null;
+  const link = await findActiveTrackingLinkByCode(db, form.organizationId, code);
+  if (!link) return null;
+  // A link's code is org-scoped, so a copy-pasted URL from a different
+  // form's scoped link would otherwise still resolve - skip attribution
+  // rather than mis-tagging the order with the wrong funnel.
+  if (form.id !== null && !trackingLinkAppliesToForm(link, form.id)) {
+    logger?.warn(
+      { formId: form.id, trackingLinkId: link.id, trackingLinkFormId: link.formId },
+      "Tracking link code resolved to a different form than the one submitted through - skipping attribution",
+    );
+    return null;
+  }
+  return link;
 }
 
 /**
@@ -80,7 +131,7 @@ export interface SubmitFormOrderInput {
  */
 export async function submitFormOrder(
   db: Database,
-  form: FormRow,
+  form: IntakeTarget,
   input: SubmitFormOrderInput,
   logger?: FastifyBaseLogger,
 ): Promise<SubmitPublicNumbatrakFormResult> {
@@ -88,6 +139,7 @@ export async function submitFormOrder(
   const hasContact = !!contact.customerName && (!!contact.phone || !!contact.whatsapp);
 
   if (hasContact && input.items.length === 0) {
+    const trackingLink = await resolveTrackingLinkForSubmission(db, form, input, logger);
     const cart = await createCart(db, form.organizationId, {
       customerName: contact.customerName,
       phoneNumber: contact.phone,
@@ -98,9 +150,10 @@ export async function submitFormOrder(
       selectedPackage: input.packageName ?? null,
       formId: form.id,
       funnelName: form.funnelName ?? form.name,
-      offerName: input.offerName ?? input.packageName ?? null,
+      offerName: input.offerName ?? input.packageName ?? trackingLink?.offerLabel ?? null,
       subBrand: form.subBrand ?? null,
-    });
+      note: input.notes ?? null,
+    }, trackingLink, { submittedData: input.submittedData ?? null });
     return { success: true, kind: "abandoned_cart", id: cart.id, confirmation: null };
   }
 
@@ -109,8 +162,10 @@ export async function submitFormOrder(
   if (!contact.state) throw new Error("State is required");
   if (input.items.length === 0) throw new Error("At least one product is required");
 
-  const schemaError = validateSubmissionAgainstSchema(form.schema as Record<string, unknown>, input.fieldValues);
-  if (schemaError) throw new Error(schemaError);
+  if (!input.skipSchemaValidation) {
+    const schemaError = validateSubmissionAgainstSchema(form.schema as Record<string, unknown>, input.fieldValues);
+    if (schemaError) throw new Error(schemaError);
+  }
 
   const productIds = [...new Set(input.items.map((i) => i.productId))];
   const products = await db
@@ -132,6 +187,10 @@ export async function submitFormOrder(
     const lineRows: Array<{
       productId: string;
       variantId: string | null;
+      // The product offer the customer actually bought - the exact answer to
+      // "which offer did this sale come from?", unlike the order-level
+      // offerName, which is a display title the client may or may not send.
+      offerId: string | null;
       quantity: number;
       unitPriceAtSubmission: string;
       unitCostAtSubmission: string;
@@ -167,6 +226,7 @@ export async function submitFormOrder(
       lineRows.push({
         productId: item.productId,
         variantId: pricing.variantId,
+        offerId: item.offerId ?? null,
         quantity: pricing.quantityPaid,
         unitPriceAtSubmission: String(pricing.unitPrice),
         unitCostAtSubmission: String(unitCostAvg),
@@ -191,6 +251,8 @@ export async function submitFormOrder(
           lineRows.push({
             productId: component.productId,
             variantId: component.variantId,
+            // Bundled-in component: credited to the bundle offer it came with.
+            offerId: item.offerId ?? null,
             quantity: component.quantity,
             unitPriceAtSubmission: "0",
             unitCostAtSubmission: String(component.unitCost),
@@ -206,30 +268,7 @@ export async function submitFormOrder(
     const agentId = await getNextAssignedAgentForState(tx, form.organizationId, contact.state);
     const profit = orderRevenue - orderCost;
     const deliveryFee = await getDeliveryFeeForLocation(tx, form.organizationId, contact.state);
-
-    // Tracking-link attribution: a bad/missing/inactive `tl` code just means
-    // no attribution, never a failed submission - this is best-effort
-    // marketing data, not a required field.
-    const trackingLinkCode = input.trackingLinkCode ?? extractTrackingLinkCode(input.pageUrl);
-    const resolvedTrackingLink = trackingLinkCode
-      ? await findActiveTrackingLinkByCode(tx, form.organizationId, trackingLinkCode)
-      : null;
-    // A link's code is org-scoped, not form-scoped, so a copy-pasted URL
-    // from a different form's tracking link would otherwise still resolve -
-    // skip attribution (don't fail the submission) rather than mis-tagging
-    // the order with the wrong funnel.
-    if (resolvedTrackingLink && resolvedTrackingLink.formId !== form.id) {
-      logger?.warn(
-        {
-          formId: form.id,
-          trackingLinkId: resolvedTrackingLink.id,
-          trackingLinkFormId: resolvedTrackingLink.formId,
-        },
-        "Tracking link code resolved to a different form than the one submitted through - skipping attribution",
-      );
-    }
-    const trackingLink =
-      resolvedTrackingLink && resolvedTrackingLink.formId === form.id ? resolvedTrackingLink : null;
+    const trackingLink = await resolveTrackingLinkForSubmission(tx, form, input, logger);
 
     const customer = await findOrCreateCustomer(tx, form.organizationId, {
       name: contact.customerName!,
@@ -259,13 +298,15 @@ export async function submitFormOrder(
         deliveryFee: String(deliveryFee),
         profit: String(profit),
         funnelName: form.funnelName ?? form.name,
-        offerName: input.offerName ?? input.packageName ?? null,
+        offerName: input.offerName ?? input.packageName ?? trackingLink?.offerLabel ?? null,
         subBrand: form.subBrand ?? null,
         trackingLinkId: trackingLink?.id ?? null,
         platform: trackingLink?.platform ?? null,
         mediaBuyerName: trackingLink?.mediaBuyerName ?? null,
         trackingLinkOfferId: trackingLink?.offerId ?? null,
         trackingLinkOfferLabel: trackingLink?.offerLabel ?? null,
+        notes: input.notes ?? null,
+        submittedData: input.submittedData ?? null,
       })
       .returning();
     if (!order) throw new Error("Failed to create order");

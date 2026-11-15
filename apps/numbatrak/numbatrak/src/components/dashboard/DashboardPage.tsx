@@ -12,6 +12,7 @@ import {
 } from "./DashboardFilters";
 import { trackingLinksApi } from "../../services/trackingLinks";
 import { LossPanel } from "./LossPanel";
+import { FunnelBreakdownTable } from "./FunnelBreakdownTable";
 import { DashboardAlertsBanner } from "./DashboardAlertsBanner";
 import { useDashboardAlertsContext } from "../../contexts/DashboardAlertsContext";
 import {
@@ -65,8 +66,6 @@ export function DashboardPage() {
     dateFilter: { type: "last_30_days" },
     formId: null,
     csrId: null,
-    funnelName: null,
-    subBrand: null,
     offerName: null,
     agentId: null,
     status: null,
@@ -80,8 +79,6 @@ export function DashboardPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [csrUsers, setCsrUsers] = useState<UserProfile[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [funnelNames, setFunnelNames] = useState<string[]>([]);
-  const [subBrands, setSubBrands] = useState<string[]>([]);
   const [offerNames, setOfferNames] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [mediaBuyerNames, setMediaBuyerNames] = useState<string[]>([]);
@@ -105,8 +102,6 @@ export function DashboardPage() {
     () => ({
       formId: filterValues.formId,
       csrId: effectiveCsrId,
-      funnelName: filterValues.funnelName,
-      subBrand: filterValues.subBrand,
       offerName: filterValues.offerName,
       agentId: filterValues.agentId,
       status: filterValues.status,
@@ -117,8 +112,6 @@ export function DashboardPage() {
     [
       filterValues.formId,
       effectiveCsrId,
-      filterValues.funnelName,
-      filterValues.subBrand,
       filterValues.offerName,
       filterValues.agentId,
       filterValues.status,
@@ -133,8 +126,6 @@ export function DashboardPage() {
       ...prev,
       formId: null,
       csrId: null,
-      funnelName: null,
-      subBrand: null,
       offerName: null,
       agentId: null,
       status: null,
@@ -145,8 +136,6 @@ export function DashboardPage() {
     if (!currentOrganization) {
       setForms([]);
       setAgents([]);
-      setFunnelNames([]);
-      setSubBrands([]);
       setOfferNames([]);
       setPlatforms([]);
       setMediaBuyerNames([]);
@@ -157,7 +146,7 @@ export function DashboardPage() {
     (async () => {
       // Forms isn't ported off Supabase yet - dynamic import + its own
       // try/catch so a module-load failure there only empties the forms
-      // filter dropdown instead of blocking agents/funnel/sub-brand options
+      // filter dropdown instead of blocking agent options
       // (which are already-ported) from loading too.
       try {
         const { fetchForms } = await import("../../services/forms");
@@ -176,8 +165,6 @@ export function DashboardPage() {
         ]);
         if (!cancelled) {
           setAgents(agentList);
-          setFunnelNames(attrOptions.funnelNames);
-          setSubBrands(attrOptions.subBrands);
           setOfferNames(attrOptions.offerNames);
           setPlatforms(attrOptions.platforms);
           setMediaBuyerNames(attrOptions.mediaBuyerNames);
@@ -192,8 +179,6 @@ export function DashboardPage() {
         console.error("Error loading dashboard filter data:", e);
         if (!cancelled) {
           setAgents([]);
-          setFunnelNames([]);
-          setSubBrands([]);
           setOfferNames([]);
           setPlatforms([]);
           setMediaBuyerNames([]);
@@ -370,12 +355,6 @@ export function DashboardPage() {
         onCsrChange={(csrId) =>
           setFilterValues((prev) => ({ ...prev, csrId }))
         }
-        onFunnelChange={(funnelName) =>
-          setFilterValues((prev) => ({ ...prev, funnelName }))
-        }
-        onSubBrandChange={(subBrand) =>
-          setFilterValues((prev) => ({ ...prev, subBrand }))
-        }
         onOfferChange={(offerName) =>
           setFilterValues((prev) => ({ ...prev, offerName }))
         }
@@ -400,8 +379,6 @@ export function DashboardPage() {
         forms={forms}
         csrUsers={csrUsers}
         agents={agents}
-        funnelNames={funnelNames}
-        subBrands={subBrands}
         offerNames={offerNames}
         platforms={platforms}
         mediaBuyerNames={mediaBuyerNames}
@@ -424,12 +401,24 @@ export function DashboardPage() {
           priorMetrics={priorMetrics}
         />
 
-        {canViewAnalytics && filterValues.viewMode === "business" && (
+        {/* Both views show the losses; the spec only swaps ROAS-vs-ROI and the
+            expense table (business) for the per-funnel table (funnel). */}
+        {canViewAnalytics && (
           <LossPanel
             metrics={lossMetrics}
             loading={lossLoading}
             error={lossError}
             onRetry={() => setLossReloadToken((t) => t + 1)}
+            formatCurrency={formatCurrency}
+            totalOrdersGenerated={performanceMetrics?.totalOrdersGenerated ?? null}
+          />
+        )}
+
+        {canViewAnalytics && filterValues.viewMode === "funnel" && currentOrganization && (
+          <FunnelBreakdownTable
+            organizationId={currentOrganization.id}
+            dateFilter={filterValues.dateFilter}
+            scope={metricsScope}
             formatCurrency={formatCurrency}
           />
         )}

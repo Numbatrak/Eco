@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import "./FormBuilderPage.css";
 import { useOrganization } from "../../contexts/OrganizationContext";
-import { API_BASE_URL } from "../../lib/apiClient";
+import { PUBLIC_API_BASE_URL } from "../../lib/apiClient";
 import {
   createForm,
   updateForm,
@@ -930,12 +930,12 @@ export default function FormBuilderPage() {
                   </li>
                   <li>
                     <p className="font-semibold">3. Configure the API URL</p>
-                    <p className="text-muted-foreground mt-1">Go to Settings → CRM Form Embed and paste your API base URL:</p>
+                    <p className="text-muted-foreground mt-1">Go to Settings → Numbatrak Forms and paste your API base URL:</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <code className="px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">{API_BASE_URL}</code>
+                      <code className="px-3 py-2 bg-muted rounded-lg font-mono text-xs break-all">{PUBLIC_API_BASE_URL}</code>
                       <button
                         type="button"
-                        onClick={() => void copyToClipboard(API_BASE_URL, "API base URL")}
+                        onClick={() => void copyToClipboard(PUBLIC_API_BASE_URL, "API base URL")}
                         className="btn-secondary shrink-0"
                         title="Copy API base URL"
                       >

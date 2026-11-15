@@ -1,50 +1,114 @@
-import { randomBytes } from "node:crypto";
-import { and, count, eq, desc, inArray } from "drizzle-orm";
-import { numbatrakTrackingLinks, numbatrakForms, numbatrakCustomerOrders, type Database, type Queryable } from "@platform/db";
+import { and, asc, count, eq, desc, inArray } from "drizzle-orm";
+import {
+  numbatrakTrackingLinks,
+  numbatrakMediaBuyers,
+  numbatrakForms,
+  numbatrakCustomerOrders,
+  type Database,
+  type Queryable,
+} from "@platform/db";
 import type {
   NumbatrakTrackingLink,
+  NumbatrakMediaBuyer,
   CreateNumbatrakTrackingLinkRequest,
   UpdateNumbatrakTrackingLinkRequest,
   ListNumbatrakTrackingLinksQuery,
+  CreateNumbatrakMediaBuyerRequest,
+  UpdateNumbatrakMediaBuyerRequest,
 } from "@platform/shared-types";
+import { slugify, slugJoin } from "../../../lib/slug.js";
+import { isUniqueViolation } from "../../../lib/db-errors.js";
 
 type TrackingLinkRow = typeof numbatrakTrackingLinks.$inferSelect;
+type MediaBuyerRow = typeof numbatrakMediaBuyers.$inferSelect;
+type FormInfo = { name: string; siteUrl: string | null };
 
-// Short, URL-safe, human-typeable code - base36, 8 chars (~41 bits, plenty
-// for the per-org volume this feature will ever see; collisions are handled
-// by retrying against the (organizationId, code) unique index anyway).
-function generateCode(): string {
-  return randomBytes(6).toString("hex").slice(0, 8);
+const MAX_CODE_LENGTH = 60;
+const MAX_SUFFIX_ATTEMPTS = 50;
+
+function httpError(statusCode: number, message: string): Error {
+  return Object.assign(new Error(message), { statusCode });
 }
 
-function buildUrl(siteUrl: string | null, code: string): string | null {
-  if (!siteUrl) return null;
-  const separator = siteUrl.includes("?") ? "&" : "?";
-  return `${siteUrl}${separator}tl=${code}`;
+/**
+ * Readable base code from who drove the traffic - "AdGuys" + "TikTok" ->
+ * "adguys-tiktok", plus the label when given so one buyer can run several
+ * links on the same platform ("adguys-tiktok-bf-test"). Only ever a lookup
+ * key: attribution is read off the row, never parsed out of this string.
+ */
+function baseCode(mediaBuyerName: string, input: CreateNumbatrakTrackingLinkRequest): string {
+  return slugJoin([mediaBuyerName, input.platform, input.label], {
+    maxLength: MAX_CODE_LENGTH - 3, // leave room for a "-NN" collision suffix
+    fallback: "link",
+  });
 }
 
-function serialize(
-  row: TrackingLinkRow,
+/** `base`, then `base-2`, `base-3`, ... */
+function candidateCode(base: string, attempt: number): string {
+  return attempt === 0 ? base : `${base}-${attempt + 1}`;
+}
+
+export type TrackingUrlParts = Pick<TrackingLinkRow, "code" | "platform" | "mediaBuyerName" | "offerLabel">;
+
+/**
+ * The ready-to-paste ad link: the landing page plus `tl=<code>` and standard
+ * UTM tags. NumbaTrak attributes orders from `tl` alone; the UTMs are for
+ * people reading the link and for analytics tools (GA, Meta, TikTok) that
+ * group traffic by them. Existing query params and the #fragment on the page
+ * are kept; our own tags overwrite any stale copies.
+ */
+export function buildTrackingUrl(
+  pageUrl: string | null,
+  link: TrackingUrlParts,
   formName: string | null,
-  siteUrl: string | null,
-  orderCount: number,
-): NumbatrakTrackingLink {
+): string | null {
+  if (!pageUrl) return null;
+  let url: URL;
+  try {
+    url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(pageUrl) ? pageUrl : `https://${pageUrl}`);
+  } catch {
+    return null;
+  }
+  const campaign = link.offerLabel ?? formName;
+  url.searchParams.set("tl", link.code);
+  url.searchParams.set("utm_source", slugify(link.platform, { fallback: "ads" }));
+  url.searchParams.set("utm_medium", "paid");
+  if (campaign) url.searchParams.set("utm_campaign", slugify(campaign, { fallback: "offer" }));
+  else url.searchParams.delete("utm_campaign");
+  url.searchParams.set("utm_content", slugify(link.mediaBuyerName, { fallback: "buyer" }));
+  return url.toString();
+}
+
+function serialize(row: TrackingLinkRow, form: FormInfo | null, orderCount: number): NumbatrakTrackingLink {
   return {
     id: row.id,
     formId: row.formId,
-    formName,
+    formName: form?.name ?? null,
     offerId: row.offerId,
     offerLabel: row.offerLabel,
+    mediaBuyerId: row.mediaBuyerId,
     mediaBuyerName: row.mediaBuyerName,
     platform: row.platform,
     label: row.label,
     code: row.code,
-    url: buildUrl(siteUrl, row.code),
+    pageUrl: row.pageUrl,
+    // Null when neither the link nor its form has a page URL - the UI then
+    // shows the bare `?tl=<code>` param to append to the landing page.
+    url: buildTrackingUrl(row.pageUrl ?? form?.siteUrl ?? null, row, form?.name ?? null),
     active: row.active,
     orderCount,
     createdAt: row.createdAt?.toISOString() ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
   };
+}
+
+async function loadForm(db: Queryable, organizationId: string, formId: string): Promise<FormInfo | null> {
+  const [form] = await db
+    .select({ name: numbatrakForms.name, siteUrl: numbatrakForms.siteUrl })
+    .from(numbatrakForms)
+    .where(and(eq(numbatrakForms.organizationId, organizationId), eq(numbatrakForms.id, formId)))
+    .limit(1);
+  return form ?? null;
 }
 
 export async function listTrackingLinks(
@@ -86,10 +150,9 @@ export async function listTrackingLinks(
   const formById = new Map(forms.map((f) => [f.id, f]));
   const orderCountByLinkId = new Map(orderCounts.map((o) => [o.trackingLinkId, o.total]));
 
-  return rows.map((row) => {
-    const form = formById.get(row.formId);
-    return serialize(row, form?.name ?? null, form?.siteUrl ?? null, orderCountByLinkId.get(row.id) ?? 0);
-  });
+  return rows.map((row) =>
+    serialize(row, formById.get(row.formId) ?? null, orderCountByLinkId.get(row.id) ?? 0),
+  );
 }
 
 export async function createTrackingLink(
@@ -97,37 +160,55 @@ export async function createTrackingLink(
   organizationId: string,
   input: CreateNumbatrakTrackingLinkRequest,
 ): Promise<NumbatrakTrackingLink> {
-  let row: TrackingLinkRow | undefined;
-  // Retry on the rare code collision within this org (unique index on
-  // (organization_id, code)) rather than pre-checking - simpler and race-free.
-  for (let attempt = 0; attempt < 5 && !row; attempt++) {
+  // The FKs alone would accept another org's form or buyer.
+  const [form, buyer] = await Promise.all([
+    loadForm(db, organizationId, input.formId),
+    findMediaBuyer(db, organizationId, input.mediaBuyerId),
+  ]);
+  if (!form) throw httpError(400, "Form not found");
+  if (!buyer) throw httpError(400, "Media buyer not found");
+  if (!buyer.active) throw httpError(400, `${buyer.name} is no longer an active media buyer`);
+
+  const values = {
+    organizationId,
+    formId: input.formId,
+    offerId: input.offerId ?? null,
+    offerLabel: input.offerId ? (input.offerLabel ?? null) : null,
+    mediaBuyerId: buyer.id,
+    mediaBuyerName: buyer.name,
+    platform: input.platform,
+    label: input.label ?? null,
+    pageUrl: input.pageUrl ?? null,
+  };
+
+  // A caller-chosen code is taken literally: a clash is the caller's to
+  // resolve, not something to paper over with a suffix they didn't ask for.
+  if (input.code) {
     try {
-      const [inserted] = await db
-        .insert(numbatrakTrackingLinks)
-        .values({
-          organizationId,
-          formId: input.formId,
-          offerId: input.offerId ?? null,
-          offerLabel: input.offerLabel ?? null,
-          mediaBuyerName: input.mediaBuyerName,
-          platform: input.platform,
-          label: input.label ?? null,
-          code: generateCode(),
-        })
-        .returning();
-      row = inserted;
+      const [row] = await db.insert(numbatrakTrackingLinks).values({ ...values, code: input.code }).returning();
+      return serialize(row!, form, 0);
     } catch (err) {
-      const isUniqueViolation = err instanceof Error && "code" in err && (err as { code?: string }).code === "23505";
-      if (!isUniqueViolation || attempt === 4) throw err;
+      if (isUniqueViolation(err)) throw httpError(409, `The code "${input.code}" is already used by another link`);
+      throw err;
     }
   }
 
-  const [form] = await db
-    .select({ name: numbatrakForms.name, siteUrl: numbatrakForms.siteUrl })
-    .from(numbatrakForms)
-    .where(eq(numbatrakForms.id, row!.formId))
-    .limit(1);
-  return serialize(row!, form?.name ?? null, form?.siteUrl ?? null, 0);
+  // Derived code: try "adguys-tiktok", then "-2", "-3"... against the
+  // (organization_id, code) unique index rather than pre-checking, so two
+  // concurrent creates can't both claim the same code.
+  const base = baseCode(buyer.name, input);
+  for (let attempt = 0; attempt < MAX_SUFFIX_ATTEMPTS; attempt++) {
+    try {
+      const [row] = await db
+        .insert(numbatrakTrackingLinks)
+        .values({ ...values, code: candidateCode(base, attempt) })
+        .returning();
+      return serialize(row!, form, 0);
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+    }
+  }
+  throw httpError(409, "Could not find a free code for this link - add a label to tell it apart");
 }
 
 export async function updateTrackingLink(
@@ -137,9 +218,20 @@ export async function updateTrackingLink(
   input: UpdateNumbatrakTrackingLinkRequest,
 ): Promise<NumbatrakTrackingLink | null> {
   const values: Partial<typeof numbatrakTrackingLinks.$inferInsert> = { updatedAt: new Date() };
-  if (input.mediaBuyerName !== undefined) values.mediaBuyerName = input.mediaBuyerName;
+  if (input.mediaBuyerId !== undefined) {
+    const buyer = await findMediaBuyer(db, organizationId, input.mediaBuyerId);
+    if (!buyer) throw httpError(400, "Media buyer not found");
+    if (!buyer.active) throw httpError(400, `${buyer.name} is no longer an active media buyer`);
+    values.mediaBuyerId = buyer.id;
+    values.mediaBuyerName = buyer.name;
+  }
+  if (input.offerId !== undefined) {
+    values.offerId = input.offerId || null;
+    values.offerLabel = values.offerId ? (input.offerLabel ?? null) : null;
+  }
   if (input.platform !== undefined) values.platform = input.platform;
   if (input.label !== undefined) values.label = input.label;
+  if (input.pageUrl !== undefined) values.pageUrl = input.pageUrl;
   if (input.active !== undefined) values.active = input.active;
 
   const [row] = await db
@@ -149,16 +241,14 @@ export async function updateTrackingLink(
     .returning();
   if (!row) return null;
 
-  const [form] = await db
-    .select({ name: numbatrakForms.name, siteUrl: numbatrakForms.siteUrl })
-    .from(numbatrakForms)
-    .where(eq(numbatrakForms.id, row.formId))
-    .limit(1);
-  const [orderCountResult] = await db
-    .select({ total: count() })
-    .from(numbatrakCustomerOrders)
-    .where(eq(numbatrakCustomerOrders.trackingLinkId, row.id));
-  return serialize(row, form?.name ?? null, form?.siteUrl ?? null, orderCountResult?.total ?? 0);
+  const [form, [orderCountResult]] = await Promise.all([
+    loadForm(db, organizationId, row.formId),
+    db
+      .select({ total: count() })
+      .from(numbatrakCustomerOrders)
+      .where(eq(numbatrakCustomerOrders.trackingLinkId, row.id)),
+  ]);
+  return serialize(row, form, orderCountResult?.total ?? 0);
 }
 
 /**
@@ -183,6 +273,15 @@ export async function findTrackingLinkById(
 }
 
 /**
+ * Whether a link may attribute a submission made through `formId`: only its
+ * own form. A link's code is org-scoped, so a URL copy-pasted from another
+ * funnel's link would otherwise still resolve and mis-tag the order.
+ */
+export function trackingLinkAppliesToForm(link: Pick<TrackingLinkRow, "formId">, formId: string): boolean {
+  return link.formId === formId;
+}
+
+/**
  * Resolve a `?tl=<code>` URL param back to an active tracking link for this
  * org - used by submitFormOrder to stamp attribution onto a new order. Not
  * an authenticated lookup (called from the public form-intake path), so it
@@ -194,6 +293,10 @@ export async function findActiveTrackingLinkByCode(
   organizationId: string,
   code: string,
 ): Promise<TrackingLinkRow | null> {
+  // Codes are stored lowercase; ad platforms and hand-typed URLs don't
+  // always preserve case.
+  code = code.trim().toLowerCase();
+  if (!code) return null;
   const [row] = await db
     .select()
     .from(numbatrakTrackingLinks)
@@ -206,4 +309,87 @@ export async function findActiveTrackingLinkByCode(
     )
     .limit(1);
   return row ?? null;
+}
+
+// ---------- media buyer list ----------
+
+function serializeBuyer(row: MediaBuyerRow): NumbatrakMediaBuyer {
+  return {
+    id: row.id,
+    name: row.name,
+    active: row.active,
+    createdAt: row.createdAt?.toISOString() ?? null,
+    updatedAt: row.updatedAt?.toISOString() ?? null,
+  };
+}
+
+async function findMediaBuyer(db: Queryable, organizationId: string, mediaBuyerId: string): Promise<MediaBuyerRow | null> {
+  const [row] = await db
+    .select()
+    .from(numbatrakMediaBuyers)
+    .where(and(eq(numbatrakMediaBuyers.organizationId, organizationId), eq(numbatrakMediaBuyers.id, mediaBuyerId)))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function listMediaBuyers(db: Database, organizationId: string): Promise<NumbatrakMediaBuyer[]> {
+  const rows = await db
+    .select()
+    .from(numbatrakMediaBuyers)
+    .where(eq(numbatrakMediaBuyers.organizationId, organizationId))
+    .orderBy(asc(numbatrakMediaBuyers.name));
+  return rows.map(serializeBuyer);
+}
+
+export async function createMediaBuyer(
+  db: Database,
+  organizationId: string,
+  input: CreateNumbatrakMediaBuyerRequest,
+): Promise<NumbatrakMediaBuyer> {
+  try {
+    const [row] = await db.insert(numbatrakMediaBuyers).values({ organizationId, name: input.name }).returning();
+    return serializeBuyer(row!);
+  } catch (err) {
+    if (isUniqueViolation(err)) throw httpError(409, `${input.name} is already on the media buyer list`);
+    throw err;
+  }
+}
+
+/**
+ * Rename or retire a buyer. A rename is copied onto that buyer's links so new
+ * orders carry the new name; orders already placed keep the name they were
+ * stamped with.
+ */
+export async function updateMediaBuyer(
+  db: Database,
+  organizationId: string,
+  mediaBuyerId: string,
+  input: UpdateNumbatrakMediaBuyerRequest,
+): Promise<NumbatrakMediaBuyer | null> {
+  const now = new Date();
+  const values: Partial<typeof numbatrakMediaBuyers.$inferInsert> = { updatedAt: now };
+  if (input.name !== undefined) values.name = input.name;
+  if (input.active !== undefined) values.active = input.active;
+  try {
+    return await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(numbatrakMediaBuyers)
+        .set(values)
+        .where(and(eq(numbatrakMediaBuyers.organizationId, organizationId), eq(numbatrakMediaBuyers.id, mediaBuyerId)))
+        .returning();
+      if (!row) return null;
+      if (input.name !== undefined) {
+        await tx
+          .update(numbatrakTrackingLinks)
+          .set({ mediaBuyerName: row.name, updatedAt: now })
+          .where(
+            and(eq(numbatrakTrackingLinks.organizationId, organizationId), eq(numbatrakTrackingLinks.mediaBuyerId, row.id)),
+          );
+      }
+      return serializeBuyer(row);
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw httpError(409, `${input.name} is already on the media buyer list`);
+    throw err;
+  }
 }

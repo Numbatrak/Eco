@@ -22,6 +22,8 @@ export const numbatrakAbandonedCarts = pgTable(
     pageUrl: text("page_url"),
     filledFields: jsonb("filled_fields"),
     fieldValues: jsonb("field_values"),
+    // Raw website-form submission (see numbatrakCustomerOrders.submittedData).
+    submittedData: jsonb("submitted_data"),
     selectedProducts: jsonb("selected_products"),
     convertedToOrder: boolean("converted_to_order").default(false),
     convertedOrderId: uuid("converted_order_id").references(() => numbatrakCustomerOrders.id, {

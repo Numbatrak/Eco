@@ -18,6 +18,7 @@ import { fetchAgents, Agent } from "../../services/agents";
 import { useOrganization } from "../../contexts/OrganizationContext";
 import { fetchProducts, Product } from "../../services/products";
 import { getProductPriceByName } from "../../services/products";
+import { SubmittedDetails } from "./SubmittedDetails";
 import { filterActiveAgents } from "../../utils/agentFilters";
 import {
   sanitizeDecimalInput,
@@ -1071,6 +1072,8 @@ export function OrderDialog({
                 />
               </div>
             </div>
+
+            {mode === "edit" && order?.id && <SubmittedDetails orderId={String(order.id)} />}
 
             {/* Hidden fields for form submission */}
             <input type="hidden" name="order_month" value={orderMonth} />

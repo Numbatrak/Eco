@@ -6,6 +6,7 @@ import deleteFormRoutes from "./delete.js";
 import formWebhookSecretRoutes from "./webhook-secret.js";
 import publicNumbatrakFormRoutes from "./public.js";
 import publicNumbatrakFormWebhookRoutes from "./public-webhook.js";
+import orgIntakeRoutes from "./org-intake.js";
 
 export default async function numbatrakFormsRoutes(app: FastifyInstance): Promise<void> {
   await app.register(listFormsRoutes);
@@ -15,4 +16,5 @@ export default async function numbatrakFormsRoutes(app: FastifyInstance): Promis
   await app.register(formWebhookSecretRoutes);
   await app.register(publicNumbatrakFormRoutes);
   await app.register(publicNumbatrakFormWebhookRoutes);
+  await app.register(orgIntakeRoutes);
 }

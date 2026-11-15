@@ -12,10 +12,15 @@ export interface TrackingLink {
   formName: string | null;
   offerId: string | null;
   offerLabel: string | null;
+  /** null only on links made before the buyer list existed. */
+  mediaBuyerId: string | null;
   mediaBuyerName: string;
   platform: string;
   label: string | null;
   code: string;
+  /** Landing page as entered; null = falls back to the form's site URL. */
+  pageUrl: string | null;
+  /** Ready-to-paste ad link: page + ?tl=<code> + UTM tags. */
   url: string | null;
   active: boolean;
   orderCount: number;
@@ -25,17 +30,26 @@ export interface TrackingLink {
 
 export interface CreateTrackingLinkInput {
   formId: string;
+  /** Narrows the link to one offer/package; omit for the whole form. */
   offerId?: string | null;
   offerLabel?: string | null;
-  mediaBuyerName: string;
+  /** From the managed buyer list (mediaBuyerListApi). */
+  mediaBuyerId: string;
   platform: string;
   label?: string | null;
+  pageUrl?: string | null;
+  /** Optional custom code ([a-z0-9-]); derived from buyer + platform when omitted. */
+  code?: string;
 }
 
 export interface UpdateTrackingLinkInput {
-  mediaBuyerName?: string;
+  /** Another offer on the same form, or null for the whole form. */
+  offerId?: string | null;
+  offerLabel?: string | null;
+  mediaBuyerId?: string;
   platform?: string;
   label?: string | null;
+  pageUrl?: string | null;
   active?: boolean;
 }
 
@@ -63,4 +77,23 @@ export const trackingLinksApi = {
 
   update: (trackingLinkId: string, body: UpdateTrackingLinkInput) =>
     apiRequest<TrackingLink>(`/org/numbatrak/tracking-links/${trackingLinkId}`, { method: "PATCH", body }),
+};
+
+/** The business's fixed list of media buyers - links pick from it. */
+export interface MediaBuyer {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export const mediaBuyerListApi = {
+  list: () => apiRequest<{ mediaBuyers: MediaBuyer[] }>("/org/numbatrak/media-buyer-list", { method: "GET" }),
+
+  create: (name: string) =>
+    apiRequest<MediaBuyer>("/org/numbatrak/media-buyer-list", { method: "POST", body: { name } }),
+
+  update: (mediaBuyerId: string, body: { name?: string; active?: boolean }) =>
+    apiRequest<MediaBuyer>(`/org/numbatrak/media-buyer-list/${mediaBuyerId}`, { method: "PATCH", body }),
 };

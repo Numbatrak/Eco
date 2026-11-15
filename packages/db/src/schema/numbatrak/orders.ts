@@ -249,6 +249,9 @@ export const numbatrakCustomerOrders = pgTable(
     // to stay stable even if the tracking link is edited later.
     trackingLinkOfferId: text("tracking_link_offer_id"),
     trackingLinkOfferLabel: text("tracking_link_offer_label"),
+    // Everything the website form actually sent (flattened field -> value),
+    // kept so the business can see the original submission. Null for manual orders.
+    submittedData: jsonb("submitted_data"),
   },
   (table) => [
     index("numbatrak_customer_orders_agent_idx").on(table.agentId),
